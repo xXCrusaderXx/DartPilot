@@ -32,3 +32,7 @@ gtest_discover_tests(IntrinsicsTest)
 add_executable(CaptureTest CaptureTest.cpp)
 target_link_libraries(CaptureTest PRIVATE dartpilot::capture GTest::gtest_main)
 gtest_discover_tests(CaptureTest)
+
+add_executable(ScoringTest ScoringTest.cpp)
+target_link_libraries(ScoringTest PRIVATE dartpilot::scoring GTest::gtest_main)
+gtest_discover_tests(ScoringTest)
