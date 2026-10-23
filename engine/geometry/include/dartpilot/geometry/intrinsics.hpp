@@ -99,4 +99,17 @@ struct StoredIntrinsics
 
 // Reads a file written by saveIntrinsics; nothing if it is missing, unreadable or of another format.
 std::optional<StoredIntrinsics> loadIntrinsics (const std::string& path);
+
+// The camera and mode a stored calibration is to be used with
+struct CaptureSettings
+{
+    std::string usb_port;
+    cv::Size image_size_px;
+    // As written into CalibrationInfo, e.g. "MJPG 1280x720 30fps"
+    std::string pixel_format;
+};
+
+// Why a stored calibration does not apply to these settings, one sentence per difference; empty if it applies.
+// A calibration is only valid for the camera and mode it was made with.
+std::vector<std::string> settingsMismatches (const StoredIntrinsics& stored, const CaptureSettings& current);
 }  // namespace dartpilot::geometry

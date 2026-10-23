@@ -7,7 +7,8 @@
 namespace dartpilot::setup
 {
 // Lists the connected V4L2 cameras for QML, sorted by USB port: path, usbPort, name,
-// and intrinsicsPath with hasIntrinsics for a stored intrinsic calibration.
+// and intrinsicsPath with hasIntrinsics for a stored intrinsic calibration, and intrinsicsWarning when it does not
+// match the reference capture mode.
 class CameraFinder : public QObject
 {
     Q_OBJECT

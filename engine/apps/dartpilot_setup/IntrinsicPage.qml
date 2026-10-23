@@ -56,7 +56,7 @@ ColumnLayout {
             id: cameraBox
 
             Layout.preferredWidth: 340
-            model: page.cameras.map((c, i) => "Camera " + (i + 1) + "  ·  USB " + c.usbPort + (c.hasIntrinsics ? "  ·  calibrated" : ""))
+            model: page.cameras.map((c, i) => "Camera " + (i + 1) + "  ·  USB " + c.usbPort + (c.hasIntrinsics ? (c.intrinsicsWarning === "" ? "  ·  calibrated" : "  ·  calibration not valid") : ""))
             // The views belong to one camera; switching starts over.
             onActivated: view.clearViews()
         }

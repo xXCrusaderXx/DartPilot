@@ -381,4 +381,23 @@ std::optional<StoredIntrinsics> loadIntrinsics (const std::string& path)
         return std::nullopt;
     }
 }
+std::vector<std::string> settingsMismatches (const StoredIntrinsics& stored, const CaptureSettings& current)
+{
+    std::vector<std::string> mismatches;
+    if(!stored.info.usb_port.empty() && !current.usb_port.empty() && stored.info.usb_port != current.usb_port)
+    {
+        mismatches.push_back("calibrated for the camera on USB port " + stored.info.usb_port + ", not " + current.usb_port);
+    }
+    const cv::Size& size = stored.calibration.image_size_px;
+    if(size != current.image_size_px)
+    {
+        mismatches.push_back("calibrated at " + std::to_string(size.width) + "x" + std::to_string(size.height) + ", capture runs at " +
+                             std::to_string(current.image_size_px.width) + "x" + std::to_string(current.image_size_px.height));
+    }
+    if(!stored.info.pixel_format.empty() && !current.pixel_format.empty() && stored.info.pixel_format != current.pixel_format)
+    {
+        mismatches.push_back("calibrated with " + stored.info.pixel_format + ", capture uses " + current.pixel_format);
+    }
+    return mismatches;
+}
 }  // namespace dartpilot::geometry
