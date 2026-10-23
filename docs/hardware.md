@@ -1,8 +1,8 @@
 # Reference hardware
 
-This is the setup DartPilot is developed and benchmarked on. Other setups will work as long as they meet the requirements below; reports of other cameras are welcome (see [CONTRIBUTING.md](../CONTRIBUTING.md#ways-to-contribute)).
+The first calibration, recordings and benchmark of DartPilot are made with this setup. Benchmark results name the setup they were measured on; other cameras are welcome as [hardware reports](../CONTRIBUTING.md#ways-to-contribute).
 
-The capture settings derived from it are in [ADR 0002](adr/0002-capture-settings.md).
+The capture settings for this setup are in [ADR 0002](adr/0002-capture-settings.md).
 
 ## Board and mounting
 
@@ -11,78 +11,79 @@ The capture settings derived from it are in [ADR 0002](adr/0002-capture-settings
 | Board | Target TOR (bristle board with number ring) |
 | Surround | Board surround with a camera ring and an LED ring |
 | Camera arrangement | 3 cameras in the ring, about 120° apart |
-| Viewing angle | Each camera sees the whole board from about 35–45° above the board plane (estimated from images; the extrinsic calibration (#13) will give exact poses) |
+| Viewing angle | Each camera sees the whole board from about 35–45° above the board plane (estimated from images; the extrinsic calibration (#13) gives the exact poses) |
 | Lighting | LED ring around the board |
 
-Open: distance of the cameras to the board centre and exact elevation angles (follow from the extrinsic calibration), name of the camera ring product.
+The board is about 650 px wide in each image. That is about **1.9 px/mm across and about 1.1 px/mm along the viewing direction**, where the board appears compressed. A P95 error of 1.5 mm therefore corresponds to roughly 1.5–3 px: tip localisation and calibration have to work at sub-pixel accuracy, and MJPG compression artefacts are a possible limit (see [ADR 0002](adr/0002-capture-settings.md)).
+
+The segment colours repeat every two segments, so they alone leave 10 possible board orientations; the number ring or a user confirmation resolves it (#47).
 
 ## Cameras
 
-All three cameras are identical.
+Three identical generic UVC camera modules.
 
 | Property | Value |
 | -------- | ----- |
-| USB ID | `0bda:5844` (Realtek), product string "USB Camera" |
-| Driver | `uvcvideo` (UVC), one video node and one UVC metadata node per camera |
-| USB | 2.0 High Speed (480 Mbit/s), 500 mA |
-| Serial number | `200901010001` on **all three** cameras – not usable to tell them apart |
-| Lens | Fixed focus, no zoom (no focus or zoom controls) |
+| Sensor | OmniVision OV9732, 1280×720 native, rolling shutter |
+| Lens | 100° field of view (seller's figure, axis not stated) |
+| USB ID | `0bda:5844` (Realtek chipset), reported as "Generic USB Camera" |
+| Interface | USB 2.0 (480 Mbit/s), UVC 1.00, Linux driver `uvcvideo` |
+| Serial number | `200901010001` on every unit, so the serial does not tell the cameras apart |
+| Focus | no focus control; set by turning the lens in its thread |
+| Gain | no gain control |
+| Capture timestamps | monotonic clock, taken at start of exposure (`V4L2_BUF_FLAG_TSTAMP_SRC_SOE`) |
 
-### Formats
+### Modes
 
-| Format | Resolutions | Frame rate |
-| ------ | ----------- | ---------- |
-| MJPG | 1280×720, 960×540, 848×480, 800×600, 640×480, 352×288, 320×240, 176×144, 160×120 | 30 fps for all |
-| YUYV | 1280×720 | 10 fps |
-| YUYV | 960×540, 848×480, 800×600 | 15 fps |
-| YUYV | 640×480 and smaller | 30 fps |
+| Format | Resolution | FPS |
+| ------ | ---------- | --- |
+| MJPG | 1280×720 and every smaller mode down to 160×120 | 30 |
+| YUYV | 1280×720 | 10 |
+| YUYV | 960×540, 848×480, 800×600 | 15 |
+| YUYV | 640×480 and smaller | 30 |
 
-Uncompressed 1280×720 at 30 fps would need about 440 Mbit/s per camera, more than USB 2.0 offers for three cameras, so full resolution at 30 fps is only available as MJPG.
+The reference mode is **MJPG 1280×720 at 30 fps**, the sensor's native resolution. Uncompressed 720p only reaches 10 fps.
+
+The rolling shutter exposes the rows one after another, so a dart in flight appears skewed. Frames of the resting dart after the throw are not affected.
 
 ### Controls
 
-| Control | Range | Default | Notes |
-| ------- | ----- | ------- | ----- |
-| `auto_exposure` | 1 = manual, 3 = aperture priority | 3 | Manual mode works |
-| `exposure_time_absolute` | 0–10000 (100 µs units) | 166 | Only active in manual mode |
-| `exposure_dynamic_framerate` | bool | 0 | Must stay off, otherwise the frame rate drops in low light |
-| `white_balance_automatic` | bool | 1 | |
-| `white_balance_temperature` | 2800–6500 K | 4600 | Only active with automatic white balance off |
-| `brightness`, `contrast`, `saturation`, `hue`, `gamma`, `sharpness` | various | | Image processing in the camera; `sharpness` may affect sub-pixel accuracy |
-| `power_line_frequency` | disabled / 50 Hz / 60 Hz | 50 Hz | |
-| `backlight_compensation` | 0–1 | 0 | |
+| Control | Range | Default |
+| ------- | ----- | ------- |
+| `auto_exposure` | 1 = manual, 3 = aperture priority | 3 |
+| `exposure_time_absolute` | 0–10000 (units of 100 µs) | 166 |
+| `exposure_dynamic_framerate` | on/off | on when connected |
+| `white_balance_automatic` | on/off | on |
+| `white_balance_temperature` | 2800–6500 K | 4600 |
+| `brightness`, `contrast`, `saturation`, `hue`, `gamma`, `sharpness` | image processing in the camera | |
+| `power_line_frequency` | disabled, 50 Hz, 60 Hz | 50 Hz |
 
-There is **no gain control**. Brightness has to come from exposure time and lighting.
+`exposure_dynamic_framerate` is on after every connect. In room light it lowers the frame rate to about 16.7 fps with intervals of up to 64 ms. Capture must switch it off, and should fix exposure and white balance, so that the frame rate and the image stay constant over a recording.
 
-### Timestamps
+### Focus
 
-`uvcvideo` delivers buffers with `V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC` and `V4L2_BUF_FLAG_TSTAMP_SRC_SOE`: the timestamp is the **start of exposure** on the host's monotonic clock, derived by the driver from the camera's UVC clock (SCR/PTS). Frame intervals in a first test alternated between about 32 and 36 ms at 30 fps, so the timestamps are quantised or jittery by about 4 ms. How well they match the real exposure time across cameras is the subject of #3 and #20.
+Set the focus once, at the final camera position, before the intrinsic calibration. Turning the lens changes the focal length and the distortion, so every turn afterwards invalidates the calibration of that camera. The lens is often fixed with a drop of glue at the factory; loosen it carefully. Fix the exposure while focusing, otherwise a sharpness measure follows the brightness instead of the focus.
 
-## USB topology
+## Connection
 
-All three cameras are connected through a chain of three USB 2.0 hubs to one host port and share its 480 Mbit/s:
+The three cameras share one USB 2.0 hub. Cameras are identified by their USB port, through `/dev/v4l/by-path/`, never by `/dev/videoN`, which can change between boots. A camera keeps its port for as long as its calibration is used.
 
-```text
-host port (usb-0000:0e:00.4-2)
-└─ hub 4-port ─ hub 2-port ─ hub 4-port ─┬─ port 2: camera (…-2.4.3.1.2)
-                                         ├─ port 3: camera (…-2.4.3.1.3)
-                                         └─ port 4: camera (…-2.4.3.1.4)
-```
+Each camera exposes two device nodes: the first (`video-index0`) delivers images, the second (`video-index1`) only UVC metadata.
 
-Because the serial numbers are identical, a camera can only be identified by its **USB port path**. Re-plugging cables swaps cameras. Calibrations are therefore stored per port path and checked against the image content: each camera sees the board from a different side, which the wire detection (#47) recognises.
+## Measured
 
-## First measurements
+2026-10-23, Arch Linux, kernel 7.2.9, all three cameras streaming MJPG 1280×720 at once with `v4l2-ctl`, 300 frames each, `exposure_dynamic_framerate` off:
 
-| Test | Result |
-| ---- | ------ |
-| All three cameras at 1280×720 MJPG, 30 fps, at the same time, 10 s | 300 of 300 frames per camera, 30.0 fps, no drops |
-| MJPG frame size at 1280×720 | about 25–55 KB |
-| Board size in the image | about 650 px wide, i.e. about 1.9 px/mm across and about 1.1 px/mm along the viewing direction |
+| Camera | Effective FPS | Longest frame interval | Lost frames |
+| ------ | ------------- | ---------------------- | ----------- |
+| 1 | 30.01 | 36 ms | 0 |
+| 2 | 30.01 | 36 ms | 0 |
+| 3 | 30.01 | 36 ms | 0 |
 
-The last line matters for the targets: a P95 error of 1.5 mm corresponds to roughly 1.5–3 px, so tip localisation and calibration have to work at sub-pixel accuracy. MJPG compression artefacts may limit this; #3 compares MJPG against YUYV at 10 fps.
+The time offset between the cameras has not been measured yet (see [technical plan, section 5.1](technical_plan.md#51-capture-and-timing)).
 
-## Still to check
+## Open
 
-- Whether the tip is visible in all three views with darts in the board (sample frames without people).
-- Stability over long sessions and under system load (#7).
-- Whether the hub chain causes drops when the host is busy; a direct connection or separate host controllers may be needed.
+- Measured field of view and lens distortion, from the intrinsic calibration
+- Exact camera positions and viewing angles relative to the board, from the extrinsic calibration (#13)
+- Whether the tip is visible in all three views with darts in the board
