@@ -3,9 +3,11 @@ name: Release
 # Builds and tests the engine and publishes a GitHub Release with the source
 # archive and SHA256SUMS. Binary packages follow once there is something to run.
 #
+# Releases are built from main, which only receives merges from dev.
+#
 # Ways to start it:
-# - push a tag vX.Y.Z matching DARTPILOT_VERSION in CMakeLists.txt
-# - call it from another workflow with a version (milestone-release.yml); it creates the tag itself
+# - push a tag vX.Y.Z on main matching DARTPILOT_VERSION in CMakeLists.txt
+# - milestone-release.yml starts it on main with a version; it creates the tag itself
 # - "Run workflow": without a version it is a dry run that publishes nothing
 on:
   push:

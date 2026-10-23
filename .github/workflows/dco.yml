@@ -5,7 +5,7 @@ name: DCO
 # description must re-run the check without re-running the whole build.
 on:
   pull_request:
-    branches: [main]
+    branches: [main, dev]
     types: [opened, synchronize, reopened, edited]
 
 permissions:
@@ -56,7 +56,7 @@ jobs:
           fi
 
           # PR-level sign-off: a checked declaration from the template or a
-          # literal trailer covers the squash commit of the whole PR.
+          # literal trailer covers all commits of the PR.
           if grep -q '^- \[[xX]\] Signed off' <<<"$PR_BODY"; then
             echo "::notice::PR description carries a checked sign-off declaration; DCO satisfied at the PR level."
             exit 0

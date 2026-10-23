@@ -1,0 +1,31 @@
+name: Branch policy
+
+# main only receives dev, merged by a maintainer at a release point (see CONTRIBUTING.md).
+# Branch rulesets cannot enforce the source branch, so this required check does.
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+
+jobs:
+  source:
+    name: source is dev
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require dev as the source branch
+        env:
+          # Contributor-controlled values reach the shell only through the environment.
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ "$HEAD_REPO" = "$REPO" ] && [ "$HEAD_REF" = "dev" ]; then
+            echo "::notice::PR from dev into main."
+            exit 0
+          fi
+          echo "::error::Pull requests into main must come from this repository's dev branch (got $HEAD_REPO:$HEAD_REF). Open the PR against dev instead."
+          exit 1

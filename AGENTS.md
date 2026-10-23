@@ -6,7 +6,7 @@ These rules apply to every AI agent (Claude Code, Codex, Copilot, Cursor, …) t
 
 - An agent works on behalf of a human contributor. That human reviews every change, understands it, and answers for it in the PR.
 - **Never add a `Signed-off-by` line yourself, and never tick the sign-off box.** The DCO sign-off is a legal statement only the human can make. A `Co-Authored-By` trailer for the agent is welcome.
-- Do not open, approve, merge, or close pull requests, push to `main`, create tags or releases, or change repository settings unless the human explicitly asks for that specific action.
+- Do not open, approve, merge, or close pull requests, push to `main` or `dev`, merge `dev` into `main`, create tags or releases, or change repository settings unless the human explicitly asks for that specific action.
 - Never bypass checks: no `--no-verify`, no disabling CI jobs, no weakening `.github/workflows/` or the DCO check to make a PR pass.
 - Disclose agent use in the PR description (the template has a checkbox).
 
@@ -45,7 +45,7 @@ Principles that every change keeps:
 
 ## Code
 
-- C++20, `.clang-format` style (Allman braces, 4-space indent, 150 columns). Format only the lines you change: `git clang-format origin/main`.
+- C++20, `.clang-format` style (Allman braces, 4-space indent, 150 columns). Format only the lines you change: `git clang-format origin/dev`.
 - Python 3.11+, `ruff` for linting and formatting.
 - Comments and log messages are written in English. A comment states intent the code cannot show; do not narrate history or the change you just made.
 - Units are part of names (`_mm`, `_px`, `_ms`, `_ns`).
@@ -57,7 +57,7 @@ Principles that every change keeps:
 cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DDARTPILOT_BUILD_TESTS=ON
 cmake --build build
 ctest --test-dir build --output-on-failure
-git clang-format --diff origin/main
+git clang-format --diff origin/dev
 (cd tools && ruff check . && ruff format --check . && pytest)
 ```
 
@@ -67,6 +67,7 @@ A change is done only when it builds and the tests pass. Say so in the PR if you
 
 - Changes you did not make belong to the human or another agent. Do not commit, revert, stash, or unstage them. Check `git diff --cached --name-only` before you commit.
 - Do not commit build output (`build/`), virtual environments, or anything under `data/`.
-- Never switch branches in the main checkout; it stays on `main`. Work on a branch in your own worktree (`git worktree add <dir> -b <branch> origin/main`).
+- Branch from `dev` and open PRs against `dev` (merge commit, no squash). `main` only receives `dev` at release points, merged by the human.
+- Never switch branches in the main checkout; it stays on `dev`. Work on a branch in your own worktree (`git worktree add <dir> -b <branch> origin/dev`).
 - Don't edit `CHANGELOG.md` in feature PRs; it is written once per release. Put the change in the PR title instead.
 - Clean up after every merge: remove your worktree and local branch (`git worktree remove <dir>`, `git branch -D <branch>`) and run `git fetch --prune`. The `Clean up merged branches` workflow deletes the remote branch.
