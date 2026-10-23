@@ -2,11 +2,14 @@
 
 #include <array>
 #include <optional>
+#include <set>
+#include <string>
 #include <vector>
 
 #include <QFutureWatcher>
 #include <QVariantList>
 
+#include "dartpilot/geometry/charuco.hpp"
 #include "dartpilot/geometry/intrinsics.hpp"
 #include "stream_view.hpp"
 
@@ -25,7 +28,9 @@ class IntrinsicView : public StreamView
     Q_PROPERTY(QString model READ model WRITE setModel NOTIFY modelChanged)
     Q_PROPERTY(bool autoCapture MEMBER auto_capture_ NOTIFY autoCaptureChanged)
     Q_PROPERTY(int cornersInFrame READ cornersInFrame NOTIFY detectionChanged)
-    Q_PROPERTY(int totalCorners READ totalCorners CONSTANT)
+    // tablet (10x7, also for prints and second displays) or phone (8x4); views of both can be mixed
+    Q_PROPERTY(QString target READ target WRITE setTarget NOTIFY targetChanged)
+    Q_PROPERTY(int totalCorners READ totalCorners NOTIFY targetChanged)
     Q_PROPERTY(int viewCount READ viewCount NOTIFY viewsChanged)
     Q_PROPERTY(double coverage READ coverage NOTIFY viewsChanged)
     Q_PROPERTY(QString hint READ hint NOTIFY detectionChanged)
@@ -50,7 +55,9 @@ class IntrinsicView : public StreamView
     QString model () const;
     void setModel (const QString& model);
     int cornersInFrame () const { return detection_ ? static_cast<int>(detection_->ids.size()) : 0; }
-    int totalCorners () const;
+    QString target () const;
+    void setTarget (const QString& target);
+    int totalCorners () const { return target_.cornerCount(); }
     int viewCount () const { return static_cast<int>(views_.size()); }
     double coverage () const;
     QString hint () const { return hint_; }
@@ -82,6 +89,7 @@ class IntrinsicView : public StreamView
 
    signals:
     void modelChanged ();
+    void targetChanged ();
     void autoCaptureChanged ();
     void detectionChanged ();
     void viewsChanged ();
@@ -118,6 +126,9 @@ class IntrinsicView : public StreamView
     QString usb_port_;
     QString camera_name_;
     geometry::DistortionModel model_ = geometry::DistortionModel::Standard;
+    geometry::CharucoTarget target_;
+    // Descriptions of the targets the current views were taken with, written into the saved calibration
+    std::set<std::string> targets_used_;
     bool auto_capture_ = true;
     std::optional<geometry::CalibrationView> detection_;
     std::optional<geometry::CalibrationView> previous_detection_;

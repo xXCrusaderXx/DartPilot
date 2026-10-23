@@ -5,6 +5,9 @@ import QtQuick.Controls
 Window {
     id: patternWindow
 
+    // tablet or phone
+    property string target: "tablet"
+
     color: "white"
     title: "DartPilot calibration pattern"
 
@@ -12,7 +15,7 @@ Window {
         anchors.fill: parent
         anchors.margins: 24
         fillMode: Image.PreserveAspectFit
-        source: "image://charuco/pattern"
+        source: "image://charuco/pattern/" + patternWindow.target
         sourceSize.width: patternWindow.width
         smooth: false
     }

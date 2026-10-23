@@ -4,8 +4,8 @@
 
 namespace dartpilot::setup
 {
-// Serves the ChArUco calibration pattern to QML as image://charuco/pattern, rendered at the requested size,
-// and a QR code of its download address as image://charuco/qr.
+// Serves the ChArUco calibration patterns to QML as image://charuco/pattern/<tablet|phone>, rendered at the requested
+// size, and QR codes of their download addresses as image://charuco/qr/<tablet|phone>.
 class PatternImageProvider : public QQuickImageProvider
 {
    public:

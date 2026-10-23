@@ -35,6 +35,7 @@ ColumnLayout {
     PatternWindow {
         id: patternWindow
 
+        target: view.target
         visible: false
     }
 
@@ -152,22 +153,43 @@ ColumnLayout {
                     title: "Pattern"
                     done: patternPath.text !== "" && patternPath.text !== "Saving failed"
 
+                    RowLayout {
+                        spacing: 8
+
+                        ButtonGroup {
+                            id: targetGroup
+                        }
+                        Button {
+                            text: "Tablet or print"
+                            checkable: true
+                            checked: view.target === "tablet"
+                            ButtonGroup.group: targetGroup
+                            onClicked: view.target = "tablet"
+                        }
+                        Button {
+                            text: "Phone"
+                            checkable: true
+                            checked: view.target === "phone"
+                            ButtonGroup.group: targetGroup
+                            onClicked: view.target = "phone"
+                        }
+                    }
                     Label {
                         Layout.fillWidth: true
                         wrapMode: Text.WordWrap
                         color: Tokens.textMuted
-                        text: "Show this pattern full screen on a tablet or a second display, or print it and lay it flat on glass. Its size does not matter."
+                        text: view.target === "phone" ? "Larger cells for the small screen of a phone, so it can stay 30 to 40 cm away and reach the image corners. Views of both patterns can be mixed." : "Show this pattern full screen on a tablet or a second display, or print it and lay it flat on glass. Its size does not matter."
                     }
                     Rectangle {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: width * 0.7
+                        Layout.preferredHeight: width * (view.target === "phone" ? 0.5 : 0.7)
                         radius: 8
                         color: "white"
 
                         Image {
                             anchors.fill: parent
                             anchors.margins: 6
-                            source: "image://charuco/pattern"
+                            source: "image://charuco/pattern/" + view.target
                             sourceSize.width: 600
                             fillMode: Image.PreserveAspectFit
                         }
@@ -185,7 +207,7 @@ ColumnLayout {
                             // Rendered at the displayed size and not scaled, so every module stays whole pixels and scans reliably.
                             Image {
                                 anchors.fill: parent
-                                source: "image://charuco/qr"
+                                source: "image://charuco/qr/" + view.target
                                 sourceSize.width: width
                                 smooth: false
                                 fillMode: Image.Pad
@@ -211,7 +233,7 @@ ColumnLayout {
                                 wrapMode: Text.WrapAnywhere
                                 font.pixelSize: Tokens.captionSize
                                 color: Tokens.textMuted
-                                text: view.patternDownloadUrl()
+                                text: view.target !== "" ? view.patternDownloadUrl() : ""
                             }
                         }
                     }

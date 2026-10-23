@@ -120,7 +120,27 @@ void IntrinsicView::setModel (const QString& model)
     emit viewsChanged();
 }
 
-int IntrinsicView::totalCorners () const { return geometry::CharucoTarget{}.cornerCount(); }
+QString IntrinsicView::target () const { return target_ == geometry::CharucoTarget::phone() ? "phone" : "tablet"; }
+
+void IntrinsicView::setTarget (const QString& target)
+{
+    const geometry::CharucoTarget next = target == QLatin1String("phone") ? geometry::CharucoTarget::phone() : geometry::CharucoTarget::tablet();
+    if(next == target_)
+    {
+        return;
+    }
+    target_ = next;
+    if(stream())
+    {
+        stream()->setCharucoTarget(target_);
+    }
+    detection_.reset();
+    previous_detection_.reset();
+    still_frames_ = 0;
+    updateHint();
+    emit targetChanged();
+    emit detectionChanged();
+}
 
 double IntrinsicView::coverage () const
 {
@@ -239,7 +259,11 @@ QString IntrinsicView::qualityText () const
     return text;
 }
 
-void IntrinsicView::attachStream (CameraStream& stream) { stream.addCharucoUser(1); }
+void IntrinsicView::attachStream (CameraStream& stream)
+{
+    stream.setCharucoTarget(target_);
+    stream.addCharucoUser(1);
+}
 
 void IntrinsicView::detachStream (CameraStream& stream)
 {
@@ -271,6 +295,7 @@ void IntrinsicView::onFrame (const CameraSnapshot& snapshot)
 
     if(auto_capture_ && still_frames_ >= kStillFrames && frames_since_capture_ >= kMinFramesBetweenCaptures && isNovel(*detection_))
     {
+        targets_used_.insert(target_.describe());
         addView(*detection_);
     }
     updateHint();
@@ -293,6 +318,7 @@ bool IntrinsicView::capture ()
     {
         return false;
     }
+    targets_used_.insert(target_.describe());
     addView(*detection_);
     return true;
 }
@@ -335,6 +361,7 @@ void IntrinsicView::removeView (int index)
 void IntrinsicView::clearViews ()
 {
     views_.clear();
+    targets_used_.clear();
     coverage_.fill(0);
     invalidateResult();
     updateHint();
@@ -404,6 +431,11 @@ bool IntrinsicView::loadSaved ()
         return false;
     }
     views_.clear();
+    targets_used_.clear();
+    if(!stored->info.target.empty())
+    {
+        targets_used_.insert(stored->info.target);
+    }
     coverage_.fill(0);
     image_size_px_ = stored->calibration.image_size_px;
     for(const auto& view : stored->views)
@@ -579,7 +611,7 @@ void IntrinsicView::updateResultText ()
 
 QString IntrinsicView::calibrationDirectory () const { return setup::calibrationDirectory(); }
 
-QString IntrinsicView::patternDownloadUrl () const { return setup::patternDownloadUrl(); }
+QString IntrinsicView::patternDownloadUrl () const { return setup::patternDownloadUrl(target_); }
 
 QString IntrinsicView::save ()
 {
@@ -593,7 +625,12 @@ QString IntrinsicView::save ()
     info.usb_port = usb_port_.toStdString();
     info.camera_name = camera_name_.toStdString();
     info.pixel_format = kReferencePixelFormat;
-    info.target = geometry::CharucoTarget{}.describe();
+    std::string targets;
+    for(const auto& used : targets_used_)
+    {
+        targets += (targets.empty() ? "" : "; ") + used;
+    }
+    info.target = targets;
     info.created = QDateTime::currentDateTimeUtc().toString(Qt::ISODate).toStdString();
     if(!geometry::saveIntrinsics(path.toStdString(), *result->calibration, info, views_, result->validation))
     {
@@ -606,8 +643,8 @@ QString IntrinsicView::save ()
 
 QString IntrinsicView::savePattern ()
 {
-    const geometry::CharucoTarget target;
-    const cv::Mat pattern = geometry::CharucoFinder(target).patternImage(cv::Size(geometry::kPatternImageWidth_px, geometry::kPatternImageHeight_px));
+    const geometry::CharucoTarget& target = target_;
+    const cv::Mat pattern = geometry::CharucoFinder(target).patternImage(target.imageSize_px());
     if(pattern.empty() || !QDir().mkpath(calibrationDirectory()))
     {
         return {};

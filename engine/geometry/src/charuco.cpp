@@ -31,6 +31,12 @@ std::string CharucoTarget::describe () const
            std::string(ratio.data(), end);
 }
 
+cv::Size CharucoTarget::imageSize_px () const
+{
+    constexpr int kWidth_px = 2000;
+    return {kWidth_px, kWidth_px * squares_y / squares_x};
+}
+
 std::string CharucoTarget::imageFileName () const
 {
     std::string name = describe();
@@ -72,7 +78,15 @@ std::optional<CalibrationView> CharucoFinder::detect (const cv::Mat& gray) const
 {
     std::vector<cv::Point2f> corners;
     std::vector<int> ids;
-    impl_->detector.detectBoard(gray, corners, ids);
+    try
+    {
+        impl_->detector.detectBoard(gray, corners, ids);
+    }
+    catch(const cv::Exception&)
+    {
+        // Runs on live frames in a capture thread, where an exception would end the program.
+        return std::nullopt;
+    }
     if(ids.size() < kMinCorners)
     {
         return std::nullopt;

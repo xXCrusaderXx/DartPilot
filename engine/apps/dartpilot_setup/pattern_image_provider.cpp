@@ -37,16 +37,17 @@ QImage qrCode (const QString& text, int size_px)
 
 QImage PatternImageProvider::requestImage (const QString& id, QSize* size, const QSize& requested_size)
 {
-    if(id == QLatin1String("qr"))
+    const geometry::CharucoTarget target =
+        id.endsWith(QLatin1String("/phone")) ? geometry::CharucoTarget::phone() : geometry::CharucoTarget::tablet();
+    if(id.startsWith(QLatin1String("qr")))
     {
-        const QImage image = qrCode(patternDownloadUrl(), requested_size.width() > 0 ? requested_size.width() : 300);
+        const QImage image = qrCode(patternDownloadUrl(target), requested_size.width() > 0 ? requested_size.width() : 300);
         if(size)
         {
             *size = image.size();
         }
         return image;
     }
-    const geometry::CharucoTarget target;
     // Keep the target's aspect ratio; the width decides.
     const int width = requested_size.width() > 0 ? requested_size.width() : 1000;
     const int height = width * target.squares_y / target.squares_x;

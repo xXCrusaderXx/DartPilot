@@ -144,26 +144,48 @@ TEST(CharucoTarget, DescriptionIgnoresTheLocale)
     EXPECT_EQ(description, "charuco 10x7 DICT_4X4_50 marker 0.70");
 }
 
-// The pattern in docs/calibration is what users open on a phone; it must be exactly the one the detector expects.
-// Regenerate it with: dartpilot pattern docs/calibration/<file name>
-TEST(CharucoTarget, ShippedPatternMatchesTheTarget)
+// The patterns in docs/calibration are what users open on a phone or tablet; they must be exactly what the detector
+// expects. Regenerate them with: dartpilot pattern [--phone] docs/calibration/<file name>
+TEST(CharucoTarget, ShippedPatternsMatchTheTargets)
 {
     if(!dartpilot::geometry::charucoAvailable())
     {
         GTEST_SKIP() << "built without ChArUco support (OpenCV < 4.7)";
     }
-    const dartpilot::geometry::CharucoTarget target;
-    const std::string path = std::string(DARTPILOT_SOURCE_DIR) + "/docs/calibration/" + target.imageFileName();
-    const cv::Mat shipped = cv::imread(path, cv::IMREAD_GRAYSCALE);
-    ASSERT_FALSE(shipped.empty()) << "missing " << path;
-    const cv::Mat generated = dartpilot::geometry::CharucoFinder(target).patternImage(
-        cv::Size(dartpilot::geometry::kPatternImageWidth_px, dartpilot::geometry::kPatternImageHeight_px));
-    ASSERT_EQ(shipped.size(), generated.size());
-    EXPECT_EQ(cv::norm(shipped, generated, cv::NORM_INF), 0.0);
+    for(const auto& target : {dartpilot::geometry::CharucoTarget::tablet(), dartpilot::geometry::CharucoTarget::phone()})
+    {
+        const std::string path = std::string(DARTPILOT_SOURCE_DIR) + "/docs/calibration/" + target.imageFileName();
+        const cv::Mat shipped = cv::imread(path, cv::IMREAD_GRAYSCALE);
+        ASSERT_FALSE(shipped.empty()) << "missing " << path;
+        const cv::Mat generated = dartpilot::geometry::CharucoFinder(target).patternImage(target.imageSize_px());
+        ASSERT_EQ(shipped.size(), generated.size()) << path;
+        EXPECT_EQ(cv::norm(shipped, generated, cv::NORM_INF), 0.0) << path;
+    }
 }
 
-// A phone held closer than the focus distance: the pattern covers half the image width, slightly tilted, blurred
-// (sigma 2 px) and MJPEG-compressed. The default ArUco parameters decode fewer than half of the markers here.
+TEST(CharucoTarget, PhoneTargetHasLargerCells)
+{
+    const auto phone = dartpilot::geometry::CharucoTarget::phone();
+    EXPECT_EQ(phone.describe(), "charuco 8x4 DICT_4X4_50 marker 0.75");
+    EXPECT_EQ(phone.imageSize_px(), cv::Size(2000, 1000));
+    EXPECT_EQ(dartpilot::geometry::CharucoTarget::tablet().imageSize_px(), cv::Size(2000, 1400));
+    // On a 2:1 screen in landscape the height limits the tablet target to 1/7 of it per cell, the phone target to 1/4.
+    EXPECT_EQ(phone.squares_y, 4);
+    EXPECT_EQ(phone.cornerCount(), 21);
+}
+
+TEST(CharucoFinder, FindsEveryCornerOfThePhonePattern)
+{
+    if(!dartpilot::geometry::charucoAvailable())
+    {
+        GTEST_SKIP() << "built without ChArUco support (OpenCV < 4.7)";
+    }
+    const dartpilot::geometry::CharucoFinder finder(dartpilot::geometry::CharucoTarget::phone());
+    const auto view = finder.detect(finder.patternImage(cv::Size(1200, 600)));
+    ASSERT_TRUE(view);
+    EXPECT_EQ(static_cast<int>(view->ids.size()), finder.target().cornerCount());
+}
+
 TEST(CharucoFinder, FindsMostCornersOfASoftCompressedPattern)
 {
     if(!dartpilot::geometry::charucoAvailable())
