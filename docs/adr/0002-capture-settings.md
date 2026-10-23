@@ -14,7 +14,7 @@ The reference setup uses three identical UVC cameras (see [hardware.md](../hardw
 | Format | MJPG, 1280×720 | Only format with full resolution at 30 fps over USB 2.0 |
 | Frame rate | 30 fps | Highest available |
 | `auto_exposure` | 1 (manual) | Same exposure in every frame; no frame rate changes |
-| `exposure_time_absolute` | to tune, as short as the LED ring allows (target ≤ 10 ms) | Short exposure reduces motion blur of the incoming dart |
+| `exposure_time_absolute` | to tune with the LED ring on, as short as the light allows (target ≤ 10 ms) | Short exposure reduces motion blur of the incoming dart. A first test in room light without the LED ring gave a nearly black image at 15 ms manual exposure, so the target depends on the LED ring. |
 | `exposure_dynamic_framerate` | 0 | Keep 30 fps regardless of light |
 | `white_balance_automatic` | 0, `white_balance_temperature` to tune for the LED ring | Stable colours for the segment colour detection |
 | `sharpness` | to tune (lowest value that keeps edges sharp) | In-camera sharpening shifts edges and may hurt sub-pixel accuracy |
@@ -31,6 +31,7 @@ The capture module applies these settings at start and refuses to start, or warn
 
 ## Consequences
 
-- The LED ring is part of the setup: without it, manual short exposures may be too dark, and there is no gain control.
+- The LED ring is part of the setup: there is no gain control, and in room light alone even 15 ms manual exposure is nearly black. If the LED ring cannot provide enough light for ≤ 10 ms, the exposure target is relaxed and motion blur is accepted, since detection uses frames of the resting dart.
+- Exposure and white balance are set before focusing and before the intrinsic calibration (see the focus procedure in [hardware.md](../hardware.md)).
 - Calibrations and recordings are keyed by USB port path; re-plugging cameras must be detected.
 - MJPG artefacts are a known error source that #3 measures.
