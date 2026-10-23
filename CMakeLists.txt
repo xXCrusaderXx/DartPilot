@@ -21,8 +21,9 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 # Without COMPONENTS every installed module is imported; the modules needed are checked below,
-# because the geometry modules differ between OpenCV builds.
-find_package(OpenCV REQUIRED)
+# because the geometry modules differ between OpenCV builds. CONFIG uses OpenCV's own package
+# configuration, so a FindOpenCV.cmake of another project on CMAKE_MODULE_PATH cannot take over.
+find_package(OpenCV REQUIRED CONFIG)
 if(OpenCV_VERSION VERSION_LESS 4)
   message(FATAL_ERROR "OpenCV ${OpenCV_VERSION} found, DartPilot needs OpenCV 4 or newer")
 endif()
