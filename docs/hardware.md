@@ -82,8 +82,34 @@ Each camera exposes two device nodes: the first (`video-index0`) delivers images
 
 The time offset between the cameras has not been measured yet (see [technical plan, section 5.1](technical_plan.md#51-capture-and-timing)).
 
+## Exposure and gain
+
+Measured 2026-10-23 with the LED ring on, room light as during play, mean brightness of the board area (0–255):
+
+| Exposure | Board brightness | Frame rate |
+| -------- | ---------------- | ---------- |
+| automatic (`auto_exposure=3`) | 124–135 | 30 fps |
+| manual 5–30 ms | 1–12 | 30 fps |
+| manual 33 ms | 10–14 | 29 fps |
+| manual 100 ms | 36 | 10 fps |
+| manual 500 ms | 112 | 2 fps |
+
+Brightness grows linearly with the manual exposure time, and above 33 ms the frame rate drops as expected, so the unit of `exposure_time_absolute` (100 µs) is correct. In automatic mode the camera applies an internal gain of roughly 10× that cannot be set and is not available in manual mode. The standard processing unit does not offer a gain control (bit 9 of `bmControls` 0x157f is not set).
+
+The cameras also have a vendor extension unit (unit 4, GUID `1229a78c-47b4-4094-b0ce-db07386fb938`, two 8-byte controls on selectors 10 and 11), which appears identically in other Realtek-based webcams. It is undocumented and behaves like a command/response mailbox (selector 10 readable, selector 11 not); it was only read, never written.
+
+Automatic exposure is stable for the comparison of frames before and after a throw: between the empty board and the board with three darts, the median absolute difference outside the darts was 1.7/255 in all three cameras. The capture settings follow from this, see [ADR 0002](adr/0002-capture-settings.md).
+
+## Tip visibility
+
+Three darts (treble 20, next to the bull, double 11 next to a wire), automatic exposure, all three cameras:
+
+- The point where each dart enters the board is visible in **all three views**. Since the visible entry point lies on the playing surface, it is the point the geometry projects (z = 0).
+- The darts stand out of the board towards the cameras, so their barrels and flights cover large image areas. In one view, the flight of a dart in the near half of the board covered the bull area; a later dart landing there would be hidden in that camera. The three viewing directions provide the redundancy for this, and fusion (#32) has to expect occluded tips.
+- The barrels are only a few pixels wide, consistent with the 1–2 px/mm resolution above.
+
 ## Open
 
 - Measured field of view and lens distortion, from the intrinsic calibration
 - Exact camera positions and viewing angles relative to the board, from the extrinsic calibration (#13)
-- Whether the tip is visible in all three views with darts in the board
+- Tip visibility in more positions and with darts occluding each other (robustness cases, #29)
