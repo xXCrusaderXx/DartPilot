@@ -79,16 +79,7 @@ std::optional<Options> parseOptions (int argc, char* argv[])
     return options;
 }
 
-cv::Rect cellRect (const cv::Size& size, int cell)
-{
-    const int col = cell % kGridSize;
-    const int row = cell / kGridSize;
-    const int x0 = col * size.width / kGridSize;
-    const int y0 = row * size.height / kGridSize;
-    const int x1 = (col + 1) * size.width / kGridSize;
-    const int y1 = (row + 1) * size.height / kGridSize;
-    return {x0, y0, x1 - x0, y1 - y0};
-}
+cv::Rect cellRect (const cv::Size& size, int cell) { return capture::gridCell(size, kGridSize, cell); }
 
 void putLabel (cv::Mat& image, const std::string& text, cv::Point origin, double scale, int thickness)
 {

@@ -44,3 +44,15 @@ TEST(Sharpness, ZeroForUniformEmptyAndBlack)
     EXPECT_EQ(dartpilot::capture::sharpness(cv::Mat()), 0.0);
     EXPECT_EQ(dartpilot::capture::sharpness(cv::Mat(64, 64, CV_8UC1, cv::Scalar(0))), 0.0);
 }
+
+TEST(GridCell, CoversTheImageWithoutGaps)
+{
+    const cv::Size size(1280, 720);
+    int area = 0;
+    for(int cell = 0; cell < 9; ++cell)
+    {
+        area += dartpilot::capture::gridCell(size, 3, cell).area();
+    }
+    EXPECT_EQ(area, size.area());
+    EXPECT_EQ(dartpilot::capture::gridCell(size, 3, 8), cv::Rect(853, 480, 427, 240));
+}

@@ -31,7 +31,7 @@ The core metrics are the radial position error in mm (median, P95), segment and 
 
 | Path | Content |
 | ---- | ------- |
-| [`engine/`](engine) | C++20 engine: one library per module, plus `apps/dartpilot_cli` |
+| [`engine/`](engine) | C++20 engine: one library per module, plus `apps/dartpilot_cli` and the developer GUI `apps/dartpilot_setup` (Qt 6, optional) |
 | [`tests/`](tests) | C++ tests (GoogleTest, run with `ctest`) |
 | [`tools/`](tools) | Python tools for benchmark evaluation and annotation |
 | [`docs/`](docs) | [Technical plan](docs/technical_plan.md), [reference hardware](docs/hardware.md) and [architecture decisions](docs/adr) |

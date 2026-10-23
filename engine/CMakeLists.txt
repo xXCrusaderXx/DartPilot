@@ -8,3 +8,4 @@ add_subdirectory(fusion)
 add_subdirectory(replay)
 
 add_subdirectory(apps/dartpilot_cli)
+add_subdirectory(apps/dartpilot_setup)

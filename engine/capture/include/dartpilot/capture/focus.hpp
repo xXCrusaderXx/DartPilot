@@ -9,4 +9,7 @@ namespace dartpilot::capture
 // Both scale with the square of the brightness, so the measure follows the focus, not the exposure.
 // Returns 0 for an empty or black image.
 double sharpness (const cv::Mat& gray);
+
+// Cell of a grid_size x grid_size grid over an image of the given size, cells numbered row by row.
+cv::Rect gridCell (const cv::Size& size, int grid_size, int cell);
 }  // namespace dartpilot::capture
