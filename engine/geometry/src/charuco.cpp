@@ -105,8 +105,9 @@ std::optional<CalibrationView> CharucoFinder::detect (const cv::Mat& gray) const
 cv::Mat CharucoFinder::patternImage (const cv::Size& size_px) const
 {
     cv::Mat image;
-    // A white margin of one square helps the marker detection at the image border.
-    const int margin_px = std::min(size_px.width / (target_.squares_x + 2), size_px.height / (target_.squares_y + 2));
+    // A white margin of a quarter square separates the outer squares from a dark screen background; the detector
+    // only uses the inner corners, so a wider margin would only shrink the pattern on a small screen.
+    const int margin_px = std::min(size_px.width / target_.squares_x, size_px.height / target_.squares_y) / 4;
     impl_->board.generateImage(size_px, image, margin_px);
     return image;
 }

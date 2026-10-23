@@ -174,6 +174,25 @@ TEST(CharucoTarget, PhoneTargetHasLargerCells)
     EXPECT_EQ(phone.cornerCount(), 21);
 }
 
+// On a phone the image viewer shows the pattern on a black background, right next to its narrow white margin.
+TEST(CharucoFinder, FindsEveryCornerOnABlackScreenBackground)
+{
+    if(!dartpilot::geometry::charucoAvailable())
+    {
+        GTEST_SKIP() << "built without ChArUco support (OpenCV < 4.7)";
+    }
+    for(const auto& target : {dartpilot::geometry::CharucoTarget::tablet(), dartpilot::geometry::CharucoTarget::phone()})
+    {
+        const dartpilot::geometry::CharucoFinder finder(target);
+        const cv::Mat pattern = finder.patternImage(cv::Size(800, 800 * target.squares_y / target.squares_x));
+        cv::Mat screen(pattern.rows + 200, pattern.cols + 200, CV_8UC1, cv::Scalar(0));
+        pattern.copyTo(screen(cv::Rect(100, 100, pattern.cols, pattern.rows)));
+        const auto view = finder.detect(screen);
+        ASSERT_TRUE(view) << target.describe();
+        EXPECT_EQ(static_cast<int>(view->ids.size()), target.cornerCount()) << target.describe();
+    }
+}
+
 TEST(CharucoFinder, FindsEveryCornerOfThePhonePattern)
 {
     if(!dartpilot::geometry::charucoAvailable())
