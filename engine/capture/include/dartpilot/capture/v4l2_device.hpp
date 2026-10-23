@@ -17,10 +17,17 @@ struct CameraDevice
     std::string usb_port;
     // Name reported by the driver, e.g. "USB Camera: USB Camera"
     std::string name;
+    // UVC metadata node of the same camera (video-index1), which carries the camera's PTS and SCR timestamps
+    // (docs/adr/0005); empty if the camera has none
+    std::string metadata_path;
 };
 
 // USB port chain from a /dev/v4l/by-path name, or an empty string if the name has none.
 std::string usbPortFromPath (std::string_view path);
+
+// Metadata node path that belongs to an image node path: "...-video-index0" becomes "...-video-index1".
+// Empty if the path is not an image node. Does not check that the node exists.
+std::string metadataPathFor (std::string_view image_path);
 
 // Image nodes (video-index0) of all V4L2 cameras, sorted by USB port. Metadata nodes are left out.
 std::vector<CameraDevice> findCameras ();
