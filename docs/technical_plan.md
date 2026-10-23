@@ -445,7 +445,7 @@ These projects are starting points for a technical review, not proof that their 
 
 ## 10. First implementation plan
 
-The phases are tracked as milestones in [ROADMAP.md](../ROADMAP.md).
+The phases are tracked as milestones in [ROADMAP.md](../ROADMAP.md); phase 1 is split into the milestones 0.1.0 to 0.3.0.
 
 ### Phase 1 – Measurability
 

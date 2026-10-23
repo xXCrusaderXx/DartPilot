@@ -4,17 +4,21 @@ This roadmap is a **living document**. Phases, features, and their order change 
 
 Each phase is a GitHub [milestone](https://github.com/xXCrusaderXx/DartPilot/milestones) named `vX.Y.Z – Name`, and each feature is an issue in it. **When a milestone is closed, a release is created automatically** (see [Releases](#releases)).
 
-The phases follow section 10 of the [technical plan](docs/technical_plan.md#10-first-implementation-plan). Each phase ends with a measured result, not only with features.
+The milestones follow section 10 of the [technical plan](docs/technical_plan.md#10-first-implementation-plan); its phase 1 is split into three milestones so that each one ends in a usable, measured step. Each milestone ends with a measured result, not only with features.
 
 ## Phases
 
-| Release | Phase | Content | Result |
-| ------- | ----- | ------- | ------ |
-| **0.1.0** | Measurability | Capture of three cameras with frame IDs and timestamps. Logging of frame drops, effective FPS and queue latency. Replay format and throw ID. Board coordinate and ground-truth convention. Annotations for a first benchmark. Baseline metrics. | A reproducible baseline that describes the current state quantitatively. |
-| **0.2.0** | Synchronisation & geometry | Measure time offset and jitter between cameras. Evaluate single-camera board projection. Triangulation on temporally associated measurements. Log reprojection error and board-plane distance. Errors broken down by camera, board region and difficulty. | A well-founded decision on time association and the geometry path. |
-| **0.3.0** | Tip localisation | Candidate lists instead of a single point. Shaft-axis and end-point methods compared. Confidence and position covariance. Annotated robustness cases. Optional evaluation of a specialised detector. | Measurably better tip localisation, or a clearly documented remaining bottleneck. |
-| **0.4.0** | Fusion & scoring | Discard temporally and geometrically incompatible candidates. Uncertainty-weighted robust fusion. Abstention threshold from the validation set. Scoring tested independently of the CV pipeline. Regression tests for known hard throws. | A verifiable engine with traceable quality indicators. |
-| **1.0.0** | Product integration | Stable API and event model. Integration with a UI or an existing dart platform. Release benchmark and a published collection of failure cases. | A modular open-source engine whose precision is backed by a repeatable benchmark. |
+| Release | Plan phase | Content | Result |
+| ------- | ---------- | ------- | ------ |
+| **[0.1.0 – Capture & timing](https://github.com/xXCrusaderXx/DartPilot/milestone/1)** | 1 Measurability | Documented camera hardware and capture settings. Capture backend and timestamp source chosen. One capture thread and bounded ring buffer per camera. Per-frame IDs, capture and arrival timestamps, drop detection. Session recording. Capture health statistics. | Three cameras are recorded reliably, and their FPS, drops and latency are known. |
+| **[0.2.0 – Replay & board model](https://github.com/xXCrusaderXx/DartPilot/milestone/2)** | 1 Measurability | Replay format and throw ID. Deterministic replay with a CI check. Python reader. Board coordinate and ground-truth convention. Deterministic scorer. Board-plane calibration. | Recorded sessions replay identically, and board points can be scored. |
+| **[0.3.0 – Ground truth & baseline](https://github.com/xXCrusaderXx/DartPilot/milestone/3)** | 1 Measurability | Ground-truth method with measured uncertainty. Annotation tool. First benchmark dataset, split by session. Benchmark metrics and report. Baseline frame-differencing pipeline. Baseline report. | A reproducible baseline that describes the current state quantitatively. |
+| **[0.4.0 – Synchronisation & geometry](https://github.com/xXCrusaderXx/DartPilot/milestone/4)** | 2 | Inter-camera offset and jitter. Timeline view. Single-camera projection error. Triangulation with reprojection and plane-distance checks. Temporal frame association. Geometry path decision. | A well-founded decision on time association and the geometry path. |
+| **[0.5.0 – Tip localisation](https://github.com/xXCrusaderXx/DartPilot/milestone/5)** | 3 | Candidate lists, shaft-axis estimation, confidence and pixel covariance. Annotated robustness cases. Ablation study. Optional learned detector. | Measurably better tip localisation, or a clearly documented remaining bottleneck. |
+| **[0.6.0 – Fusion & scoring](https://github.com/xXCrusaderXx/DartPilot/milestone/6)** | 4 | Uncertainty-weighted robust fusion. Abstention threshold from the validation set. Regression tests for hard throws. Latency budget. Hold-out evaluation. | A verifiable engine with traceable quality indicators. |
+| **[1.0.0 – Product integration](https://github.com/xXCrusaderXx/DartPilot/milestone/7)** | 5 | Engine API and event model. UI toolkit decision and user interface. Review of existing dart platforms. Published release benchmark and failure cases. Packaging and user documentation. | A modular open-source engine whose precision is backed by a repeatable benchmark. |
+
+Every work item is an issue in its milestone, with a "Done when" criterion. Labels: `area/*` for the module, `experiment` for measurements with a documented result, `decision` for work that ends in an [ADR](docs/adr).
 
 Phases after 1.0.0 are open. Ideas that don't belong to a phase yet are collected below.
 
@@ -22,9 +26,7 @@ Phases after 1.0.0 are open. Ideas that don't belong to a phase yet are collecte
 
 Unscheduled proposals, in no particular order. A maintainer moves an idea into a milestone once it is clear and someone works on it.
 
-- Own user interface (toolkit not decided, see [ADR 0001](docs/adr/0001-language-stack.md)).
-- Online multiplayer.
-- Integration with existing open-source dart platforms.
+- Online multiplayer (after 1.0.0, on top of the engine API).
 - Public benchmark dataset with a leaderboard of detection variants.
 - Neural tip detector, if classical candidates turn out to be insufficient (phase 3 decides).
 
