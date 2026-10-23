@@ -3,6 +3,7 @@
 
 #include <opencv2/imgcodecs.hpp>
 
+#include "capture_check_command.hpp"
 #include "dartpilot/capture/capture.hpp"
 #include "dartpilot/event_detection/event_detection.hpp"
 #include "dartpilot/fusion/fusion.hpp"
@@ -32,6 +33,10 @@ int main (int argc, char* argv[])
         }
         return 0;
     }
+    if(arg == "capture-check")
+    {
+        return dartpilot::cli::runCaptureCheck(argc - 2, argv + 2);
+    }
     if(arg == "focus")
     {
         return dartpilot::cli::runFocus(argc - 2, argv + 2);
@@ -48,6 +53,7 @@ int main (int argc, char* argv[])
         }
         return 0;
     }
-    std::cerr << "Usage: dartpilot --version | --modules | focus --camera <device> [--exposure <value>] | pattern <file.png>\n";
+    std::cerr
+        << "Usage: dartpilot --version | --modules | capture-check [seconds] | focus --camera <device> [--exposure <value>] | pattern <file.png>\n";
     return arg.empty() || arg == "--help" ? 0 : 2;
 }
