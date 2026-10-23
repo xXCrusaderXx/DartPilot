@@ -39,7 +39,7 @@ The core metrics are the radial position error in mm (median, P95), segment and 
 
 ## Building from source
 
-Requirements: CMake 3.20 or newer, a C++20 compiler and OpenCV 4. GoogleTest is downloaded automatically when the tests are enabled.
+Requirements: CMake 3.20 or newer, a C++20 compiler and OpenCV 4 or 5. GoogleTest is downloaded automatically when the tests are enabled.
 
 ```sh
 # Arch Linux

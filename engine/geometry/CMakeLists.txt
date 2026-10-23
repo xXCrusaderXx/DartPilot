@@ -1,1 +1,1 @@
-dartpilot_add_module(geometry DEPS tip_candidates opencv_calib3d)
+dartpilot_add_module(geometry DEPS tip_candidates ${DARTPILOT_OPENCV_GEOMETRY})
