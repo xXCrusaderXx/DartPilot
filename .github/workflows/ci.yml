@@ -58,10 +58,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7.0.1
 
+      # Mirrors occasionally stall; fail fast and retry instead of hanging until the job timeout.
       - name: Install dependencies
+        timeout-minutes: 15
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends build-essential cmake ninja-build libopencv-dev
+          apt_opts=(-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30)
+          sudo apt-get "${apt_opts[@]}" update
+          sudo apt-get "${apt_opts[@]}" install -y --no-install-recommends build-essential cmake ninja-build libopencv-dev
 
       - name: Configure
         run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DDARTPILOT_BUILD_TESTS=ON
@@ -80,10 +83,12 @@ jobs:
     container: archlinux:latest
     steps:
       # git for GoogleTest's FetchContent; OpenCV's optional runtime deps (vtk, hdf5, ...)
-      # are not pulled in by pacman but are needed by its CMake config.
+      # are not pulled in by pacman but are needed by its CMake config, and qt6-base by
+      # libopencv_highgui, which Arch builds against Qt 6.
       - name: Install dependencies
+        timeout-minutes: 15
         run: |
-          pacman -Syu --noconfirm --needed base-devel cmake ninja git opencv vtk hdf5 glew fmt
+          pacman -Syu --noconfirm --needed base-devel cmake ninja git opencv vtk hdf5 glew fmt qt6-base
 
       - name: Checkout
         uses: actions/checkout@v7.0.1
