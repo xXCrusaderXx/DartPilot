@@ -62,7 +62,7 @@ The rolling shutter exposes the rows one after another, so a dart in flight appe
 
 ### Focus
 
-Set the focus once, at the final camera position, before the intrinsic calibration. Turning the lens changes the focal length and the distortion, so every turn afterwards invalidates the calibration of that camera. The lens is often fixed with a drop of glue at the factory; loosen it carefully. Fix the exposure while focusing, otherwise a sharpness measure follows the brightness instead of the focus.
+Set the focus once, at the final camera position, before the intrinsic calibration. Turning the lens changes the focal length and the distortion, so every turn afterwards invalidates the calibration of that camera. The lens is often fixed with a drop of glue at the factory; loosen it carefully. Keep the exposure automatic while focusing (see [Exposure and gain](#exposure-and-gain)); `dartpilot focus` normalises its sharpness measure by brightness, so exposure changes do not mimic a change in focus.
 
 ## Connection
 
