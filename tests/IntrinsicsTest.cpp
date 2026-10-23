@@ -305,3 +305,24 @@ TEST(LoadIntrinsics, RejectsMissingAndForeignFiles)
     EXPECT_FALSE(dartpilot::geometry::loadIntrinsics(path));
     std::filesystem::remove(path);
 }
+
+TEST(SettingsMismatches, AppliesOnlyToItsCameraAndMode)
+{
+    dartpilot::geometry::StoredIntrinsics stored;
+    stored.calibration.image_size_px = cv::Size(1280, 720);
+    stored.info.usb_port = "2.4.3.1.2";
+    stored.info.pixel_format = "MJPG 1280x720 30fps";
+
+    EXPECT_TRUE(dartpilot::geometry::settingsMismatches(stored, {"2.4.3.1.2", cv::Size(1280, 720), "MJPG 1280x720 30fps"}).empty());
+
+    const auto other_port = dartpilot::geometry::settingsMismatches(stored, {"2.4.3.1.3", cv::Size(1280, 720), "MJPG 1280x720 30fps"});
+    ASSERT_EQ(other_port.size(), 1u);
+    EXPECT_NE(other_port.front().find("2.4.3.1.3"), std::string::npos);
+
+    const auto other_mode = dartpilot::geometry::settingsMismatches(stored, {"2.4.3.1.2", cv::Size(640, 480), "MJPG 640x480 30fps"});
+    ASSERT_EQ(other_mode.size(), 2u);
+    EXPECT_NE(other_mode.front().find("640x480"), std::string::npos);
+
+    // Unknown fields are not held against the calibration; the image size always is.
+    EXPECT_TRUE(dartpilot::geometry::settingsMismatches(stored, {"", cv::Size(1280, 720), ""}).empty());
+}

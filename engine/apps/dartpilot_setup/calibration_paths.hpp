@@ -10,6 +10,12 @@ namespace dartpilot::setup
 // Calibrations are stored per user, outside the repository: ~/.local/share/dartpilot/calibration on Linux.
 inline QString calibrationDirectory () { return QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/dartpilot/calibration"; }
 
+// Reference capture mode of the setup GUI (docs/adr/0002); stored calibrations are checked against it.
+constexpr int kReferenceWidth_px = 1280;
+constexpr int kReferenceHeight_px = 720;
+constexpr int kReferenceFps = 30;
+inline const char* const kReferencePixelFormat = "MJPG 1280x720 30fps";
+
 // The pattern image in the repository, for opening it on a phone or tablet
 inline QString patternDownloadUrl ()
 {

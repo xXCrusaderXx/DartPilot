@@ -382,7 +382,14 @@ QString IntrinsicView::savedSummary () const
     {
         summary += QString(", held-out %1 px").arg(stored->validation->rms_px, 0, 'f', 2);
     }
-    return summary + ", " + QString::fromStdString(stored->info.created);
+    summary += ", " + QString::fromStdString(stored->info.created);
+    const auto mismatches =
+        geometry::settingsMismatches(*stored, {usb_port_.toStdString(), cv::Size(kReferenceWidth_px, kReferenceHeight_px), kReferencePixelFormat});
+    for(const auto& mismatch : mismatches)
+    {
+        summary += ". Not valid: " + QString::fromStdString(mismatch);
+    }
+    return summary;
 }
 
 bool IntrinsicView::loadSaved ()
@@ -585,7 +592,7 @@ QString IntrinsicView::save ()
     geometry::CalibrationInfo info;
     info.usb_port = usb_port_.toStdString();
     info.camera_name = camera_name_.toStdString();
-    info.pixel_format = "MJPG 1280x720 30fps";
+    info.pixel_format = kReferencePixelFormat;
     info.target = geometry::CharucoTarget{}.describe();
     info.created = QDateTime::currentDateTimeUtc().toString(Qt::ISODate).toStdString();
     if(!geometry::saveIntrinsics(path.toStdString(), *result->calibration, info, views_, result->validation))

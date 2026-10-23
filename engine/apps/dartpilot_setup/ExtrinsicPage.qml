@@ -42,8 +42,10 @@ ColumnLayout {
                     required property var modelData
                     required property int index
 
+                    // Equal preferred widths, so a long warning does not widen one tile
                     Layout.fillWidth: true
                     Layout.fillHeight: true
+                    Layout.preferredWidth: 1
 
                     ColumnLayout {
                         anchors.fill: parent
@@ -64,8 +66,8 @@ ColumnLayout {
                             spacing: 8
 
                             Chip {
-                                text: tile.modelData.hasIntrinsics ? "Intrinsics saved" : "Intrinsics missing"
-                                tone: tile.modelData.hasIntrinsics ? Tokens.good : Tokens.warning
+                                text: !tile.modelData.hasIntrinsics ? "Intrinsics missing" : tile.modelData.intrinsicsWarning !== "" ? "Intrinsics for other settings" : "Intrinsics saved"
+                                tone: tile.modelData.hasIntrinsics && tile.modelData.intrinsicsWarning === "" ? Tokens.good : Tokens.warning
                                 dot: true
                             }
                             Chip {
@@ -73,6 +75,14 @@ ColumnLayout {
                                 tone: Tokens.textMuted
                                 dot: true
                             }
+                        }
+                        Label {
+                            visible: tile.modelData.intrinsicsWarning !== ""
+                            Layout.fillWidth: true
+                            text: tile.modelData.intrinsicsWarning
+                            color: Tokens.warning
+                            wrapMode: Text.WordWrap
+                            font.pixelSize: Tokens.captionSize
                         }
                         CameraView {
                             Layout.fillWidth: true
@@ -95,7 +105,7 @@ ColumnLayout {
                     {
                         title: "Intrinsics",
                         text: "Calibrate every camera on the previous page.",
-                        ready: page.cameras.length > 0 && page.cameras.every(c => c.hasIntrinsics)
+                        ready: page.cameras.length > 0 && page.cameras.every(c => c.hasIntrinsics && c.intrinsicsWarning === "")
                     },
                     {
                         title: "Empty board",
@@ -155,7 +165,7 @@ ColumnLayout {
 
                     anchors.fill: parent
                     anchors.margins: 12
-                    text: "Not available yet: this needs the board coordinate convention (#11) and the wire detection (#47)."
+                    text: "Not available yet: this needs the wire detection (#47) and the pose solving (#13). The board coordinates are defined in docs/board-coordinates.md."
                     color: Tokens.warning
                     wrapMode: Text.WordWrap
                 }

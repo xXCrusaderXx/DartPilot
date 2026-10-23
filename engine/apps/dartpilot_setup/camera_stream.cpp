@@ -7,6 +7,7 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/videoio.hpp>
 
+#include "calibration_paths.hpp"
 #include "dartpilot/capture/focus.hpp"
 
 namespace dartpilot::setup
@@ -59,9 +60,9 @@ void CameraStream::run ()
     }
     // Reference mode, see docs/hardware.md. The FOURCC must be set before the size.
     camera.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'));
-    camera.set(cv::CAP_PROP_FRAME_WIDTH, 1280);
-    camera.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
-    camera.set(cv::CAP_PROP_FPS, 30);
+    camera.set(cv::CAP_PROP_FRAME_WIDTH, kReferenceWidth_px);
+    camera.set(cv::CAP_PROP_FRAME_HEIGHT, kReferenceHeight_px);
+    camera.set(cv::CAP_PROP_FPS, kReferenceFps);
 
     // Display statistics only; nothing here is part of a recording or replay.
     std::deque<std::chrono::steady_clock::time_point> arrivals;
