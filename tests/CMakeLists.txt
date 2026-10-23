@@ -28,3 +28,7 @@ add_executable(IntrinsicsTest IntrinsicsTest.cpp)
 target_link_libraries(IntrinsicsTest PRIVATE dartpilot::geometry opencv_imgcodecs GTest::gtest_main)
 target_compile_definitions(IntrinsicsTest PRIVATE DARTPILOT_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 gtest_discover_tests(IntrinsicsTest)
+
+add_executable(CaptureTest CaptureTest.cpp)
+target_link_libraries(CaptureTest PRIVATE dartpilot::capture GTest::gtest_main)
+gtest_discover_tests(CaptureTest)
