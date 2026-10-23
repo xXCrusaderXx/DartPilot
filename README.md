@@ -75,7 +75,7 @@ pytest
 
 ## Contributing
 
-Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) first. Every commit needs a DCO sign-off (`git commit -s`). Pull requests are checked by CI; a maintainer reviews and merges them. Changes to detection report their effect on the benchmark.
+Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) first. Development happens on `dev`; `main` only receives merges from `dev` at release points. Every commit needs a DCO sign-off (`git commit -s`). Pull requests go against `dev` and are checked by CI; a maintainer reviews and merges them. Changes to detection report their effect on the benchmark.
 
 - Security problems: [SECURITY.md](SECURITY.md)
 - Code of conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)

@@ -16,7 +16,7 @@ This project uses the [Developer Certificate of Origin](https://developercertifi
 git commit -s -m "Your message"
 ```
 
-**Per PR:** put one `Signed-off-by: Your Name <your@email>` line in the pull request description, or tick the sign-off box in the PR template. PRs are squash-merged, so that one sign-off covers the whole PR.
+**Per PR:** put one `Signed-off-by: Your Name <your@email>` line in the pull request description, or tick the sign-off box in the PR template. That one sign-off covers all commits of the PR.
 
 The `DCO` check enforces this. PRs opened from the repository owner's account are exempt: the owner certifies them as a standing decision. Use your real identity and a reachable email address. Never sign off for someone else.
 
@@ -70,16 +70,26 @@ Recordings and annotations are valuable, but they are **not committed to this re
 ## Workflow
 
 1. Open an issue first for larger changes, so the approach can be agreed on before you invest time.
-2. Fork the repository and create a branch from `main` (`feat/…`, `fix/…`, `docs/…`, `chore/…`).
-3. Keep each PR focused on one topic. Use a [Conventional Commits](https://www.conventionalcommits.org/)-style PR title, for example `feat: per-frame capture timestamps from V4L2`. It becomes the squash-commit message.
-4. Open a pull request against `main` and fill in the template.
+2. Fork the repository and create a branch from `dev` (`feat/…`, `fix/…`, `docs/…`, `chore/…`).
+3. Keep each PR focused on one topic. Use a [Conventional Commits](https://www.conventionalcommits.org/)-style PR title, for example `feat: per-frame capture timestamps from V4L2`. It becomes the title of the merge commit and the changelog entry.
+4. Open a pull request against `dev` and fill in the template.
+
+### Branches
+
+| Branch | Purpose |
+| ------ | ------- |
+| `main` | Released code only. Changes come exclusively from `dev`, merged by a maintainer at a release point. |
+| `dev` | Integration branch and default branch. All development happens here, through feature and fix PRs. |
+| `feat/…`, `fix/…`, `docs/…`, `chore/…` | One topic each, branched from `dev`, deleted after the merge. |
+
+PRs are merged with a merge commit, never squashed or rebased, so the history shows which commits belong to which branch. The `Branch policy` check fails every PR into `main` whose source is not `dev`. After `dev` is merged into `main`, work simply continues on `dev`.
 
 ### How a PR gets merged
 
-A PR can only be merged when all required checks are green (`format`, `build (ubuntu)`, `build (arch)` including the tests, `python`, `DCO sign-off`). The branch does not need to be up to date with `main`; if two PRs that pass on their own break `main` together, the CI run on `main` shows it and a small follow-up PR fixes it. PRs are always squash-merged.
+A PR can only be merged when all required checks are green (`format`, `build (ubuntu)`, `build (arch)` including the tests, `python`, `DCO sign-off`; for PRs into `main` also `source is dev`). The branch does not need to be up to date with `dev`; if two PRs that pass on their own break `dev` together, the CI run on `dev` shows it and a small follow-up PR fixes it.
 
 - **Contributors' PRs:** a maintainer reviews the change. When it is good, the maintainer merges it, or enables auto-merge so GitHub merges it as soon as the checks are green. Nothing from outside is merged without a maintainer looking at it.
-- **Maintainers' own PRs:** auto-merge is enabled automatically. Ticking the sign-off box in the PR description is the maintainer's one action; the PR merges once the checks are green.
+- **Maintainers' own PRs into `dev`:** auto-merge is enabled automatically. Ticking the sign-off box in the PR description is the maintainer's one action; the PR merges once the checks are green.
 - **Dependabot:** minor and patch updates of GitHub Actions merge automatically once CI is green. Major updates wait for a maintainer.
 
 Auto-merge and CodeQL are switched on once the repository is public; until then they are skipped.
@@ -96,7 +106,7 @@ Run the same checks as CI before you push:
 
 ```sh
 # Formatting of the lines you changed (.clang-format in the repository root)
-git fetch origin && git clang-format --diff origin/main
+git fetch origin && git clang-format --diff origin/dev
 
 # Build and test the engine (the tests need no cameras)
 cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DDARTPILOT_BUILD_TESTS=ON
@@ -111,7 +121,7 @@ Optional: `.githooks/pre-push` stops a push when a commit's author or committer 
 
 Optional: `.githooks/post-merge` cleans up after every `git pull`: local branches whose PR was merged (remote branch gone) are deleted, together with their worktree if it has no changes. Enable it with `git config core.hooksPath .githooks` and `git config fetch.prune true`.
 
-CI checks only the lines your PR changes. To fix them in place, run `git clang-format origin/main`. Don't reformat code you didn't otherwise touch.
+CI checks only the lines your PR changes. To fix them in place, run `git clang-format origin/dev`. Don't reformat code you didn't otherwise touch.
 
 ## Code style
 
@@ -127,7 +137,7 @@ CI checks only the lines your PR changes. To fix them in place, run `git clang-f
 ## Pull request checklist
 
 - [ ] Signed off (`git commit -s`, or one `Signed-off-by` line in the PR description).
-- [ ] `git clang-format --diff origin/main` reports no changes.
+- [ ] `git clang-format --diff origin/dev` reports no changes.
 - [ ] The project builds with `cmake --build build`, and `ctest --test-dir build` passes.
 - [ ] `ruff check`, `ruff format --check` and `pytest` pass in `tools/` if you changed Python code.
 - [ ] Changes to detection include before/after benchmark values (see [Changes to detection](#changes-to-detection)).
@@ -138,9 +148,9 @@ CI checks only the lines your PR changes. To fix them in place, run `git clang-f
 
 `CHANGELOG.md` is written by a maintainer once per release, from the titles of the merged PRs. Feature PRs don't edit it: with several PRs in flight it is the most frequent merge conflict.
 
-Releases follow the [roadmap](ROADMAP.md): every phase is a milestone named `vX.Y.Z – Name`. When a maintainer closes the milestone, the `Milestone release` workflow checks that all its issues are closed and runs the `Release` workflow for `X.Y.Z`. That workflow builds and tests the engine and publishes GitHub release `vX.Y.Z` with a source archive and checksums, and with the milestone's issues and PRs as release notes. The version comes from the milestone title, so no version-bump commit is needed. Before closing a milestone, work through the [release checklist](https://github.com/xXCrusaderXx/DartPilot/issues/new?template=release.yml).
+Releases follow the [roadmap](ROADMAP.md): every phase is a milestone named `vX.Y.Z – Name`. At a release point, a PR `dev` → `main` is opened and the maintainer merges it (merge commit, never automatic). When the maintainer then closes the milestone, the `Milestone release` workflow checks that all its issues are closed and runs the `Release` workflow for `X.Y.Z` on `main`. That workflow builds and tests the engine and publishes GitHub release `vX.Y.Z` with a source archive and checksums, and with the milestone's issues and PRs as release notes. The version comes from the milestone title, so no version-bump commit is needed. Before closing a milestone, work through the [release checklist](https://github.com/xXCrusaderXx/DartPilot/issues/new?template=release.yml).
 
-For a release outside a milestone, either run the `Release` workflow by hand with a version (without a version it is a dry run that builds and tests everything but publishes nothing), or set `DARTPILOT_VERSION` in `CMakeLists.txt` and push a matching tag `vX.Y.Z`. A version with a suffix (`0.2.0-rc.1`) is published as a pre-release.
+For a release outside a milestone, either run the `Release` workflow by hand with a version (without a version it is a dry run that builds and tests everything but publishes nothing), or set `DARTPILOT_VERSION` in `CMakeLists.txt` and push a matching tag `vX.Y.Z` on `main`. A version with a suffix (`0.2.0-rc.1`) is published as a pre-release.
 
 ## Conduct
 

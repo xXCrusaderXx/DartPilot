@@ -37,7 +37,8 @@ Add ideas through a [roadmap proposal](https://github.com/xXCrusaderXx/DartPilot
 
 ## Releases
 
-- Closing a milestone `vX.Y.Z – Name` starts the `Milestone release` workflow. It checks that every issue in the milestone is closed, collects the closed issues and pull requests as release notes, and runs the `Release` workflow for version `X.Y.Z`.
+- Work happens on feature branches that are merged into `dev`. At a release point, `dev` is merged into `main` by the maintainer.
+- Closing a milestone `vX.Y.Z – Name` starts the `Milestone release` workflow. It checks that every issue in the milestone is closed, collects the closed issues and pull requests as release notes, and runs the `Release` workflow for version `X.Y.Z` on `main`.
 - The `Release` workflow builds and tests the engine and publishes GitHub release `vX.Y.Z` with a source archive and `SHA256SUMS`. Binary packages follow once there is something to run.
 - If a milestone is closed by mistake while issues are still open, no release is made. Reopen the milestone, finish the issues, and close it again.
 - Bug-fix releases (`X.Y.Z+1`) use their own small milestone, or a manual run of the `Release` workflow.
