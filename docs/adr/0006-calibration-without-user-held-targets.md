@@ -24,14 +24,14 @@ Cameras of the same model are similar but not identical:
 
 ## Decision
 
-Users do not hold a calibration target. The intrinsics of each camera come from two sources:
+By default, users do not hold a calibration target. The intrinsics of each camera come from two sources:
 
 1. **A prior per camera model.** One careful ChArUco calibration of the model, with a flat print and many views over the whole image, done once by a maintainer or contributor and shipped in the repository with its uncertainty. Every camera of that model starts from it.
 2. **Refinement per camera from the dartboard,** together with the extrinsics: wire intersections, radial wires and rings (#47) of the empty board, seen by all three cameras, against one shared board model (#13). Per camera the refinement estimates the pose, the focal length and the distortion starting from the prior, and the principal point with the prior as a soft constraint, because a single view of one plane observes it only weakly.
 
-The result is judged in board millimetres (#48): the board region is where accuracy matters, and an error of the principal point is largely absorbed by the pose for points on the board plane. If the error budget is not met, the setup GUI points to the fallback: a per-camera ChArUco calibration with the existing intrinsic calibration page.
+The result is judged in board millimetres (#48): the board region is where accuracy matters, and an error of the principal point is largely absorbed by the pose for points on the board plane.
 
-The ChArUco page stays, as the tool for model priors, for the method comparison (#46) and as that fallback, not as the normal user flow.
+**The per-camera ChArUco calibration remains a supported option** with the existing intrinsic calibration page, for anyone who has a tablet or a print and wants it, and the setup GUI suggests it when the board refinement misses the error budget. If a camera has its own ChArUco calibration, it replaces the model prior as the starting point of that camera, with its own uncertainty, so its principal point and focal length are known from many views instead of one plane. The same page also makes the model priors and the reference for the method comparison (#46).
 
 ## Alternatives considered
 
@@ -41,8 +41,8 @@ The ChArUco page stays, as the tool for model priors, for the method comparison 
 
 ## Consequences
 
-- #44 becomes: model priors, the refinement from the board, and the error budget in board mm. The per-camera ChArUco flow remains as fallback.
-- #45 (guided capture) serves the model priors and the fallback; it is no longer part of the normal setup.
+- #44 becomes: model priors, the refinement from the board, and the error budget in board mm, with the per-camera ChArUco calibration as an equal option that the refinement starts from when present.
+- #45 (guided capture) stays: it serves the optional per-camera calibration, the model priors and the reference for #46; it is just not required for the normal setup.
 - #46 compares the board refinement against a per-camera ChArUco reference calibration, in board mm.
 - #47 must deliver points over the whole board with a pixel uncertainty each, and #13 optimizes intrinsics and poses together.
 - Model priors live in the repository per camera model, with the target, the number of views, the coverage and the held-out error they were made with. Until a print-based prior of the reference cameras exists, the maintainer's phone calibration of camera 1 (centre only) is a provisional starting value.
