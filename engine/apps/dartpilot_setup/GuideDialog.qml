@@ -56,7 +56,7 @@ Dialog {
                 color: Tokens.textMuted
             }
             Repeater {
-                model: ["The focus is final; the camera stays in its mount and is not touched. Exposure stays automatic.", "Tablet brightness to maximum, auto-rotation and auto-brightness off.", "No reflections from lamps or windows on the screen."]
+                model: ["The focus is final; the camera stays in its mount and is not touched. Exposure stays automatic.", "Screen brightness about 50 %, auto-rotation and auto-brightness off. A tablet works better than a phone.", "No reflections from lamps or windows on the screen."]
 
                 delegate: ChecklistItem {}
             }
@@ -68,7 +68,7 @@ Dialog {
                 Layout.topMargin: 8
             }
             Repeater {
-                model: ["Cover the whole image: centre, corners and edges.", "Tilt by 30 to 45 degrees in all directions, and vary the distance.", "Hold still for a moment at each pose; the view is captured automatically.", "15 to 25 views are enough. Remove views marked red after calibrating."]
+                model: ["Cover the whole image: centre, corners and edges.", "Tilt by 30 to 45 degrees in all directions, and vary the distance between about 20 and 40 cm.", "Hold still for a moment at each pose; the view is captured automatically.", "15 to 25 views are enough. Remove views marked red after calibrating."]
 
                 delegate: ChecklistItem {}
             }

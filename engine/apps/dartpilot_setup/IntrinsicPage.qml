@@ -204,7 +204,7 @@ ColumnLayout {
                                 Layout.fillWidth: true
                                 wrapMode: Text.WordWrap
                                 color: Tokens.textMuted
-                                text: "Scan the code to open the pattern, then show it full screen in landscape with maximum brightness."
+                                text: "Scan the code to open the pattern, then show it full screen in landscape at about 50 % brightness."
                             }
                             Label {
                                 Layout.fillWidth: true

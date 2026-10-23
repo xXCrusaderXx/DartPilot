@@ -158,3 +158,28 @@ TEST(CharucoTarget, ShippedPatternMatchesTheTarget)
     ASSERT_EQ(shipped.size(), generated.size());
     EXPECT_EQ(cv::norm(shipped, generated, cv::NORM_INF), 0.0);
 }
+
+// A phone held closer than the focus distance: the pattern covers half the image width, slightly tilted, blurred
+// (sigma 2 px) and MJPEG-compressed. The default ArUco parameters decode fewer than half of the markers here.
+TEST(CharucoFinder, FindsMostCornersOfASoftCompressedPattern)
+{
+    if(!dartpilot::geometry::charucoAvailable())
+    {
+        GTEST_SKIP() << "built without ChArUco support (OpenCV < 4.7)";
+    }
+    const dartpilot::geometry::CharucoFinder finder;
+    const cv::Mat pattern = finder.patternImage(cv::Size(1000, 700));
+    const std::vector<cv::Point2f> source = {{0, 0}, {1000, 0}, {1000, 700}, {0, 700}};
+    const std::vector<cv::Point2f> target = {{325, 140}, {955, 160}, {940, 581}, {335, 568}};
+    cv::Mat frame;
+    cv::warpPerspective(pattern, frame, cv::getPerspectiveTransform(source, target), cv::Size(1280, 720), cv::INTER_AREA, cv::BORDER_CONSTANT,
+                        cv::Scalar(90));
+    cv::GaussianBlur(frame, frame, cv::Size(), 2.0);
+    std::vector<uchar> jpeg;
+    cv::imencode(".jpg", frame, jpeg, {cv::IMWRITE_JPEG_QUALITY, 35});
+    frame = cv::imdecode(jpeg, cv::IMREAD_GRAYSCALE);
+
+    const auto view = finder.detect(frame);
+    ASSERT_TRUE(view);
+    EXPECT_GE(static_cast<int>(view->ids.size()), finder.target().cornerCount() * 2 / 3);
+}

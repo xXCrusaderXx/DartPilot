@@ -54,7 +54,16 @@ CharucoFinder::CharucoFinder (const CharucoTarget& target)
     // Square length 1: object points are in squares, which is enough for intrinsics.
     cv::aruco::CharucoBoard board(cv::Size(target.squares_x, target.squares_y), 1.0f, target.marker_to_square,
                                   cv::aruco::getPredefinedDictionary(target.dictionary));
-    impl_ = std::make_unique<Impl>(Impl{board, cv::aruco::CharucoDetector(board)});
+    // Tuned for soft, MJPEG-compressed views of a pattern on a phone or tablet screen: the marker bits are sampled more
+    // finely and away from their blurred edges, and low-contrast or slightly damaged markers are still decoded.
+    // On recorded frames without a pattern these settings found no markers.
+    cv::aruco::DetectorParameters marker_parameters;
+    marker_parameters.perspectiveRemovePixelPerCell = 10;
+    marker_parameters.perspectiveRemoveIgnoredMarginPerCell = 0.3;
+    marker_parameters.minOtsuStdDev = 2.0;
+    marker_parameters.maxErroneousBitsInBorderRate = 0.5;
+    marker_parameters.errorCorrectionRate = 0.8;
+    impl_ = std::make_unique<Impl>(Impl{board, cv::aruco::CharucoDetector(board, cv::aruco::CharucoParameters(), marker_parameters)});
 }
 
 CharucoFinder::~CharucoFinder () = default;
