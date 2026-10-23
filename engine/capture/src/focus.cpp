@@ -22,4 +22,15 @@ double sharpness (const cv::Mat& gray)
     const double gradient_energy = (cv::mean(gx.mul(gx))[0] + cv::mean(gy.mul(gy))[0]);
     return gradient_energy / (mean_intensity * mean_intensity);
 }
+
+cv::Rect gridCell (const cv::Size& size, int grid_size, int cell)
+{
+    const int col = cell % grid_size;
+    const int row = cell / grid_size;
+    const int x0 = col * size.width / grid_size;
+    const int y0 = row * size.height / grid_size;
+    const int x1 = (col + 1) * size.width / grid_size;
+    const int y1 = (row + 1) * size.height / grid_size;
+    return {x0, y0, x1 - x0, y1 - y0};
+}
 }  // namespace dartpilot::capture

@@ -19,3 +19,7 @@ gtest_discover_tests(SmokeTest)
 add_executable(FocusTest FocusTest.cpp)
 target_link_libraries(FocusTest PRIVATE dartpilot::capture GTest::gtest_main)
 gtest_discover_tests(FocusTest)
+
+add_executable(V4l2DeviceTest V4l2DeviceTest.cpp)
+target_link_libraries(V4l2DeviceTest PRIVATE dartpilot::capture GTest::gtest_main)
+gtest_discover_tests(V4l2DeviceTest)
