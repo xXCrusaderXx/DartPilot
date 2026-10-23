@@ -47,7 +47,7 @@ Principles that every change keeps:
 
 - C++20, `.clang-format` style (Allman braces, 4-space indent, 150 columns). Format only the lines you change: `git clang-format origin/dev`.
 - Python 3.11+, `ruff` for linting and formatting.
-- QML in `engine/apps/dartpilot_setup`: 4-space indent, `qmllint` clean, logic in C++ (ADR 0003).
+- QML in `engine/apps/dartpilot_setup`: 4-space indent, `dartpilot_setup_qmllint` target clean, colours and sizes from `Tokens.qml`, logic in C++ (ADR 0003).
 - Comments and log messages are written in English. A comment states intent the code cannot show; do not narrate history or the change you just made.
 - Units are part of names (`_mm`, `_px`, `_ms`, `_ns`).
 - Match the surrounding code: naming, structure, and comment density. Do not reformat or refactor code unrelated to the task.

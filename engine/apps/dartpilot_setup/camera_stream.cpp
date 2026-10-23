@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <deque>
+#include <map>
 
 #include <opencv2/imgproc.hpp>
 #include <opencv2/videoio.hpp>
@@ -15,6 +16,19 @@ namespace
 // Below this mean gray value sensor noise dominates the gradient energy and the measure no longer follows the focus.
 constexpr double kMinMeanIntensity = 40.0;
 }  // namespace
+
+std::shared_ptr<CameraStream> CameraStream::acquire (const std::string& path)
+{
+    // Views are created and destroyed on the GUI thread only.
+    static std::map<std::string, std::weak_ptr<CameraStream>> streams;
+    if(auto stream = streams[path].lock())
+    {
+        return stream;
+    }
+    auto stream = std::make_shared<CameraStream>(path);
+    streams[path] = stream;
+    return stream;
+}
 
 CameraStream::CameraStream (std::string path)
     : path_(std::move(path))
@@ -73,9 +87,17 @@ void CameraStream::run ()
 
         std::array<double, kFocusCellCount> sharpness{};
         std::array<bool, kFocusCellCount> too_dark{};
-        if(focus_enabled_)
+        std::optional<geometry::CalibrationView> charuco;
+        if(focus_users_ > 0 || charuco_users_ > 0)
         {
             cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
+        }
+        if(charuco_users_ > 0)
+        {
+            charuco = charuco_finder_.detect(gray);
+        }
+        if(focus_users_ > 0)
+        {
             for(int cell = 0; cell < kFocusCellCount; ++cell)
             {
                 const cv::Mat region = gray(capture::gridCell(gray.size(), kFocusGridSize, cell));
@@ -92,6 +114,7 @@ void CameraStream::run ()
         snapshot_.fps = fps;
         snapshot_.sharpness = sharpness;
         snapshot_.too_dark = too_dark;
+        snapshot_.charuco = std::move(charuco);
     }
 }
 }  // namespace dartpilot::setup
