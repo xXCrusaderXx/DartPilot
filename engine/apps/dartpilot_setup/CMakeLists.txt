@@ -6,6 +6,7 @@ if(NOT Qt6_FOUND)
 endif()
 
 qt_standard_project_setup(REQUIRES 6.5)
+include(GNUInstallDirs)
 
 qt_add_executable(dartpilot_setup main.cpp)
 set_source_files_properties(Tokens.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
@@ -17,6 +18,7 @@ qt_add_qml_module(dartpilot_setup
     Card.qml Chip.qml NavButton.qml PageHeader.qml StepCard.qml
     CamerasPage.qml CameraPane.qml IntrinsicPage.qml ExtrinsicPage.qml
     CaptureGuide.qml GuideDialog.qml PatternWindow.qml
+  RESOURCES icons/dartpilot.svg
   SOURCES
     calibration_paths.hpp
     camera_finder.hpp camera_finder.cpp
@@ -27,3 +29,8 @@ qt_add_qml_module(dartpilot_setup
     stream_view.hpp stream_view.cpp
 )
 target_link_libraries(dartpilot_setup PRIVATE Qt6::Quick Qt6::QuickControls2 Qt6::Concurrent dartpilot::capture dartpilot::geometry opencv_objdetect)
+
+# The desktop file lets the taskbar show the icon; the window is matched to it through QGuiApplication::setDesktopFileName.
+install(TARGETS dartpilot_setup RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(FILES dartpilot-setup.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
+install(FILES icons/dartpilot.svg DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)

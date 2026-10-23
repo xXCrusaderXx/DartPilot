@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=DartPilot Setup
+Comment=Camera setup and diagnostics for DartPilot
+Exec=dartpilot_setup
+Icon=dartpilot
+Terminal=false
+Categories=Utility;Development;
+StartupWMClass=dartpilot_setup

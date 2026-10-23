@@ -53,21 +53,10 @@ ApplicationWindow {
                     Layout.topMargin: 8
                     spacing: 12
 
-                    Rectangle {
-                        implicitWidth: 36
-                        implicitHeight: 36
-                        radius: 18
-                        color: "transparent"
-                        border.color: Tokens.accent
-                        border.width: 3
-
-                        Rectangle {
-                            anchors.centerIn: parent
-                            width: 10
-                            height: 10
-                            radius: 5
-                            color: Tokens.accent
-                        }
+                    Image {
+                        source: "icons/dartpilot.svg"
+                        sourceSize.width: 40
+                        sourceSize.height: 40
                     }
                     ColumnLayout {
                         spacing: 0

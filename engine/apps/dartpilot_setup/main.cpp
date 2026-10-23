@@ -1,5 +1,6 @@
 #include <QCommandLineParser>
 #include <QGuiApplication>
+#include <QIcon>
 #include <QQmlApplicationEngine>
 #include <QQuickStyle>
 #include <QQuickWindow>
@@ -11,6 +12,8 @@ int main (int argc, char* argv[])
 {
     QGuiApplication app(argc, argv);
     QGuiApplication::setApplicationName("DartPilot Setup");
+    QGuiApplication::setDesktopFileName("dartpilot-setup");
+    QGuiApplication::setWindowIcon(QIcon(":/qt/qml/DartPilotSetup/icons/dartpilot.svg"));
     QQuickStyle::setStyle("Material");
 
     QCommandLineParser parser;
