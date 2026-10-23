@@ -119,7 +119,7 @@ cd tools && ruff check . && ruff format --check . && pytest
 
 Optional: `.githooks/pre-push` stops a push when a commit's author or committer email matches a pattern you set locally, so a work or private address never reaches GitHub by accident (Git GUIs often use their own identity). Enable it with `git config core.hooksPath .githooks` and `git config --add hooks.blockedEmail 'example\.com'`. The patterns stay in your local config.
 
-Optional: `.githooks/post-merge` cleans up after every `git pull`: local branches whose PR was merged (remote branch gone) are deleted, together with their worktree if it has no changes. Enable it with `git config core.hooksPath .githooks` and `git config fetch.prune true`.
+Optional: `.githooks/post-merge` cleans up after every `git pull`: local branches whose PR was merged (remote branch gone) are deleted, together with their worktree if it has no changes. If you use worktrees, keep them under `.worktrees/` in the repository; that folder is ignored by Git. Enable it with `git config core.hooksPath .githooks` and `git config fetch.prune true`.
 
 CI checks only the lines your PR changes. To fix them in place, run `git clang-format origin/dev`. Don't reformat code you didn't otherwise touch.
 
