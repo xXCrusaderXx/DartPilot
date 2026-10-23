@@ -89,10 +89,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7.0.1
 
+      # Mirrors occasionally stall; fail fast and retry instead of hanging until the job timeout.
       - name: Install dependencies
+        timeout-minutes: 15
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends build-essential cmake ninja-build libopencv-dev
+          apt_opts=(-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30)
+          sudo apt-get "${apt_opts[@]}" update
+          sudo apt-get "${apt_opts[@]}" install -y --no-install-recommends build-essential cmake ninja-build libopencv-dev
 
       - name: Configure
         env:
