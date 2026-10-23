@@ -68,6 +68,6 @@ A change is done only when it builds and the tests pass. Say so in the PR if you
 - Changes you did not make belong to the human or another agent. Do not commit, revert, stash, or unstage them. Check `git diff --cached --name-only` before you commit.
 - Do not commit build output (`build/`), virtual environments, or anything under `data/`.
 - Branch from `dev` and open PRs against `dev` (merge commit, no squash). `main` only receives `dev` at release points, merged by the human.
-- Never switch branches in the main checkout; it stays on `dev`. Work on a branch in your own worktree (`git worktree add <dir> -b <branch> origin/dev`).
+- Never switch branches in the main checkout; it stays on `dev`. Work on a branch in your own worktree inside the repository, under `.worktrees/` (ignored by Git), named after the branch with `/` replaced by `-`: `git worktree add .worktrees/feat-capture-threads -b feat/capture-threads origin/dev`. Never create worktrees next to the repository or in temporary directories.
 - Don't edit `CHANGELOG.md` in feature PRs; it is written once per release. Put the change in the PR title instead.
-- Clean up after every merge: remove your worktree and local branch (`git worktree remove <dir>`, `git branch -D <branch>`) and run `git fetch --prune`. The `Clean up merged branches` workflow deletes the remote branch.
+- Clean up after every merge: remove your worktree and local branch (`git worktree remove .worktrees/<name>`, `git branch -D <branch>`) and run `git fetch --prune`. The `Clean up merged branches` workflow deletes the remote branch.
