@@ -2,6 +2,22 @@
 
 The first calibration, recordings and benchmark of DartPilot are made with this setup. Benchmark results name the setup they were measured on; other cameras are welcome as [hardware reports](../CONTRIBUTING.md#ways-to-contribute).
 
+The capture settings for this setup are in [ADR 0002](adr/0002-capture-settings.md).
+
+## Board and mounting
+
+| | |
+| - | - |
+| Board | Target TOR (bristle board with number ring) |
+| Surround | Board surround with a camera ring and an LED ring |
+| Camera arrangement | 3 cameras in the ring, about 120° apart |
+| Viewing angle | Each camera sees the whole board from about 35–45° above the board plane (estimated from images; the extrinsic calibration (#13) gives the exact poses) |
+| Lighting | LED ring around the board |
+
+The board is about 650 px wide in each image. That is about **1.9 px/mm across and about 1.1 px/mm along the viewing direction**, where the board appears compressed. A P95 error of 1.5 mm therefore corresponds to roughly 1.5–3 px: tip localisation and calibration have to work at sub-pixel accuracy, and MJPG compression artefacts are a possible limit (see [ADR 0002](adr/0002-capture-settings.md)).
+
+The segment colours repeat every two segments, so they alone leave 10 possible board orientations; the number ring or a user confirmation resolves it (#47).
+
 ## Cameras
 
 Three identical generic UVC camera modules.
@@ -69,4 +85,5 @@ The time offset between the cameras has not been measured yet (see [technical pl
 ## Open
 
 - Measured field of view and lens distortion, from the intrinsic calibration
-- Camera positions and viewing angles relative to the board
+- Exact camera positions and viewing angles relative to the board, from the extrinsic calibration (#13)
+- Whether the tip is visible in all three views with darts in the board
