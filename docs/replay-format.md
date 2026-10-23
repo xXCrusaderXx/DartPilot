@@ -1,7 +1,7 @@
 # Session and replay format
 
 - **Format version:** 1
-- **Status:** proposed (issue #8)
+- **Status:** accepted (issue #8); written by `dartpilot record` (#6)
 
 A **session** is one recording of all cameras, stored in one directory. The engine writes it while capturing (`dartpilot record`, #6), replays it offline (#9), and the Python tools read it (#10). Detection results and annotations live in the same directory, next to the frames they refer to, so every result can be traced back to its source frames (technical plan, section 8).
 
@@ -197,7 +197,7 @@ Ground truth lives in `annotations/<annotation set>.jsonl`, one line per throw, 
 
 ## Size
 
-At the reference settings a frame is about 25–55 KB. Three cameras at 30 fps write roughly **3–5 MB/s, i.e. about 0.2–0.3 GB per minute or 11–18 GB per hour**. Recording #6 will replace this estimate with a measured value.
+Measured with `dartpilot record` on the reference setup (#6): a frame is about **66 KB**, so three cameras at 30 fps write about **6 MB/s, 350 MB per minute or 21 GB per hour**. The index and clock files add about 0.1 %. Check the free disk space before long recordings.
 
 ## Versioning
 

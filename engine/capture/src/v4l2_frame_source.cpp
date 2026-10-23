@@ -317,6 +317,10 @@ std::optional<Frame> V4l2FrameSource::next (std::chrono::milliseconds timeout)
                 if(it != metadata_->pending.end())
                 {
                     frame.pts = it->second.pts;
+                    if(it->second.scr_ticks)
+                    {
+                        frame.clock_sample = ClockSample{*it->second.scr_ticks, it->second.scr_host_ns};
+                    }
                     metadata_->pending.erase(metadata_->pending.begin(), std::next(it));
                 }
                 if(frame.pts)

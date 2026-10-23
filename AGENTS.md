@@ -24,6 +24,7 @@ The design is in [docs/technical_plan.md](docs/technical_plan.md); decisions are
 
 - `engine/<module>/`: one C++ library per pipeline stage, public headers in `include/dartpilot/<module>/`, namespace `dartpilot::<module>`.
   - `capture`: camera threads, per-frame timestamps and IDs, bounded ring buffers, drop counters.
+  - `session`: writes (and later reads) recorded sessions in the format of [docs/replay-format.md](docs/replay-format.md); depends only on `capture`.
   - `event_detection`: throw event, time window, baseline and difference masks.
   - `tip_candidates`: several tip candidates per camera, each with confidence and a 2×2 covariance.
   - `geometry`: board plane, ray–plane projection, triangulation, reprojection error.

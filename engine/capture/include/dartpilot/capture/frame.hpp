@@ -17,6 +17,13 @@ enum class TimestampSource
     Driver,
 };
 
+// A camera-clock sample with the host time of the same moment, one per frame (docs/adr/0005)
+struct ClockSample
+{
+    std::uint32_t camera_ticks = 0;
+    std::int64_t host_ns = 0;
+};
+
 struct Frame
 {
     // V4L2 sequence number; a gap means the driver lost frames
@@ -30,6 +37,8 @@ struct Frame
     std::int64_t arrival_ns = 0;
     // Raw UVC PTS in camera clock ticks, if the camera sent one
     std::optional<std::uint32_t> pts;
+    // The frame's sample for the PTS mapping, kept so a recording can refit it (docs/replay-format.md)
+    std::optional<ClockSample> clock_sample;
     // Compressed image as delivered by the camera (MJPG)
     std::vector<std::uint8_t> data;
 };

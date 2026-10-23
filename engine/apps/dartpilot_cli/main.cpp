@@ -14,6 +14,7 @@
 #include "dartpilot/tip_candidates/tip_candidates.hpp"
 #include "dartpilot/version.hpp"
 #include "focus_command.hpp"
+#include "record_command.hpp"
 
 int main (int argc, char* argv[])
 {
@@ -32,6 +33,10 @@ int main (int argc, char* argv[])
             std::cout << name << '\n';
         }
         return 0;
+    }
+    if(arg == "record")
+    {
+        return dartpilot::cli::runRecord(argc - 2, argv + 2);
     }
     if(arg == "capture-check")
     {
@@ -56,7 +61,8 @@ int main (int argc, char* argv[])
         }
         return 0;
     }
-    std::cerr << "Usage: dartpilot --version | --modules | capture-check [seconds] | focus --camera <device> [--exposure <value>] | pattern "
+    std::cerr << "Usage: dartpilot --version | --modules | record [--seconds N] [--root DIR] [--notes TEXT] | capture-check [seconds] | focus "
+                 "--camera <device> [--exposure <value>] | pattern "
                  "[--phone] <file.png>\n";
     return arg.empty() || arg == "--help" ? 0 : 2;
 }
