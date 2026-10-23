@@ -17,10 +17,9 @@ constexpr int kReferenceFps = 30;
 inline const char* const kReferencePixelFormat = "MJPG 1280x720 30fps";
 
 // The pattern image in the repository, for opening it on a phone or tablet
-inline QString patternDownloadUrl ()
+inline QString patternDownloadUrl (const geometry::CharucoTarget& target)
 {
-    return "https://raw.githubusercontent.com/xXCrusaderXx/DartPilot/dev/docs/calibration/" +
-           QString::fromStdString(geometry::CharucoTarget{}.imageFileName());
+    return "https://raw.githubusercontent.com/xXCrusaderXx/DartPilot/dev/docs/calibration/" + QString::fromStdString(target.imageFileName());
 }
 
 // A calibration belongs to the USB port, because all reference cameras report the same serial number.

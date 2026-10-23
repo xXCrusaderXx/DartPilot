@@ -33,6 +33,7 @@ std::shared_ptr<CameraStream> CameraStream::acquire (const std::string& path)
 
 CameraStream::CameraStream (std::string path)
     : path_(std::move(path))
+    , charuco_finder_(std::make_shared<const geometry::CharucoFinder>())
     , thread_([this] { run(); })
 {
 }
@@ -41,6 +42,15 @@ CameraStream::~CameraStream ()
 {
     stop_ = true;
     thread_.join();
+}
+
+void CameraStream::setCharucoTarget (const geometry::CharucoTarget& target)
+{
+    std::lock_guard lock(mutex_);
+    if(charuco_finder_->target() != target)
+    {
+        charuco_finder_ = std::make_shared<const geometry::CharucoFinder>(target);
+    }
 }
 
 CameraSnapshot CameraStream::latest () const
@@ -95,7 +105,12 @@ void CameraStream::run ()
         }
         if(charuco_users_ > 0)
         {
-            charuco = charuco_finder_.detect(gray);
+            std::shared_ptr<const geometry::CharucoFinder> finder;
+            {
+                std::lock_guard lock(mutex_);
+                finder = charuco_finder_;
+            }
+            charuco = finder->detect(gray);
         }
         if(focus_users_ > 0)
         {

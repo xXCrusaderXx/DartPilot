@@ -250,7 +250,7 @@ ColumnLayout {
             Image {
                 anchors.fill: parent
                 anchors.margins: parent.width * 0.04
-                source: "image://charuco/pattern"
+                source: "image://charuco/pattern/tablet"
                 sourceSize.width: 400
                 fillMode: Image.PreserveAspectFit
             }

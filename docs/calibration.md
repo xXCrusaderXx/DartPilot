@@ -17,6 +17,14 @@ DartPilot calibrates each camera in two steps, both in the developer GUI `dartpi
 
 The file is generated with `dartpilot pattern docs/calibration/charuco-10x7-DICT_4X4_50-marker-0.70.png`; a test checks that it matches the pattern the detector expects.
 
+### Phone pattern
+
+![ChArUco pattern for phones](calibration/charuco-8x4-DICT_4X4_50-marker-0.75.png)
+
+[charuco-8x4-DICT_4X4_50-marker-0.75.png](calibration/charuco-8x4-DICT_4X4_50-marker-0.75.png): 8 × 4 squares, markers 75 % of the square size. A phone in landscape is about twice as wide as high, so the 10 × 7 pattern gets cells of only about 9 mm there and has to come so close to the camera that the image gets soft; on the phone pattern the cells are almost twice as large. Choose "Phone" on the intrinsic calibration page, which switches the detector and the QR code. It gives 21 corners per view instead of 54, so take more views; views of both patterns can be mixed in one calibration. Generated with `dartpilot pattern --phone docs/calibration/charuco-8x4-DICT_4X4_50-marker-0.75.png`.
+
+A flat print of the 10 × 7 pattern is still the better target: it is larger, so it can stay further from the camera and reach the image corners.
+
 ## Capturing views
 
 Set the focus first ([hardware](hardware.md)); it must not change afterwards. Keep the exposure automatic: the reference cameras amplify only in automatic mode, and the intrinsics do not depend on the exposure.
