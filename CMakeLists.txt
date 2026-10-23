@@ -21,20 +21,20 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 # Without COMPONENTS every installed module is imported; the modules needed are checked below,
-# because the geometry modules' names depend on the version.
+# because the geometry modules differ between OpenCV builds.
 find_package(OpenCV REQUIRED)
 if(OpenCV_VERSION VERSION_LESS 4)
   message(FATAL_ERROR "OpenCV ${OpenCV_VERSION} found, DartPilot needs OpenCV 4 or newer")
 endif()
-# OpenCV 5 split calib3d into 3d (projection, triangulation) and calib (calibration)
-if(OpenCV_VERSION VERSION_LESS 5)
+# Some OpenCV 5 builds split calib3d into 3d (projection, triangulation) and calib (calibration)
+if(TARGET opencv_calib3d)
   set(DARTPILOT_OPENCV_GEOMETRY opencv_calib3d)
 else()
   set(DARTPILOT_OPENCV_GEOMETRY opencv_3d opencv_calib)
 endif()
 foreach(target opencv_core opencv_imgproc opencv_videoio ${DARTPILOT_OPENCV_GEOMETRY})
   if(NOT TARGET ${target})
-    message(FATAL_ERROR "OpenCV ${OpenCV_VERSION} lacks the ${target} module")
+    message(FATAL_ERROR "OpenCV ${OpenCV_VERSION} lacks the ${target} module. Found: ${OpenCV_LIBS}")
   endif()
 endforeach()
 
