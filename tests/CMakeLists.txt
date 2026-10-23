@@ -23,3 +23,8 @@ gtest_discover_tests(FocusTest)
 add_executable(V4l2DeviceTest V4l2DeviceTest.cpp)
 target_link_libraries(V4l2DeviceTest PRIVATE dartpilot::capture GTest::gtest_main)
 gtest_discover_tests(V4l2DeviceTest)
+
+add_executable(IntrinsicsTest IntrinsicsTest.cpp)
+target_link_libraries(IntrinsicsTest PRIVATE dartpilot::geometry opencv_imgcodecs GTest::gtest_main)
+target_compile_definitions(IntrinsicsTest PRIVATE DARTPILOT_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+gtest_discover_tests(IntrinsicsTest)

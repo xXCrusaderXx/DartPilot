@@ -129,7 +129,7 @@ CI checks only the lines your PR changes. To fix them in place, run `git clang-f
 
 - C++20, formatted with the repository's `.clang-format` (Allman braces, 4-space indent, 150 columns).
 - Python 3.11+, formatted and linted with `ruff` (settings in `tools/pyproject.toml`).
-- QML (developer GUI `engine/apps/dartpilot_setup`): 4-space indent, no `qmllint` warnings. Logic and image processing stay in C++; QML only arranges views and controls.
+- QML (developer GUI `engine/apps/dartpilot_setup`): 4-space indent, no warnings from `cmake --build build --target dartpilot_setup_qmllint`. Colours and sizes come from `Tokens.qml`. Logic and image processing stay in C++; QML only arranges views and controls.
 - **Code comments and log messages are written in English.**
 - Each engine module is a library under `engine/<module>/` with its public headers in `include/dartpilot/<module>/`. Modules depend only on the modules before them in the pipeline; `scoring` depends on none of them.
 - Results carry their units in the name (`board_xy_mm`, `latency_ms`). Board coordinates follow the convention defined in phase 1.
