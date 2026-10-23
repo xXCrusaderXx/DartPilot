@@ -13,7 +13,7 @@ Three identical generic UVC camera modules.
 | USB ID | `0bda:5844` (Realtek chipset), reported as "Generic USB Camera" |
 | Interface | USB 2.0 (480 Mbit/s), UVC 1.00, Linux driver `uvcvideo` |
 | Serial number | `200901010001` on every unit, so the serial does not tell the cameras apart |
-| Focus | fixed, no focus control |
+| Focus | no focus control; set by turning the lens in its thread |
 | Gain | no gain control |
 | Capture timestamps | monotonic clock, taken at start of exposure (`V4L2_BUF_FLAG_TSTAMP_SRC_SOE`) |
 
@@ -43,6 +43,10 @@ The rolling shutter exposes the rows one after another, so a dart in flight appe
 | `power_line_frequency` | disabled, 50 Hz, 60 Hz | 50 Hz |
 
 `exposure_dynamic_framerate` is on after every connect. In room light it lowers the frame rate to about 16.7 fps with intervals of up to 64 ms. Capture must switch it off, and should fix exposure and white balance, so that the frame rate and the image stay constant over a recording.
+
+### Focus
+
+Set the focus once, at the final camera position, before the intrinsic calibration. Turning the lens changes the focal length and the distortion, so every turn afterwards invalidates the calibration of that camera. The lens is often fixed with a drop of glue at the factory; loosen it carefully. Fix the exposure while focusing, otherwise a sharpness measure follows the brightness instead of the focus.
 
 ## Connection
 
