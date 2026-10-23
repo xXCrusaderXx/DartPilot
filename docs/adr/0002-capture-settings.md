@@ -1,6 +1,6 @@
 # ADR 0002: Capture settings for the reference cameras
 
-- **Status:** accepted – exposure revised after the measurements of 2026-10-23 (see [hardware.md](../hardware.md#exposure-and-gain)); values marked "to tune" follow from #3 and #44
+- **Status:** accepted – exposure revised after the measurements of 2026-10-23 (see [hardware.md](../hardware.md#exposure-and-gain)); values marked "to tune" follow from #44 and #46
 - **Date:** 2026-10-23
 
 ## Context
@@ -33,7 +33,7 @@ Because exposure is automatic, the pipeline must tolerate brightness changes:
 
 ## Alternatives considered
 
-- **YUYV at 1280×720:** no compression artefacts, but only 10 fps. Kept as a comparison in #3; reconsidered if MJPG artefacts measurably limit sub-pixel accuracy.
+- **YUYV at 1280×720:** no compression artefacts, but only 10 fps. Kept as a comparison in #46; reconsidered if MJPG artefacts measurably limit sub-pixel accuracy.
 - **Lower resolution with YUYV at 30 fps (640×480):** halves the pixels per millimetre on the board, which already is only about 1–2 px/mm.
 - **Manual exposure (original proposal):** constant images, but at 30 fps the board is nearly black (≤ 14/255) without gain. Usable only with much stronger lighting; kept as an option.
 - **Vendor extension unit:** the cameras have an undocumented Realtek extension unit (GUID `1229a78c-47b4-4094-b0ce-db07386fb938`, two 8-byte selectors) that looks like a register/flash mailbox. It might reach the sensor gain, but writing to it risks bricking the camera and would only work for this chip; not used.
@@ -44,4 +44,4 @@ Because exposure is automatic, the pipeline must tolerate brightness changes:
 - Brightness normalisation and the settle check become part of `event_detection` (#18) and of the replay format (per-frame brightness).
 - White balance is set before focusing and before the intrinsic calibration (see the focus procedure in [hardware.md](../hardware.md)).
 - Calibrations and recordings are keyed by USB port path; re-plugging cameras must be detected. Intrinsic calibrations are stored as `~/.local/share/dartpilot/calibration/intrinsics-usb-<port>.yml`.
-- MJPG artefacts are a known error source that #3 measures.
+- MJPG artefacts are a known error source that #46 measures.
