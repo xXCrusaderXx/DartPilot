@@ -17,6 +17,7 @@ namespace
 {
 constexpr std::string_view kByPathDir = "/dev/v4l/by-path";
 constexpr std::string_view kImageNodeSuffix = "-video-index0";
+constexpr std::string_view kMetadataNodeSuffix = "-video-index1";
 
 int retryIoctl (int fd, unsigned long request, void* arg)
 {
@@ -71,6 +72,15 @@ std::string usbPortFromPath (std::string_view path)
     return {};
 }
 
+std::string metadataPathFor (std::string_view image_path)
+{
+    if(image_path.size() < kImageNodeSuffix.size() || image_path.substr(image_path.size() - kImageNodeSuffix.size()) != kImageNodeSuffix)
+    {
+        return {};
+    }
+    return std::string(image_path.substr(0, image_path.size() - kImageNodeSuffix.size())) + std::string(kMetadataNodeSuffix);
+}
+
 std::vector<CameraDevice> findCameras ()
 {
     std::vector<CameraDevice> cameras;
@@ -101,7 +111,12 @@ std::vector<CameraDevice> findCameras ()
         {
             continue;
         }
-        cameras.push_back({link.string(), usbPortFromPath(link.filename().string()), driverName(link.string())});
+        std::string metadata_path = metadataPathFor(link.string());
+        if(!std::filesystem::exists(metadata_path, error))
+        {
+            metadata_path.clear();
+        }
+        cameras.push_back({link.string(), usbPortFromPath(link.filename().string()), driverName(link.string()), metadata_path});
     }
     std::sort(cameras.begin(), cameras.end(), [] (const CameraDevice& a, const CameraDevice& b) { return a.usb_port < b.usb_port; });
     return cameras;
