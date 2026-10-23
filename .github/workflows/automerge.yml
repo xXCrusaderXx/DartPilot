@@ -1,0 +1,59 @@
+name: Auto-merge
+
+# Turns on GitHub auto-merge for trusted PRs. GitHub then squash-merges them by
+# itself once the branch ruleset is satisfied (required checks green, branch up
+# to date). Nothing is merged before that.
+#
+# Trusted: PRs opened by the repository owner, members or collaborators, and
+# Dependabot minor/patch updates. Everything else (fork PRs, major Dependabot
+# updates) waits for a maintainer to review it and merge it by hand.
+#
+# pull_request_target runs with the base repository's token so it works for
+# fork PRs too. It therefore MUST NOT check out or run code from the PR.
+on:
+  pull_request_target:
+    types: [opened, reopened, ready_for_review, synchronize]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  enable-auto-merge:
+    name: Enable auto-merge
+    # Without branch protection (not available for private repositories on the free plan) auto-merge
+    # would merge before CI finishes, so it stays off until the repository is public.
+    if: ${{ !github.event.pull_request.draft && !github.event.repository.private }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      # Optional AUTOMERGE_TOKEN (fine-grained PAT: contents + pull requests
+      # read/write). Merges done with GITHUB_TOKEN do not trigger the push
+      # workflows on main; merges done with a PAT do.
+      GH_TOKEN: ${{ secrets.AUTOMERGE_TOKEN || secrets.GITHUB_TOKEN }}
+      PR_URL: ${{ github.event.pull_request.html_url }}
+      ASSOCIATION: ${{ github.event.pull_request.author_association }}
+      IS_DEPENDABOT: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
+    steps:
+      - name: Fetch Dependabot metadata
+        id: meta
+        if: env.IS_DEPENDABOT == 'true'
+        uses: dependabot/fetch-metadata@v3
+
+      - name: Enable squash auto-merge for trusted PRs
+        env:
+          UPDATE_TYPE: ${{ steps.meta.outputs.update-type }}
+        run: |
+          case "$ASSOCIATION" in
+            OWNER|MEMBER|COLLABORATOR) trusted=true ;;
+            *) trusted=false ;;
+          esac
+          # Major updates can change action behaviour, so they wait for a human.
+          if [ "$IS_DEPENDABOT" = "true" ] && [ "$UPDATE_TYPE" != "version-update:semver-major" ]; then
+            trusted=true
+          fi
+          if [ "$trusted" != "true" ]; then
+            echo "::notice::Not enabling auto-merge (author association $ASSOCIATION). A maintainer reviews and merges this PR."
+            exit 0
+          fi
+          gh pr merge --auto --squash "$PR_URL"

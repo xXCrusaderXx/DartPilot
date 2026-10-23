@@ -1,0 +1,9 @@
+#pragma once
+
+#include <string_view>
+
+namespace dartpilot
+{
+// Full version including a pre-release suffix, e.g. "0.2.0-rc.1"
+inline constexpr std::string_view kVersion = "@DARTPILOT_VERSION@";
+}  // namespace dartpilot

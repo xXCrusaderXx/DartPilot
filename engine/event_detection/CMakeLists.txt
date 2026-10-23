@@ -1,0 +1,1 @@
+dartpilot_add_module(event_detection DEPS capture opencv_imgproc)

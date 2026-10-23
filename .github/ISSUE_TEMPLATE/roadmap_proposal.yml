@@ -1,0 +1,45 @@
+name: Roadmap proposal
+description: Suggest a new feature or a change to the roadmap.
+labels: [roadmap]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The [roadmap](https://github.com/xXCrusaderXx/DartPilot/blob/main/ROADMAP.md) is open for additions. Describe the idea; it is discussed here and then scheduled in a milestone or listed under "Open ideas".
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idea
+      description: What should DartPilot do, and for whom?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+      description: What problem does it solve? How is it handled today?
+    validations:
+      required: true
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Fits into phase
+      options:
+        - Not sure / new phase
+        - 0.1.0 Measurability
+        - 0.2.0 Synchronisation & geometry
+        - 0.3.0 Tip localisation
+        - 0.4.0 Fusion & scoring
+        - 1.0.0 Product integration
+        - After 1.0.0
+  - type: textarea
+    id: measurement
+    attributes:
+      label: How is success measured?
+      description: Which metric or experiment shows that it works (see section 6 of the technical plan)? Does it need new recordings or annotations?
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contribution
+      options:
+        - label: I would like to work on this myself.

@@ -1,0 +1,163 @@
+name: Release
+
+# Builds and tests the engine and publishes a GitHub Release with the source
+# archive and SHA256SUMS. Binary packages follow once there is something to run.
+#
+# Ways to start it:
+# - push a tag vX.Y.Z matching DARTPILOT_VERSION in CMakeLists.txt
+# - call it from another workflow with a version (milestone-release.yml); it creates the tag itself
+# - "Run workflow": without a version it is a dry run that publishes nothing
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+*"]
+  workflow_call:
+    inputs:
+      version:
+        description: Release version without "v", e.g. 0.1.0
+        type: string
+        required: true
+      notes:
+        description: Release notes (Markdown); generated from the commits when empty
+        type: string
+        required: false
+        default: ""
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version without "v" (empty = dry run, nothing is published)
+        type: string
+        required: false
+        default: ""
+      notes:
+        description: Release notes (Markdown); generated from the commits when empty
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    name: check version
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+      publish: ${{ steps.check.outputs.publish }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Determine version
+        id: check
+        env:
+          INPUT_VERSION: ${{ inputs.version || '' }}
+          TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+        run: |
+          set -euo pipefail
+          cmake_version="$(sed -n 's/^set(DARTPILOT_VERSION \([0-9][0-9.]*\).*/\1/p' CMakeLists.txt)"
+          if [ -n "$INPUT_VERSION" ]; then
+            # Given by the caller; the build passes it to CMake, so CMakeLists.txt needs no bump
+            version="${INPUT_VERSION#v}"
+            if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
+              echo "::error::Invalid version $INPUT_VERSION, expected X.Y.Z or X.Y.Z-suffix"
+              exit 1
+            fi
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          elif [ -n "$TAG" ]; then
+            if [ "${TAG#v}" != "$cmake_version" ] && [[ "${TAG#v}" != "$cmake_version"-* ]]; then
+              echo "::error::Tag $TAG does not match DARTPILOT_VERSION $cmake_version in CMakeLists.txt"
+              exit 1
+            fi
+            echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=$cmake_version" >> "$GITHUB_OUTPUT"
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    name: build and test
+    needs: version
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential cmake ninja-build libopencv-dev
+
+      - name: Configure
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DDARTPILOT_BUILD_TESTS=ON "-DDARTPILOT_VERSION=$VERSION"
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      # The built binary must report the version that is about to be published
+      - name: Check version
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: ./build/engine/apps/dartpilot_cli/dartpilot --version | grep -Fx "dartpilot $VERSION"
+
+  source:
+    name: source archive
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Archive and checksums
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir dist
+          git archive --prefix="DartPilot-$VERSION/" -o "dist/DartPilot-$VERSION.tar.gz" HEAD
+          (cd dist && sha256sum -- * > SHA256SUMS)
+          cat dist/SHA256SUMS
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-files
+          path: dist/*
+
+  publish:
+    name: publish release
+    needs: [version, source]
+    if: needs.version.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-files
+          path: dist
+
+      # For a tag push the tag exists; otherwise gh creates it on the commit that was built
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ needs.version.outputs.version }}
+          NOTES: ${{ inputs.notes || '' }}
+        run: |
+          set -euo pipefail
+          tag="v$VERSION"
+          args=(--title "$tag" --target "$GITHUB_SHA")
+          if [[ "$VERSION" == *-* ]]; then args+=(--prerelease); fi
+          if [ -n "$NOTES" ]; then args+=(--notes "$NOTES"); else args+=(--generate-notes); fi
+          gh release create "$tag" "${args[@]}" dist/*

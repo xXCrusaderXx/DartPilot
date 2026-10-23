@@ -1,0 +1,1 @@
+dartpilot_add_module(capture DEPS opencv_core opencv_videoio)
