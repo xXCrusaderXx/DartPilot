@@ -2,6 +2,7 @@
 
 - **Status:** accepted
 - **Date:** 2026-10-23
+- **Amended by:** [ADR 0003](0003-developer-gui.md) (developer GUI) and [ADR 0004](0004-user-interface.md) (user interface)
 
 ## Context
 
@@ -13,7 +14,7 @@ The maintainer works mainly in C++ and OpenCV.
 
 - **Engine: C++20, CMake, OpenCV.** All modules (`capture`, `event_detection`, `tip_candidates`, `geometry`, `fusion`, `scoring`, `replay`) live under `engine/`.
 - **Tools: Python** (NumPy, pandas, Matplotlib) under `tools/` for benchmark evaluation, annotation helpers and plots. The tools read the engine's replay and result files; they never sit in the detection path.
-- **UI: not decided.** It talks to the engine through an API (for example JSON over WebSocket) so the choice (Flutter or another toolkit) does not affect the engine.
+- **UI: not decided** at the time; decided in [ADR 0004](0004-user-interface.md) (Flutter). It talks to the engine through an API (for example JSON over WebSocket) so the choice (Flutter or another toolkit) does not affect the engine.
 
 ## Alternatives considered
 
