@@ -56,7 +56,7 @@ Dialog {
                 color: Tokens.textMuted
             }
             Repeater {
-                model: ["Focus and exposure are final; the camera stays in its mount and is not touched.", "Tablet brightness to maximum, auto-rotation and auto-brightness off.", "No reflections from lamps or windows on the screen."]
+                model: ["The focus is final; the camera stays in its mount and is not touched. Exposure stays automatic.", "Tablet brightness to maximum, auto-rotation and auto-brightness off.", "No reflections from lamps or windows on the screen."]
 
                 delegate: ChecklistItem {}
             }

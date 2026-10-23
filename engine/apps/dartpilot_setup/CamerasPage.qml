@@ -16,7 +16,7 @@ ColumnLayout {
     PageHeader {
         Layout.fillWidth: true
         title: "Cameras"
-        description: "Fix exposure and white balance, keep 30 fps, and set the focus before calibrating. Cameras are named by USB port, so keep each one on its port."
+        description: "Keep the exposure automatic: the cameras amplify only in automatic mode, so manual exposure is too dark at 30 fps. Keep 30 fps, set the focus before calibrating, and keep each camera on its USB port."
     }
 
     ScrollView {

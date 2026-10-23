@@ -37,7 +37,8 @@ void requestStop (int) { stop_requested = 1; }
 const char* const kUsage =
     "Usage: dartpilot focus --camera <device> [--exposure <value>]\n"
     "  --camera    V4L2 device, preferably /dev/v4l/by-path/...-video-index0\n"
-    "  --exposure  fixed exposure_time_absolute (units of 100 us) while focusing\n"
+    "  --exposure  fixed exposure_time_absolute (units of 100 us) while focusing; usually not needed, since the\n"
+    "              sharpness measure is normalised by brightness and the reference cameras need automatic exposure\n"
     "Keys: click a cell to select it, r resets the peaks, q or Esc quits.\n";
 
 struct Options

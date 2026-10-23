@@ -19,7 +19,7 @@ The file is generated with `dartpilot pattern docs/calibration/charuco-10x7-DICT
 
 ## Capturing views
 
-Set focus and exposure first ([hardware](hardware.md)); they must not change afterwards.
+Set the focus first ([hardware](hardware.md)); it must not change afterwards. Keep the exposure automatic: the reference cameras amplify only in automatic mode, and the intrinsics do not depend on the exposure.
 
 - Hold the pattern about 15 to 40 cm in front of the camera, so that it fills a third to two thirds of the image width. Closer than about 15 cm it gets blurred.
 - Cover the whole image: centre, corners and edges. The lens distorts most at the edges.
