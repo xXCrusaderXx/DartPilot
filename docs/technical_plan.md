@@ -513,7 +513,7 @@ The phases are tracked as milestones in [ROADMAP.md](../ROADMAP.md); phase 1 is 
 
 ### Still to be clarified
 
-- Camera models, resolution, FPS, exposure control and capture backend
+- Capture backend; the first camera model, its modes and exposure controls are recorded in [Reference hardware](hardware.md)
 - Camera positions and viewing angles relative to the board
 - Whether the tip is visible in all three views after the throw
 - How ground truth is produced in practice
