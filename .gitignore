@@ -1,4 +1,6 @@
 build/
+# Git worktrees for parallel branches (see AGENTS.md)
+.worktrees/
 .cache/
 .vscode/
 
