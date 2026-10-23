@@ -1,1 +1,1 @@
-dartpilot_add_module(capture DEPS opencv_core opencv_videoio)
+dartpilot_add_module(capture DEPS opencv_core opencv_imgproc opencv_videoio)
