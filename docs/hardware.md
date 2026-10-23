@@ -4,10 +4,12 @@ The first calibration, recordings and benchmark of DartPilot are made with this 
 
 ## Cameras
 
-Three identical generic UVC cameras.
+Three identical generic UVC camera modules.
 
 | Property | Value |
 | -------- | ----- |
+| Sensor | OmniVision OV9732, 1280×720 native, rolling shutter |
+| Lens | 100° field of view (seller's figure, axis not stated) |
 | USB ID | `0bda:5844` (Realtek chipset), reported as "Generic USB Camera" |
 | Interface | USB 2.0 (480 Mbit/s), UVC 1.00, Linux driver `uvcvideo` |
 | Serial number | `200901010001` on every unit, so the serial does not tell the cameras apart |
@@ -24,7 +26,9 @@ Three identical generic UVC cameras.
 | YUYV | 960×540, 848×480, 800×600 | 15 |
 | YUYV | 640×480 and smaller | 30 |
 
-The reference mode is **MJPG 1280×720 at 30 fps**. Uncompressed 720p only reaches 10 fps.
+The reference mode is **MJPG 1280×720 at 30 fps**, the sensor's native resolution. Uncompressed 720p only reaches 10 fps.
+
+The rolling shutter exposes the rows one after another, so a dart in flight appears skewed. Frames of the resting dart after the throw are not affected.
 
 ### Controls
 
@@ -60,5 +64,5 @@ The time offset between the cameras has not been measured yet (see [technical pl
 
 ## Open
 
-- Retail product name, sensor and lens field of view
+- Measured field of view and lens distortion, from the intrinsic calibration
 - Camera positions and viewing angles relative to the board
