@@ -31,7 +31,7 @@ Three identical generic UVC camera modules.
 | Serial number | `200901010001` on every unit, so the serial does not tell the cameras apart |
 | Focus | no focus control; set by turning the lens in its thread |
 | Gain | no gain control |
-| Capture timestamps | monotonic clock, taken at start of exposure (`V4L2_BUF_FLAG_TSTAMP_SRC_SOE`) |
+| Capture timestamps | driver: monotonic clock, flagged as start of exposure but following the USB delivery (±2 ms); UVC metadata: PTS of the real start of exposure on a 15 MHz camera clock, see [ADR 0005](adr/0005-capture-backend-and-timestamps.md) |
 
 ### Modes
 
