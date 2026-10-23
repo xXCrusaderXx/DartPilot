@@ -48,7 +48,14 @@ endif()
 
 add_compile_options(-Wall -Wextra -Wpedantic)
 
-# Version header shared by the app and the tests
+# Version header shared by the app and the tests; the commit is recorded in session manifests
+execute_process(
+  COMMAND git rev-parse --short HEAD
+  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+  OUTPUT_VARIABLE DARTPILOT_GIT_COMMIT
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  ERROR_QUIET
+)
 configure_file(engine/version.hpp.in ${CMAKE_BINARY_DIR}/generated/dartpilot/version.hpp @ONLY)
 add_library(dartpilot_version INTERFACE)
 target_include_directories(dartpilot_version INTERFACE ${CMAKE_BINARY_DIR}/generated)

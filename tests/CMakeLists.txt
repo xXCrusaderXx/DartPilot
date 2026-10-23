@@ -36,3 +36,7 @@ gtest_discover_tests(CaptureTest)
 add_executable(ScoringTest ScoringTest.cpp)
 target_link_libraries(ScoringTest PRIVATE dartpilot::scoring GTest::gtest_main)
 gtest_discover_tests(ScoringTest)
+
+add_executable(SessionTest SessionTest.cpp)
+target_link_libraries(SessionTest PRIVATE dartpilot::session GTest::gtest_main)
+gtest_discover_tests(SessionTest)
