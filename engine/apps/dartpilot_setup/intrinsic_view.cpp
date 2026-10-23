@@ -27,6 +27,12 @@ constexpr int kMinFramesBetweenCaptures = 15;
 constexpr double kNovelMotionPx = 40.0;
 // A view is marked as outlier when its error exceeds this multiple of the median view error.
 constexpr double kOutlierFactor = 2.0;
+// Provisional quality gate in pixels of held-out error. #46 derives the final thresholds in board millimetres.
+constexpr double kGoodHeldOut_px = 0.5;
+constexpr double kFairHeldOut_px = 1.0;
+constexpr double kGoodCoverage = 0.75;
+constexpr std::size_t kGoodViews = 15;
+constexpr std::size_t kFairViews = 8;
 
 // Mean and maximum displacement of the corners two views share, and how many they share.
 struct Motion
@@ -106,8 +112,12 @@ void IntrinsicView::setModel (const QString& model)
         return;
     }
     model_ = *parsed;
-    invalidateResult();
+    // All models are calibrated together, so switching shows the stored result instead of discarding it.
+    saved_path_.clear();
+    updateResultText();
     emit modelChanged();
+    emit resultChanged();
+    emit viewsChanged();
 }
 
 int IntrinsicView::totalCorners () const { return geometry::CharucoTarget{}.cornerCount(); }
@@ -118,27 +128,115 @@ double IntrinsicView::coverage () const
     return static_cast<double>(covered) / coverage_.size();
 }
 
+const IntrinsicView::ModelResult* IntrinsicView::selected () const
+{
+    const auto it = std::find_if(results_.begin(), results_.end(), [this] (const ModelResult& result) { return result.model == model_; });
+    return it == results_.end() ? nullptr : &*it;
+}
+
+std::vector<int> IntrinsicView::outlierViews () const
+{
+    std::vector<int> outliers;
+    const ModelResult* result = selected();
+    if(!result || !result->calibration || result->calibration->per_view_rms_px.size() != views_.size() || views_.empty())
+    {
+        return outliers;
+    }
+    const auto& errors = result->calibration->per_view_rms_px;
+    std::vector<double> sorted = errors;
+    std::nth_element(sorted.begin(), sorted.begin() + sorted.size() / 2, sorted.end());
+    const double median = sorted[sorted.size() / 2];
+    for(std::size_t i = 0; i < errors.size(); ++i)
+    {
+        if(errors[i] > kOutlierFactor * median)
+        {
+            outliers.push_back(static_cast<int>(i));
+        }
+    }
+    return outliers;
+}
+
 QVariantList IntrinsicView::views () const
 {
     QVariantList list;
-    double median = 0.0;
-    if(result_ && !result_->per_view_rms_px.empty())
-    {
-        std::vector<double> sorted = result_->per_view_rms_px;
-        std::nth_element(sorted.begin(), sorted.begin() + sorted.size() / 2, sorted.end());
-        median = sorted[sorted.size() / 2];
-    }
+    const ModelResult* result = selected();
+    const std::vector<int> outliers = outlierViews();
     for(std::size_t i = 0; i < views_.size(); ++i)
     {
         QVariantMap entry{{"index", static_cast<int>(i)}, {"corners", static_cast<int>(views_[i].ids.size())}};
-        if(result_ && i < result_->per_view_rms_px.size())
+        if(result && result->calibration && i < result->calibration->per_view_rms_px.size())
         {
-            entry["rmsPx"] = result_->per_view_rms_px[i];
-            entry["outlier"] = result_->per_view_rms_px[i] > kOutlierFactor * median;
+            entry["rmsPx"] = result->calibration->per_view_rms_px[i];
+            entry["outlier"] = std::find(outliers.begin(), outliers.end(), static_cast<int>(i)) != outliers.end();
         }
         list.append(entry);
     }
     return list;
+}
+
+QVariantList IntrinsicView::modelResults () const
+{
+    QVariantList list;
+    for(const auto& result : results_)
+    {
+        QVariantMap entry{{"model", QString::fromLatin1(geometry::toString(result.model).data())},
+                          {"ok", result.calibration.has_value() && result.validation.has_value()},
+                          {"recommended", recommended_ == result.model}};
+        if(result.calibration)
+        {
+            entry["rmsPx"] = result.calibration->rms_px;
+        }
+        if(result.validation)
+        {
+            entry["heldOutRmsPx"] = result.validation->rms_px;
+        }
+        list.append(entry);
+    }
+    return list;
+}
+
+QString IntrinsicView::recommendedModel () const { return recommended_ ? QString::fromLatin1(geometry::toString(*recommended_).data()) : QString(); }
+
+QString IntrinsicView::quality () const
+{
+    const ModelResult* result = selected();
+    if(!result || !result->validation)
+    {
+        return {};
+    }
+    const double held_out_px = result->validation->rms_px;
+    if(held_out_px <= kGoodHeldOut_px && coverage() >= kGoodCoverage && views_.size() >= kGoodViews)
+    {
+        return "good";
+    }
+    return held_out_px <= kFairHeldOut_px && views_.size() >= kFairViews ? "fair" : "poor";
+}
+
+QString IntrinsicView::qualityText () const
+{
+    const ModelResult* result = selected();
+    if(!result || !result->validation)
+    {
+        return {};
+    }
+    QString text = QString("Error on held-out views: %1 px.").arg(result->validation->rms_px, 0, 'f', 2);
+    if(quality() != "good")
+    {
+        if(views_.size() < kGoodViews)
+        {
+            text += QString(" Capture at least %1 views.").arg(kGoodViews);
+        }
+        if(coverage() < kGoodCoverage)
+        {
+            text += " Cover more of the image, especially corners and edges.";
+        }
+        if(result->validation->rms_px > kGoodHeldOut_px)
+        {
+            text += " Remove the red views, keep the pattern still and flat, and check the focus.";
+        }
+    }
+    text += " Provisional thresholds in pixels; the gate in board millimetres follows with #46 and the camera poses (#13).";
+    return text;
 }
 
 void IntrinsicView::attachStream (CameraStream& stream) { stream.addCharucoUser(1); }
@@ -243,13 +341,87 @@ void IntrinsicView::clearViews ()
     emit viewsChanged();
 }
 
-void IntrinsicView::invalidateResult ()
+void IntrinsicView::removeOutlierViews ()
 {
-    if(!result_ && result_text_.isEmpty())
+    const std::vector<int> outliers = outlierViews();
+    for(auto it = outliers.rbegin(); it != outliers.rend(); ++it)
+    {
+        views_.erase(views_.begin() + *it);
+    }
+    if(outliers.empty())
     {
         return;
     }
-    result_.reset();
+    coverage_.fill(0);
+    const std::vector<geometry::CalibrationView> remaining = std::move(views_);
+    views_.clear();
+    for(const auto& view : remaining)
+    {
+        addView(view);
+    }
+    invalidateResult();
+    emit viewsChanged();
+}
+
+QString IntrinsicView::savedSummary () const
+{
+    if(usb_port_.isEmpty())
+    {
+        return {};
+    }
+    const auto stored = geometry::loadIntrinsics(intrinsicsPath(usb_port_).toStdString());
+    if(!stored)
+    {
+        return {};
+    }
+    QString summary = QString("%1 model, %2 views, fit %3 px")
+                          .arg(QString::fromLatin1(geometry::toString(stored->calibration.model).data()))
+                          .arg(stored->views.size())
+                          .arg(stored->calibration.rms_px, 0, 'f', 2);
+    if(stored->validation)
+    {
+        summary += QString(", held-out %1 px").arg(stored->validation->rms_px, 0, 'f', 2);
+    }
+    return summary + ", " + QString::fromStdString(stored->info.created);
+}
+
+bool IntrinsicView::loadSaved ()
+{
+    if(usb_port_.isEmpty() || watcher_.isRunning())
+    {
+        return false;
+    }
+    const auto stored = geometry::loadIntrinsics(intrinsicsPath(usb_port_).toStdString());
+    if(!stored || stored->views.empty())
+    {
+        return false;
+    }
+    views_.clear();
+    coverage_.fill(0);
+    image_size_px_ = stored->calibration.image_size_px;
+    for(const auto& view : stored->views)
+    {
+        addView(view);
+    }
+    if(stored->calibration.model != model_)
+    {
+        model_ = stored->calibration.model;
+        emit modelChanged();
+    }
+    invalidateResult();
+    emit viewsChanged();
+    calibrate();
+    return true;
+}
+
+void IntrinsicView::invalidateResult ()
+{
+    if(results_.empty() && result_text_.isEmpty())
+    {
+        return;
+    }
+    results_.clear();
+    recommended_.reset();
     result_text_.clear();
     saved_path_.clear();
     emit resultChanged();
@@ -323,46 +495,79 @@ void IntrinsicView::calibrate ()
     {
         return;
     }
-    watcher_.setFuture(
-        QtConcurrent::run([views = views_, size = image_size_px_, model = model_] { return geometry::calibrateIntrinsics(views, size, model); }));
+    // Every model is calibrated and validated, so the choice between them is made on held-out data.
+    watcher_.setFuture(QtConcurrent::run(
+        [views = views_, size = image_size_px_]
+        {
+            std::vector<ModelResult> results;
+            for(const auto model : {geometry::DistortionModel::Standard, geometry::DistortionModel::Rational, geometry::DistortionModel::Fisheye})
+            {
+                results.push_back({model, geometry::calibrateIntrinsics(views, size, model), geometry::validateIntrinsics(views, size, model)});
+            }
+            return results;
+        }));
     emit resultChanged();
 }
 
 void IntrinsicView::onCalibrated ()
 {
-    result_ = watcher_.result();
+    results_ = watcher_.result();
+    std::vector<std::pair<geometry::DistortionModel, geometry::HeldOutValidation>> validations;
+    for(const auto& result : results_)
+    {
+        if(result.calibration && result.validation)
+        {
+            validations.emplace_back(result.model, *result.validation);
+        }
+    }
+    recommended_ = geometry::recommendModel(validations);
+    if(recommended_ && *recommended_ != model_)
+    {
+        model_ = *recommended_;
+        emit modelChanged();
+    }
     saved_path_.clear();
-    if(!result_)
-    {
-        result_text_ = "Calibration failed: OpenCV rejected the views. Remove poor views or add more and try again.";
-    }
-    else
-    {
-        const auto& k = result_->camera_matrix;
-        QStringList coefficients;
-        for(std::size_t i = 0; i < result_->dist_coeffs.total(); ++i)
-        {
-            coefficients << QString::number(result_->dist_coeffs.at<double>(static_cast<int>(i)), 'g', 4);
-        }
-        result_text_ = QString("RMS %1 px over %2 views\nfx %3  fy %4  cx %5  cy %6 px")
-                           .arg(result_->rms_px, 0, 'f', 3)
-                           .arg(views_.size())
-                           .arg(k(0, 0), 0, 'f', 1)
-                           .arg(k(1, 1), 0, 'f', 1)
-                           .arg(k(0, 2), 0, 'f', 1)
-                           .arg(k(1, 2), 0, 'f', 1);
-        if(result_->std_deviations.size() >= 4)
-        {
-            result_text_ += QString("\n± %1  %2  %3  %4 px")
-                                .arg(result_->std_deviations[0], 0, 'f', 2)
-                                .arg(result_->std_deviations[1], 0, 'f', 2)
-                                .arg(result_->std_deviations[2], 0, 'f', 2)
-                                .arg(result_->std_deviations[3], 0, 'f', 2);
-        }
-        result_text_ += "\nDistortion (" + model() + "): " + coefficients.join("  ");
-    }
+    updateResultText();
     emit resultChanged();
     emit viewsChanged();
+}
+
+void IntrinsicView::updateResultText ()
+{
+    const ModelResult* result = selected();
+    if(!result)
+    {
+        result_text_.clear();
+        return;
+    }
+    if(!result->calibration)
+    {
+        result_text_ = "Calibration with the " + model() + " model failed: OpenCV rejected the views. Remove poor views or add more.";
+        return;
+    }
+    const auto& calibration = *result->calibration;
+    const auto& k = calibration.camera_matrix;
+    QStringList coefficients;
+    for(std::size_t i = 0; i < calibration.dist_coeffs.total(); ++i)
+    {
+        coefficients << QString::number(calibration.dist_coeffs.at<double>(static_cast<int>(i)), 'g', 4);
+    }
+    result_text_ = QString("RMS %1 px over %2 views\nfx %3  fy %4  cx %5  cy %6 px")
+                       .arg(calibration.rms_px, 0, 'f', 3)
+                       .arg(views_.size())
+                       .arg(k(0, 0), 0, 'f', 1)
+                       .arg(k(1, 1), 0, 'f', 1)
+                       .arg(k(0, 2), 0, 'f', 1)
+                       .arg(k(1, 2), 0, 'f', 1);
+    if(calibration.std_deviations.size() >= 4)
+    {
+        result_text_ += QString("\n± %1  %2  %3  %4 px")
+                            .arg(calibration.std_deviations[0], 0, 'f', 2)
+                            .arg(calibration.std_deviations[1], 0, 'f', 2)
+                            .arg(calibration.std_deviations[2], 0, 'f', 2)
+                            .arg(calibration.std_deviations[3], 0, 'f', 2);
+    }
+    result_text_ += "\nDistortion (" + model() + "): " + coefficients.join("  ");
 }
 
 QString IntrinsicView::calibrationDirectory () const { return setup::calibrationDirectory(); }
@@ -371,7 +576,8 @@ QString IntrinsicView::patternDownloadUrl () const { return setup::patternDownlo
 
 QString IntrinsicView::save ()
 {
-    if(!result_ || usb_port_.isEmpty() || !QDir().mkpath(calibrationDirectory()))
+    const ModelResult* result = selected();
+    if(!result || !result->calibration || usb_port_.isEmpty() || !QDir().mkpath(calibrationDirectory()))
     {
         return {};
     }
@@ -382,7 +588,7 @@ QString IntrinsicView::save ()
     info.pixel_format = "MJPG 1280x720 30fps";
     info.target = geometry::CharucoTarget{}.describe();
     info.created = QDateTime::currentDateTimeUtc().toString(Qt::ISODate).toStdString();
-    if(!geometry::saveIntrinsics(path.toStdString(), *result_, info, views_))
+    if(!geometry::saveIntrinsics(path.toStdString(), *result->calibration, info, views_, result->validation))
     {
         return {};
     }
@@ -434,6 +640,22 @@ void IntrinsicView::paintOverlay (QPainter* painter, const QRectF& target, doubl
         {
             const double progress = std::min(1.0, static_cast<double>(still_frames_) / kStillFrames);
             painter->fillRect(QRectF(target.x(), target.bottom() - 6, target.width() * progress, 6), QColor(56, 189, 248));
+        }
+    }
+
+    // Held-out error per image region of the selected model, where the calibration is weakest
+    const ModelResult* result = selected();
+    if(result && result->validation)
+    {
+        constexpr int kGrid = geometry::HeldOutValidation::kRegionGrid;
+        const int label_px = std::max(11, static_cast<int>(target.height() / 40));
+        for(int region = 0; region < kGrid * kGrid; ++region)
+        {
+            const double error_px = result->validation->region_rms_px[region];
+            const QPointF centre(target.x() + (region % kGrid + 0.5) * target.width() / kGrid,
+                                 target.y() + (region / kGrid + 0.5) * target.height() / kGrid);
+            const QString text = std::isnan(error_px) ? QStringLiteral("no points") : QString::number(error_px, 'f', 2) + " px";
+            drawLabel(painter, centre - QPointF(label_px * 2.0, 0.0), text, label_px, error_px > kGoodHeldOut_px);
         }
     }
 }

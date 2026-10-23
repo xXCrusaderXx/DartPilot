@@ -319,24 +319,25 @@ ColumnLayout {
                     title: "Calibrate"
                     done: view.savedPath !== ""
 
-                    RowLayout {
-                        Label {
-                            text: "Distortion model"
-                            color: Tokens.textMuted
-                        }
-                        ComboBox {
-                            Layout.fillWidth: true
-                            model: ["standard", "rational", "fisheye"]
-                            currentIndex: model.indexOf(view.model)
-                            onActivated: view.model = currentText
-                        }
-                    }
                     Label {
                         Layout.fillWidth: true
                         wrapMode: Text.WordWrap
                         font.pixelSize: Tokens.captionSize
                         color: Tokens.textMuted
-                        text: "For the 100° lens, compare the RMS of standard, rational and fisheye. Red views have more than twice the median error."
+                        text: "Calibrates the standard, rational and fisheye model and checks each on views it did not see. The recommended model is the simplest one within 5 % of the best held-out error."
+                    }
+                    Label {
+                        id: savedLabel
+
+                        // Re-read when the camera, the page or a save changes
+                        readonly property string summary: page.active && page.camera && view.savedPath !== "-" ? view.savedSummary() : ""
+
+                        visible: summary !== ""
+                        Layout.fillWidth: true
+                        wrapMode: Text.WordWrap
+                        font.pixelSize: Tokens.captionSize
+                        color: Tokens.textMuted
+                        text: "Saved calibration: " + summary
                     }
                     RowLayout {
                         Button {
@@ -345,12 +346,103 @@ ColumnLayout {
                             enabled: view.viewCount >= 3 && !view.calibrating
                             onClicked: view.calibrate()
                         }
+                        Button {
+                            visible: savedLabel.visible
+                            text: "Load saved views"
+                            flat: true
+                            enabled: !view.calibrating
+                            onClicked: view.loadSaved()
+                        }
                         BusyIndicator {
                             running: view.calibrating
                             visible: running
                             Layout.preferredHeight: 36
                             Layout.preferredWidth: 36
                         }
+                    }
+
+                    // One row per model: click to select it.
+                    Repeater {
+                        model: view.modelResults
+
+                        delegate: Rectangle {
+                            id: modelRow
+
+                            required property var modelData
+                            readonly property bool selected: modelData.model === view.model
+
+                            Layout.fillWidth: true
+                            implicitHeight: 40
+                            radius: 8
+                            color: selected ? Qt.rgba(Tokens.accent.r, Tokens.accent.g, Tokens.accent.b, 0.14) : Tokens.surfaceRaised
+                            border.color: selected ? Tokens.accent : "transparent"
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 12
+                                anchors.rightMargin: 12
+
+                                Label {
+                                    Layout.preferredWidth: 72
+                                    text: modelRow.modelData.model
+                                    font.weight: Font.DemiBold
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: modelRow.modelData.ok ? "fit " + modelRow.modelData.rmsPx.toFixed(2) + " px   held-out " + modelRow.modelData.heldOutRmsPx.toFixed(2) + " px" : "failed"
+                                    color: modelRow.modelData.ok ? Tokens.textMuted : Tokens.bad
+                                    font.pixelSize: Tokens.captionSize
+                                }
+                                Chip {
+                                    visible: modelRow.modelData.recommended
+                                    text: "recommended"
+                                    tone: Tokens.good
+                                }
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: view.model = modelRow.modelData.model
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        id: qualityBox
+
+                        visible: view.quality !== ""
+                        Layout.fillWidth: true
+                        implicitHeight: qualityColumn.implicitHeight + 20
+                        radius: 8
+                        readonly property color tone: view.quality === "good" ? Tokens.good : view.quality === "fair" ? Tokens.warning : Tokens.bad
+                        color: Qt.rgba(tone.r, tone.g, tone.b, 0.10)
+                        border.color: Qt.rgba(tone.r, tone.g, tone.b, 0.35)
+
+                        ColumnLayout {
+                            id: qualityColumn
+
+                            anchors.fill: parent
+                            anchors.margins: 10
+                            spacing: 6
+
+                            Chip {
+                                text: view.quality === "good" ? "Good" : view.quality === "fair" ? "Usable, can be better" : "Not good enough"
+                                tone: qualityBox.tone
+                                dot: true
+                            }
+                            Label {
+                                Layout.fillWidth: true
+                                text: view.qualityText
+                                wrapMode: Text.WordWrap
+                                font.pixelSize: Tokens.captionSize
+                            }
+                        }
+                    }
+                    Button {
+                        visible: view.views.some(v => v.outlier === true)
+                        text: "Remove red views"
+                        flat: true
+                        onClicked: view.removeOutlierViews()
                     }
                     Rectangle {
                         visible: view.resultText !== ""
