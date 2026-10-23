@@ -1,5 +1,7 @@
 # Calibration
 
+Users do not hold a calibration target ([ADR 0006](adr/0006-calibration-without-user-held-targets.md)): the intrinsics start from a prior per camera model and are refined per camera from the dartboard, together with the extrinsics. The ChArUco calibration below is for making those model priors, for the method comparison (#46), and as the fallback when the refinement does not meet the error budget.
+
 DartPilot calibrates each camera in two steps, both in the developer GUI `dartpilot_setup` ([ADR 0003](adr/0003-developer-gui.md)):
 
 1. **Intrinsic calibration** (#44, #45): focal length, principal point and lens distortion of one camera, from views of a ChArUco pattern.
