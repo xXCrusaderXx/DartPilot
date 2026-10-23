@@ -149,9 +149,12 @@ Every detection run over a session gets its own directory `results/<run id>/`, s
 {
   "throw_id": "20261023T201500Z-3f9a/17",
   "accepted": true,
-  "board_xy_mm": [12.4, 98.1],
-  "position_covariance_mm2": [[0.6, 0.1], [0.1, 0.9]],
-  "score": { "sector": 20, "ring": "triple", "points": 60, "boundary_distance_mm": 1.3 },
+  "board_point": { "x_mm": 12.4, "y_mm": 98.1, "covariance_mm2": { "xx": 0.6, "xy": 0.1, "yy": 0.9 } },
+  "score": {
+    "ring": "triple", "sector": 20, "multiplier": 3, "points": 60, "label": "T20",
+    "boundary_distance_mm": 1.3, "ring_boundary_distance_mm": 1.3, "sector_boundary_distance_mm": 4.8,
+    "board_geometry": "nominal"
+  },
   "confidence": 0.93,
   "camera_measurements": [
     {
@@ -161,7 +164,7 @@ Every detection run over a session gets its own directory `results/<run id>/`, s
         { "pixel_xy": [641.2, 377.8], "covariance_px2": [[0.8, 0.0], [0.0, 1.4]], "confidence": 0.88 }
       ],
       "selected_candidate": 0,
-      "board_xy_mm": [12.1, 98.4],
+      "board_point": { "x_mm": 12.1, "y_mm": 98.4, "covariance_mm2": { "xx": 1.1, "xy": 0.2, "yy": 1.9 } },
       "reprojection_error_px": 0.6
     }
   ],
@@ -170,14 +173,15 @@ Every detection run over a session gets its own directory `results/<run id>/`, s
 }
 ```
 
-- `board_xy_mm` uses the board coordinate convention of #11; `score` is the output of the deterministic scorer (#12), whose field names are authoritative.
+- `board_point` uses the board coordinates and field names of [board-coordinates.md](board-coordinates.md) (#11): `x_mm`, `y_mm` and `covariance_mm2` with `xx`, `xy`, `yy`.
+- `score` is **derived output** of this run: the deterministic scorer (#12) applied to `board_point`. Its fields are those of `scoring::Score` (`ring` as snake_case enum, `sector` 1–20 or 0 for the bulls and a miss, `multiplier` 0–3, `points`, `label` such as `T20`), and `board_geometry` names the board geometry it was scored with: `nominal` or the id of a measured board model (#47). `sector_boundary_distance_mm` is `null` where there are no radial wires (bulls, miss). When the scorer or the board geometry changes, the score is recomputed from `board_point`; it is never the primary result.
 - `frames` lists the `sequence` numbers of the frames each camera contributed, so a result points back to exact frames.
-- A rejected throw has `"accepted": false`, keeps its measurements and diagnostics, and may leave `board_xy_mm` and `score` as `null`.
+- A rejected throw has `"accepted": false`, keeps its measurements and diagnostics, and may leave `board_point` and `score` as `null`.
 - `processing_latency_ms` is measured live; in a replay it is the processing time of the replay and is not compared between runs.
 
 ## Annotations
 
-Ground truth lives in `annotations/<annotation set>.jsonl`, one line per throw, keyed by `throw_id`. Its fields (board point, tip pixel per camera, annotator, uncertainty, flags such as "near wire" or "occluded") are defined with the ground-truth method (#14) and the annotation tool (#15).
+Ground truth lives in `annotations/<annotation set>.jsonl`, one line per throw, keyed by `throw_id`. It carries the board point (`x_mm`, `y_mm`, `covariance_mm2`, `source`, `frames`, see [board-coordinates.md](board-coordinates.md)) and **never a score**: benchmarks score the result and the ground truth with the same scorer and geometry. Its other fields (tip pixel per camera, annotator, uncertainty, flags such as "near wire" or "occluded") are defined with the ground-truth method (#14) and the annotation tool (#15).
 
 ## Replay and determinism
 
