@@ -15,3 +15,7 @@ include(GoogleTest)
 add_executable(SmokeTest SmokeTest.cpp)
 target_link_libraries(SmokeTest PRIVATE dartpilot::replay dartpilot_version GTest::gtest_main)
 gtest_discover_tests(SmokeTest)
+
+add_executable(FocusTest FocusTest.cpp)
+target_link_libraries(FocusTest PRIVATE dartpilot::capture GTest::gtest_main)
+gtest_discover_tests(FocusTest)

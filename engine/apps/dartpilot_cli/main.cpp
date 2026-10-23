@@ -9,6 +9,7 @@
 #include "dartpilot/scoring/scoring.hpp"
 #include "dartpilot/tip_candidates/tip_candidates.hpp"
 #include "dartpilot/version.hpp"
+#include "focus_command.hpp"
 
 int main (int argc, char* argv[])
 {
@@ -28,6 +29,10 @@ int main (int argc, char* argv[])
         }
         return 0;
     }
-    std::cerr << "Usage: dartpilot --version | --modules\n";
+    if(arg == "focus")
+    {
+        return dartpilot::cli::runFocus(argc - 2, argv + 2);
+    }
+    std::cerr << "Usage: dartpilot --version | --modules | focus --camera <device> [--exposure <value>]\n";
     return arg.empty() || arg == "--help" ? 0 : 2;
 }
