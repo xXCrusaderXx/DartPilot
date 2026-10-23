@@ -1,0 +1,125 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Supersede in-flight runs when the same PR is pushed again. Each push to main
+# gets its own group so a burst of merges does not cancel the main runs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'push' && github.sha || github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'push' }}
+
+jobs:
+  # Checks only the lines a PR changes, so existing code is never reformatted
+  # as a side effect of an unrelated change.
+  format:
+    name: format
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+
+      # Pinned so CI and contributors format identically; distro versions drift.
+      - name: Install clang-format
+        run: pipx install clang-format==23.1.1
+
+      - name: Check formatting of changed lines
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          base="$(git merge-base "$BASE_SHA" "$HEAD_SHA")"
+          if ! out="$(git clang-format --diff --extensions h,hpp,cpp "$base" "$HEAD_SHA" -- engine tests)"; then
+            echo "$out"
+            echo "::error::Formatting differs from .clang-format. Run: git clang-format origin/main"
+            exit 1
+          fi
+          echo "$out"
+
+  build-ubuntu:
+    name: build (ubuntu)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential cmake ninja-build libopencv-dev
+
+      - name: Configure
+        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DDARTPILOT_BUILD_TESTS=ON
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  build-arch:
+    name: build (arch)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    # Rolling release: catches breakage with the newest OpenCV and compilers early.
+    container: archlinux:latest
+    steps:
+      # git for GoogleTest's FetchContent; OpenCV's optional runtime deps (vtk, hdf5, ...)
+      # are not pulled in by pacman but are needed by its CMake config.
+      - name: Install dependencies
+        run: |
+          pacman -Syu --noconfirm --needed base-devel cmake ninja git opencv vtk hdf5 glew fmt
+
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Configure
+        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DDARTPILOT_BUILD_TESTS=ON
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  python:
+    name: python
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: tools
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: pip install -e '.[dev]'
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Check formatting
+        run: ruff format --check .
+
+      - name: Test
+        run: pytest

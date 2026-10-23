@@ -1,0 +1,20 @@
+build/
+.cache/
+.vscode/
+
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Recordings and datasets are never committed (see LEGAL.md)
+data/**
+!data/.gitkeep
+*.mp4
+*.avi
+*.mkv

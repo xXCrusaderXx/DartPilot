@@ -1,0 +1,1 @@
+dartpilot_add_module(tip_candidates DEPS event_detection opencv_imgproc)

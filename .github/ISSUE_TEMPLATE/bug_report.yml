@@ -1,0 +1,52 @@
+name: Bug report
+description: DartPilot does not work as expected, or reports a wrong score.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Please don't attach frames that show people (see [LEGAL.md](https://github.com/xXCrusaderXx/DartPilot/blob/main/LEGAL.md)).
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead? For a wrong score, give the real and the reported field.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Start dartpilot with ...
+        2. Throw at ...
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: DartPilot version
+      placeholder: e.g. 0.1.0 or commit hash
+    validations:
+      required: true
+  - type: textarea
+    id: setup
+    attributes:
+      label: Camera setup
+      description: Camera models, resolution, FPS, how they are connected (USB ports/hubs), positions relative to the board, board model, lighting.
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: System
+      placeholder: e.g. Arch Linux, GCC 15, OpenCV 4.12
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log output
+      description: Paste the terminal output. If you have a replay file of the throw, say so; it can be shared privately.
+      render: text
