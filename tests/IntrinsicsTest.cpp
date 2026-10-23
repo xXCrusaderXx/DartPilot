@@ -1,7 +1,10 @@
 #include <gtest/gtest.h>
 
+#include <unistd.h>
+
 #include <clocale>
 #include <cmath>
+#include <filesystem>
 #include <string>
 
 #include <opencv2/calib3d.hpp>
@@ -182,4 +185,123 @@ TEST(CharucoFinder, FindsMostCornersOfASoftCompressedPattern)
     const auto view = finder.detect(frame);
     ASSERT_TRUE(view);
     EXPECT_GE(static_cast<int>(view->ids.size()), finder.target().cornerCount() * 2 / 3);
+}
+
+namespace
+{
+std::vector<CalibrationView> withNoise (std::vector<CalibrationView> views, double sigma_px)
+{
+    cv::RNG rng(1234);
+    for(auto& view : views)
+    {
+        for(auto& point : view.image_points_px)
+        {
+            point.x += static_cast<float>(rng.gaussian(sigma_px));
+            point.y += static_cast<float>(rng.gaussian(sigma_px));
+        }
+    }
+    return views;
+}
+}  // namespace
+
+TEST(ValidateIntrinsics, HeldOutErrorMatchesTheNoise)
+{
+    const cv::Mat dist(cv::Matx<double, 1, 5>(-0.25, 0.08, 0.0005, -0.0003, 0.0));
+    const auto views = withNoise(syntheticViews(DistortionModel::Standard, dist), 0.2);
+    const auto calibration = dartpilot::geometry::calibrateIntrinsics(views, kImageSize, DistortionModel::Standard);
+    const auto validation = dartpilot::geometry::validateIntrinsics(views, kImageSize, DistortionModel::Standard);
+    ASSERT_TRUE(calibration);
+    ASSERT_TRUE(validation);
+    EXPECT_EQ(validation->folds, 5);
+    // Gaussian noise of 0.2 px per axis has an RMS of about 0.28 px in 2D; held-out views cannot do better than the fit.
+    EXPECT_GT(validation->rms_px, 0.2);
+    EXPECT_LT(validation->rms_px, 0.5);
+    EXPECT_GE(validation->rms_px, calibration->rms_px * 0.95);
+    int points = 0;
+    for(const int n : validation->region_points)
+    {
+        points += n;
+    }
+    EXPECT_EQ(points, static_cast<int>(views.size() * views.front().ids.size()));
+}
+
+TEST(ValidateIntrinsics, NeedsEnoughViews)
+{
+    auto views = syntheticViews(DistortionModel::Standard, cv::Mat::zeros(1, 5, CV_64F));
+    views.resize(3);
+    EXPECT_FALSE(dartpilot::geometry::validateIntrinsics(views, kImageSize, DistortionModel::Standard));
+}
+
+TEST(RecommendModel, PicksTheModelTheDataNeeds)
+{
+    const auto recommend = [] (const std::vector<CalibrationView>& views)
+    {
+        std::vector<std::pair<DistortionModel, dartpilot::geometry::HeldOutValidation>> validations;
+        for(const auto model : {DistortionModel::Standard, DistortionModel::Rational, DistortionModel::Fisheye})
+        {
+            if(const auto validation = dartpilot::geometry::validateIntrinsics(views, kImageSize, model))
+            {
+                validations.emplace_back(model, *validation);
+            }
+        }
+        return dartpilot::geometry::recommendModel(validations);
+    };
+    const cv::Mat standard(cv::Matx<double, 1, 5>(-0.25, 0.08, 0.0005, -0.0003, 0.0));
+    EXPECT_EQ(recommend(withNoise(syntheticViews(DistortionModel::Standard, standard), 0.1)), DistortionModel::Standard);
+    // Strong fisheye distortion, as from a wide lens, which the polynomial models cannot follow at the image edges
+    const cv::Mat fisheye(cv::Vec4d(0.3, 0.2, -0.1, 0.05));
+    EXPECT_EQ(recommend(withNoise(syntheticViews(DistortionModel::Fisheye, fisheye), 0.1)), DistortionModel::Fisheye);
+}
+
+TEST(RecommendModel, PrefersFewerCoefficientsWithinTolerance)
+{
+    dartpilot::geometry::HeldOutValidation good, slightly_better;
+    good.rms_px = 0.30;
+    slightly_better.rms_px = 0.29;
+    EXPECT_EQ(dartpilot::geometry::recommendModel({{DistortionModel::Standard, good}, {DistortionModel::Rational, slightly_better}}),
+              DistortionModel::Standard);
+    slightly_better.rms_px = 0.20;
+    EXPECT_EQ(dartpilot::geometry::recommendModel({{DistortionModel::Standard, good}, {DistortionModel::Rational, slightly_better}}),
+              DistortionModel::Rational);
+    EXPECT_FALSE(dartpilot::geometry::recommendModel({}));
+}
+
+TEST(LoadIntrinsics, RoundTrip)
+{
+    const cv::Mat dist(cv::Matx<double, 1, 5>(-0.25, 0.08, 0.0005, -0.0003, 0.0));
+    const auto views = withNoise(syntheticViews(DistortionModel::Standard, dist), 0.2);
+    const auto calibration = dartpilot::geometry::calibrateIntrinsics(views, kImageSize, DistortionModel::Standard);
+    const auto validation = dartpilot::geometry::validateIntrinsics(views, kImageSize, DistortionModel::Standard);
+    ASSERT_TRUE(calibration && validation);
+    dartpilot::geometry::CalibrationInfo info{"2.4.3.1.2", "USB Camera", "MJPG 1280x720 30fps", "charuco 10x7 DICT_4X4_50 marker 0.70",
+                                              "2026-10-23T20:00:00Z"};
+    const std::string path = (std::filesystem::temp_directory_path() / ("dartpilot-intrinsics-test-" + std::to_string(::getpid()) + ".yml")).string();
+    ASSERT_TRUE(dartpilot::geometry::saveIntrinsics(path, *calibration, info, views, validation));
+    const auto stored = dartpilot::geometry::loadIntrinsics(path);
+    std::filesystem::remove(path);
+    ASSERT_TRUE(stored);
+    EXPECT_EQ(stored->calibration.model, DistortionModel::Standard);
+    EXPECT_EQ(stored->calibration.image_size_px, kImageSize);
+    EXPECT_NEAR(stored->calibration.camera_matrix(0, 0), calibration->camera_matrix(0, 0), 1e-9);
+    EXPECT_EQ(stored->calibration.dist_coeffs.total(), 5u);
+    EXPECT_NEAR(stored->calibration.rms_px, calibration->rms_px, 1e-12);
+    EXPECT_EQ(stored->info.usb_port, "2.4.3.1.2");
+    EXPECT_EQ(stored->info.created, "2026-10-23T20:00:00Z");
+    ASSERT_EQ(stored->views.size(), views.size());
+    EXPECT_EQ(stored->views[3].ids, views[3].ids);
+    ASSERT_TRUE(stored->validation);
+    EXPECT_NEAR(stored->validation->rms_px, validation->rms_px, 1e-12);
+    EXPECT_EQ(stored->validation->region_points, validation->region_points);
+}
+
+TEST(LoadIntrinsics, RejectsMissingAndForeignFiles)
+{
+    EXPECT_FALSE(dartpilot::geometry::loadIntrinsics("/nonexistent/intrinsics.yml"));
+    const std::string path = (std::filesystem::temp_directory_path() / ("dartpilot-foreign-test-" + std::to_string(::getpid()) + ".yml")).string();
+    {
+        cv::FileStorage file(path, cv::FileStorage::WRITE);
+        file << "format" << "something-else";
+    }
+    EXPECT_FALSE(dartpilot::geometry::loadIntrinsics(path));
+    std::filesystem::remove(path);
 }

@@ -34,6 +34,12 @@ class IntrinsicView : public StreamView
     Q_PROPERTY(QString resultText READ resultText NOTIFY resultChanged)
     // Per view: index, corners and, after a calibration, rmsPx and outlier
     Q_PROPERTY(QVariantList views READ views NOTIFY viewsChanged)
+    // Per distortion model: model, ok, rmsPx, heldOutRmsPx, recommended
+    Q_PROPERTY(QVariantList modelResults READ modelResults NOTIFY resultChanged)
+    Q_PROPERTY(QString recommendedModel READ recommendedModel NOTIFY resultChanged)
+    // good, fair, poor, or empty before a calibration
+    Q_PROPERTY(QString quality READ quality NOTIFY resultChanged)
+    Q_PROPERTY(QString qualityText READ qualityText NOTIFY resultChanged)
     Q_PROPERTY(QString savedPath READ savedPath NOTIFY resultChanged)
 
    public:
@@ -49,14 +55,24 @@ class IntrinsicView : public StreamView
     double coverage () const;
     QString hint () const { return hint_; }
     bool calibrating () const { return watcher_.isRunning(); }
-    bool calibrated () const { return result_.has_value(); }
+    bool calibrated () const { return selected() && selected()->calibration.has_value(); }
     QString resultText () const { return result_text_; }
     QVariantList views () const;
     QString savedPath () const { return saved_path_; }
+    QVariantList modelResults () const;
+    QString recommendedModel () const;
+    QString quality () const;
+    QString qualityText () const;
 
     Q_INVOKABLE bool capture ();
     Q_INVOKABLE void removeView (int index);
     Q_INVOKABLE void clearViews ();
+    // Removes the views whose error is more than twice the median of the selected model
+    Q_INVOKABLE void removeOutlierViews ();
+    // Summary of the calibration stored for this camera, or an empty string if there is none
+    Q_INVOKABLE QString savedSummary () const;
+    // Replaces the views with those of the stored calibration and calibrates again
+    Q_INVOKABLE bool loadSaved ();
     Q_INVOKABLE void calibrate ();
     // Returns the written file, or an empty string on failure
     Q_INVOKABLE QString save ();
@@ -82,6 +98,17 @@ class IntrinsicView : public StreamView
     static constexpr int kCoverageCols = 16;
     static constexpr int kCoverageRows = 9;
 
+    // Calibration and held-out validation of one distortion model
+    struct ModelResult
+    {
+        geometry::DistortionModel model = geometry::DistortionModel::Standard;
+        std::optional<geometry::IntrinsicCalibration> calibration;
+        std::optional<geometry::HeldOutValidation> validation;
+    };
+
+    const ModelResult* selected () const;
+    std::vector<int> outlierViews () const;
+    void updateResultText ();
     void addView (const geometry::CalibrationView& view);
     void invalidateResult ();
     bool isNovel (const geometry::CalibrationView& view) const;
@@ -100,8 +127,9 @@ class IntrinsicView : public StreamView
     std::vector<geometry::CalibrationView> views_;
     std::array<int, kCoverageCols * kCoverageRows> coverage_{};
     QString hint_;
-    QFutureWatcher<std::optional<geometry::IntrinsicCalibration>> watcher_;
-    std::optional<geometry::IntrinsicCalibration> result_;
+    QFutureWatcher<std::vector<ModelResult>> watcher_;
+    std::vector<ModelResult> results_;
+    std::optional<geometry::DistortionModel> recommended_;
     QString result_text_;
     QString saved_path_;
 };

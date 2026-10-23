@@ -27,4 +27,14 @@ Set the focus first ([hardware](hardware.md)); it must not change afterwards. Ke
 - Hold still for a moment at each pose; the view is captured automatically.
 - 15 to 25 views are enough. After calibrating, remove views marked red and calibrate again.
 
-The calibration is stored per USB port in `~/.local/share/dartpilot/calibration/intrinsics-usb-<port>.yml`, together with the views it was computed from.
+## Checking the result
+
+"Calibrate" fits all three distortion models (standard, rational, fisheye) and checks each on views it did not see: the views are split into five groups, each group is held out once, and its points are projected with the calibration of the other four. This held-out error does not shrink when a model with many coefficients bends itself around its own views, so it is the number to judge, not the fit error.
+
+- The **recommended model** is the simplest one within 5 % of the lowest held-out error; it is selected automatically and can be changed by clicking another row.
+- The **quality** is good below 0.5 px held-out error with at least 15 views and 75 % coverage, usable below 1.0 px. These thresholds are provisional and in pixels; the gate in board millimetres follows from the method comparison (#46) and the camera poses (#13).
+- The image shows the held-out error per ninth of the image. Large values in the corners mean that more views with the pattern in the corners are needed, or that the model does not fit the lens.
+- Views with more than twice the median error are marked red; "Remove red views" drops them, then calibrate again.
+- "Load saved views" continues from the stored calibration of the selected camera.
+
+The calibration is stored per USB port in `~/.local/share/dartpilot/calibration/intrinsics-usb-<port>.yml`, together with the views it was computed from and its held-out error.
