@@ -204,6 +204,12 @@ Ground truth lives in `annotations/<annotation set>.jsonl`, one line per throw, 
 - The replay uses only the times stored in the session; it never reads the wall clock.
 - `dartpilot replay <session> [--run-id ID] [--extrinsics FILE] [--check-every SECONDS] [--no-checks]` writes `results/<run id>/` (`replay` by default) and never overwrites an existing run. The board refinement is the one the manifest references, provided the file in the calibration directory still has the recorded SHA-256; `--extrinsics` names another one. Throw detection does not exist yet (#18), so `throws.jsonl` stays empty for now.
 
+## Reading sessions
+
+- C++: `session::openSession` and `session::FrameReader` (`engine/session`), `replay::replayOrder` (`engine/replay`).
+- Python: `dartpilot_tools.session.load_session(directory)` gives the manifest, the frame index per camera (as pandas tables), `read_frame`, `capture.csv`, `throws.csv`, `replay_order()` and `annotations(name)`; `session.run(run_id)` reads `run.json`, `throws.jsonl` and `calibration_checks.jsonl` of a detection run.
+- Both readers are tested on the same fixture session, `tests/fixtures/session-v1/`.
+
 ## Writing rules
 
 - All files of a session are append-only while recording. A frame's JPEG is written to `frames.mjpg` before its line in `frames.csv`, so after a crash the last index line can be trusted and a truncated tail of `frames.mjpg` is ignored.

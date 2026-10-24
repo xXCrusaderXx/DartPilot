@@ -281,3 +281,41 @@ TEST(Replay, WithoutARefinementThereAreNoChecks)
     EXPECT_TRUE(readFile(summary->run_directory / "calibration_checks.jsonl").empty());
     EXPECT_TRUE(std::filesystem::exists(summary->run_directory / "throws.jsonl"));
 }
+
+// The fixture session that tools/tests/test_session.py reads as well, so both readers agree on the format
+TEST(SessionReader, ReadsTheSharedFixture)
+{
+    const std::filesystem::path fixture = std::filesystem::path(DARTPILOT_SOURCE_DIR) / "tests/fixtures/session-v1";
+    std::string error;
+    const auto recorded = session::openSession(fixture, error);
+    ASSERT_TRUE(recorded) << error;
+    EXPECT_EQ(recorded->session_id, "20261024T120000Z-fixt");
+    ASSERT_EQ(recorded->cameras.size(), 2u);
+    EXPECT_EQ(recorded->cameras[1].name, "Cam B \"quoted\" \xc3\xa9");
+    ASSERT_TRUE(recorded->cameras[0].extrinsics);
+    EXPECT_EQ(recorded->cameras[0].extrinsics->sha256, "22bb");
+    EXPECT_EQ(recorded->cameras[0].frames.size(), 4u);
+    EXPECT_FALSE(recorded->cameras[0].frames[2].pts);
+    // The last JPEG of usb-1.3 never reached frames.mjpg completely.
+    EXPECT_EQ(recorded->cameras[1].frames.size(), 2u);
+    session::FrameReader reader(*recorded, 0);
+    const auto bytes = reader.read(3);
+    EXPECT_EQ(std::string(bytes.begin(), bytes.end()), "placeholder usb-1.2 frame 5\n");
+
+    std::vector<std::pair<std::string, std::uint32_t>> order;
+    for(const auto& f : replay::replayOrder(*recorded))
+    {
+        order.emplace_back(recorded->cameras[f.camera].id, recorded->cameras[f.camera].frames[f.frame].sequence);
+    }
+    const std::vector<std::pair<std::string, std::uint32_t>> expected = {{"usb-1.2", 1},  {"usb-1.3", 11}, {"usb-1.2", 2},
+                                                                         {"usb-1.3", 12}, {"usb-1.2", 3},  {"usb-1.2", 5}};
+    EXPECT_EQ(order, expected);
+
+    for(const auto& line : lines(readFile(fixture / "results/replay/throws.jsonl")))
+    {
+        EXPECT_TRUE(session::parseJson(line, error)) << error;
+    }
+    const auto check = session::parseJson(lines(readFile(fixture / "results/replay/calibration_checks.jsonl")).front(), error);
+    ASSERT_TRUE(check) << error;
+    EXPECT_EQ(check->find("rms_mm")->text, "0.4321");
+}
