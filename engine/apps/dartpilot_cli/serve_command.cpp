@@ -5,11 +5,14 @@
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
+#include <memory>
 #include <string>
 #include <thread>
 
+#include "board_watch.hpp"
 #include "dartpilot/api/server.hpp"
 #include "dartpilot/api/simulator.hpp"
+#include "paths.hpp"
 #include "preview_sources.hpp"
 
 namespace dartpilot::cli
@@ -23,11 +26,12 @@ void onInterrupt (int) { interrupted = true; }
 int usage ()
 {
     std::fprintf(stderr,
-                 "Usage: dartpilot serve --simulate [--cameras] [--listen ADDRESS] [--port N] [--seed N] [--interval MS]\n"
+                 "Usage: dartpilot serve --simulate [--cameras] [--listen ADDRESS] [--port N] [--seed N] [--interval MS] [--occupied]\n"
                  "  --simulate     darts, takeouts and camera states without cameras\n"
-                 "  --cameras      previews and status from the real cameras; darts stay simulated\n"
+                 "  --cameras      previews, status and board check from the real cameras; darts stay simulated\n"
                  "  --listen       address to listen on (default 127.0.0.1; 0.0.0.0 for the whole network)\n"
-                 "  --port         default 8484\n");
+                 "  --port         default 8484\n"
+                 "  --occupied     darts are in the board at start (board check warning)\n");
     return 2;
 }
 }  // namespace
@@ -62,6 +66,10 @@ int runServe (int argc, char* argv[])
         {
             settings.seed = static_cast<std::uint32_t>(std::strtoul(argv[++i], nullptr, 10));
         }
+        else if(arg == "--occupied")
+        {
+            settings.occupied_at_start = true;
+        }
         else if(arg == "--interval" && i + 1 < argc)
         {
             settings.dart_interval = std::chrono::milliseconds(std::atoi(argv[++i]));
@@ -85,10 +93,12 @@ int runServe (int argc, char* argv[])
     CameraPreviews camera_previews(server);
     std::vector<std::string> simulated = {"sim-1", "sim-2", "sim-3"};
     SimulatedPreviews simulated_previews(server, simulated);
+    std::unique_ptr<BoardWatch> board_watch;
     if(cameras)
     {
         std::vector<api::CameraInfo> infos;
-        for(const auto& device : camera_previews.start())
+        const auto devices = camera_previews.start();
+        for(const auto& device : devices)
         {
             infos.push_back({"usb-" + device.usb_port, device.name, "ok"});
         }
@@ -99,6 +109,8 @@ int runServe (int argc, char* argv[])
         }
         server.setCameras(infos);
         settings.camera_status = false;
+        settings.board_state = false;
+        board_watch = std::make_unique<BoardWatch>(server, camera_previews, devices, dataHome() / "calibration");
     }
     else
     {
@@ -110,6 +122,10 @@ int runServe (int argc, char* argv[])
     {
         std::fprintf(stderr, "%s %s:%d\n", error.c_str(), host.c_str(), port);
         return 1;
+    }
+    if(board_watch)
+    {
+        board_watch->start();
     }
     api::Simulator simulator(server, settings);
     server.onDetectionChanged([&simulator] (bool running) { simulator.setRunning(running); });
@@ -124,6 +140,7 @@ int runServe (int argc, char* argv[])
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     simulator.stop();
+    board_watch.reset();
     simulated_previews.stop();
     camera_previews.stop();
     server.stop();

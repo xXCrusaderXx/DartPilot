@@ -595,6 +595,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Latency'**
   String get latency;
+
+  /// No description provided for @boardOccupiedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pull the darts out of the board'**
+  String get boardOccupiedTitle;
+
+  /// No description provided for @boardOccupiedText.
+  ///
+  /// In en, this message translates to:
+  /// **'The cameras see something in the board. Pull out the darts before the game starts.'**
+  String get boardOccupiedText;
+
+  /// No description provided for @boardOccupiedBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Darts in the board'**
+  String get boardOccupiedBanner;
+
+  /// No description provided for @checkBoardAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Check again'**
+  String get checkBoardAgain;
+
+  /// No description provided for @startAnyway.
+  ///
+  /// In en, this message translates to:
+  /// **'Start anyway'**
+  String get startAnyway;
+
+  /// No description provided for @show.
+  ///
+  /// In en, this message translates to:
+  /// **'Show'**
+  String get show;
+
+  /// No description provided for @emptyReferenceMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'No image of the empty board stored'**
+  String get emptyReferenceMissing;
+
+  /// No description provided for @storeEmptyReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Store empty board'**
+  String get storeEmptyReference;
+
+  /// No description provided for @emptyReferenceStored.
+  ///
+  /// In en, this message translates to:
+  /// **'Empty board stored'**
+  String get emptyReferenceStored;
+
+  /// No description provided for @boardNotEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'The board is not empty; pull out the darts first.'**
+  String get boardNotEmpty;
+
+  /// No description provided for @storeReferenceFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not store the empty board'**
+  String get storeReferenceFailed;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

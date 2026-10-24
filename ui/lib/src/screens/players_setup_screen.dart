@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../widgets/board_check.dart';
 import '../widgets/player_names.dart';
 
 /// Setup for games that only need the players and a few switches.
@@ -49,9 +50,12 @@ class _PlayersSetupScreenState extends State<PlayersSetupScreen> {
                 ),
               const SizedBox(height: 24),
               FilledButton.icon(
-                onPressed: () => Navigator.of(context).pushReplacement(
-                  MaterialPageRoute<void>(builder: (_) => widget.start(_players.names(l10n), List.of(_options))),
-                ),
+                onPressed: () async {
+                  if (!await confirmBoardEmpty(context) || !context.mounted) return;
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute<void>(builder: (_) => widget.start(_players.names(l10n), List.of(_options))),
+                  );
+                },
                 icon: const Icon(Icons.play_arrow),
                 label: Text(l10n.startGame),
               ),

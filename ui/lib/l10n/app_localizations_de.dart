@@ -277,4 +277,38 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get latency => 'Latenz';
+
+  @override
+  String get boardOccupiedTitle => 'Darts aus der Scheibe ziehen';
+
+  @override
+  String get boardOccupiedText =>
+      'Die Kameras sehen etwas in der Scheibe. Zieh die Darts heraus, bevor das Spiel beginnt.';
+
+  @override
+  String get boardOccupiedBanner => 'Darts in der Scheibe';
+
+  @override
+  String get checkBoardAgain => 'Erneut prüfen';
+
+  @override
+  String get startAnyway => 'Trotzdem starten';
+
+  @override
+  String get show => 'Anzeigen';
+
+  @override
+  String get emptyReferenceMissing => 'Kein Bild der leeren Scheibe gespeichert';
+
+  @override
+  String get storeEmptyReference => 'Leere Scheibe speichern';
+
+  @override
+  String get emptyReferenceStored => 'Leere Scheibe gespeichert';
+
+  @override
+  String get boardNotEmpty => 'Die Scheibe ist nicht leer; zieh zuerst die Darts.';
+
+  @override
+  String get storeReferenceFailed => 'Leere Scheibe konnte nicht gespeichert werden';
 }

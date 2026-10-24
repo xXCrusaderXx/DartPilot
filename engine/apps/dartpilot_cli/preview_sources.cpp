@@ -55,6 +55,7 @@ std::vector<capture::CameraDevice> CameraPreviews::start ()
             devices_.push_back(device);
             captures_.push_back(std::move(capture));
             latest_.emplace_back();
+            latest_sequence_.push_back(0);
         }
     }
     stop_ = false;
@@ -75,6 +76,18 @@ void CameraPreviews::stop ()
     }
 }
 
+bool CameraPreviews::latest (std::size_t camera, std::vector<std::uint8_t>& jpeg, std::uint32_t& sequence) const
+{
+    std::lock_guard lock(latest_mutex_);
+    if(camera >= latest_.size() || latest_[camera].empty())
+    {
+        return false;
+    }
+    jpeg = latest_[camera];
+    sequence = latest_sequence_[camera];
+    return true;
+}
+
 void CameraPreviews::run ()
 {
     auto next_status = std::chrono::steady_clock::now();
@@ -88,7 +101,11 @@ void CameraPreviews::run ()
             while(auto frame = captures_[i]->frames().tryPop())
             {
                 any = true;
-                latest_[i] = frame->data;
+                {
+                    std::lock_guard lock(latest_mutex_);
+                    latest_[i] = frame->data;
+                    latest_sequence_[i] = frame->sequence;
+                }
                 if(!server_.wantsPreview(id))
                 {
                     continue;
@@ -106,9 +123,11 @@ void CameraPreviews::run ()
                 const std::string state = !stats.running ? "lost" : stats.lost_frames > 0 || stats.overflow_drops > 0 ? "degraded" : "ok";
                 // Mean brightness of the newest frame at an eighth of its size, once per status (ADR 0002)
                 double brightness = -1.0;
-                if(!latest_[i].empty())
+                std::vector<std::uint8_t> jpeg;
+                std::uint32_t sequence = 0;
+                if(latest(i, jpeg, sequence))
                 {
-                    const cv::Mat gray = cv::imdecode(latest_[i], cv::IMREAD_REDUCED_GRAYSCALE_8);
+                    const cv::Mat gray = cv::imdecode(jpeg, cv::IMREAD_REDUCED_GRAYSCALE_8);
                     brightness = gray.empty() ? -1.0 : cv::mean(gray)[0];
                 }
                 server_.publishCameraStatus({"usb-" + devices_[i].usb_port, state, stats.effective_fps, stats.lost_frames, stats.overflow_drops,

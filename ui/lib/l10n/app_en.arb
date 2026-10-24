@@ -142,5 +142,16 @@
   "expandAll": "Expand all",
   "collapseAll": "Collapse all",
   "tapToEnlarge": "Tap the image to enlarge it",
-  "latency": "Latency"
+  "latency": "Latency",
+  "boardOccupiedTitle": "Pull the darts out of the board",
+  "boardOccupiedText": "The cameras see something in the board. Pull out the darts before the game starts.",
+  "boardOccupiedBanner": "Darts in the board",
+  "checkBoardAgain": "Check again",
+  "startAnyway": "Start anyway",
+  "show": "Show",
+  "emptyReferenceMissing": "No image of the empty board stored",
+  "storeEmptyReference": "Store empty board",
+  "emptyReferenceStored": "Empty board stored",
+  "boardNotEmpty": "The board is not empty; pull out the darts first.",
+  "storeReferenceFailed": "Could not store the empty board"
 }

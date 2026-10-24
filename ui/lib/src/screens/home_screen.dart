@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../widgets/board_check.dart';
 import '../widgets/engine_card.dart';
 import 'around_the_clock_screen.dart';
 import 'cricket_screen.dart';
@@ -36,7 +37,10 @@ class HomeScreen extends StatelessWidget {
         Icons.adjust,
         l10n.modeTraining,
         l10n.modeTrainingDescription,
-        () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const TrainingScreen())),
+        () async {
+          if (!await confirmBoardEmpty(context) || !context.mounted) return;
+          Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const TrainingScreen()));
+        },
       ),
     ];
     return Scaffold(

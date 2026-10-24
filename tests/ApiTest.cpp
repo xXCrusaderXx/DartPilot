@@ -296,3 +296,76 @@ TEST(Server, PreviewsGoOnlyToSubscribersWithinTheirRateAndWidth)
     EXPECT_FALSE(server.wantsPreview("cam-a"));
     server.stop();
 }
+
+TEST(Protocol, BoardStateCombinesCamerasAndIsPartOfHello)
+{
+    api::CameraBoardState empty{"a", "empty", std::nullopt, ""};
+    api::CameraBoardState occupied{"b", "occupied", std::array<double, 2>{640.0, 300.0}, "object", {1280, 720}};
+    api::CameraBoardState unknown{"c", "unknown", std::nullopt, "no reference"};
+    EXPECT_EQ(api::combineBoardState({empty, empty}), "empty");
+    EXPECT_EQ(api::combineBoardState({empty, unknown, occupied}), "occupied");
+    EXPECT_EQ(api::combineBoardState({empty, unknown}), "unknown");
+    EXPECT_EQ(api::combineBoardState({}), "unknown");
+
+    api::Hello hello;
+    hello.board_state = {"occupied", {empty, occupied}, true};
+    const json board = api::helloMessage(hello)["board_state"];
+    EXPECT_EQ(board["state"], "occupied");
+    EXPECT_EQ(board["reference"], "stored");
+    EXPECT_TRUE(board["cameras"][0]["image_point_px"].is_null());
+    EXPECT_EQ(board["cameras"][1]["image_point_px"], json({640.0, 300.0}));
+    EXPECT_EQ(board["cameras"][1]["image_size_px"], json({1280, 720}));
+    EXPECT_EQ(api::boardStateMessage(hello.board_state)["type"], "board_state");
+    EXPECT_EQ(api::helloMessage(api::Hello{})["board_state"]["reference"], "missing");
+
+    const auto check = api::parseRequest(R"({"type":"check_board","request_id":"1"})");
+    EXPECT_TRUE(std::holds_alternative<api::CheckBoard>(std::get<api::Request>(check).body));
+    const auto store = api::parseRequest(R"({"type":"store_empty_reference","request_id":"2"})");
+    EXPECT_TRUE(std::holds_alternative<api::StoreEmptyReference>(std::get<api::Request>(store).body));
+}
+
+TEST(Server, BoardStateGoesToEveryoneAndRequestsReachTheSource)
+{
+    ix::initNetSystem();
+    const int port = 20000 + static_cast<int>(std::random_device{}() % 20000);
+    api::Server server(port, "127.0.0.1", api::Hello{});
+    std::string error;
+    ASSERT_TRUE(server.start(error)) << error;
+
+    TestClient client(port);
+    EXPECT_EQ(client.next("hello")["board_state"]["state"], "unknown");
+    client.send({{"type", "check_board"}, {"request_id", "1"}});
+    EXPECT_EQ(client.next("result")["error"]["code"], "not_available");
+
+    api::BoardStateInfo occupied{"occupied", {{"cam", "occupied", std::array<double, 2>{10.0, 20.0}, "object"}}, true};
+    server.setBoardState(occupied);
+    EXPECT_EQ(client.next("board_state")["cameras"][0]["image_point_px"], json({10.0, 20.0}));
+    // An unchanged state is not sent again.
+    server.setBoardState(occupied);
+    EXPECT_TRUE(client.next("board_state").is_null());
+
+    int checks = 0;
+    server.onCheckBoard([&] { ++checks; });
+    server.onStoreEmptyReference([&] () -> std::optional<std::string> { return std::string("board_not_empty"); });
+    client.send({{"type", "check_board"}, {"request_id", "2"}});
+    EXPECT_TRUE(client.next("result")["ok"]);
+    EXPECT_EQ(checks, 1);
+    client.send({{"type", "store_empty_reference"}, {"request_id", "3"}});
+    EXPECT_EQ(client.next("result")["error"]["code"], "board_not_empty");
+
+    TestClient late(port);
+    EXPECT_EQ(late.next("hello")["board_state"]["state"], "occupied");
+    server.stop();
+}
+
+TEST(Simulator, BoardStateMarksTheObjectWhenOccupied)
+{
+    const auto occupied = api::Simulator::boardState(true);
+    EXPECT_EQ(occupied.state, "occupied");
+    ASSERT_EQ(occupied.cameras.size(), 3u);
+    EXPECT_TRUE(occupied.cameras[0].image_point_px.has_value());
+    const auto empty = api::Simulator::boardState(false);
+    EXPECT_EQ(empty.state, "empty");
+    EXPECT_TRUE(empty.reference_stored);
+    EXPECT_FALSE(empty.cameras[2].image_point_px.has_value());
+}

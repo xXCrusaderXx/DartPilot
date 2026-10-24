@@ -137,6 +137,37 @@ void Server::publishTakeout (std::int64_t event_ns, int darts_removed)
     broadcast(takeoutMessage(event_ns, darts_removed));
 }
 
+void Server::setBoardState (BoardStateInfo board)
+{
+    {
+        std::lock_guard lock(mutex_);
+        if(hello_.board_state == board)
+        {
+            return;
+        }
+        hello_.board_state = board;
+    }
+    broadcast(boardStateMessage(board));
+}
+
+BoardStateInfo Server::boardState () const
+{
+    std::lock_guard lock(mutex_);
+    return hello_.board_state;
+}
+
+void Server::onCheckBoard (std::function<void()> handler)
+{
+    std::lock_guard lock(mutex_);
+    check_board_handler_ = std::move(handler);
+}
+
+void Server::onStoreEmptyReference (std::function<std::optional<std::string>()> handler)
+{
+    std::lock_guard lock(mutex_);
+    store_reference_handler_ = std::move(handler);
+}
+
 std::vector<BoardPoint> Server::visitPoints () const
 {
     std::lock_guard lock(mutex_);
@@ -334,6 +365,38 @@ nlohmann::json Server::handle (const std::string& connection, const Request& req
                 }
                 std::lock_guard lock(mutex_);
                 clients_[connection].status = subscription.subscribe;
+                return resultMessage(request.request_id, true);
+            },
+            [&] (const CheckBoard&)
+            {
+                std::function<void()> handler;
+                {
+                    std::lock_guard lock(mutex_);
+                    handler = check_board_handler_;
+                }
+                if(!handler)
+                {
+                    return resultMessage(request.request_id, false, "not_available", "No board check in this mode");
+                }
+                handler();
+                return resultMessage(request.request_id, true);
+            },
+            [&] (const StoreEmptyReference&)
+            {
+                std::function<std::optional<std::string>()> handler;
+                {
+                    std::lock_guard lock(mutex_);
+                    handler = store_reference_handler_;
+                }
+                if(!handler)
+                {
+                    return resultMessage(request.request_id, false, "not_available", "No board check in this mode");
+                }
+                if(const auto error = handler())
+                {
+                    return resultMessage(request.request_id, false, *error,
+                                         *error == "board_not_empty" ? "Remove the darts first" : "Cannot store the empty board");
+                }
                 return resultMessage(request.request_id, true);
             },
         },

@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <memory>
+#include <mutex>
 #include <thread>
 #include <vector>
 
@@ -26,6 +27,9 @@ class CameraPreviews
     std::vector<capture::CameraDevice> start ();
     void stop ();
 
+    // Newest JPEG of a camera (in the order start() returned) and its frame sequence; false before the first frame
+    bool latest (std::size_t camera, std::vector<std::uint8_t>& jpeg, std::uint32_t& sequence) const;
+
    private:
     void run ();
 
@@ -34,6 +38,8 @@ class CameraPreviews
     std::vector<std::unique_ptr<capture::CaptureThread>> captures_;
     // Newest JPEG per camera, for the brightness in the status
     std::vector<std::vector<std::uint8_t>> latest_;
+    std::vector<std::uint32_t> latest_sequence_;
+    mutable std::mutex latest_mutex_;
     std::thread thread_;
     std::atomic<bool> stop_{false};
 };
