@@ -98,7 +98,7 @@ void Simulator::run ()
     while(!stop_)
     {
         const auto now = std::chrono::steady_clock::now();
-        if(now >= next_status)
+        if(settings_.camera_status && now >= next_status)
         {
             for(const char* camera : kCameras)
             {

@@ -128,7 +128,14 @@ class TestClient
                 if(message->type == ix::WebSocketMessageType::Message)
                 {
                     std::lock_guard lock(mutex_);
-                    messages_.push_back(json::parse(message->str));
+                    if(message->binary)
+                    {
+                        binary_.push_back(message->str);
+                    }
+                    else
+                    {
+                        messages_.push_back(json::parse(message->str));
+                    }
                     ready_.notify_all();
                 }
             });
@@ -161,7 +168,16 @@ class TestClient
         }
     }
 
+    // Binary messages received so far, after waiting up to the timeout for at least `count`
+    std::vector<std::string> binary (std::size_t count, std::chrono::milliseconds timeout = std::chrono::seconds(2))
+    {
+        std::unique_lock lock(mutex_);
+        ready_.wait_for(lock, timeout, [&] { return binary_.size() >= count; });
+        return binary_;
+    }
+
    private:
+    std::vector<std::string> binary_;
     ix::WebSocket socket_;
     std::mutex mutex_;
     std::condition_variable ready_;
@@ -213,5 +229,70 @@ TEST(Server, HelloThrowsAndCorrectionsOverWebSocket)
     server.publishCameraStatus({"cam", "lost", 0.0, 0, 0, -1.0});
     EXPECT_FALSE(b.next("camera_status").is_null());
     EXPECT_TRUE(a.next("camera_status").is_null());
+    server.stop();
+}
+
+TEST(Protocol, PreviewMessageLayout)
+{
+    const std::vector<std::uint8_t> jpeg = {0xff, 0xd8, 0x01, 0x02};
+    const std::string message = api::previewMessage({"usb-1", 7, 99, 640, 360}, jpeg);
+    const std::uint32_t length = static_cast<std::uint8_t>(message[0]) | static_cast<std::uint8_t>(message[1]) << 8 |
+                                 static_cast<std::uint8_t>(message[2]) << 16 |
+                                 static_cast<std::uint32_t>(static_cast<std::uint8_t>(message[3])) << 24;
+    const json header = json::parse(message.substr(4, length));
+    EXPECT_EQ(header["camera"], "usb-1");
+    EXPECT_EQ(header["sequence"], 7);
+    EXPECT_EQ(header["width"], 640);
+    EXPECT_EQ(message.substr(4 + length), std::string("\xff\xd8\x01\x02", 4));
+}
+
+TEST(Server, PreviewsGoOnlyToSubscribersWithinTheirRateAndWidth)
+{
+    ix::initNetSystem();
+    const int port = 20000 + static_cast<int>(std::random_device{}() % 20000);
+    api::Hello hello;
+    hello.mode = "simulate";
+    api::Server server(port, "127.0.0.1", hello);
+    server.setCameras({{"cam-a", "A", "ok"}});
+    int scaled_to = 0;
+    server.setPreviewScaler(
+        [&] (const std::vector<std::uint8_t>&, int max_width, int& width, int& height)
+        {
+            scaled_to = max_width;
+            width = max_width;
+            height = max_width / 2;
+            return std::vector<std::uint8_t>{0xff, 0xd8};
+        });
+    std::string error;
+    ASSERT_TRUE(server.start(error)) << error;
+
+    TestClient watcher(port);
+    TestClient other(port);
+    ASSERT_FALSE(watcher.next("hello").is_null());
+    ASSERT_FALSE(other.next("hello").is_null());
+    EXPECT_FALSE(server.wantsPreview("cam-a"));
+
+    watcher.send({{"type", "subscribe_preview"}, {"request_id", "1"}, {"camera", "nope"}});
+    EXPECT_EQ(watcher.next("result")["error"]["code"], "unknown_camera");
+    watcher.send({{"type", "subscribe_preview"}, {"request_id", "2"}, {"camera", "cam-a"}, {"max_fps", 2}, {"max_width", 320}});
+    EXPECT_TRUE(watcher.next("result")["ok"]);
+    EXPECT_TRUE(server.wantsPreview("cam-a"));
+
+    const std::vector<std::uint8_t> jpeg(100, 0x42);
+    for(int i = 0; i < 5; ++i)
+    {
+        server.publishPreview({"cam-a", static_cast<std::uint32_t>(i), i, 1280, 720}, jpeg);
+    }
+    const auto received = watcher.binary(1);
+    // At most 2 fps: five frames within a few milliseconds give one.
+    ASSERT_EQ(received.size(), 1u);
+    EXPECT_EQ(scaled_to, 320);
+    const std::uint32_t length = static_cast<std::uint8_t>(received[0][0]);
+    EXPECT_EQ(json::parse(received[0].substr(4, length))["width"], 320);
+    EXPECT_TRUE(other.binary(1, std::chrono::milliseconds(200)).empty());
+
+    watcher.send({{"type", "unsubscribe_preview"}, {"request_id", "3"}, {"camera", "cam-a"}});
+    EXPECT_TRUE(watcher.next("result")["ok"]);
+    EXPECT_FALSE(server.wantsPreview("cam-a"));
     server.stop();
 }

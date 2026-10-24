@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -32,9 +33,15 @@ class EngineConnection extends ChangeNotifier {
   WebSocketChannel? _channel;
   StreamSubscription<dynamic>? _subscription;
   final StreamController<EngineEvent> _events = StreamController.broadcast();
+  final StreamController<PreviewFrame> _previews = StreamController.broadcast();
+
+  /// Latest state per camera from camera_status
+  final Map<String, String> cameraStates = {};
   int _nextRequest = 1;
 
   Stream<EngineEvent> get events => _events.stream;
+
+  Stream<PreviewFrame> get previews => _previews.stream;
 
   bool get isConnected => state == EngineConnectionState.connected;
 
@@ -68,10 +75,7 @@ class EngineConnection extends ChangeNotifier {
   }
 
   Future<void> disconnect() async {
-    await _subscription?.cancel();
-    await _channel?.sink.close();
-    _subscription = null;
-    _channel = null;
+    await _closeChannel();
     hello = null;
     if (state != EngineConnectionState.disconnected) {
       state = EngineConnectionState.disconnected;
@@ -86,13 +90,25 @@ class EngineConnection extends ChangeNotifier {
   }
 
   void _onMessage(dynamic message) {
+    if (message is List<int>) {
+      final frame = PreviewFrame.parse(message is Uint8List ? message : Uint8List.fromList(message));
+      if (frame != null) _previews.add(frame);
+      return;
+    }
     if (message is! String) return;
     final json = jsonDecode(message);
     if (json is! Map<String, dynamic>) return;
     final event = EngineEvent.fromJson(json);
     if (event is EngineHello) {
       hello = event;
+      cameraStates
+        ..clear()
+        ..addAll({for (final c in event.cameras) c: 'ok'});
       state = EngineConnectionState.connected;
+      notifyListeners();
+    }
+    if (event is EngineCameraStatus && cameraStates[event.camera] != event.state) {
+      cameraStates[event.camera] = event.state;
       notifyListeners();
     }
     if (event != null) _events.add(event);
@@ -110,17 +126,33 @@ class EngineConnection extends ChangeNotifier {
   void rejectThrow(String throwId, String reason) =>
       _send({'type': 'reject_throw', 'throw_id': throwId, 'reason': reason});
 
+  void subscribePreview(String camera, {double maxFps = 10, int maxWidth = 640}) =>
+      _send({'type': 'subscribe_preview', 'camera': camera, 'max_fps': maxFps, 'max_width': maxWidth});
+
+  void unsubscribePreview(String camera) => _send({'type': 'unsubscribe_preview', 'camera': camera});
+
   /// A dart the engine missed, entered by hand
   void addThrow(BoardPoint point) => _send({'type': 'add_throw', 'board_point': _pointJson(point)});
 
   /// For tests: feed a message as if the engine had sent it
   @visibleForTesting
-  void receiveForTest(String message) => _onMessage(message);
+  void receiveForTest(Object message) => _onMessage(message);
+
+  Future<void> _closeChannel() async {
+    final subscription = _subscription;
+    final channel = _channel;
+    _subscription = null;
+    _channel = null;
+    await subscription?.cancel();
+    await channel?.sink.close();
+  }
 
   @override
   void dispose() {
-    disconnect();
+    // No notifications after dispose: close the channel without going through disconnect().
+    _closeChannel();
     _events.close();
+    _previews.close();
     super.dispose();
   }
 }

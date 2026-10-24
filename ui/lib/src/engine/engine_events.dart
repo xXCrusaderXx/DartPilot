@@ -1,4 +1,7 @@
 // Messages of the engine API, protocol dartpilot/1.0 (docs/engine-api.md), as Dart objects.
+import 'dart:convert';
+import 'dart:typed_data';
+
 import '../board/dart_throw.dart';
 import '../board/scoring.dart';
 
@@ -105,6 +108,39 @@ class EngineCameraStatus extends EngineEvent {
 
   final String camera;
   final String state;
+}
+
+/// A camera image from the engine (docs/engine-api.md, "Previews")
+class PreviewFrame {
+  const PreviewFrame({
+    required this.camera,
+    required this.sequence,
+    required this.width,
+    required this.height,
+    required this.jpeg,
+  });
+
+  final String camera;
+  final int sequence;
+  final int width;
+  final int height;
+  final Uint8List jpeg;
+
+  /// Binary message: header length as u32 little-endian, the header as JSON, then the JPEG; null if malformed.
+  static PreviewFrame? parse(Uint8List bytes) {
+    if (bytes.length < 4) return null;
+    final length = ByteData.sublistView(bytes, 0, 4).getUint32(0, Endian.little);
+    if (4 + length > bytes.length) return null;
+    final header = jsonDecode(utf8.decode(bytes.sublist(4, 4 + length)));
+    if (header is! Map<String, dynamic>) return null;
+    return PreviewFrame(
+      camera: header['camera'] as String,
+      sequence: header['sequence'] as int,
+      width: header['width'] as int,
+      height: header['height'] as int,
+      jpeg: Uint8List.sublistView(bytes, 4 + length),
+    );
+  }
 }
 
 class EngineStatus extends EngineEvent {

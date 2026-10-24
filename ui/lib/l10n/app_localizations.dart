@@ -505,6 +505,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter them'**
   String get enterManually;
+
+  /// No description provided for @cameras.
+  ///
+  /// In en, this message translates to:
+  /// **'Cameras'**
+  String get cameras;
+
+  /// No description provided for @waitingForImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the first image…'**
+  String get waitingForImage;
+
+  /// No description provided for @cameraOk.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get cameraOk;
+
+  /// No description provided for @cameraDegraded.
+  ///
+  /// In en, this message translates to:
+  /// **'Degraded'**
+  String get cameraDegraded;
+
+  /// No description provided for @cameraLost.
+  ///
+  /// In en, this message translates to:
+  /// **'Lost'**
+  String get cameraLost;
+
+  /// No description provided for @noCameras.
+  ///
+  /// In en, this message translates to:
+  /// **'The engine has no cameras'**
+  String get noCameras;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
