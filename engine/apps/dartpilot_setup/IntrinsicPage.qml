@@ -11,7 +11,9 @@ ColumnLayout {
 
     required property bool active
     required property var cameras
-    readonly property var camera: cameraBox.currentIndex >= 0 && cameraBox.currentIndex < cameras.length ? cameras[cameraBox.currentIndex] : null
+    // Kept here, so refreshing the camera list after a save neither switches the camera nor resets the dropdown
+    property int selected: 0
+    readonly property var camera: selected >= 0 && selected < cameras.length ? cameras[selected] : null
 
     signal saved
 
@@ -58,8 +60,14 @@ ColumnLayout {
 
             Layout.preferredWidth: 340
             model: page.cameras.map((c, i) => "Camera " + (i + 1) + "  ·  USB " + c.usbPort + (c.hasIntrinsics ? (c.intrinsicsWarning === "" ? "  ·  calibrated" : "  ·  calibration not valid") : ""))
+            currentIndex: page.selected
+            // A new model resets the index and choosing an entry breaks the binding, so the selection is set again.
+            onModelChanged: Qt.callLater(() => currentIndex = page.selected)
             // The views belong to one camera; switching starts over.
-            onActivated: view.clearViews()
+            onActivated: index => {
+                page.selected = index;
+                view.clearViews();
+            }
         }
     }
 
