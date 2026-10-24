@@ -31,6 +31,33 @@ struct CameraInfo
     std::string state = "ok";
 };
 
+// Whether darts or other objects are in the board (issue #121): empty, occupied or unknown
+struct CameraBoardState
+{
+    std::string camera;
+    std::string state = "unknown";
+    // Where the object is in the camera's full image
+    std::optional<std::array<double, 2>> image_point_px;
+    std::string reason;
+    // Size of the image the point refers to, so a client can place it in a scaled preview
+    std::array<int, 2> image_size_px{0, 0};
+
+    bool operator==(const CameraBoardState&) const = default;
+};
+
+struct BoardStateInfo
+{
+    std::string state = "unknown";
+    std::vector<CameraBoardState> cameras;
+    // Whether an image of the empty board is stored for every camera
+    bool reference_stored = false;
+
+    bool operator==(const BoardStateInfo&) const = default;
+};
+
+// Overall state from the cameras: occupied if any camera sees an object, empty if all see none, unknown otherwise
+std::string combineBoardState (const std::vector<CameraBoardState>& cameras);
+
 struct Hello
 {
     std::string mode;  // live, replay, simulate
@@ -39,6 +66,7 @@ struct Hello
     std::string board_geometry_source = "nominal";
     std::vector<CameraInfo> cameras;
     std::string detection = "running";
+    BoardStateInfo board_state;
 };
 
 struct CameraContribution
@@ -77,7 +105,9 @@ nlohmann::json toJson (const BoardPoint& point);
 nlohmann::json toJson (const scoring::Score& score);
 nlohmann::json toJson (const scoring::BoardGeometry& geometry, const std::string& source);
 
+nlohmann::json toJson (const BoardStateInfo& board);
 nlohmann::json helloMessage (const Hello& hello);
+nlohmann::json boardStateMessage (const BoardStateInfo& board);
 // The score is derived from the board point with the geometry, as the engine's scorer does it.
 nlohmann::json throwMessage (const Throw& dart, const scoring::BoardGeometry& geometry);
 // action: corrected, rejected or added
@@ -111,6 +141,12 @@ struct SetDetection
 {
     bool running = true;
 };
+struct CheckBoard
+{
+};
+struct StoreEmptyReference
+{
+};
 struct Subscription
 {
     std::string topic;  // status or preview
@@ -120,7 +156,7 @@ struct Subscription
     double max_fps = 0.0;
     int max_width = 0;
 };
-using RequestBody = std::variant<ClientHello, CorrectThrow, RejectThrow, AddThrow, SetDetection, Subscription>;
+using RequestBody = std::variant<ClientHello, CorrectThrow, RejectThrow, AddThrow, SetDetection, Subscription, CheckBoard, StoreEmptyReference>;
 
 struct Request
 {

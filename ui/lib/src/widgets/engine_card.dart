@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../engine/engine_connection.dart';
 import '../screens/cameras_screen.dart';
+import 'board_check.dart';
 
 /// Engine address, connect button and connection state, on the home screen.
 class EngineCard extends StatefulWidget {
@@ -80,6 +81,7 @@ class _EngineCardState extends State<EngineCard> {
                     : FilledButton(onPressed: () => engine.connect(_url.text.trim()), child: Text(l10n.connect)),
               ],
             ),
+            if (connected) const BoardStateRow(),
           ],
         ),
       ),

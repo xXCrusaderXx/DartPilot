@@ -282,4 +282,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get latency => 'Latency';
+
+  @override
+  String get boardOccupiedTitle => 'Pull the darts out of the board';
+
+  @override
+  String get boardOccupiedText => 'The cameras see something in the board. Pull out the darts before the game starts.';
+
+  @override
+  String get boardOccupiedBanner => 'Darts in the board';
+
+  @override
+  String get checkBoardAgain => 'Check again';
+
+  @override
+  String get startAnyway => 'Start anyway';
+
+  @override
+  String get show => 'Show';
+
+  @override
+  String get emptyReferenceMissing => 'No image of the empty board stored';
+
+  @override
+  String get storeEmptyReference => 'Store empty board';
+
+  @override
+  String get emptyReferenceStored => 'Empty board stored';
+
+  @override
+  String get boardNotEmpty => 'The board is not empty; pull out the darts first.';
+
+  @override
+  String get storeReferenceFailed => 'Could not store the empty board';
 }

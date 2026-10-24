@@ -83,5 +83,16 @@
   "expandAll": "Alle aufklappen",
   "collapseAll": "Alle zuklappen",
   "tapToEnlarge": "Tippe auf das Bild, um es zu vergrößern",
-  "latency": "Latenz"
+  "latency": "Latenz",
+  "boardOccupiedTitle": "Darts aus der Scheibe ziehen",
+  "boardOccupiedText": "Die Kameras sehen etwas in der Scheibe. Zieh die Darts heraus, bevor das Spiel beginnt.",
+  "boardOccupiedBanner": "Darts in der Scheibe",
+  "checkBoardAgain": "Erneut prüfen",
+  "startAnyway": "Trotzdem starten",
+  "show": "Anzeigen",
+  "emptyReferenceMissing": "Kein Bild der leeren Scheibe gespeichert",
+  "storeEmptyReference": "Leere Scheibe speichern",
+  "emptyReferenceStored": "Leere Scheibe gespeichert",
+  "boardNotEmpty": "Die Scheibe ist nicht leer; zieh zuerst die Darts.",
+  "storeReferenceFailed": "Leere Scheibe konnte nicht gespeichert werden"
 }

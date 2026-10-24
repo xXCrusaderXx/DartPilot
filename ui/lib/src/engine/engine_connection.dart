@@ -36,6 +36,9 @@ class EngineConnection extends ChangeNotifier {
   String url = defaultUrl;
   EngineConnectionState state = EngineConnectionState.disconnected;
   EngineHello? hello;
+
+  /// Latest board check of the engine; null when it has none
+  EngineBoardState? boardState;
   String? error;
 
   WebSocketChannel? _channel;
@@ -52,6 +55,7 @@ class EngineConnection extends ChangeNotifier {
   final Map<String, List<PreviewHandle>> _previewHandles = {};
   int _statusSubscribers = 0;
   int _nextRequest = 1;
+  final Map<String, Completer<String?>> _pending = {};
 
   Stream<EngineEvent> get events => _events.stream;
 
@@ -91,6 +95,7 @@ class EngineConnection extends ChangeNotifier {
   Future<void> disconnect() async {
     await _closeChannel();
     hello = null;
+    boardState = null;
     if (state != EngineConnectionState.disconnected) {
       state = EngineConnectionState.disconnected;
       notifyListeners();
@@ -112,13 +117,27 @@ class EngineConnection extends ChangeNotifier {
     if (message is! String) return;
     final json = jsonDecode(message);
     if (json is! Map<String, dynamic>) return;
+    if (json['type'] == 'result') {
+      final error = json['error'];
+      _pending
+          .remove(json['request_id'])
+          ?.complete(
+            json['ok'] == true ? null : (error is Map<String, dynamic> ? error['code'] as String? : null) ?? 'failed',
+          );
+      return;
+    }
     final event = EngineEvent.fromJson(json);
     if (event is EngineHello) {
       hello = event;
+      boardState = event.boardState;
       cameraStatus
         ..clear()
         ..addAll({for (final c in event.cameras) c: EngineCameraStatus(c, 'ok')});
       state = EngineConnectionState.connected;
+      notifyListeners();
+    }
+    if (event is EngineBoardState) {
+      boardState = event;
       notifyListeners();
     }
     if (event is EngineCameraStatus) {
@@ -128,13 +147,23 @@ class EngineConnection extends ChangeNotifier {
     if (event != null) _events.add(event);
   }
 
-  void _send(Map<String, dynamic> request) {
+  /// Returns the request id, which the engine's result carries
+  String _send(Map<String, dynamic> request) {
+    final id = '${_nextRequest++}';
     final testSink = _testSink;
     if (testSink != null) {
       testSink(request);
-      return;
+      return id;
     }
-    _channel?.sink.add(jsonEncode({'request_id': '${_nextRequest++}', ...request}));
+    _channel?.sink.add(jsonEncode({'request_id': id, ...request}));
+    return id;
+  }
+
+  /// Sends a request and completes with the error code of its result, or null when it succeeded
+  Future<String?> _request(Map<String, dynamic> request) {
+    final completer = Completer<String?>();
+    _pending[_send(request)] = completer;
+    return completer.future;
   }
 
   static Map<String, dynamic> _pointJson(BoardPoint p) => {'x_mm': p.xMm, 'y_mm': p.yMm};
@@ -181,6 +210,12 @@ class EngineConnection extends ChangeNotifier {
     if (_statusSubscribers > 0 && --_statusSubscribers == 0) _send({'type': 'unsubscribe_status'});
   }
 
+  /// Asks the engine to check the board now; the answer arrives as [boardState]
+  void checkBoard() => _send({'type': 'check_board'});
+
+  /// Stores the current images as the empty board; the error code if that failed, e.g. board_not_empty
+  Future<String?> storeEmptyReference() => _request({'type': 'store_empty_reference'});
+
   /// A dart the engine missed, entered by hand
   void addThrow(BoardPoint point) => _send({'type': 'add_throw', 'board_point': _pointJson(point)});
 
@@ -193,6 +228,10 @@ class EngineConnection extends ChangeNotifier {
     final channel = _channel;
     _subscription = null;
     _channel = null;
+    for (final pending in _pending.values) {
+      pending.complete('disconnected');
+    }
+    _pending.clear();
     await subscription?.cancel();
     await channel?.sink.close();
   }

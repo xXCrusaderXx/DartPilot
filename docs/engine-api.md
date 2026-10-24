@@ -38,7 +38,8 @@ Sent once after the connection opens.
     "source": "measured"
   },
   "cameras": [ { "id": "usb-2.4.3.1.2", "name": "USB Camera: USB Camera", "state": "ok" } ],
-  "detection": "running"
+  "detection": "running",
+  "board_state": { "state": "empty", "cameras": [ { "camera": "usb-2.4.3.1.2", "state": "empty", "image_point_px": null, "image_size_px": [ 1280, 720 ], "reason": "" } ], "reference": "stored" }
 }
 ```
 
@@ -46,6 +47,7 @@ Sent once after the connection opens.
 - `session_id`: the session being recorded or replayed, if any, so client and recording can be matched.
 - `board_geometry`: the boundaries the engine's scorer uses. `source` is `nominal` (tournament dimensions) or `measured` (derived from the calibration's board model, #13/#47). A client that scores or draws the board uses these values, so it agrees with the engine.
 - `detection`: `running`, `paused` or `unavailable` (e.g. not calibrated); see `engine_status`.
+- `board_state`: whether the board is empty; see `board_state`.
 
 ### throw
 
@@ -120,6 +122,28 @@ Sent when a camera's state changes and once per second while a client watches st
 
 `brightness` (mean image brightness 0–255) and `latency_ms` (arrival minus exposure of the latest frame) are `null` when unknown. `state` is `ok`, `degraded` (frames lost or the calibration check found a moved camera) or `lost` (no frames).
 
+### board_state
+
+Sent to every client when the board state changes (#121). The engine compares each camera's image of the still board with the stored image of the empty board.
+
+```json
+{
+  "type": "board_state",
+  "state": "occupied",
+  "cameras": [
+    { "camera": "usb-2.4.3.1.2", "state": "occupied", "image_point_px": [ 702.5, 311.0 ], "image_size_px": [ 1280, 720 ], "reason": "object on the board" },
+    { "camera": "usb-2.4.3.1.3", "state": "unknown", "image_point_px": null, "image_size_px": [ 1280, 720 ], "reason": "board is moving" }
+  ],
+  "reference": "stored"
+}
+```
+
+- `state` per camera: `empty`, `occupied` or `unknown` (no reference, no calibration, or the image is not still). The overall `state` is `occupied` if any camera sees an object, `empty` if all cameras see an empty board, and `unknown` otherwise.
+- `image_point_px`: where the object is in the camera's image of size `image_size_px` (e.g. 1280×720); a client scales it to mark the object in a preview. `null` when there is none.
+- `reference`: `stored` or `missing`, whether the engine has an image of the empty board.
+
+A client warns the player to pull out the darts when the board is occupied before a game starts, not during a visit, where darts in the board are normal.
+
 ### engine_status
 
 ```json
@@ -134,7 +158,7 @@ The answer to every client request that has a `request_id`.
 { "type": "result", "request_id": "7", "ok": false, "error": { "code": "unknown_throw", "message": "No throw 20261024T190000Z-7c1e/99" } }
 ```
 
-Error codes: `bad_request`, `unknown_type`, `unknown_throw`, `unknown_camera`, `not_available`.
+Error codes: `bad_request`, `unknown_type`, `unknown_throw`, `unknown_camera`, `not_available`, `board_not_empty`.
 
 ## Client → engine
 
@@ -148,6 +172,8 @@ Every request carries a `request_id` chosen by the client and is answered with `
 | `add_throw` | `board_point` | Adds a dart the engine missed |
 | `pause_detection` / `resume_detection` | – | E.g. while the user calibrates or retrieves a dart that fell out |
 | `subscribe_status` / `unsubscribe_status` | – | Periodic `camera_status` |
+| `check_board` | – | Checks the board now; the answer comes as `board_state` |
+| `store_empty_reference` | – | Stores the current images as the empty board; fails with `board_not_empty` while a camera sees an object |
 | `subscribe_preview` | `camera`, `max_fps`, `max_width` | Starts preview frames of a camera |
 | `unsubscribe_preview` | `camera` | Stops them |
 
@@ -179,7 +205,7 @@ The engine sends the camera's own JPEG when it fits `max_width`, otherwise a sca
 
 ## Implementation status
 
-`dartpilot serve --simulate` implements the protocol with simulated darts, takeouts and camera states (`engine/api`), and the player app connects to it (`ui/lib/src/engine/`). Previews work for simulated cameras (drawn board with the darts of the visit) and, with `--simulate --cameras`, for the real cameras, which then also report their status. Not implemented yet: live detection (needs the detection pipeline), `--replay`, and storing corrections in a recorded session.
+`dartpilot serve --simulate` implements the protocol with simulated darts, takeouts and camera states (`engine/api`), and the player app connects to it (`ui/lib/src/engine/`). Previews work for simulated cameras (drawn board with the darts of the visit) and, with `--simulate --cameras`, for the real cameras, which then also report their status. The simulator reports an empty board, occupied while darts are in it (`--occupied`: darts in the board at start, pulled out after the takeout delay); with `--cameras` the board state stays `unknown` until the live board check is wired in. Not implemented yet: live detection (needs the detection pipeline), `--replay`, and storing corrections in a recorded session.
 
 ## Not in version 1
 

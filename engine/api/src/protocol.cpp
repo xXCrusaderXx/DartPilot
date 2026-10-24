@@ -82,6 +82,50 @@ json toJson (const scoring::BoardGeometry& geometry, const std::string& source)
             {"source", source}};
 }
 
+std::string combineBoardState (const std::vector<CameraBoardState>& cameras)
+{
+    if(cameras.empty())
+    {
+        return "unknown";
+    }
+    bool all_empty = true;
+    for(const auto& camera : cameras)
+    {
+        if(camera.state == "occupied")
+        {
+            return "occupied";
+        }
+        all_empty = all_empty && camera.state == "empty";
+    }
+    return all_empty ? "empty" : "unknown";
+}
+
+json toJson (const BoardStateInfo& board)
+{
+    json cameras = json::array();
+    for(const auto& camera : board.cameras)
+    {
+        json entry = {{"camera", camera.camera},
+                      {"state", camera.state},
+                      {"image_point_px", nullptr},
+                      {"reason", camera.reason},
+                      {"image_size_px", {camera.image_size_px[0], camera.image_size_px[1]}}};
+        if(camera.image_point_px)
+        {
+            entry["image_point_px"] = {(*camera.image_point_px)[0], (*camera.image_point_px)[1]};
+        }
+        cameras.push_back(entry);
+    }
+    return {{"state", board.state}, {"cameras", cameras}, {"reference", board.reference_stored ? "stored" : "missing"}};
+}
+
+json boardStateMessage (const BoardStateInfo& board)
+{
+    json out = toJson(board);
+    out["type"] = "board_state";
+    return out;
+}
+
 json helloMessage (const Hello& hello)
 {
     json cameras = json::array();
@@ -96,7 +140,8 @@ json helloMessage (const Hello& hello)
             {"session_id", hello.session_id.empty() ? json(nullptr) : json(hello.session_id)},
             {"board_geometry", toJson(hello.board_geometry, hello.board_geometry_source)},
             {"cameras", cameras},
-            {"detection", hello.detection}};
+            {"detection", hello.detection},
+            {"board_state", toJson(hello.board_state)}};
 }
 
 json throwMessage (const Throw& dart, const scoring::BoardGeometry& geometry)
@@ -240,6 +285,14 @@ std::variant<Request, ParseError> parseRequest (const std::string& text)
         else if(type == "pause_detection" || type == "resume_detection")
         {
             request.body = SetDetection{type == "resume_detection"};
+        }
+        else if(type == "check_board")
+        {
+            request.body = CheckBoard{};
+        }
+        else if(type == "store_empty_reference")
+        {
+            request.body = StoreEmptyReference{};
         }
         else if(type == "subscribe_status" || type == "unsubscribe_status")
         {

@@ -1,6 +1,7 @@
 // Messages of the engine API, protocol dartpilot/1.0 (docs/engine-api.md), as Dart objects.
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:ui' show Offset, Size;
 
 import '../board/dart_throw.dart';
 import '../board/scoring.dart';
@@ -15,6 +16,7 @@ sealed class EngineEvent {
     'throw_corrected' => EngineThrowCorrected.fromJson(json),
     'takeout' => EngineTakeout(json['darts_removed'] as int? ?? 0),
     'camera_status' => EngineCameraStatus.fromJson(json),
+    'board_state' => EngineBoardState.fromJson(json),
     'engine_status' => EngineStatus(json['detection'] as String, json['message'] as String? ?? ''),
     _ => null,
   };
@@ -26,12 +28,21 @@ BoardPoint? _point(Object? json) {
 }
 
 class EngineHello extends EngineEvent {
-  const EngineHello({required this.protocol, required this.mode, required this.geometry, required this.cameras});
+  const EngineHello({
+    required this.protocol,
+    required this.mode,
+    required this.geometry,
+    required this.cameras,
+    this.boardState,
+  });
 
   final String protocol;
   final String mode;
   final BoardGeometry geometry;
   final List<String> cameras;
+
+  /// Missing with engines before the board check
+  final EngineBoardState? boardState;
 
   factory EngineHello.fromJson(Map<String, dynamic> json) {
     final g = json['board_geometry'] as Map<String, dynamic>;
@@ -49,6 +60,9 @@ class EngineHello extends EngineEvent {
         wireRotationDeg: r('wire_rotation_deg'),
       ),
       cameras: [for (final c in json['cameras'] as List<dynamic>) (c as Map<String, dynamic>)['id'] as String],
+      boardState: json['board_state'] is Map<String, dynamic>
+          ? EngineBoardState.fromJson(json['board_state'] as Map<String, dynamic>)
+          : null,
     );
   }
 }
@@ -168,6 +182,55 @@ class PreviewFrame {
       width: header['width'] as int,
       height: header['height'] as int,
       jpeg: Uint8List.sublistView(bytes, 4 + length),
+    );
+  }
+}
+
+/// Whether the board is empty, per camera and overall (docs/engine-api.md, "board_state")
+class EngineBoardState extends EngineEvent {
+  const EngineBoardState(this.state, {this.cameras = const [], this.referenceStored = false});
+
+  /// empty, occupied or unknown
+  final String state;
+  final List<CameraBoardState> cameras;
+  final bool referenceStored;
+
+  bool get occupied => state == 'occupied';
+
+  factory EngineBoardState.fromJson(Map<String, dynamic> json) => EngineBoardState(
+    json['state'] as String? ?? 'unknown',
+    cameras: [
+      for (final c in json['cameras'] as List<dynamic>? ?? const [])
+        CameraBoardState.fromJson(c as Map<String, dynamic>),
+    ],
+    referenceStored: json['reference'] == 'stored',
+  );
+}
+
+class CameraBoardState {
+  const CameraBoardState(this.camera, this.state, {this.imagePointPx, this.imageSizePx, this.reason = ''});
+
+  final String camera;
+  final String state;
+
+  /// Where the camera sees the object, in an image of [imageSizePx]
+  final Offset? imagePointPx;
+  final Size? imageSizePx;
+  final String reason;
+
+  bool get occupied => state == 'occupied';
+
+  factory CameraBoardState.fromJson(Map<String, dynamic> json) {
+    final point = json['image_point_px'] as List<dynamic>?;
+    final size = json['image_size_px'] as List<dynamic>?;
+    return CameraBoardState(
+      json['camera'] as String,
+      json['state'] as String? ?? 'unknown',
+      imagePointPx: point == null ? null : Offset((point[0] as num).toDouble(), (point[1] as num).toDouble()),
+      imageSizePx: size == null || (size[0] as num) <= 0
+          ? null
+          : Size((size[0] as num).toDouble(), (size[1] as num).toDouble()),
+      reason: json['reason'] as String? ?? '',
     );
   }
 }

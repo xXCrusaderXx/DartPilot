@@ -23,11 +23,12 @@ void onInterrupt (int) { interrupted = true; }
 int usage ()
 {
     std::fprintf(stderr,
-                 "Usage: dartpilot serve --simulate [--cameras] [--listen ADDRESS] [--port N] [--seed N] [--interval MS]\n"
+                 "Usage: dartpilot serve --simulate [--cameras] [--listen ADDRESS] [--port N] [--seed N] [--interval MS] [--occupied]\n"
                  "  --simulate     darts, takeouts and camera states without cameras\n"
                  "  --cameras      previews and status from the real cameras; darts stay simulated\n"
                  "  --listen       address to listen on (default 127.0.0.1; 0.0.0.0 for the whole network)\n"
-                 "  --port         default 8484\n");
+                 "  --port         default 8484\n"
+                 "  --occupied     darts are in the board at start (board check warning)\n");
     return 2;
 }
 }  // namespace
@@ -61,6 +62,10 @@ int runServe (int argc, char* argv[])
         else if(arg == "--seed" && i + 1 < argc)
         {
             settings.seed = static_cast<std::uint32_t>(std::strtoul(argv[++i], nullptr, 10));
+        }
+        else if(arg == "--occupied")
+        {
+            settings.occupied_at_start = true;
         }
         else if(arg == "--interval" && i + 1 < argc)
         {
@@ -99,6 +104,7 @@ int runServe (int argc, char* argv[])
         }
         server.setCameras(infos);
         settings.camera_status = false;
+        settings.board_state = false;
     }
     else
     {

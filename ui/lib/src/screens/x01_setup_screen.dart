@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../games/x01.dart';
+import '../widgets/board_check.dart';
 import '../widgets/player_names.dart';
 import 'x01_screen.dart';
 
@@ -25,7 +26,8 @@ class _X01SetupScreenState extends State<X01SetupScreen> {
     super.dispose();
   }
 
-  void _start() {
+  Future<void> _start() async {
+    if (!await confirmBoardEmpty(context) || !mounted) return;
     final l10n = AppLocalizations.of(context);
     final settings = X01Settings(
       players: _players.names(l10n),
