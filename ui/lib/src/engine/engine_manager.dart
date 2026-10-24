@@ -173,7 +173,6 @@ class EngineManager extends ChangeNotifier {
   }
 }
 
-/// The engine program: $DARTPILOT_ENGINE, next to the app (installed together), or on the PATH.
 /// Whether [path] is the engine: its program carries the usage text of `dartpilot serve`. A program of the same name
 /// may be an app of an older version, which would start itself again.
 bool looksLikeEngine(String path) {
@@ -193,12 +192,16 @@ bool isOwnExecutable(String path) {
   }
 }
 
+/// The engine program: $DARTPILOT_ENGINE, the one shipped with the app (engine/ next to it), next to the app, or on
+/// the PATH.
 String? findEngineExecutable() {
   final name = Platform.isWindows ? 'dartpilot.exe' : 'dartpilot';
   final configured = Platform.environment['DARTPILOT_ENGINE'];
   if (configured != null && configured.isNotEmpty) return configured;
   final appDirectory = File(Platform.resolvedExecutable).parent.path;
   for (final directory in [
+    // The engine shipped with the app comes first.
+    '$appDirectory${Platform.pathSeparator}engine',
     appDirectory,
     '$appDirectory/lib',
     ...?Platform.environment['PATH']?.split(Platform.isWindows ? ';' : ':'),
