@@ -17,6 +17,7 @@ sealed class EngineEvent {
     'takeout' => EngineTakeout(json['darts_removed'] as int? ?? 0),
     'camera_status' => EngineCameraStatus.fromJson(json),
     'board_state' => EngineBoardState.fromJson(json),
+    'board_image' => BoardImage.fromJson(json),
     'diagnosis' => EngineDiagnosis.fromJson(json),
     'calibration_status' => CalibrationStatus.fromJson(json),
     'white_balance' => WhiteBalanceState.fromJson(json),
@@ -631,5 +632,21 @@ class CameraRefinement {
     uncertaintyMm: _number(json['uncertainty_mm']),
     lensFrom: json['lens_from'] as String?,
     advice: json['advice'] as String?,
+  );
+}
+
+/// The real board seen from the front, in board coordinates (docs/engine-api.md, "Board image"): the point (x, y) mm
+/// lies at column (x + radiusMm) / mmPerPx and row (radiusMm - y) / mmPerPx.
+class BoardImage extends EngineEvent {
+  const BoardImage({required this.jpeg, required this.radiusMm, required this.mmPerPx});
+
+  final Uint8List jpeg;
+  final double radiusMm;
+  final double mmPerPx;
+
+  factory BoardImage.fromJson(Map<String, dynamic> json) => BoardImage(
+    jpeg: base64Decode(json['jpeg_base64'] as String),
+    radiusMm: (json['radius_mm'] as num).toDouble(),
+    mmPerPx: (json['mm_per_px'] as num).toDouble(),
   );
 }
