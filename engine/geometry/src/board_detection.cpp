@@ -582,22 +582,28 @@ std::optional<BoardDetection> detectBoard (const cv::Mat& bgr)
         // The lens bends straight wires slightly towards the image edge, so the wire is followed as a parabola beside
         // the line: offset = a + b s + c s^2 at the distance s from the bull's foot point.
         const cv::Point2f normal(dir.y, -dir.x);
-        cv::Mat design(static_cast<int>(points.size()), 3, CV_64F), offsets(static_cast<int>(points.size()), 1, CV_64F);
+        // With few points (a dart hiding the others) the bend is not fitted; the system must never be under-determined.
+        const int terms = points.size() >= kMinPointsForBend ? 3 : 2;
+        cv::Mat design(static_cast<int>(points.size()), terms, CV_64F), offsets(static_cast<int>(points.size()), 1, CV_64F);
         for(std::size_t k = 0; k < points.size(); ++k)
         {
             const double s_px = (points[k] - foot).dot(dir);
             design.at<double>(static_cast<int>(k), 0) = 1.0;
             design.at<double>(static_cast<int>(k), 1) = s_px;
-            design.at<double>(static_cast<int>(k), 2) = points.size() >= kMinPointsForBend ? s_px * s_px : 0.0;
+            if(terms == 3)
+            {
+                design.at<double>(static_cast<int>(k), 2) = s_px * s_px;
+            }
             offsets.at<double>(static_cast<int>(k)) = (points[k] - foot).dot(normal);
         }
         cv::Mat bend;
         cv::solve(design, offsets, bend, cv::DECOMP_SVD);
         const cv::Mat residuals = design * bend - offsets;
         const double wire_rms_px = std::sqrt(residuals.dot(residuals) / points.size());
+        const double curvature = terms == 3 ? bend.at<double>(2) : 0.0;
         const auto onWire = [&] (double s_px)
         {
-            const double offset_px = bend.at<double>(0) + bend.at<double>(1) * s_px + bend.at<double>(2) * s_px * s_px;
+            const double offset_px = bend.at<double>(0) + bend.at<double>(1) * s_px + curvature * s_px * s_px;
             return foot + dir * static_cast<float>(s_px) + normal * static_cast<float>(offset_px);
         };
 
