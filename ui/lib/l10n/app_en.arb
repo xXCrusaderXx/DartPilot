@@ -23,5 +23,52 @@
   "points": "Points",
   "average": "3-dart average",
   "newVisit": "Next visit",
-  "noThrowsYet": "Tap the board or use the keypad"
+  "noThrowsYet": "Tap the board or use the keypad",
+  "x01Setup": "New X01 game",
+  "players": "Players",
+  "addPlayer": "Add player",
+  "playerName": "Player {number}",
+  "@playerName": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "startScore": "Start score",
+  "doubleIn": "Double in",
+  "doubleOut": "Double out",
+  "legsToWin": "Legs to win",
+  "startGame": "Start game",
+  "leg": "Leg {number}",
+  "@leg": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "legs": "Legs",
+  "checkout": "Checkout",
+  "bust": "Bust",
+  "notIn": "not in",
+  "legWonBy": "{name} wins the leg",
+  "@legWonBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "matchWonBy": "{name} wins!",
+  "@matchWonBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "newGame": "New game",
+  "backToMenu": "Menu",
+  "removePlayer": "Remove player"
 }

@@ -80,4 +80,69 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get noThrowsYet => 'Tippe auf die Scheibe oder nutze das Tastenfeld';
+
+  @override
+  String get x01Setup => 'Neues X01-Spiel';
+
+  @override
+  String get players => 'Spieler';
+
+  @override
+  String get addPlayer => 'Spieler hinzufügen';
+
+  @override
+  String playerName(int number) {
+    return 'Spieler $number';
+  }
+
+  @override
+  String get startScore => 'Startpunktzahl';
+
+  @override
+  String get doubleIn => 'Double-In';
+
+  @override
+  String get doubleOut => 'Double-Out';
+
+  @override
+  String get legsToWin => 'Legs zum Sieg';
+
+  @override
+  String get startGame => 'Spiel starten';
+
+  @override
+  String leg(int number) {
+    return 'Leg $number';
+  }
+
+  @override
+  String get legs => 'Legs';
+
+  @override
+  String get checkout => 'Checkout';
+
+  @override
+  String get bust => 'Überworfen';
+
+  @override
+  String get notIn => 'nicht drin';
+
+  @override
+  String legWonBy(String name) {
+    return '$name gewinnt das Leg';
+  }
+
+  @override
+  String matchWonBy(String name) {
+    return '$name gewinnt!';
+  }
+
+  @override
+  String get newGame => 'Neues Spiel';
+
+  @override
+  String get backToMenu => 'Menü';
+
+  @override
+  String get removePlayer => 'Spieler entfernen';
 }

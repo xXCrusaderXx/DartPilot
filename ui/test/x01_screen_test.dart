@@ -1,0 +1,50 @@
+import 'package:dartpilot/src/app.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  testWidgets('a whole 301 game with the keypad', (tester) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(const DartPilotApp(locale: Locale('de')));
+    await tester.tap(find.text('X01'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('player-name-0')), 'Anna');
+    await tester.tap(find.text('301'));
+    await tester.tap(find.text('Spiel starten'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Tastenfeld'));
+    await tester.pumpAndSettle();
+    Future<void> dart(String modifier, String key) async {
+      if (modifier.isNotEmpty) {
+        await tester.tap(find.text(modifier));
+        await tester.pump();
+      }
+      await tester.tap(find.byKey(ValueKey(key)));
+      await tester.pumpAndSettle();
+    }
+
+    for (var i = 0; i < 3; ++i) {
+      await dart('Triple', 'keypad-20');
+    }
+    expect(tester.widget<Text>(find.byKey(const ValueKey('remaining-Anna'))).data, '121');
+    for (var i = 0; i < 3; ++i) {
+      await dart('', 'keypad-miss');
+    }
+    expect(tester.widget<Text>(find.byKey(const ValueKey('remaining-Spieler 2'))).data, '301');
+    expect(tester.widget<Text>(find.byKey(const ValueKey('checkout'))).data, 'T20  T15  D8');
+
+    await dart('Triple', 'keypad-20');
+    await dart('Triple', 'keypad-15');
+    await dart('Double', 'keypad-8');
+    expect(find.text('Anna gewinnt!'), findsOneWidget);
+
+    // Undo from the dialog takes the winning dart back.
+    await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text('Rückgängig')));
+    await tester.pumpAndSettle();
+    expect(tester.widget<Text>(find.byKey(const ValueKey('remaining-Anna'))).data, '16');
+  });
+}
