@@ -4,6 +4,8 @@ import '../../l10n/app_localizations.dart';
 import '../board/dart_throw.dart';
 import '../games/around_the_clock.dart';
 import '../input/game_input.dart';
+import '../stats/game_record.dart';
+import '../stats/statistics.dart';
 import '../widgets/winner_dialog.dart';
 import 'game_layout.dart';
 import 'players_setup_screen.dart';
@@ -27,8 +29,19 @@ class AroundTheClockScreen extends StatefulWidget {
   State<AroundTheClockScreen> createState() => _AroundTheClockScreenState();
 }
 
-class _AroundTheClockScreenState extends State<AroundTheClockScreen> {
+class _AroundTheClockScreenState extends State<AroundTheClockScreen> with RecordsGame {
   late final AroundTheClockGame _game = AroundTheClockGame(widget.names, endWithBull: widget.endWithBull);
+
+  @override
+  GameRecord buildRecord(String id, DateTime started, DateTime ended) => GameRecord(
+    id: id,
+    mode: GameMode.aroundTheClock,
+    started: started,
+    ended: ended,
+    players: widget.names,
+    settings: {'end_with_bull': widget.endWithBull},
+    throws: _game.throws,
+  );
 
   void _add(DartThrow dart) {
     setState(() => _game.add(dart));

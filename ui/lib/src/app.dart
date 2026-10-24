@@ -7,10 +7,11 @@ import '../l10n/app_localizations.dart';
 import 'engine/engine_choice.dart';
 import 'engine/engine_connection.dart';
 import 'engine/engine_manager.dart';
+import 'stats/statistics.dart';
 import 'screens/main_shell.dart';
 
 class DartPilotApp extends StatefulWidget {
-  const DartPilotApp({super.key, this.locale, this.engine, this.manager, this.settings});
+  const DartPilotApp({super.key, this.locale, this.engine, this.manager, this.settings, this.statistics});
 
   /// Fixed locale for tests; the system language otherwise
   final Locale? locale;
@@ -23,6 +24,9 @@ class DartPilotApp extends StatefulWidget {
   final EngineManager? manager;
   final EngineSettings? settings;
 
+  /// Played games for the statistics; kept in memory only when none is given (tests), main() gives the stored ones
+  final Statistics? statistics;
+
   @override
   State<DartPilotApp> createState() => _DartPilotAppState();
 }
@@ -33,6 +37,7 @@ class _DartPilotAppState extends State<DartPilotApp> {
       widget.manager ?? (widget.engine == null && EngineManager.supported ? EngineManager() : null);
   late EngineSettings _settings = widget.settings ?? EngineSettings();
   late final AppLifecycleListener _lifecycle;
+  late final Statistics _statistics = widget.statistics ?? Statistics(MemoryGameStore());
 
   @override
   void initState() {
@@ -87,7 +92,10 @@ class _DartPilotAppState extends State<DartPilotApp> {
     );
     return EngineScope(
       connection: _engine,
-      child: manager == null ? app : LocalEngineScope(manager: manager, settings: _settings, child: app),
+      child: StatisticsScope(
+        statistics: _statistics,
+        child: manager == null ? app : LocalEngineScope(manager: manager, settings: _settings, child: app),
+      ),
     );
   }
 }

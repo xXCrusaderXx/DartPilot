@@ -755,4 +755,114 @@ class AppLocalizationsDe extends AppLocalizations {
   String resultFewDarts(int done, int target) {
     return 'Nur $done von $target Darts gemessen; die Befunde zu Darts sind weniger sicher.';
   }
+
+  @override
+  String get navStatistics => 'Statistik';
+
+  @override
+  String get statisticsEmpty =>
+      'Noch keine Statistik. Wer mit eigenem Namen spielt (nicht „Spieler 1“), bekommt nach dem ersten Spiel eine Statistik.';
+
+  @override
+  String statsGamesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Spiele', one: '1 Spiel');
+    return '$_temp0';
+  }
+
+  @override
+  String get statsGames => 'Spiele';
+
+  @override
+  String statsWon(int count) {
+    return '$count gewonnen';
+  }
+
+  @override
+  String get statsDarts => 'Darts';
+
+  @override
+  String get statsFirst9 => 'First-9-Average';
+
+  @override
+  String get statsLegs => 'Legs';
+
+  @override
+  String get statsBestLeg => 'Bestes Leg';
+
+  @override
+  String statsDartsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Darts', one: '1 Dart');
+    return '$_temp0';
+  }
+
+  @override
+  String get statsCheckoutRate => 'Checkout-Quote';
+
+  @override
+  String get statsHighestFinish => 'Höchstes Finish';
+
+  @override
+  String get statsMarksPerRound => 'Marks pro Runde';
+
+  @override
+  String get statsClockHitRate => 'Around-the-Clock-Treffer';
+
+  @override
+  String get periodLastGame => 'Letztes Spiel';
+
+  @override
+  String get periodWeek => '7 Tage';
+
+  @override
+  String get periodMonth => '30 Tage';
+
+  @override
+  String get periodAll => 'Gesamt';
+
+  @override
+  String get statsNoGamesInPeriod => 'Keine Spiele in diesem Zeitraum.';
+
+  @override
+  String get statsHits => 'Wo die Darts landeten';
+
+  @override
+  String get ringTriple => 'Triple';
+
+  @override
+  String get ringDouble => 'Double';
+
+  @override
+  String get ringSingleInner => 'Single (innen)';
+
+  @override
+  String get ringSingleOuter => 'Single (außen)';
+
+  @override
+  String get ringOuterBull => 'Single-Bull';
+
+  @override
+  String get ringBull => 'Bull';
+
+  @override
+  String get ringMiss => 'Daneben';
+
+  @override
+  String get statsFavouriteDoubles => 'Beendet auf';
+
+  @override
+  String get statsHistory => 'Spiele';
+
+  @override
+  String statsOpponents(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'gegen $count Spieler',
+      one: 'gegen 1 Spieler',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get statsSolo => 'solo';
 }
