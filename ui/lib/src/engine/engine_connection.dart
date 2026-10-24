@@ -48,6 +48,15 @@ class EngineConnection extends ChangeNotifier {
 
   /// Latest state of the setup diagnosis; null before it ran
   EngineDiagnosis? diagnosis;
+
+  /// What is calibrated; null without cameras
+  CalibrationStatus? calibration;
+
+  /// Latest results of the calibration steps, for the wizard
+  WhiteBalanceState? whiteBalance;
+  final Map<String, BoardDetection> boardDetections = {};
+  final Map<String, BoardPlaneResult> boardPlanes = {};
+  RefinementResult? refinement;
   String? error;
 
   WebSocketChannel? _channel;
@@ -106,6 +115,7 @@ class EngineConnection extends ChangeNotifier {
     hello = null;
     boardState = null;
     diagnosis = null;
+    _clearCalibration();
     if (state != EngineConnectionState.disconnected) {
       state = EngineConnectionState.disconnected;
       notifyListeners();
@@ -141,10 +151,34 @@ class EngineConnection extends ChangeNotifier {
       hello = event;
       boardState = event.boardState;
       diagnosis = null;
+      _clearCalibration();
+      calibration = event.calibration;
       cameraStatus
         ..clear()
         ..addAll({for (final c in event.cameras) c: EngineCameraStatus(c, 'ok')});
       state = EngineConnectionState.connected;
+      notifyListeners();
+    }
+    switch (event) {
+      case CalibrationStatus():
+        calibration = event;
+      case WhiteBalanceState():
+        whiteBalance = event;
+      case BoardDetection():
+        boardDetections[event.camera] = event;
+        boardPlanes.remove(event.camera);
+      case BoardPlaneResult():
+        boardPlanes[event.camera] = event;
+      case RefinementResult():
+        refinement = event;
+      default:
+        break;
+    }
+    if (event is CalibrationStatus ||
+        event is WhiteBalanceState ||
+        event is BoardDetection ||
+        event is BoardPlaneResult ||
+        event is RefinementResult) {
       notifyListeners();
     }
     if (event is EngineDiagnosis) {
@@ -237,6 +271,28 @@ class EngineConnection extends ChangeNotifier {
   Future<String?> startDiagnosis() => _request({'type': 'start_diagnosis'});
 
   Future<String?> stopDiagnosis() => _request({'type': 'stop_diagnosis'});
+
+  void _clearCalibration() {
+    calibration = null;
+    whiteBalance = null;
+    boardDetections.clear();
+    boardPlanes.clear();
+    refinement = null;
+  }
+
+  /// The calibration steps (docs/engine-api.md, "Calibration"); each completes with an error code, or null. Their
+  /// results arrive as events, possibly before the result.
+  Future<String?> tuneWhiteBalance() => _request({'type': 'tune_white_balance'});
+
+  Future<String?> detectBoard(String camera) => _request({'type': 'detect_board', 'camera': camera});
+
+  Future<String?> setSector20(String camera, Offset pointPx) => _request({
+    'type': 'set_sector_20',
+    'camera': camera,
+    'point_px': [pointPx.dx, pointPx.dy],
+  });
+
+  Future<String?> refineCameras() => _request({'type': 'refine_cameras'});
 
   /// A dart the engine missed, entered by hand
   void addThrow(BoardPoint point) => _send({'type': 'add_throw', 'board_point': _pointJson(point)});

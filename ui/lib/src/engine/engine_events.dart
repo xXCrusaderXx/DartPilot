@@ -18,6 +18,11 @@ sealed class EngineEvent {
     'camera_status' => EngineCameraStatus.fromJson(json),
     'board_state' => EngineBoardState.fromJson(json),
     'diagnosis' => EngineDiagnosis.fromJson(json),
+    'calibration_status' => CalibrationStatus.fromJson(json),
+    'white_balance' => WhiteBalanceState.fromJson(json),
+    'board_detection' => BoardDetection.fromJson(json),
+    'board_plane' => BoardPlaneResult.fromJson(json),
+    'refinement' => RefinementResult.fromJson(json),
     'engine_status' => EngineStatus(json['detection'] as String, json['message'] as String? ?? ''),
     _ => null,
   };
@@ -35,6 +40,7 @@ class EngineHello extends EngineEvent {
     required this.geometry,
     required this.cameras,
     this.boardState,
+    this.calibration,
   });
 
   final String protocol;
@@ -44,6 +50,9 @@ class EngineHello extends EngineEvent {
 
   /// Missing with engines before the board check
   final EngineBoardState? boardState;
+
+  /// Missing without cameras and with engines before the calibration wizard
+  final CalibrationStatus? calibration;
 
   factory EngineHello.fromJson(Map<String, dynamic> json) {
     final g = json['board_geometry'] as Map<String, dynamic>;
@@ -61,6 +70,9 @@ class EngineHello extends EngineEvent {
         wireRotationDeg: r('wire_rotation_deg'),
       ),
       cameras: [for (final c in json['cameras'] as List<dynamic>) (c as Map<String, dynamic>)['id'] as String],
+      calibration: json['calibration_status'] is Map<String, dynamic>
+          ? CalibrationStatus.fromJson(json['calibration_status'] as Map<String, dynamic>)
+          : null,
       boardState: json['board_state'] is Map<String, dynamic>
           ? EngineBoardState.fromJson(json['board_state'] as Map<String, dynamic>)
           : null,
@@ -384,4 +396,240 @@ class EngineStatus extends EngineEvent {
 
   final String detection;
   final String message;
+}
+
+Offset _offset(Object? json) {
+  final p = json as List<dynamic>;
+  return Offset((p[0] as num).toDouble(), (p[1] as num).toDouble());
+}
+
+Size? _size(Object? json) {
+  if (json is! List || json.length < 2) return null;
+  return Size((json[0] as num).toDouble(), (json[1] as num).toDouble());
+}
+
+/// What is calibrated, per camera (docs/engine-api.md, "Calibration")
+class CalibrationStatus extends EngineEvent {
+  const CalibrationStatus({this.cameras = const [], this.refinementStale = false, this.extrinsicsCreated});
+
+  final List<CameraCalibration> cameras;
+
+  /// A board was measured or a lens calibrated after the last refinement
+  final bool refinementStale;
+  final String? extrinsicsCreated;
+
+  CameraCalibration? of(String camera) => cameras.where((c) => c.camera == camera).firstOrNull;
+
+  factory CalibrationStatus.fromJson(Map<String, dynamic> json) => CalibrationStatus(
+    cameras: [
+      for (final c in json['cameras'] as List<dynamic>? ?? const [])
+        CameraCalibration.fromJson(c as Map<String, dynamic>),
+    ],
+    refinementStale: json['refinement_stale'] == true,
+    extrinsicsCreated: json['extrinsics_created'] as String?,
+  );
+}
+
+class CameraCalibration {
+  const CameraCalibration({
+    required this.camera,
+    this.intrinsics = 'none',
+    this.boardPlaneMm,
+    this.refined = false,
+    this.whiteBalanceKelvin,
+  });
+
+  final String camera;
+
+  /// valid, invalid or none
+  final String intrinsics;
+  final double? boardPlaneMm;
+  final bool refined;
+  final int? whiteBalanceKelvin;
+
+  factory CameraCalibration.fromJson(Map<String, dynamic> json) => CameraCalibration(
+    camera: json['camera'] as String,
+    intrinsics: json['intrinsics'] as String? ?? 'none',
+    boardPlaneMm: _number(json['board_plane_mm']),
+    refined: json['refined'] == true,
+    whiteBalanceKelvin: (json['white_balance_kelvin'] as num?)?.round(),
+  );
+}
+
+/// The white balance sweep: where each camera found the board
+class WhiteBalanceState extends EngineEvent {
+  const WhiteBalanceState({required this.state, this.kelvinNow, this.settleS, this.cameras = const []});
+
+  /// settling, sweeping, done or failed
+  final String state;
+  final int? kelvinNow;
+  final double? settleS;
+  final List<CameraWhiteBalance> cameras;
+
+  bool get running => state == 'settling' || state == 'sweeping';
+
+  factory WhiteBalanceState.fromJson(Map<String, dynamic> json) => WhiteBalanceState(
+    state: json['state'] as String? ?? '',
+    kelvinNow: (json['kelvin_now'] as num?)?.round(),
+    settleS: _number(json['settle_s']),
+    cameras: [
+      for (final c in json['cameras'] as List<dynamic>? ?? const [])
+        CameraWhiteBalance.fromJson(c as Map<String, dynamic>),
+    ],
+  );
+}
+
+class CameraWhiteBalance {
+  const CameraWhiteBalance({required this.camera, this.foundAt = const {}, this.chosenKelvin, this.code});
+
+  final String camera;
+
+  /// Kelvin tried so far, and whether the board was found there
+  final Map<int, bool> foundAt;
+  final int? chosenKelvin;
+  final String? code;
+
+  factory CameraWhiteBalance.fromJson(Map<String, dynamic> json) => CameraWhiteBalance(
+    camera: json['camera'] as String,
+    foundAt: {
+      for (final f in json['found_at'] as List<dynamic>? ?? const [])
+        ((f as Map)['kelvin'] as num).round(): f['found'] == true,
+    },
+    chosenKelvin: (json['chosen_kelvin'] as num?)?.round(),
+    code: json['code'] as String?,
+  );
+}
+
+/// The board as one camera sees it: rings, wires and calibration points
+class BoardDetection extends EngineEvent {
+  const BoardDetection({
+    required this.camera,
+    required this.ok,
+    this.imageSizePx,
+    this.ellipses = const [],
+    this.wiresPx = const [],
+    this.pointsPx = const [],
+  });
+
+  final String camera;
+  final bool ok;
+  final Size? imageSizePx;
+  final List<({Offset center, Size halfAxes, double angleDeg})> ellipses;
+  final List<(Offset, Offset)> wiresPx;
+  final List<Offset> pointsPx;
+
+  factory BoardDetection.fromJson(Map<String, dynamic> json) => BoardDetection(
+    camera: json['camera'] as String,
+    ok: json['ok'] == true,
+    imageSizePx: _size(json['image_size_px']),
+    ellipses: [
+      for (final e in json['ellipses'] as List<dynamic>? ?? const [])
+        (
+          center: _offset((e as Map)['center_px']),
+          halfAxes: _size(e['axes_px']) ?? Size.zero,
+          angleDeg: (e['angle_deg'] as num? ?? 0).toDouble(),
+        ),
+    ],
+    wiresPx: [
+      for (final w in json['wires_px'] as List<dynamic>? ?? const [])
+        (
+          Offset(((w as List)[0] as num).toDouble(), (w[1] as num).toDouble()),
+          Offset((w[2] as num).toDouble(), (w[3] as num).toDouble()),
+        ),
+    ],
+    pointsPx: [for (final p in json['points_px'] as List<dynamic>? ?? const []) _offset(p)],
+  );
+}
+
+/// The stored board plane of a camera, with the sector numbers where the camera sees them
+class BoardPlaneResult extends EngineEvent {
+  const BoardPlaneResult({
+    required this.camera,
+    required this.fitMm,
+    this.worstMm,
+    this.lensCorrected = false,
+    this.sectors = const {},
+  });
+
+  final String camera;
+  final double fitMm;
+  final double? worstMm;
+  final bool lensCorrected;
+  final Map<int, Offset> sectors;
+
+  factory BoardPlaneResult.fromJson(Map<String, dynamic> json) => BoardPlaneResult(
+    camera: json['camera'] as String,
+    fitMm: _number(json['fit_mm']) ?? 0,
+    worstMm: _number(json['worst_mm']),
+    lensCorrected: json['lens_corrected'] == true,
+    sectors: {
+      for (final s in json['sectors'] as List<dynamic>? ?? const [])
+        ((s as Map)['sector'] as num).round(): _offset(s['label_px']),
+    },
+  );
+}
+
+/// All cameras refined together: per camera how well, and what would help
+class RefinementResult extends EngineEvent {
+  const RefinementResult({
+    required this.state,
+    this.code,
+    this.cameras = const [],
+    this.outerBullMm,
+    this.trebleCentreMm,
+  });
+
+  /// running, done or failed
+  final String state;
+  final String? code;
+  final List<CameraRefinement> cameras;
+  final double? outerBullMm;
+  final double? trebleCentreMm;
+
+  factory RefinementResult.fromJson(Map<String, dynamic> json) {
+    final board = json['board'] as Map<String, dynamic>?;
+    return RefinementResult(
+      state: json['state'] as String? ?? '',
+      code: json['code'] as String?,
+      cameras: [
+        for (final c in json['cameras'] as List<dynamic>? ?? const [])
+          CameraRefinement.fromJson(c as Map<String, dynamic>),
+      ],
+      outerBullMm: _number(board?['outer_bull_mm']),
+      trebleCentreMm: _number(board?['treble_centre_mm']),
+    );
+  }
+}
+
+class CameraRefinement {
+  const CameraRefinement({
+    required this.camera,
+    required this.heldOutMm,
+    required this.quality,
+    this.uncertaintyMm,
+    this.lensFrom,
+    this.advice,
+  });
+
+  final String camera;
+  final double heldOutMm;
+
+  /// good, fair or poor
+  final String quality;
+  final double? uncertaintyMm;
+
+  /// own, model or board
+  final String? lensFrom;
+
+  /// detect_again or lens_calibration
+  final String? advice;
+
+  factory CameraRefinement.fromJson(Map<String, dynamic> json) => CameraRefinement(
+    camera: json['camera'] as String,
+    heldOutMm: _number(json['held_out_mm']) ?? 0,
+    quality: json['quality'] as String? ?? 'poor',
+    uncertaintyMm: _number(json['uncertainty_mm']),
+    lensFrom: json['lens_from'] as String?,
+    advice: json['advice'] as String?,
+  );
 }
