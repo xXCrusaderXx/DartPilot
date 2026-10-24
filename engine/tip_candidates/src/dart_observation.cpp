@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <map>
+#include <tuple>
 
 #include <opencv2/imgproc.hpp>
 
@@ -22,13 +23,20 @@ constexpr double kWeakSigmas = 4.0;
 constexpr double kMinStrong = 12.0;
 constexpr double kMinWeak = 6.0;
 constexpr float kBin_px = 2.0f;
-// A cross-section belongs to the axis up to this multiple of the median width: point, barrel and shaft are in, the
-// flight, several times wider, is out.
-constexpr float kNarrowFactor = 1.6f;
-constexpr float kMinNarrow_px = 4.0f;
+// A level counts for the tone curve with this many pixels; the curve needs the middle 90 % of the pixels to span this
+// many levels, and drops levels further than kToneOutlier from it.
+constexpr int kMinTonePixels = 50;
+constexpr int kMinToneRange = 60;
+constexpr double kToneOutlier = 12.0;
+// Closing bridges gaps up to about this size inside the object, such as between the edges of a plain barrel.
+constexpr int kClose_px = 9;
+// Middles within this distance of a line are on the axis; the axis spans at least this length.
+constexpr float kAxisTolerance_px = 1.5f;
+constexpr float kMinAxisSpan_px = 30.0f;
+// Half width of the band in which an end is followed, and how far beyond the last axis point
+constexpr float kBand_px = 2.0f;
+constexpr float kMaxReach_px = 120.0f;
 constexpr std::size_t kMinAxisPoints = 8;
-// Pixels this close to an end fix the direction of the line the end is refined along
-constexpr float kEndLine_px = 50.0f;
 constexpr int kBorder_px = 5;
 
 float median (const cv::Mat& channel)
@@ -36,6 +44,105 @@ float median (const cv::Mat& channel)
     std::vector<float> values(channel.begin<float>(), channel.end<float>());
     std::nth_element(values.begin(), values.begin() + values.size() / 2, values.end());
     return values[values.size() / 2];
+}
+
+// The tone curve from one channel onto another of the same scene, applied to the first. For every level of the first,
+// the median of the other channel's values at the same pixels; a parabola is fitted to these medians, weighted by how
+// many pixels each level has, and levels far off it are dropped and the parabola fitted again. Levels that only a dart
+// has are few pixels and lie off the curve of the board, so they cannot pull the dart onto the board's colour. Without
+// enough contrast in the scene the curve is undetermined, and the channel is left as it is.
+cv::Mat matchTones (const cv::Mat& from, const cv::Mat& to)
+{
+    constexpr int kLevels = 256;
+    std::vector<std::vector<int>> histogram(kLevels, std::vector<int>(kLevels, 0));
+    std::vector<int> counts(kLevels, 0);
+    for(int y = 0; y < from.rows; ++y)
+    {
+        const float* f = from.ptr<float>(y);
+        const float* t = to.ptr<float>(y);
+        for(int x = 0; x < from.cols; ++x)
+        {
+            const int level = std::clamp(static_cast<int>(std::lround(f[x])), 0, kLevels - 1);
+            ++histogram[level][std::clamp(static_cast<int>(std::lround(t[x])), 0, kLevels - 1)];
+            ++counts[level];
+        }
+    }
+    const int total = from.rows * from.cols;
+    int seen = 0, low = -1, high = -1;
+    for(int level = 0; level < kLevels; ++level)
+    {
+        seen += counts[level];
+        if(low < 0 && seen >= total / 20)
+        {
+            low = level;
+        }
+        if(high < 0 && seen >= total - total / 20)
+        {
+            high = level;
+        }
+    }
+    if(high - low < kMinToneRange)
+    {
+        return from.clone();
+    }
+
+    std::vector<double> levels, medians, weights;
+    for(int level = 0; level < kLevels; ++level)
+    {
+        if(counts[level] < kMinTonePixels)
+        {
+            continue;
+        }
+        int below = 0;
+        for(int value = 0; value < kLevels; ++value)
+        {
+            below += histogram[level][value];
+            if(2 * below >= counts[level])
+            {
+                levels.push_back(level);
+                medians.push_back(value);
+                weights.push_back(counts[level]);
+                break;
+            }
+        }
+    }
+    cv::Vec3d curve(0.0, 1.0, 0.0);
+    std::vector<bool> used(levels.size(), true);
+    for(int pass = 0; pass < 2; ++pass)
+    {
+        cv::Matx33d normal = cv::Matx33d::zeros();
+        cv::Vec3d right(0, 0, 0);
+        for(std::size_t i = 0; i < levels.size(); ++i)
+        {
+            if(!used[i])
+            {
+                continue;
+            }
+            const cv::Vec3d row(1.0, levels[i], levels[i] * levels[i]);
+            normal += weights[i] * row * row.t();
+            right += weights[i] * medians[i] * row;
+        }
+        if(cv::determinant(normal) <= 0.0)
+        {
+            return from.clone();
+        }
+        curve = normal.inv() * right;
+        for(std::size_t i = 0; i < levels.size(); ++i)
+        {
+            used[i] = std::abs(curve[0] + curve[1] * levels[i] + curve[2] * levels[i] * levels[i] - medians[i]) <= kToneOutlier;
+        }
+    }
+    cv::Mat mapped(from.size(), CV_32F);
+    for(int y = 0; y < from.rows; ++y)
+    {
+        const float* f = from.ptr<float>(y);
+        float* m = mapped.ptr<float>(y);
+        for(int x = 0; x < from.cols; ++x)
+        {
+            m[x] = static_cast<float>(curve[0] + curve[1] * f[x] + curve[2] * f[x] * f[x]);
+        }
+    }
+    return mapped;
 }
 
 float sample (const cv::Mat& image, const cv::Point2f& p)
@@ -66,24 +173,40 @@ std::pair<cv::Point2f, cv::Point2f> fitLine (const std::vector<cv::Point2f>& poi
     return {mean, cv::Point2f(static_cast<float>(std::cos(angle)), static_cast<float>(std::sin(angle)))};
 }
 
-// Where the difference along a line fades out: the line is followed outwards while the signal stays above the noise,
-// bridging gaps of up to a pixel; the end is where the signal falls to half of its level just inside.
-cv::Point2f refineEnd (const cv::Mat& difference, const cv::Point2f& end, const cv::Point2f& dir, float noise)
+// Where the object ends along a line: the line is followed outwards while the difference stays above the noise,
+// bridging gaps of up to a pixel; the end is where it falls to half of its level just inside. The difference is taken
+// as the largest within a narrow band across the line, so a point slightly off the fitted axis is still followed.
+cv::Point2f refineEnd (const cv::Mat& difference, const cv::Point2f& start, const cv::Point2f& dir, const cv::Point2f& normal, float noise)
 {
     constexpr float kStep = 0.25f;
-    const auto at = [&] (float k) { return sample(difference, end + dir * k); };
-    std::vector<float> tail;
-    for(float k = 5.0f; k <= 40.0f; k += kStep)
+    const auto at = [&] (float k)
     {
-        tail.push_back(at(k));
+        float strongest = 0.0f;
+        for(float t = -kBand_px; t <= kBand_px; t += 0.5f)
+        {
+            strongest = std::max(strongest, sample(difference, start + dir * k + normal * t));
+        }
+        return strongest;
+    };
+    // The object is followed for at most kMaxReach_px beyond the last axis point; the background is measured past it.
+    std::vector<float> profile;
+    for(float k = 0.0f; k <= kMaxReach_px + 30.0f; k += kStep)
+    {
+        profile.push_back(at(k));
     }
-    std::sort(tail.begin(), tail.end());
-    const float background = tail[tail.size() / 5];
-    const float low = background + std::max(6.0f, 4.0f * noise);
-    float run_end = -5.0f, gap = 0.0f;
-    for(float k = -5.0f; k <= 40.0f; k += kStep)
+    const auto value = [&] (float k) { return profile[std::min(profile.size() - 1, static_cast<std::size_t>(std::max(0.0f, k) / kStep))]; };
+    float run_end = 0.0f, gap = 0.0f;
+    for(float k = 0.0f; k <= kMaxReach_px; k += kStep)
     {
-        if(at(k) > low)
+        // The background just beyond: the low end of the next 30 px
+        std::vector<float> ahead;
+        for(float a = k + 5.0f; a <= k + 30.0f; a += 1.0f)
+        {
+            ahead.push_back(value(a));
+        }
+        std::nth_element(ahead.begin(), ahead.begin() + ahead.size() / 5, ahead.end());
+        const float low = ahead[ahead.size() / 5] + std::max(6.0f, 4.0f * noise);
+        if(value(k) > low)
         {
             run_end = k;
             gap = 0.0f;
@@ -93,23 +216,29 @@ cv::Point2f refineEnd (const cv::Mat& difference, const cv::Point2f& end, const 
             break;
         }
     }
-    std::vector<float> inside;
-    for(float k = run_end - 4.0f; k < run_end; k += kStep)
+    std::vector<float> ahead;
+    for(float a = run_end + 5.0f; a <= run_end + 30.0f; a += 1.0f)
     {
-        inside.push_back(at(k));
+        ahead.push_back(value(a));
     }
-    std::sort(inside.begin(), inside.end());
-    const float half = background + 0.5f * (inside[inside.size() / 2] - background);
-    for(float k = run_end; k >= run_end - 6.0f; k -= kStep)
+    std::nth_element(ahead.begin(), ahead.begin() + ahead.size() / 5, ahead.end());
+    const float background = ahead[ahead.size() / 5];
+    std::vector<float> inside;
+    for(float k = std::max(0.0f, run_end - 4.0f); k <= run_end; k += kStep)
     {
-        const float a = at(k);
+        inside.push_back(value(k));
+    }
+    std::nth_element(inside.begin(), inside.begin() + inside.size() / 2, inside.end());
+    const float half = background + 0.5f * (inside[inside.size() / 2] - background);
+    for(float k = run_end; k >= std::max(0.0f, run_end - 6.0f); k -= kStep)
+    {
+        const float a = value(k), b = value(k + kStep);
         if(a >= half)
         {
-            const float b = at(k + kStep);
-            return end + dir * (k + kStep * (a - half) / std::max(1e-3f, a - b));
+            return start + dir * (k + kStep * (a - half) / std::max(1e-3f, a - b));
         }
     }
-    return end + dir * run_end;
+    return start + dir * run_end;
 }
 }  // namespace
 
@@ -122,18 +251,16 @@ std::optional<DartObservation> observeDart (const cv::Mat& image, const cv::Mat&
     cv::Mat a, b, diff;
     image.convertTo(a, CV_32FC3);
     empty_board.convertTo(b, CV_32FC3);
-    // The automatic exposure may still settle after a hand has left the view, which brightens or darkens the whole
-    // image: each channel is scaled to the empty board by the ratio of their medians, which a dart barely moves.
+    // The automatic exposure may still settle after a hand has left the view. It does not scale the image evenly: light
+    // and dark sectors change by different amounts. Each channel is therefore mapped onto the empty board by a tone
+    // curve: for every level of the image, the median level the same pixels have on the empty board. A dart covers too
+    // little of the image to move these medians.
     std::vector<cv::Mat> a_channels, b_channels;
     cv::split(a, a_channels);
     cv::split(b, b_channels);
     for(int c = 0; c < 3; ++c)
     {
-        const float a_median = median(a_channels[c]), b_median = median(b_channels[c]);
-        if(a_median > 1.0f)
-        {
-            a_channels[c] *= b_median / a_median;
-        }
+        a_channels[c] = matchTones(a_channels[c], b_channels[c]);
     }
     cv::merge(a_channels, a);
     cv::absdiff(a, b, diff);
@@ -206,33 +333,42 @@ std::optional<DartObservation> observeDart (const cv::Mat& image, const cv::Mat&
         }
     }
 
-    DartObservation observation;
-    std::vector<cv::Point2f> pixels;
+    // The object as one area: closing bridges the gap between the two edges of a barrel that matches the board behind
+    // it, so that its cross-sections are whole and their middles lie on the axis.
+    cv::Mat area(labels.size(), CV_8U, cv::Scalar(0));
     for(int y = 0; y < labels.rows; ++y)
     {
         for(int x = 0; x < labels.cols; ++x)
         {
-            if(member[labels.at<int>(y, x)])
+            area.at<uchar>(y, x) = member[labels.at<int>(y, x)] ? 255 : 0;
+        }
+    }
+    cv::morphologyEx(area, area, cv::MORPH_CLOSE, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(kClose_px, kClose_px)));
+
+    DartObservation observation;
+    std::vector<cv::Point2f> pixels;
+    for(int y = 0; y < area.rows; ++y)
+    {
+        for(int x = 0; x < area.cols; ++x)
+        {
+            if(area.at<uchar>(y, x))
             {
                 pixels.emplace_back(static_cast<float>(x), static_cast<float>(y));
-                observation.cut = observation.cut || x <= 1 || y <= 1 || x >= labels.cols - 2 || y >= labels.rows - 2;
+                observation.cut = observation.cut || x <= 1 || y <= 1 || x >= area.cols - 2 || y >= area.rows - 2;
             }
         }
     }
     observation.area_px = static_cast<int>(pixels.size());
 
-    // Cross-sections along the main axis: their middles are the centre line, their widths tell the flight apart.
-    const auto [centre, axis] = fitLine(pixels);
-    const cv::Point2f normal(-axis.y, axis.x);
+    // Middles of the cross-sections along the main direction of the object
+    const auto [centre, main] = fitLine(pixels);
+    const cv::Point2f across(-main.y, main.x);
     std::map<int, std::pair<float, float>> sections;
-    float s_min = 1e9f, s_max = -1e9f;
     for(const auto& p : pixels)
     {
         const cv::Point2f q = p - centre;
-        const float s = q.dot(axis), t = q.dot(normal);
-        s_min = std::min(s_min, s);
-        s_max = std::max(s_max, s);
-        const int bin = static_cast<int>(std::floor(s / kBin_px));
+        const int bin = static_cast<int>(std::floor(q.dot(main) / kBin_px));
+        const float t = q.dot(across);
         const auto it = sections.find(bin);
         if(it == sections.end())
         {
@@ -244,57 +380,78 @@ std::optional<DartObservation> observeDart (const cv::Mat& image, const cv::Mat&
             it->second.second = std::max(it->second.second, t);
         }
     }
-    std::vector<float> widths;
+    std::vector<cv::Point2f> middles;
     for(const auto& [bin, range] : sections)
     {
-        widths.push_back(range.second - range.first + 1.0f);
+        middles.push_back(centre + main * (kBin_px * bin + 0.5f * kBin_px) + across * (0.5f * (range.first + range.second)));
     }
-    std::nth_element(widths.begin(), widths.begin() + widths.size() / 2, widths.end());
-    const float narrow = std::max(kMinNarrow_px, kNarrowFactor * widths[widths.size() / 2]);
-    for(const auto& [bin, range] : sections)
-    {
-        if(range.second - range.first + 1.0f <= narrow)
-        {
-            observation.axis_px.push_back(centre + axis * (kBin_px * bin + 0.5f * kBin_px) + normal * (0.5f * (range.first + range.second)));
-        }
-    }
-    if(observation.axis_px.size() < kMinAxisPoints)
+    if(middles.size() < kMinAxisPoints)
     {
         return std::nullopt;
     }
-    observation.axis_length_px = cv::norm(observation.axis_px.front() - observation.axis_px.back());
 
-    for(const float side : {-1.0f, 1.0f})
+    // The axis is the straight line through most middles: point, barrel and shaft lie on it, while the middles of a
+    // flight seen at an angle, of a ragged outline or of a stray piece do not. Every pair of middles is tried, so the
+    // result does not depend on chance.
+    const auto inliersOf = [&] (const cv::Point2f& base, const cv::Point2f& dir)
     {
-        const float end_s = side < 0 ? s_min : s_max;
-        std::vector<cv::Point2f> near_end;
-        for(const auto& p : pixels)
+        std::vector<cv::Point2f> inliers;
+        for(const auto& m : middles)
         {
-            if(std::abs((p - centre).dot(axis) - end_s) < kEndLine_px)
+            if(std::abs((m - base).cross(dir)) <= kAxisTolerance_px)
             {
-                near_end.push_back(p);
+                inliers.push_back(m);
             }
         }
-        if(near_end.size() < 5)
+        return inliers;
+    };
+    std::vector<cv::Point2f> best;
+    const std::size_t stride = std::max<std::size_t>(1, middles.size() / 80);
+    for(std::size_t i = 0; i < middles.size(); i += stride)
+    {
+        for(std::size_t j = i + stride; j < middles.size(); j += stride)
         {
-            continue;
+            const cv::Point2f span = middles[j] - middles[i];
+            const float length = std::hypot(span.x, span.y);
+            if(length < kMinAxisSpan_px)
+            {
+                continue;
+            }
+            auto inliers = inliersOf(middles[i], span / length);
+            if(inliers.size() > best.size())
+            {
+                best = std::move(inliers);
+            }
         }
-        auto [base, dir] = fitLine(near_end);
-        if(dir.dot(axis * side) < 0)
-        {
-            dir = -dir;
-        }
-        float reach = -1e9f;
-        for(const auto& p : near_end)
-        {
-            reach = std::max(reach, (p - base).dot(dir));
-        }
-        const cv::Point2f end = base + dir * reach;
+    }
+    if(best.size() < kMinAxisPoints)
+    {
+        return std::nullopt;
+    }
+    auto [base, dir] = fitLine(best);
+    best = inliersOf(base, dir);
+    std::tie(base, dir) = fitLine(best);
+    std::sort(best.begin(), best.end(), [&] (const cv::Point2f& a, const cv::Point2f& b) { return (a - base).dot(dir) < (b - base).dot(dir); });
+    observation.axis_px = best;
+    observation.axis_length_px = cv::norm(best.front() - best.back());
+    if(observation.axis_length_px < kMinAxisSpan_px)
+    {
+        return std::nullopt;
+    }
+
+    // Both ends along the axis itself: from the outermost middle on the axis outwards, in a narrow band around the line,
+    // as long as the object goes on. The point continues the axis even where it is too thin or too faint for the mask.
+    const cv::Point2f normal(-dir.y, dir.x);
+    for(const float side : {-1.0f, 1.0f})
+    {
+        const cv::Point2f outward = dir * side;
+        const cv::Point2f start = side < 0 ? best.front() : best.back();
+        const cv::Point2f end = refineEnd(d, start, outward, normal, noise);
         if(end.x < kBorder_px || end.y < kBorder_px || end.x > d.cols - 1 - kBorder_px || end.y > d.rows - 1 - kBorder_px)
         {
             continue;
         }
-        observation.ends_px.push_back(refineEnd(d, end, dir, noise));
+        observation.ends_px.push_back(end);
     }
     return observation;
 }
