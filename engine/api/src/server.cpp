@@ -304,6 +304,7 @@ void Server::publishEngineStatus (const std::string& detection, const std::strin
     {
         std::lock_guard lock(mutex_);
         hello_.detection = detection;
+        hello_.detection_reason = detection == "unavailable" ? message : std::string();
     }
     broadcast(engineStatusMessage(detection, message));
 }

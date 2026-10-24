@@ -46,7 +46,7 @@ Sent once after the connection opens.
 - `mode`: `live` (cameras), `replay` (a recorded session) or `simulate` (no cameras, generated darts).
 - `session_id`: the session being recorded or replayed, if any, so client and recording can be matched.
 - `board_geometry`: the boundaries the engine's scorer uses. `source` is `nominal` (tournament dimensions) or `measured` (derived from the calibration's board model, #13/#47). A client that scores or draws the board uses these values, so it agrees with the engine.
-- `detection`: `running`, `paused` or `unavailable` (e.g. not calibrated); see `engine_status`.
+- `detection`: `running`, `paused` or `unavailable`; see `engine_status`. With `unavailable`, `detection_reason` says why: `not_calibrated` (no refinement of the cameras: the app sends the user to the calibration) or `no_empty_reference` (live detection waits for a still, empty board to compare darts with; it starts by itself once it sees one). `null` otherwise.
 - `board_state`: whether the board is empty; see `board_state`.
 
 ### throw
@@ -284,7 +284,15 @@ The engine sends the camera's own JPEG when it fits `max_width`, otherwise a sca
 
 ## Implementation status
 
-`dartpilot serve --simulate` implements the protocol with simulated darts, takeouts and camera states (`engine/api`), and the player app connects to it (`ui/lib/src/engine/`). Previews work for simulated cameras (drawn board with the darts of the visit) and, with `--simulate --cameras`, for the real cameras, which then also report their status. The simulator reports an empty board, occupied while darts are in it (`--occupied`: darts in the board at start, pulled out after the takeout delay); with `--cameras` the real cameras check the board: each camera's frames are averaged once its image has been still for a second and compared with its empty-board reference (`empty-usb-<port>.png` in the calibration directory). `start_diagnosis` runs the setup diagnosis on the real cameras with `--cameras`; without, the simulator answers with a fixed example. Not implemented yet: live detection (needs the detection pipeline), `--replay`, and storing corrections in a recorded session.
+`dartpilot serve --cameras` detects live darts (#121, #128, `fusion::DartTracker`). Whenever all cameras have been still for 1.5 s, it averages a second of frames and compares the board with its last still state:
+
+- A new dart is located from the cameras whose axis planes meet (`locateDart`) and sent as `throw`. If the cameras do not agree it abstains: `accepted: false`, no `board_point`, and `reason` `cameras_disagree` or `seen_by_one_camera`, so the player confirms or corrects it. `cameras[].reason` gives each camera's part: `not_seen`, `cut` (by the image border), `disagrees`.
+- When the board matches the empty board again after darts, it sends `takeout` with the number of darts that were in it, and the empty board, as it is now, becomes the reference for the next visit. A dart pulled and the next one put in without a still board in between are told apart by where the image is the empty board again.
+- Detection waits for a still, empty board at the start (`detection: unavailable`, `no_empty_reference`), and is unavailable without a refinement (`not_calibrated`).
+
+On the reference recordings, replayed through the tracker, all located darts were right: 9 of 10 type-1 darts located and 1 missed; 6 of 9 type-2 darts located and the others abstained, some of them twice when the hand was still in view. The engine sets no visit logic: the app decides how many darts a turn has.
+
+`dartpilot serve --simulate` implements the protocol with simulated darts, takeouts and camera states (`engine/api`), and the player app connects to it (`ui/lib/src/engine/`). Previews work for simulated cameras (drawn board with the darts of the visit) and, with `--simulate --cameras`, for the real cameras, which then also report their status. The simulator reports an empty board, occupied while darts are in it (`--occupied`: darts in the board at start, pulled out after the takeout delay); with `--cameras` the real cameras check the board: each camera's frames are averaged once its image has been still for a second and compared with its empty-board reference (`empty-usb-<port>.png` in the calibration directory). `start_diagnosis` runs the setup diagnosis on the real cameras with `--cameras`; without, the simulator answers with a fixed example. Not implemented yet: `--replay`, and recording a live session with its corrections.
 
 ## Not in version 1
 

@@ -13,6 +13,7 @@
 #include "calibration_service.hpp"
 #include "dartpilot/api/server.hpp"
 #include "dartpilot/api/simulator.hpp"
+#include "live_detection.hpp"
 #include "live_diagnosis.hpp"
 #include "paths.hpp"
 #include "preview_sources.hpp"
@@ -28,9 +29,10 @@ void onInterrupt (int) { interrupted = true; }
 int usage ()
 {
     std::fprintf(stderr,
-                 "Usage: dartpilot serve --simulate [--cameras] [--listen ADDRESS] [--port N] [--seed N] [--interval MS] [--occupied]\n"
-                 "  --simulate     darts, takeouts and camera states without cameras\n"
-                 "  --cameras      previews, status and board check from the real cameras; darts stay simulated\n"
+                 "Usage: dartpilot serve --cameras [--listen ADDRESS] [--port N]\n"
+                 "       dartpilot serve --simulate [--cameras] [--listen ADDRESS] [--port N] [--seed N] [--interval MS] [--occupied]\n"
+                 "  --cameras      the real cameras: previews, status, board check, diagnosis, calibration, and live darts\n"
+                 "  --simulate     simulated darts and takeouts; without --cameras also simulated cameras\n"
                  "  --listen       address to listen on (default 127.0.0.1; 0.0.0.0 for the whole network)\n"
                  "  --port         default 8484\n"
                  "  --occupied     darts are in the board at start (board check warning)\n");
@@ -81,15 +83,14 @@ int runServe (int argc, char* argv[])
             return usage();
         }
     }
-    if(!simulate)
+    if(!simulate && !cameras)
     {
-        // Live detection needs the detection pipeline (milestones 0.3 to 0.6); until then only the simulator serves.
-        std::fprintf(stderr, "Live detection is not available yet; use --simulate.\n");
+        std::fprintf(stderr, "Live darts need the cameras: --cameras, or --simulate without them.\n");
         return usage();
     }
 
     api::Hello hello;
-    hello.mode = "simulate";
+    hello.mode = simulate ? "simulate" : "live";
     api::Server server(port, host, hello);
     server.setPreviewScaler(scaleJpeg);
     CameraPreviews camera_previews(server);
@@ -98,6 +99,7 @@ int runServe (int argc, char* argv[])
     std::unique_ptr<BoardWatch> board_watch;
     std::unique_ptr<LiveDiagnosis> live_diagnosis;
     std::unique_ptr<CalibrationService> calibration;
+    std::unique_ptr<LiveDetection> live_detection;
     if(cameras)
     {
         std::vector<api::CameraInfo> infos;
@@ -119,6 +121,13 @@ int runServe (int argc, char* argv[])
         board_watch = std::make_unique<BoardWatch>(server, camera_previews, devices, dataHome() / "calibration");
         live_diagnosis = std::make_unique<LiveDiagnosis>(server, camera_previews, devices, dataHome() / "calibration", cameras_started);
         calibration = std::make_unique<CalibrationService>(server, camera_previews, devices, dataHome() / "calibration", cameras_started);
+        if(!simulate)
+        {
+            live_detection = std::make_unique<LiveDetection>(server, camera_previews, devices, dataHome() / "calibration");
+            // Until the first still empty board, darts cannot be told from the board.
+            const auto unavailable = live_detection->unavailableReason();
+            server.publishEngineStatus("unavailable", unavailable.value_or("no_empty_reference"));
+        }
     }
     else
     {
@@ -136,9 +145,19 @@ int runServe (int argc, char* argv[])
         board_watch->start();
     }
     api::Simulator simulator(server, settings);
-    server.onDetectionChanged([&simulator] (bool running) { simulator.setRunning(running); });
-    simulator.start();
-    std::printf("Engine API (simulated darts%s) on ws://%s:%d/ - Ctrl+C to stop\n", cameras ? ", real cameras" : "", host.c_str(), port);
+    if(live_detection)
+    {
+        server.onDetectionChanged([&live_detection] (bool running) { live_detection->setRunning(running); });
+        live_detection->start();
+        std::printf("Engine API (live darts%s) on ws://%s:%d/ - Ctrl+C to stop\n",
+                    live_detection->unavailableReason() ? ", not calibrated: no detection" : "", host.c_str(), port);
+    }
+    else
+    {
+        server.onDetectionChanged([&simulator] (bool running) { simulator.setRunning(running); });
+        simulator.start();
+        std::printf("Engine API (simulated darts%s) on ws://%s:%d/ - Ctrl+C to stop\n", cameras ? ", real cameras" : "", host.c_str(), port);
+    }
     std::fflush(stdout);
 
     std::signal(SIGINT, onInterrupt);
@@ -148,6 +167,7 @@ int runServe (int argc, char* argv[])
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     simulator.stop();
+    live_detection.reset();
     calibration.reset();
     live_diagnosis.reset();
     board_watch.reset();

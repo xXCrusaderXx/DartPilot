@@ -141,6 +141,7 @@ json helloMessage (const Hello& hello)
             {"board_geometry", toJson(hello.board_geometry, hello.board_geometry_source)},
             {"cameras", cameras},
             {"detection", hello.detection},
+            {"detection_reason", hello.detection_reason.empty() ? json(nullptr) : json(hello.detection_reason)},
             {"board_state", toJson(hello.board_state)},
             {"calibration_status", hello.calibration_status}};
 }

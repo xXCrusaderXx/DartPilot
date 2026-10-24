@@ -65,7 +65,9 @@ struct Hello
     scoring::BoardGeometry board_geometry;
     std::string board_geometry_source = "nominal";
     std::vector<CameraInfo> cameras;
+    // running, paused or unavailable; for unavailable, detection_reason says why (not_calibrated, no_empty_reference)
     std::string detection = "running";
+    std::string detection_reason;
     BoardStateInfo board_state;
     // What is calibrated per camera (calibration_status), for the calibration wizard; null without real cameras
     nlohmann::json calibration_status;
