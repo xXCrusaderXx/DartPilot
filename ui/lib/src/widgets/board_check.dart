@@ -15,6 +15,39 @@ Future<bool> confirmBoardEmpty(BuildContext context) async {
   return start ?? false;
 }
 
+/// Stores the empty board and tells the player how it went
+Future<void> storeEmptyBoard(BuildContext context, {bool force = false}) async {
+  final l10n = AppLocalizations.of(context);
+  final messenger = ScaffoldMessenger.of(context);
+  final error = await EngineScope.of(context).storeEmptyReference(force: force);
+  messenger.showSnackBar(
+    SnackBar(
+      content: Text(switch (error) {
+        null => l10n.emptyReferenceStored,
+        'board_not_empty' => l10n.boardNotEmpty,
+        'not_still' => l10n.boardNotStill,
+        _ => l10n.storeReferenceFailed,
+      }),
+    ),
+  );
+}
+
+Future<void> _confirmEmpty(BuildContext context) async {
+  final l10n = AppLocalizations.of(context);
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(l10n.boardIsEmptyTitle),
+      content: Text(l10n.boardIsEmptyText),
+      actions: [
+        TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.cancel)),
+        FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.storeEmptyReference)),
+      ],
+    ),
+  );
+  if (confirmed == true && context.mounted) await storeEmptyBoard(context, force: true);
+}
+
 /// Shows which cameras see an object in the board, with the object marked in their image. Closes by itself with
 /// true when the board becomes empty.
 class BoardOccupiedDialog extends StatefulWidget {
@@ -83,6 +116,8 @@ class _BoardOccupiedDialogState extends State<BoardOccupiedDialog> {
       actions: [
         TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.cancel)),
         TextButton(onPressed: engine.checkBoard, child: Text(l10n.checkBoardAgain)),
+        // The check can be wrong (#121); the player looks at the real board and may replace the empty image.
+        TextButton(onPressed: () => _confirmEmpty(context), child: Text(l10n.boardIsEmpty)),
         if (widget.allowStart)
           FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.startAnyway)),
       ],
@@ -169,21 +204,6 @@ class _MarkPainter extends CustomPainter {
 class BoardStateRow extends StatelessWidget {
   const BoardStateRow({super.key});
 
-  Future<void> _store(BuildContext context) async {
-    final l10n = AppLocalizations.of(context);
-    final messenger = ScaffoldMessenger.of(context);
-    final error = await EngineScope.of(context).storeEmptyReference();
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(switch (error) {
-          null => l10n.emptyReferenceStored,
-          'board_not_empty' => l10n.boardNotEmpty,
-          _ => l10n.storeReferenceFailed,
-        }),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -212,7 +232,7 @@ class BoardStateRow extends StatelessWidget {
         Icon(Icons.info_outline, color: theme.colorScheme.secondary),
         const SizedBox(width: 8),
         Expanded(child: Text(l10n.emptyReferenceMissing)),
-        TextButton(onPressed: () => _store(context), child: Text(l10n.storeEmptyReference)),
+        TextButton(onPressed: () => storeEmptyBoard(context), child: Text(l10n.storeEmptyReference)),
       ],
     );
   }

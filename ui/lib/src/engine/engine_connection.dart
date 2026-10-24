@@ -219,8 +219,10 @@ class EngineConnection extends ChangeNotifier {
   /// Asks the engine to check the board now; the answer arrives as [boardState]
   void checkBoard() => _send({'type': 'check_board'});
 
-  /// Stores the current images as the empty board; the error code if that failed, e.g. board_not_empty
-  Future<String?> storeEmptyReference() => _request({'type': 'store_empty_reference'});
+  /// Stores the current images as the empty board; the error code if that failed, e.g. board_not_empty.
+  /// [force] stores even while a camera reports an object, after the player confirmed the board is empty.
+  Future<String?> storeEmptyReference({bool force = false}) =>
+      _request({'type': 'store_empty_reference', if (force) 'force': true});
 
   /// A dart the engine missed, entered by hand
   void addThrow(BoardPoint point) => _send({'type': 'add_throw', 'board_point': _pointJson(point)});

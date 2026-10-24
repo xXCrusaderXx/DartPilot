@@ -333,4 +333,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String engineIncompatible(String protocol) {
     return 'incompatible ($protocol)';
   }
+
+  @override
+  String get boardIsEmpty => 'The board is empty';
+
+  @override
+  String get boardIsEmptyTitle => 'Store the empty board again?';
+
+  @override
+  String get boardIsEmptyText =>
+      'Only if no dart or other object is in the board. The current camera images become the new empty board, and the check compares with them from now on.';
+
+  @override
+  String get boardNotStill => 'The image is not still yet; wait a moment and try again.';
 }

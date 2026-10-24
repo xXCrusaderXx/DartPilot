@@ -691,6 +691,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'incompatible ({protocol})'**
   String engineIncompatible(String protocol);
+
+  /// No description provided for @boardIsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'The board is empty'**
+  String get boardIsEmpty;
+
+  /// No description provided for @boardIsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Store the empty board again?'**
+  String get boardIsEmptyTitle;
+
+  /// No description provided for @boardIsEmptyText.
+  ///
+  /// In en, this message translates to:
+  /// **'Only if no dart or other object is in the board. The current camera images become the new empty board, and the check compares with them from now on.'**
+  String get boardIsEmptyText;
+
+  /// No description provided for @boardNotStill.
+  ///
+  /// In en, this message translates to:
+  /// **'The image is not still yet; wait a moment and try again.'**
+  String get boardNotStill;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

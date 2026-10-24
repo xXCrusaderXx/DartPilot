@@ -329,4 +329,17 @@ class AppLocalizationsDe extends AppLocalizations {
   String engineIncompatible(String protocol) {
     return 'inkompatibel ($protocol)';
   }
+
+  @override
+  String get boardIsEmpty => 'Die Scheibe ist leer';
+
+  @override
+  String get boardIsEmptyTitle => 'Leere Scheibe neu speichern?';
+
+  @override
+  String get boardIsEmptyText =>
+      'Nur wenn wirklich kein Dart und nichts anderes in der Scheibe steckt. Die aktuellen Kamerabilder werden das neue Bild der leeren Scheibe, und die Prüfung vergleicht ab jetzt damit.';
+
+  @override
+  String get boardNotStill => 'Das Bild ist noch nicht ruhig; warte einen Moment und versuch es noch einmal.';
 }
