@@ -248,5 +248,6 @@
   "statsFavouriteDoubles": "Beendet auf",
   "statsHistory": "Spiele",
   "statsOpponents": "{count, plural, =1{gegen 1 Spieler} other{gegen {count} Spieler}}",
-  "statsSolo": "solo"
+  "statsSolo": "solo",
+  "localEngineNoAnswer": "Das Programm hat sich nicht als Engine gemeldet und wurde beendet. Prüf das Engine-Programm unter Log."
 }

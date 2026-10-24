@@ -47,8 +47,12 @@ class FakeProcess implements Process {
 }
 
 void main() {
-  // Any existing file stands in for the engine program.
-  final program = Platform.resolvedExecutable;
+  // Any existing file other than the app itself stands in for the engine program.
+  late final String program;
+  setUpAll(() async {
+    final dir = await Directory.systemTemp.createTemp('dartpilot-engine');
+    program = (await File('${dir.path}/dartpilot').writeAsString('… Usage: dartpilot serve --simulate …')).path;
+  });
 
   test('starts the engine, reports its address once it listens, and stops it', () async {
     final process = FakeProcess();
@@ -97,6 +101,40 @@ void main() {
     expect(manager.state, LocalEngineState.failed);
     expect(manager.error, LocalEngineError.noCameras);
     expect(manager.log.last, 'Engine exited with code 1');
+  });
+
+  test('never starts the app itself, which would start the app again and again', () async {
+    var started = 0;
+    final manager = EngineManager(
+      start: (_, _) async {
+        started++;
+        return FakeProcess();
+      },
+      findEngine: () => Platform.resolvedExecutable,
+      freePort: () async => 8484,
+    );
+    expect(await manager.start(), isNull);
+    expect(started, 0);
+    expect(manager.error, LocalEngineError.notFound);
+    expect(manager.log.last, contains('Not the engine program'));
+    expect(isOwnExecutable(Platform.resolvedExecutable), isTrue);
+    expect(isOwnExecutable(program), isFalse);
+    expect(looksLikeEngine(program), isTrue);
+    expect(looksLikeEngine(Platform.resolvedExecutable), isFalse);
+  });
+
+  test('a program that never says it listens is stopped after the timeout', () async {
+    final process = FakeProcess();
+    final manager = EngineManager(
+      start: (_, _) async => process,
+      findEngine: () => program,
+      freePort: () async => 8484,
+      readyTimeout: const Duration(milliseconds: 50),
+    );
+    expect(await manager.start(), isNull);
+    expect(process.signals, [ProcessSignal.sigkill]);
+    expect(manager.state, LocalEngineState.failed);
+    expect(manager.error, LocalEngineError.noAnswer);
   });
 
   test('a free port is 8484 when nobody uses it, another one otherwise', () async {

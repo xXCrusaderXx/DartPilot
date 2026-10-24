@@ -219,6 +219,7 @@ class _LocalEngineSection extends StatelessWidget {
         LocalEngineError.notFound => l10n.localEngineNotFound,
         LocalEngineError.noCameras => l10n.localEngineNoCameras,
         LocalEngineError.portInUse => l10n.localEnginePortInUse,
+        LocalEngineError.noAnswer => l10n.localEngineNoAnswer,
         _ => l10n.localEngineCrashed,
       },
     };

@@ -865,4 +865,8 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get statsSolo => 'solo';
+
+  @override
+  String get localEngineNoAnswer =>
+      'Das Programm hat sich nicht als Engine gemeldet und wurde beendet. Prüf das Engine-Programm unter Log.';
 }

@@ -9,19 +9,29 @@ import 'package:flutter/foundation.dart';
 enum LocalEngineState { stopped, starting, running, failed }
 
 /// Why the engine could not start or stopped; the log has the details.
-enum LocalEngineError { notFound, noCameras, portInUse, crashed }
+enum LocalEngineError { notFound, noCameras, portInUse, crashed, noAnswer }
 
 typedef ProcessStarter = Future<Process> Function(String executable, List<String> arguments);
 
 class EngineManager extends ChangeNotifier {
-  EngineManager({ProcessStarter? start, String? Function()? findEngine, Future<int> Function()? freePort})
-    : _start = start ?? Process.start,
-      _findEngine = findEngine ?? findEngineExecutable,
-      _freePort = freePort ?? findFreePort;
+  EngineManager({
+    ProcessStarter? start,
+    String? Function()? findEngine,
+    Future<int> Function()? freePort,
+    bool Function(String path)? isEngine,
+    this.readyTimeout = const Duration(seconds: 20),
+  }) : _start = start ?? Process.start,
+       _isEngine = isEngine ?? looksLikeEngine,
+       _findEngine = findEngine ?? findEngineExecutable,
+       _freePort = freePort ?? findFreePort;
 
   final ProcessStarter _start;
   final String? Function() _findEngine;
   final Future<int> Function() _freePort;
+  final bool Function(String path) _isEngine;
+
+  /// A program that has not said it listens by then is not the engine, or hangs: it is stopped.
+  final Duration readyTimeout;
 
   /// A child process works on desktop systems; Android runs the engine as a library (#106).
   static bool get supported => !kIsWeb && (Platform.isLinux || Platform.isWindows);
@@ -39,6 +49,7 @@ class EngineManager extends ChangeNotifier {
   final List<String> log = [];
 
   Process? _process;
+  Timer? _readyTimer;
   Completer<String?>? _ready;
 
   String? get resolvedExecutable => executable ?? _findEngine();
@@ -51,6 +62,10 @@ class EngineManager extends ChangeNotifier {
     final program = resolvedExecutable;
     if (program == null || !File(program).existsSync()) {
       return _failed(LocalEngineError.notFound, 'Engine program not found: ${program ?? 'dartpilot'}');
+    }
+    // Starting the app itself would start the app again and again.
+    if (isOwnExecutable(program) || !_isEngine(program)) {
+      return _failed(LocalEngineError.notFound, 'Not the engine program (the app itself, or an older app): $program');
     }
     final port = await _freePort();
     state = LocalEngineState.starting;
@@ -72,6 +87,13 @@ class EngineManager extends ChangeNotifier {
       stream.transform(utf8.decoder).transform(const LineSplitter()).listen(_onLine);
     }
     unawaited(process.exitCode.then((code) => _onExit(process, code)));
+    _readyTimer?.cancel();
+    _readyTimer = Timer(readyTimeout, () {
+      if (!identical(process, _process) || state != LocalEngineState.starting) return;
+      _process = null;
+      process.kill(ProcessSignal.sigkill);
+      _failed(LocalEngineError.noAnswer, 'No answer within ${readyTimeout.inSeconds} s; stopped.');
+    });
     return ready.future;
   }
 
@@ -82,6 +104,7 @@ class EngineManager extends ChangeNotifier {
     final match = _listening.firstMatch(line);
     if (match != null && state == LocalEngineState.starting) {
       state = LocalEngineState.running;
+      _readyTimer?.cancel();
       url = match.group(1);
       _ready?.complete(url);
       _ready = null;
@@ -104,6 +127,7 @@ class EngineManager extends ChangeNotifier {
   }
 
   String? _failed(LocalEngineError reason, String? message) {
+    _readyTimer?.cancel();
     if (message != null) _addLog(message);
     state = LocalEngineState.failed;
     error = reason;
@@ -121,6 +145,7 @@ class EngineManager extends ChangeNotifier {
 
   /// Stops the engine; it gets a moment to close its session before it is killed.
   Future<void> stop() async {
+    _readyTimer?.cancel();
     final process = _process;
     _process = null;
     if (state != LocalEngineState.stopped) {
@@ -141,6 +166,7 @@ class EngineManager extends ChangeNotifier {
 
   @override
   void dispose() {
+    _readyTimer?.cancel();
     _process?.kill(ProcessSignal.sigterm);
     _process = null;
     super.dispose();
@@ -148,6 +174,25 @@ class EngineManager extends ChangeNotifier {
 }
 
 /// The engine program: $DARTPILOT_ENGINE, next to the app (installed together), or on the PATH.
+/// Whether [path] is the engine: its program carries the usage text of `dartpilot serve`. A program of the same name
+/// may be an app of an older version, which would start itself again.
+bool looksLikeEngine(String path) {
+  try {
+    return latin1.decode(File(path).readAsBytesSync(), allowInvalid: true).contains('Usage: dartpilot serve');
+  } on FileSystemException {
+    return false;
+  }
+}
+
+/// Whether [path] is this app's own program, also through a link
+bool isOwnExecutable(String path) {
+  try {
+    return File(path).resolveSymbolicLinksSync() == File(Platform.resolvedExecutable).resolveSymbolicLinksSync();
+  } on FileSystemException {
+    return false;
+  }
+}
+
 String? findEngineExecutable() {
   final name = Platform.isWindows ? 'dartpilot.exe' : 'dartpilot';
   final configured = Platform.environment['DARTPILOT_ENGINE'];
@@ -159,7 +204,9 @@ String? findEngineExecutable() {
     ...?Platform.environment['PATH']?.split(Platform.isWindows ? ';' : ':'),
   ]) {
     final candidate = File('$directory${Platform.pathSeparator}$name');
-    if (candidate.existsSync()) return candidate.path;
+    if (candidate.existsSync() && !isOwnExecutable(candidate.path) && looksLikeEngine(candidate.path)) {
+      return candidate.path;
+    }
   }
   return null;
 }
