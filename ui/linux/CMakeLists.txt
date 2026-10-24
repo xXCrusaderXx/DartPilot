@@ -107,6 +107,22 @@ foreach(bundled_library ${PLUGIN_BUNDLED_LIBRARIES})
     COMPONENT Runtime)
 endforeach(bundled_library)
 
+# The engine ships with the app (ADR 0008): "Engine on this device" starts bundle/engine/dartpilot. It is built
+# by the engine's own CMake project (the repository root) and copied here; without it the app still builds and says
+# that the engine is missing.
+set(DARTPILOT_ENGINE_BINARY "${CMAKE_CURRENT_SOURCE_DIR}/../../build/engine/apps/dartpilot_cli/dartpilot"
+  CACHE FILEPATH "Engine program to bundle with the app")
+# flutter build passes no CMake variables; the environment can point to another engine build.
+if(DEFINED ENV{DARTPILOT_ENGINE_BINARY})
+  set(DARTPILOT_ENGINE_BINARY "$ENV{DARTPILOT_ENGINE_BINARY}")
+endif()
+if(EXISTS "${DARTPILOT_ENGINE_BINARY}")
+  install(PROGRAMS "${DARTPILOT_ENGINE_BINARY}" DESTINATION "${CMAKE_INSTALL_PREFIX}/engine" COMPONENT Runtime)
+else()
+  message(WARNING "No engine at ${DARTPILOT_ENGINE_BINARY}: the app is built without it. Build the engine first "
+                  "(cmake -B build && cmake --build build in the repository root) or set DARTPILOT_ENGINE_BINARY.")
+endif()
+
 # Copy the native assets provided by the build.dart from all packages.
 set(NATIVE_ASSETS_DIR "${PROJECT_BUILD_DIR}native_assets/linux/")
 install(DIRECTORY "${NATIVE_ASSETS_DIR}"
