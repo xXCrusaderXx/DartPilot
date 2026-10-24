@@ -19,6 +19,7 @@ qt_add_qml_module(dartpilot_setup
     CamerasPage.qml CameraPane.qml IntrinsicPage.qml ExtrinsicPage.qml
     CaptureGuide.qml GuideDialog.qml PatternWindow.qml
     BoardIllustration.qml ExtrinsicGuideDialog.qml
+    CheckPage.qml
   RESOURCES icons/dartpilot.svg
   SOURCES
     board_refiner.hpp board_refiner.cpp
@@ -26,6 +27,7 @@ qt_add_qml_module(dartpilot_setup
     camera_finder.hpp camera_finder.cpp
     camera_stream.hpp camera_stream.cpp
     camera_view.hpp camera_view.cpp
+    check_view.hpp check_view.cpp
     extrinsic_view.hpp extrinsic_view.cpp
     intrinsic_view.hpp intrinsic_view.cpp
     pattern_image_provider.hpp pattern_image_provider.cpp

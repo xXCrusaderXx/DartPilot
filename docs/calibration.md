@@ -73,3 +73,16 @@ The detection measures each radial wire on seven tracks through the singles, to 
 
 The result is stored in `~/.local/share/dartpilot/calibration/extrinsics.yml`, together with the board points, the lens priors and the creation times of the board planes and intrinsics it was computed from. The page marks it as outdated when any of them changes.
 
+
+## Calibration check
+
+The page "Calibration check" watches every camera: every few seconds each camera averages ten frames, finds the empty board again and compares the points with where its stored refinement puts them (blue rings expected, green dots found). It needs no click on the sector 20: the orientation that fits the calibration is taken. The edge offset is measured again each time, because it changes with the light, not with the camera.
+
+| Result | Meaning |
+| - | - |
+| Green, up to 1 mm | The calibration still holds. |
+| Yellow, up to 2.5 mm | Other light than during the calibration, or the camera moved a little. Calibrate again if it stays. |
+| Red, above 2.5 mm | The camera or the board has moved: calibrate it again on the extrinsic page. |
+| Wrong port | The image fits the calibration of another camera much better: the cameras were plugged into other USB ports. |
+
+On the stills of the reference cameras, a fresh detection matched its own refinement within 0.4 to 1.0 mm in the light it was made in and within 1.1 to 1.6 mm under evening light, while the calibration of another camera was off by 27 to 61 mm. The thresholds are provisional until #48 sets the error budget. Darts in the board pause the check ("No board").

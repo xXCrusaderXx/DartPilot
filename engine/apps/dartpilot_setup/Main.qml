@@ -96,6 +96,13 @@ ApplicationWindow {
                     selected: window.page === 2
                     onClicked: window.page = 2
                 }
+                NavButton {
+                    text: "Calibration check"
+                    subtitle: "Has a camera moved?"
+                    glyph: "◈"
+                    selected: window.page === 3
+                    onClicked: window.page = 3
+                }
 
                 Item {
                     Layout.fillHeight: true
@@ -145,6 +152,10 @@ ApplicationWindow {
                 active: window.page === 2
                 cameras: finder.cameras
                 onSaved: finder.refresh()
+            }
+            CheckPage {
+                active: window.page === 3
+                cameras: finder.cameras
             }
         }
     }

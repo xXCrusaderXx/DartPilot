@@ -74,7 +74,7 @@ std::vector<cv::Point2f> projectWithOpenCv (const TrueCamera& camera, const std:
 
 // The 60 board points as the detection and orientBoard deliver them: image points of the real board, board points at
 // the nominal positions. A little noise, seeded, so the test is repeatable.
-std::vector<BoardCorrespondence> observe (const TrueCamera& camera, int seed)
+std::vector<BoardCorrespondence> observe (const TrueCamera& camera, int seed, double edge_offset_mm = kEdgeOffset_mm)
 {
     const std::array<double, 3> nominal = {15.9, 103.0, 166.0}, real = {kOuterBull_mm, kTreble_mm, kDouble_mm};
     std::vector<cv::Point3f> seen;
@@ -85,7 +85,7 @@ std::vector<BoardCorrespondence> observe (const TrueCamera& camera, int seed)
         for(int circle = 0; circle < 3; ++circle)
         {
             // The detected edge lies beside the wire, alternately to either side
-            const double side_mm = (wire % 2 == 0 ? 1.0 : -1.0) * kEdgeOffset_mm;
+            const double side_mm = (wire % 2 == 0 ? 1.0 : -1.0) * edge_offset_mm;
             const double shifted = angle + std::asin(side_mm / real[circle]);
             seen.emplace_back(real[circle] * std::cos(shifted), real[circle] * std::sin(shifted), kWireHeight_mm);
             board.emplace_back(nominal[circle] * std::cos(angle), nominal[circle] * std::sin(angle));
@@ -255,4 +255,67 @@ TEST(BoardRefinement, SavesAndLoads)
         EXPECT_LT(cv::norm(p - q), 1e-6);
     }
     EXPECT_FALSE(dartpilot::geometry::loadExtrinsics(path));
+}
+
+namespace
+{
+// The detection the setup GUI would make of this camera: the observed points, wires counted from board wire 0
+dartpilot::geometry::BoardDetection detectionOf (const std::vector<BoardCorrespondence>& correspondences)
+{
+    dartpilot::geometry::BoardDetection detection;
+    for(std::size_t i = 0; i < correspondences.size(); ++i)
+    {
+        detection.points.push_back({static_cast<int>(i / 3), static_cast<dartpilot::geometry::BoardCircle>(i % 3), correspondences[i].image_px, 0.3});
+    }
+    return detection;
+}
+}  // namespace
+
+TEST(CalibrationCheck, AnUnmovedCameraMatchesAndFindsSectorTwentyByItself)
+{
+    const Rig rig = threeCameras(DistortionModel::Fisheye);
+    const auto refinement = dartpilot::geometry::refineBoardCameras(rig.inputs);
+    ASSERT_TRUE(refinement);
+    const auto check = dartpilot::geometry::checkCalibration(detectionOf(observe(rig.cameras[1], 7)), refinement->cameras[1], refinement->board);
+    ASSERT_TRUE(check);
+    // Board wire k borders sector 20 for k = 4 (docs/board-coordinates.md), and the wires were counted from wire 0.
+    EXPECT_EQ(check->twenty_sector, 4);
+    EXPECT_EQ(check->points, 60);
+    EXPECT_LT(check->rms_mm, 0.5);
+    EXPECT_EQ(check->predicted_px.size(), 60u);
+}
+
+TEST(CalibrationCheck, OtherLightIsNotTakenForAMovedCamera)
+{
+    const Rig rig = threeCameras(DistortionModel::Fisheye);
+    const auto refinement = dartpilot::geometry::refineBoardCameras(rig.inputs);
+    ASSERT_TRUE(refinement);
+    const auto check =
+        dartpilot::geometry::checkCalibration(detectionOf(observe(rig.cameras[0], 7, -0.2)), refinement->cameras[0], refinement->board);
+    ASSERT_TRUE(check);
+    EXPECT_NEAR(check->edge_offset_mm, -0.2, 0.1);
+    EXPECT_LT(check->rms_mm, 0.5);
+}
+
+TEST(CalibrationCheck, NoticesAMovedOrSwappedCamera)
+{
+    const Rig rig = threeCameras(DistortionModel::Fisheye);
+    const auto refinement = dartpilot::geometry::refineBoardCameras(rig.inputs);
+    ASSERT_TRUE(refinement);
+    // Knocked: the camera tilts by 1 degree about its own centre.
+    TrueCamera knocked = rig.cameras[2];
+    cv::Matx33d tilt, rotation;
+    cv::Rodrigues(cv::Vec3d(1.0 * CV_PI / 180.0, 0.0, 0.0), tilt);
+    cv::Rodrigues(knocked.rvec, rotation);
+    cv::Rodrigues(tilt * rotation, knocked.rvec);
+    knocked.tvec_mm = tilt * knocked.tvec_mm;
+    const auto moved = dartpilot::geometry::checkCalibration(detectionOf(observe(knocked, 7)), refinement->cameras[2], refinement->board);
+    ASSERT_TRUE(moved);
+    EXPECT_GT(moved->rms_mm, 3.0);
+    EXPECT_GT(cv::norm(moved->mean_shift_px), 5.0);
+    // The image of camera 3 against the calibration of camera 1
+    const auto swapped = dartpilot::geometry::checkCalibration(detectionOf(observe(rig.cameras[2], 7)), refinement->cameras[0], refinement->board);
+    ASSERT_TRUE(swapped);
+    EXPECT_GT(swapped->rms_mm, 10.0);
+    EXPECT_FALSE(dartpilot::geometry::checkCalibration({}, refinement->cameras[0], refinement->board));
 }
