@@ -315,4 +315,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get storeReferenceFailed => 'Could not store the empty board';
+
+  @override
+  String get searchEngines => 'Search the network for engines';
+
+  @override
+  String get searchingEngines => 'Searching the network…';
+
+  @override
+  String get noEnginesFound =>
+      'No engine found. Guest Wi-Fi, client isolation or separate networks block the search; type the address instead.';
+
+  @override
+  String get foundEngines => 'Engines in the network';
+
+  @override
+  String engineIncompatible(String protocol) {
+    return 'incompatible ($protocol)';
+  }
 }

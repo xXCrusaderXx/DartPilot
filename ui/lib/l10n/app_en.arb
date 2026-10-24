@@ -153,5 +153,11 @@
   "storeEmptyReference": "Store empty board",
   "emptyReferenceStored": "Empty board stored",
   "boardNotEmpty": "The board is not empty; pull out the darts first.",
-  "storeReferenceFailed": "Could not store the empty board"
+  "storeReferenceFailed": "Could not store the empty board",
+  "searchEngines": "Search the network for engines",
+  "searchingEngines": "Searching the network…",
+  "noEnginesFound": "No engine found. Guest Wi-Fi, client isolation or separate networks block the search; type the address instead.",
+  "foundEngines": "Engines in the network",
+  "engineIncompatible": "incompatible ({protocol})",
+  "@engineIncompatible": {"placeholders": {"protocol": {"type": "String"}}}
 }

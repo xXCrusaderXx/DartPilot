@@ -1,11 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../engine/engine_connection.dart';
+import '../engine/engine_discovery.dart';
 import '../screens/cameras_screen.dart';
 import 'board_check.dart';
 
-/// Engine address, connect button and connection state, on the home screen.
+/// Engine address, connect button and connection state, on the home screen, with a search for engines in the network.
 class EngineCard extends StatefulWidget {
   const EngineCard({super.key});
 
@@ -19,10 +22,33 @@ class _EngineCardState extends State<EngineCard> {
 
   TextEditingController get _url => _controller ??= TextEditingController(text: EngineScope.of(context).url);
 
+  StreamSubscription<List<FoundEngine>>? _search;
+  bool _searching = false;
+
+  /// Result of the last search; null before the first one
+  List<FoundEngine>? _found;
+
   @override
   void dispose() {
+    _search?.cancel();
     _controller?.dispose();
     super.dispose();
+  }
+
+  void _startSearch() {
+    _search?.cancel();
+    setState(() {
+      _searching = true;
+      _found = const [];
+    });
+    _search = EngineScope.of(context).discovery
+        .search()
+        .listen((found) => setState(() => _found = found), onDone: () => setState(() => _searching = false));
+  }
+
+  void _connectTo(FoundEngine engine) {
+    _url.text = engine.url;
+    EngineScope.of(context).connect(engine.url);
   }
 
   @override
@@ -67,6 +93,17 @@ class _EngineCardState extends State<EngineCard> {
                   ),
                 ),
                 const SizedBox(width: 12),
+                if (!connected && engine.discovery.available) ...[
+                  IconButton(
+                    key: const ValueKey('engine-search'),
+                    onPressed: _searching ? null : _startSearch,
+                    tooltip: l10n.searchEngines,
+                    icon: _searching
+                        ? const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.travel_explore),
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 if (connected) ...[
                   OutlinedButton.icon(
                     onPressed: () =>
@@ -81,10 +118,43 @@ class _EngineCardState extends State<EngineCard> {
                     : FilledButton(onPressed: () => engine.connect(_url.text.trim()), child: Text(l10n.connect)),
               ],
             ),
+            if (!connected && _found != null) ..._foundList(l10n, theme),
             if (connected) const BoardStateRow(),
           ],
         ),
       ),
     );
+  }
+
+  List<Widget> _foundList(AppLocalizations l10n, ThemeData theme) {
+    final found = _found!;
+    if (found.isEmpty) {
+      return [
+        const SizedBox(height: 8),
+        Text(_searching ? l10n.searchingEngines : l10n.noEnginesFound, style: theme.textTheme.bodySmall),
+      ];
+    }
+    return [
+      const SizedBox(height: 8),
+      Text(l10n.foundEngines, style: theme.textTheme.labelLarge),
+      for (final e in found)
+        ListTile(
+          key: ValueKey('found-${e.key}'),
+          dense: true,
+          contentPadding: EdgeInsets.zero,
+          leading: Icon(e.compatible ? Icons.dns : Icons.block),
+          title: Text(e.name),
+          subtitle: Text(
+            [
+              e.address,
+              if (e.mode == 'simulate') l10n.engineSimulated,
+              if (e.version.isNotEmpty) e.version,
+              if (!e.compatible) l10n.engineIncompatible(e.protocol),
+            ].join('  ·  '),
+          ),
+          enabled: e.compatible,
+          onTap: e.compatible ? () => _connectTo(e) : null,
+        ),
+    ];
   }
 }
