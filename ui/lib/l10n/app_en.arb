@@ -76,5 +76,49 @@
   "target": "Target",
   "marksPerRound": "Marks per round",
   "hitRate": "Hit rate",
-  "bull": "Bull"
+  "bull": "Bull",
+  "engine": "Engine",
+  "engineAddress": "Engine address",
+  "connect": "Connect",
+  "disconnect": "Disconnect",
+  "engineConnected": "Connected",
+  "engineConnecting": "Connecting…",
+  "engineDisconnected": "Not connected",
+  "engineFailed": "Connection failed",
+  "engineSimulated": "simulated",
+  "uncertainDart": "Uncertain: {label} ({percent} %)",
+  "@uncertainDart": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "uncertainNoPoint": "A dart was detected, but not where",
+  "confirm": "Confirm",
+  "discard": "Discard",
+  "tapToCorrect": "Tap the board where the dart is",
+  "recentDarts": "Last darts",
+  "correctingDart": "Correcting {label} – tap the board",
+  "@correctingDart": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "cancel": "Cancel",
+  "missingDarts": "{count, plural, =1{1 dart is missing} other{{count} darts are missing}}",
+  "@missingDarts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "countAsMiss": "Count as miss",
+  "enterManually": "Enter them"
 }

@@ -1,5 +1,6 @@
 import '../board/dart_throw.dart';
 import '../board/scoring.dart';
+import 'dart_game.dart';
 
 class X01Settings {
   const X01Settings({
@@ -67,7 +68,7 @@ class X01PlayerState {
 
 /// X01 state, derived by replaying all darts from the settings. Undo removes the last dart and replays, so the state
 /// can never drift from the throws.
-class X01Game {
+class X01Game implements DartGame {
   X01Game(this.settings) {
     if (settings.players.isEmpty) throw ArgumentError('at least one player');
     _replay();
@@ -86,16 +87,31 @@ class X01Game {
   /// Visit of the player at the oche, possibly with no darts yet
   X01Visit get currentVisit => visits.last;
 
+  @override
   bool get isFinished => winner != null;
 
   bool get canUndo => _throws.isNotEmpty;
 
+  @override
+  List<DartThrow> get throws => List.unmodifiable(_throws);
+
+  @override
+  int get dartsInVisit => currentVisit.isComplete ? 0 : currentVisit.darts.length;
+
+  @override
+  void replace(int index, DartThrow dart) {
+    _throws[index] = dart;
+    _replay();
+  }
+
+  @override
   void add(DartThrow dart) {
     if (isFinished) return;
     _throws.add(dart);
     _apply(dart);
   }
 
+  @override
   void undo() {
     if (_throws.isEmpty) return;
     _throws.removeLast();

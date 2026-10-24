@@ -385,6 +385,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Bull'**
   String get bull;
+
+  /// No description provided for @engine.
+  ///
+  /// In en, this message translates to:
+  /// **'Engine'**
+  String get engine;
+
+  /// No description provided for @engineAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Engine address'**
+  String get engineAddress;
+
+  /// No description provided for @connect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get connect;
+
+  /// No description provided for @disconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect'**
+  String get disconnect;
+
+  /// No description provided for @engineConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get engineConnected;
+
+  /// No description provided for @engineConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting…'**
+  String get engineConnecting;
+
+  /// No description provided for @engineDisconnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Not connected'**
+  String get engineDisconnected;
+
+  /// No description provided for @engineFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection failed'**
+  String get engineFailed;
+
+  /// No description provided for @engineSimulated.
+  ///
+  /// In en, this message translates to:
+  /// **'simulated'**
+  String get engineSimulated;
+
+  /// No description provided for @uncertainDart.
+  ///
+  /// In en, this message translates to:
+  /// **'Uncertain: {label} ({percent} %)'**
+  String uncertainDart(String label, int percent);
+
+  /// No description provided for @uncertainNoPoint.
+  ///
+  /// In en, this message translates to:
+  /// **'A dart was detected, but not where'**
+  String get uncertainNoPoint;
+
+  /// No description provided for @confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirm;
+
+  /// No description provided for @discard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get discard;
+
+  /// No description provided for @tapToCorrect.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the board where the dart is'**
+  String get tapToCorrect;
+
+  /// No description provided for @recentDarts.
+  ///
+  /// In en, this message translates to:
+  /// **'Last darts'**
+  String get recentDarts;
+
+  /// No description provided for @correctingDart.
+  ///
+  /// In en, this message translates to:
+  /// **'Correcting {label} – tap the board'**
+  String correctingDart(String label);
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @missingDarts.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 dart is missing} other{{count} darts are missing}}'**
+  String missingDarts(int count);
+
+  /// No description provided for @countAsMiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Count as miss'**
+  String get countAsMiss;
+
+  /// No description provided for @enterManually.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter them'**
+  String get enterManually;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

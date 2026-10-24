@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../games/training.dart';
-import '../input/throw_input_panel.dart';
+import '../input/game_input.dart';
 
 class TrainingScreen extends StatefulWidget {
   const TrainingScreen({super.key});
@@ -57,7 +57,12 @@ class _TrainingScreenState extends State<TrainingScreen> {
         ),
       ],
     );
-    final input = ThrowInputPanel(shownThrows: visit, onThrow: (dart) => setState(() => _training.add(dart)));
+    final input = GameInput(
+      game: _training,
+      shownThrows: visit,
+      onDart: (dart) => setState(() => _training.add(dart)),
+      onChanged: () => setState(() {}),
+    );
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.modeTraining)),

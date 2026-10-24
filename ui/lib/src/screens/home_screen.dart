@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../widgets/engine_card.dart';
 import 'around_the_clock_screen.dart';
 import 'cricket_screen.dart';
 import 'training_screen.dart';
@@ -43,6 +44,8 @@ class HomeScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          const EngineCard(),
+          const SizedBox(height: 16),
           Text(l10n.chooseGame, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 12),
           for (final (icon, title, description, onTap) in modes)

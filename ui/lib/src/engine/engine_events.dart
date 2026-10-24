@@ -1,0 +1,115 @@
+// Messages of the engine API, protocol dartpilot/1.0 (docs/engine-api.md), as Dart objects.
+import '../board/dart_throw.dart';
+import '../board/scoring.dart';
+
+sealed class EngineEvent {
+  const EngineEvent();
+
+  /// Parses an engine message; unknown types give null, so newer engines stay compatible.
+  static EngineEvent? fromJson(Map<String, dynamic> json) => switch (json['type']) {
+    'hello' => EngineHello.fromJson(json),
+    'throw' => EngineThrow.fromJson(json),
+    'throw_corrected' => EngineThrowCorrected.fromJson(json),
+    'takeout' => EngineTakeout(json['darts_removed'] as int? ?? 0),
+    'camera_status' => EngineCameraStatus(json['camera'] as String, json['state'] as String),
+    'engine_status' => EngineStatus(json['detection'] as String, json['message'] as String? ?? ''),
+    _ => null,
+  };
+}
+
+BoardPoint? _point(Object? json) {
+  if (json is! Map<String, dynamic>) return null;
+  return BoardPoint((json['x_mm'] as num).toDouble(), (json['y_mm'] as num).toDouble());
+}
+
+class EngineHello extends EngineEvent {
+  const EngineHello({required this.protocol, required this.mode, required this.geometry, required this.cameras});
+
+  final String protocol;
+  final String mode;
+  final BoardGeometry geometry;
+  final List<String> cameras;
+
+  factory EngineHello.fromJson(Map<String, dynamic> json) {
+    final g = json['board_geometry'] as Map<String, dynamic>;
+    double r(String key) => (g[key] as num).toDouble();
+    return EngineHello(
+      protocol: json['protocol'] as String,
+      mode: json['mode'] as String,
+      geometry: BoardGeometry(
+        bullRadiusMm: r('bull_radius_mm'),
+        outerBullRadiusMm: r('outer_bull_radius_mm'),
+        tripleInnerRadiusMm: r('triple_inner_radius_mm'),
+        tripleOuterRadiusMm: r('triple_outer_radius_mm'),
+        doubleInnerRadiusMm: r('double_inner_radius_mm'),
+        doubleOuterRadiusMm: r('double_outer_radius_mm'),
+        wireRotationDeg: r('wire_rotation_deg'),
+      ),
+      cameras: [for (final c in json['cameras'] as List<dynamic>) (c as Map<String, dynamic>)['id'] as String],
+    );
+  }
+}
+
+class EngineThrow extends EngineEvent {
+  const EngineThrow({
+    required this.throwId,
+    required this.accepted,
+    required this.point,
+    required this.confidence,
+    this.reason = '',
+  });
+
+  final String throwId;
+
+  /// false: the engine abstains; [point] is its best guess, if any
+  final bool accepted;
+  final BoardPoint? point;
+  final double confidence;
+  final String reason;
+
+  factory EngineThrow.fromJson(Map<String, dynamic> json) => EngineThrow(
+    throwId: json['throw_id'] as String,
+    accepted: json['accepted'] as bool,
+    point: _point(json['board_point']),
+    confidence: (json['confidence'] as num? ?? 0).toDouble(),
+    reason: json['reason'] as String? ?? '',
+  );
+}
+
+class EngineThrowCorrected extends EngineEvent {
+  const EngineThrowCorrected({required this.throwId, required this.action, required this.point, required this.client});
+
+  final String throwId;
+
+  /// corrected, rejected or added
+  final String action;
+  final BoardPoint? point;
+  final String client;
+
+  factory EngineThrowCorrected.fromJson(Map<String, dynamic> json) => EngineThrowCorrected(
+    throwId: json['throw_id'] as String,
+    action: json['action'] as String,
+    point: _point(json['board_point']),
+    client: json['client'] as String? ?? '',
+  );
+}
+
+class EngineTakeout extends EngineEvent {
+  const EngineTakeout(this.dartsRemoved);
+
+  final int dartsRemoved;
+}
+
+class EngineCameraStatus extends EngineEvent {
+  const EngineCameraStatus(this.camera, this.state);
+
+  final String camera;
+  final String state;
+}
+
+class EngineStatus extends EngineEvent {
+  const EngineStatus(this.detection, this.message);
+
+  final String detection;
+  final String message;
+}

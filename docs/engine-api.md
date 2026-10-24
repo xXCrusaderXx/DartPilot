@@ -178,7 +178,7 @@ The engine sends the camera's own JPEG when it fits `max_width`, otherwise a sca
 
 ## Implementation status
 
-`dartpilot serve --simulate` implements the protocol with simulated darts, takeouts and camera states (`engine/api`). Not implemented yet: live detection (needs the detection pipeline), `--replay`, previews (`subscribe_preview` answers `not_available`), and storing corrections in a recorded session.
+`dartpilot serve --simulate` implements the protocol with simulated darts, takeouts and camera states (`engine/api`), and the player app connects to it (`ui/lib/src/engine/`). Not implemented yet: live detection (needs the detection pipeline), `--replay`, previews (`subscribe_preview` answers `not_available`), and storing corrections in a recorded session.
 
 ## Not in version 1
 

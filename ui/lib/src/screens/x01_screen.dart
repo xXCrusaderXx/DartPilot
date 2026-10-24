@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../board/dart_throw.dart';
 import '../games/x01.dart';
-import '../input/throw_input_panel.dart';
+import '../input/game_input.dart';
 import '../widgets/winner_dialog.dart';
 import 'x01_setup_screen.dart';
 
@@ -96,7 +96,12 @@ class _X01ScreenState extends State<X01Screen> {
         ),
       ],
     );
-    final input = ThrowInputPanel(shownThrows: [for (final d in visit.darts) d.dart], onThrow: _add);
+    final input = GameInput(
+      game: _game,
+      shownThrows: [for (final d in visit.darts) d.dart],
+      onDart: _add,
+      onChanged: () => setState(() {}),
+    );
 
     return Scaffold(
       appBar: AppBar(title: Text('${widget.settings.startScore}')),
