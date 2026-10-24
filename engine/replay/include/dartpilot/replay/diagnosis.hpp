@@ -84,6 +84,9 @@ class DiagnosisBuilder
         std::string id;
         // Nothing if the camera has no refinement; its calibration and dart checks are then skipped.
         const geometry::RefinedCamera* calibration = nullptr;
+        // The stored image of the empty board, if any: whether the board is empty at the start is checked against it,
+        // else by whether all wires are where the calibration has them.
+        cv::Mat empty_reference;
     };
 
     // board: from the refinement, nothing without one. wait_for_empty_board: periods are ignored until a still board

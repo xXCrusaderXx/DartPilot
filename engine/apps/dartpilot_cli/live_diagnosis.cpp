@@ -30,7 +30,9 @@ LiveDiagnosis::LiveDiagnosis (api::Server& server, const CameraPreviews& preview
 {
     for(const auto& device : devices)
     {
-        replay::DiagnosisBuilder::Camera camera{"usb-" + device.usb_port, nullptr};
+        replay::DiagnosisBuilder::Camera camera{
+            "usb-" + device.usb_port, nullptr,
+            geometry::loadEmptyReference((calibration_directory / geometry::emptyReferenceFileName(device.usb_port)).string())};
         if(extrinsics_)
         {
             for(const auto& refined : extrinsics_->refinement.cameras)
