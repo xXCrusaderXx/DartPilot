@@ -184,7 +184,7 @@ class _Zoom extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final engine = EngineScope.of(context);
-    final scale = Dartboard.scaleFor(const Size(boardPx, boardPx), engine.geometry);
+    final scale = Dartboard.scaleFor(const Size(boardPx, boardPx), engine.geometry, image: engine.boardImage);
     final x = boardPx / 2 + target.xMm * scale;
     final y = boardPx / 2 - target.yMm * scale;
     return ClipRRect(
@@ -245,7 +245,7 @@ class _BoardWithMarks extends StatelessWidget {
               child: CustomPaint(
                 painter: _MarksPainter(
                   run: run,
-                  scale: Dartboard.scaleFor(size, engine.geometry),
+                  scale: Dartboard.scaleFor(size, engine.geometry, image: engine.boardImage),
                   markScale: markScale,
                   target: AppColors.accent,
                   good: status.good,

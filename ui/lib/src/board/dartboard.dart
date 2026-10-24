@@ -30,12 +30,14 @@ class Dartboard extends StatelessWidget {
           final size = constraints.biggest;
           return GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTapUp: onTap == null ? null : (details) => onTap!(toBoard(details.localPosition, size, geometry)),
+            onTapUp: onTap == null
+                ? null
+                : (details) => onTap!(toBoard(details.localPosition, size, geometry, image: image)),
             child: _withImage(
               size,
               CustomPaint(
                 size: size,
-                painter: _DartboardPainter(geometry, throws, Theme.of(context).colorScheme, drawBoard: image == null),
+                painter: _DartboardPainter(geometry, throws, Theme.of(context).colorScheme, image: image),
               ),
             ),
           );
@@ -48,7 +50,7 @@ class Dartboard extends StatelessWidget {
   Widget _withImage(Size size, Widget overlay) {
     final board = image;
     if (board == null) return overlay;
-    final scale = scaleFor(size, geometry);
+    final scale = scaleFor(size, geometry, image: board);
     final half = board.radiusMm * scale;
     return ClipRect(
       child: Stack(
@@ -73,25 +75,29 @@ class Dartboard extends StatelessWidget {
   }
 
   /// Pixels per mm for a widget of this size
-  static double scaleFor(Size size, BoardGeometry geometry) =>
-      size.shortestSide / (2 * (geometry.doubleOuterRadiusMm + numberRingMm));
+  /// With the real board's [image] the whole image is shown, the board with its number ring and surround; the
+  /// drawn board shows the scoring area and a narrow number ring.
+  static double scaleFor(Size size, BoardGeometry geometry, {BoardImage? image}) =>
+      size.shortestSide / (2 * (image?.radiusMm ?? geometry.doubleOuterRadiusMm + numberRingMm));
 
   /// Widget position to board point: origin in the middle, +y up
-  static BoardPoint toBoard(Offset position, Size size, BoardGeometry geometry) {
-    final scale = scaleFor(size, geometry);
+  static BoardPoint toBoard(Offset position, Size size, BoardGeometry geometry, {BoardImage? image}) {
+    final scale = scaleFor(size, geometry, image: image);
     return BoardPoint((position.dx - size.width / 2) / scale, -(position.dy - size.height / 2) / scale);
   }
 }
 
 class _DartboardPainter extends CustomPainter {
-  _DartboardPainter(this.geometry, this.throws, this.colors, {this.drawBoard = true});
+  _DartboardPainter(this.geometry, this.throws, this.colors, {this.image});
 
   final BoardGeometry geometry;
   final List<DartThrow> throws;
   final ColorScheme colors;
 
-  /// false when the real board's image lies underneath
-  final bool drawBoard;
+  /// The real board's image underneath; the painted board is left out then
+  final BoardImage? image;
+
+  bool get drawBoard => image == null;
 
   static const _black = Color(0xFF1B1B1B);
   static const _white = Color(0xFFF1E9D2);
@@ -100,7 +106,7 @@ class _DartboardPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final scale = Dartboard.scaleFor(size, geometry);
+    final scale = Dartboard.scaleFor(size, geometry, image: image);
     final centre = size.center(Offset.zero);
     if (drawBoard) {
       final g = geometry;
@@ -179,5 +185,5 @@ class _DartboardPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_DartboardPainter old) =>
-      old.throws != throws || old.geometry != geometry || old.colors != colors || old.drawBoard != drawBoard;
+      old.throws != throws || old.geometry != geometry || old.colors != colors || old.image != image;
 }
