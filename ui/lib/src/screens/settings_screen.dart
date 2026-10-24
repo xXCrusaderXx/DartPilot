@@ -8,6 +8,7 @@ import 'calibration_check_screen.dart';
 import 'calibration_screen.dart';
 import 'cameras_screen.dart';
 import 'diagnosis_screen.dart';
+import 'reference_run_screen.dart';
 
 /// Everything that is set up rather than played: the connection, the cameras, the setup diagnosis and calibration.
 class SettingsScreen extends StatelessWidget {
@@ -78,6 +79,15 @@ class SettingsScreen extends StatelessWidget {
                 subtitle: Text(l10n.settingsDiagnosisHint),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => open(const DiagnosisScreen()),
+              ),
+              ListTile(
+                key: const ValueKey('open-reference-run'),
+                enabled: connected,
+                leading: const Icon(Icons.my_location),
+                title: Text(l10n.referenceRun),
+                subtitle: Text(l10n.settingsReferenceHint),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => open(const ReferenceRunScreen()),
               ),
               ListTile(
                 key: const ValueKey('settings-empty-board'),

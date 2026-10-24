@@ -467,34 +467,82 @@
   "lobby": "Lobby",
   "lobbyComingSoon": "Play with friends on other devices – coming with #124",
   "diagnosisProgress": "Darts: {done} of {target}",
-  "@diagnosisProgress": {"placeholders": {"done": {"type": "int"}, "target": {"type": "int"}}},
+  "@diagnosisProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
   "stepRemoveLastDart": "Pull the last dart out – then you are done.",
   "diagnosisEnough": "Enough darts measured – the diagnosis is complete.",
   "finishDiagnosis": "Finish the diagnosis",
   "diagnosisMoreDartsOptional": "More darts are possible, but not needed.",
   "diagnosisFinished": "Diagnosis finished",
   "resultProblems": "{count, plural, =1{1 problem found} other{{count} problems found}}",
-  "@resultProblems": {"placeholders": {"count": {"type": "int"}}},
+  "@resultProblems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "resultWarnings": "{count, plural, =1{1 warning} other{{count} warnings}}",
-  "@resultWarnings": {"placeholders": {"count": {"type": "int"}}},
+  "@resultWarnings": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "resultFixHint": "The findings below say what to do. Run the diagnosis again afterwards.",
   "resultAllGood": "All good",
   "resultAllGoodHint": "The setup is ready to play.",
   "resultFewDarts": "Only {done} of {target} darts measured; the findings on darts are less certain.",
-  "@resultFewDarts": {"placeholders": {"done": {"type": "int"}, "target": {"type": "int"}}},
+  "@resultFewDarts": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
   "navStatistics": "Players",
   "statisticsEmpty": "No players yet. Create a profile; every game counts for its statistics.",
   "statsGamesCount": "{count, plural, =1{1 game} other{{count} games}}",
-  "@statsGamesCount": {"placeholders": {"count": {"type": "int"}}},
+  "@statsGamesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "statsGames": "Games",
   "statsWon": "{count} won",
-  "@statsWon": {"placeholders": {"count": {"type": "int"}}},
+  "@statsWon": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "statsDarts": "Darts",
   "statsFirst9": "First 9 average",
   "statsLegs": "Legs",
   "statsBestLeg": "Best leg",
   "statsDartsCount": "{count, plural, =1{1 dart} other{{count} darts}}",
-  "@statsDartsCount": {"placeholders": {"count": {"type": "int"}}},
+  "@statsDartsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "statsCheckoutRate": "Checkout rate",
   "statsHighestFinish": "Highest finish",
   "statsMarksPerRound": "Marks per round",
@@ -515,7 +563,13 @@
   "statsFavouriteDoubles": "Finished on",
   "statsHistory": "Games",
   "statsOpponents": "{count, plural, =1{against 1 player} other{against {count} players}}",
-  "@statsOpponents": {"placeholders": {"count": {"type": "int"}}},
+  "@statsOpponents": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "statsSolo": "solo",
   "localEngineNoAnswer": "The program did not answer as the engine and was stopped. Check the engine program under Log.",
   "newProfile": "New profile",
@@ -525,11 +579,23 @@
   "createProfile": "Create",
   "pickPlayersHint": "Tap the players in the order they throw.",
   "throwingOrder": "Order: {order}",
-  "@throwingOrder": {"placeholders": {"order": {"type": "String"}}},
+  "@throwingOrder": {
+    "placeholders": {
+      "order": {
+        "type": "String"
+      }
+    }
+  },
   "statsNoGamesYet": "No games yet",
   "deleteProfile": "Delete profile",
   "deleteProfileText": "{name} is removed from the players. The games stay kept and count again if a profile with this name is created.",
-  "@deleteProfileText": {"placeholders": {"name": {"type": "String"}}},
+  "@deleteProfileText": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "delete": "Delete",
   "firstProfileTitle": "Who is playing?",
   "firstProfileText": "Create a player profile; every game counts for its statistics.",
@@ -542,16 +608,34 @@
   "calibStale": "A camera was measured again after the last refinement: refine all cameras once more.",
   "calibBoardMissing": "board not measured",
   "calibBoardMeasured": "board {mm} mm",
-  "@calibBoardMeasured": {"placeholders": {"mm": {"type": "String"}}},
+  "@calibBoardMeasured": {
+    "placeholders": {
+      "mm": {
+        "type": "String"
+      }
+    }
+  },
   "calibLensOwn": "own lens calibration",
   "calibLensNone": "no lens calibration",
   "calibStart": "Start calibration",
   "calibLightInstruction": "Empty the board and switch on the light you play in.",
   "calibLightHint": "The engine tries every colour temperature on all cameras and keeps the one in the middle of where the board is found. This takes about a minute.",
   "calibLightSettling": "Waiting for the cameras' exposure: {seconds} s",
-  "@calibLightSettling": {"placeholders": {"seconds": {"type": "int"}}},
+  "@calibLightSettling": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
   "calibLightSweeping": "Trying {kelvin} K …",
-  "@calibLightSweeping": {"placeholders": {"kelvin": {"type": "int"}}},
+  "@calibLightSweeping": {
+    "placeholders": {
+      "kelvin": {
+        "type": "int"
+      }
+    }
+  },
   "calibLightDone": "Light set for every camera.",
   "calibLightFailed": "The light could not be set.",
   "calibLightNotFound": "board not found",
@@ -559,7 +643,16 @@
   "calibLightAgain": "Set again",
   "calibNext": "Next",
   "calibCameraOf": "Camera {number} of {count}",
-  "@calibCameraOf": {"placeholders": {"number": {"type": "int"}, "count": {"type": "int"}}},
+  "@calibCameraOf": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "calibBoardDetectInstruction": "Keep the board empty, hand out of view, and detect it.",
   "calibBoardDetectHint": "The engine finds the rings and the 20 wires of the board in this camera's image.",
   "calibBoardTap20": "Tap into the field of the 20.",
@@ -568,7 +661,16 @@
   "calibBoardCheckHint": "If not, tap into the 20 again.",
   "calibBoardNotFound": "Board not found: remove all darts, keep the hand out of view, and check the light (step 1).",
   "calibBoardFit": "Board fit {fit} mm (worst {worst} mm)",
-  "@calibBoardFit": {"placeholders": {"fit": {"type": "String"}, "worst": {"type": "String"}}},
+  "@calibBoardFit": {
+    "placeholders": {
+      "fit": {
+        "type": "String"
+      },
+      "worst": {
+        "type": "String"
+      }
+    }
+  },
   "calibBoardDetect": "Detect the board",
   "calibBoardDetectAgain": "Detect again",
   "calibNumbersMatchNext": "Numbers match – next camera",
@@ -585,7 +687,16 @@
   "calibAdviceLens": "A lens calibration of this camera would make it more accurate.",
   "calibMeasureAgain": "Measure again",
   "calibMeasuredBoard": "Your board: outer bull {bull} mm, treble centre {treble} mm",
-  "@calibMeasuredBoard": {"placeholders": {"bull": {"type": "String"}, "treble": {"type": "String"}}},
+  "@calibMeasuredBoard": {
+    "placeholders": {
+      "bull": {
+        "type": "String"
+      },
+      "treble": {
+        "type": "String"
+      }
+    }
+  },
   "calibRefine": "Refine",
   "calibRefineAgain": "Refine again",
   "calibDone": "The cameras are calibrated.",
@@ -598,16 +709,43 @@
   "calibErrorPoseFailed": "A camera could not be placed; measure its board again.",
   "calibErrorSaveFailed": "The calibration could not be saved.",
   "calibErrorOther": "Failed ({code}).",
-  "@calibErrorOther": {"placeholders": {"code": {"type": "String"}}},
+  "@calibErrorOther": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
   "calibrationHint": "Light, board and refinement, step by step",
   "addBot": "Bot",
   "botDifficulty": "Difficulty",
   "botAverage": "Average about {average}",
-  "@botAverage": {"placeholders": {"average": {"type": "int"}}},
+  "@botAverage": {
+    "placeholders": {
+      "average": {
+        "type": "int"
+      }
+    }
+  },
   "botName": "Bot · {name}",
-  "@botName": {"placeholders": {"level": {"type": "int"}, "name": {"type": "String"}}},
+  "@botName": {
+    "placeholders": {
+      "level": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "statsAgainstBots": "against bot level {levels}",
-  "@statsAgainstBots": {"placeholders": {"levels": {"type": "String"}}},
+  "@statsAgainstBots": {
+    "placeholders": {
+      "levels": {
+        "type": "String"
+      }
+    }
+  },
   "botLevel1": "Beginner",
   "botLevel2": "Occasional player",
   "botLevel3": "Pub player",
@@ -622,18 +760,112 @@
   "calibrationCheckHint": "Has a camera moved? Every camera against its calibration",
   "calibrationCheckIntro": "Keep the board empty. Blue rings show where the calibration expects the board's points, green dots where they are now; long amber lines mean the camera or the board has moved. The engine also checks this in the background whenever the board is empty.",
   "checkOk": "Matches the calibration ({mm} mm).",
-  "@checkOk": {"placeholders": {"mm": {"type": "String"}}},
+  "@checkOk": {
+    "placeholders": {
+      "mm": {
+        "type": "String"
+      }
+    }
+  },
   "checkOff": "Slightly off ({mm} mm), e.g. other light. Detection still works.",
-  "@checkOff": {"placeholders": {"mm": {"type": "String"}}},
+  "@checkOff": {
+    "placeholders": {
+      "mm": {
+        "type": "String"
+      }
+    }
+  },
   "checkMoved": "The camera or the board has moved ({mm} mm). Measure this camera again.",
-  "@checkMoved": {"placeholders": {"mm": {"type": "String"}}},
+  "@checkMoved": {
+    "placeholders": {
+      "mm": {
+        "type": "String"
+      }
+    }
+  },
   "checkWrongPort": "Wrong USB port? This image fits the calibration of camera {camera}.",
-  "@checkWrongPort": {"placeholders": {"camera": {"type": "String"}}},
+  "@checkWrongPort": {
+    "placeholders": {
+      "camera": {
+        "type": "String"
+      }
+    }
+  },
   "checkNoBoard": "No board found – darts in the board or a hand in view?",
   "checkNotCalibrated": "Not calibrated yet.",
   "checkChecking": "Checking …",
   "homeCameraMoved": "Camera {number} has moved – measure it again.",
-  "@homeCameraMoved": {"placeholders": {"number": {"type": "int"}}},
+  "@homeCameraMoved": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
   "homeCameraWrongPort": "Camera {number} is on another USB port than when it was calibrated.",
-  "@homeCameraWrongPort": {"placeholders": {"number": {"type": "int"}}}
+  "@homeCameraWrongPort": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "referenceRun": "Reference measurement",
+  "settingsReferenceHint": "How accurate is the detection? Darts in known positions show it in millimetres",
+  "referenceIntro": "You push one dart after the other by hand into a known position: the centre of the bull, then corners where a radial wire meets a ring wire. The engine locates every dart, and the distance from the position is the error of the whole system, from calibration to tip. Ten darts take about five minutes; the board must be calibrated.",
+  "referenceNotCalibrated": "Calibrate the cameras first (Settings → Calibration).",
+  "referenceProgress": "Dart {number} of {total}",
+  "@referenceProgress": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "referenceBullCentre": "Push a dart into the very centre of the bull, then take your hand away.",
+  "referenceCorner": "Push a dart into {field}, into the corner at the wire between {a} and {b}, then take your hand away.",
+  "@referenceCorner": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      },
+      "a": {
+        "type": "int"
+      },
+      "b": {
+        "type": "int"
+      }
+    }
+  },
+  "referenceCornerHint": "The point touches both wires: the radial wire and the ring wire. Push it in by hand, do not throw.",
+  "referenceResults": "Measured darts",
+  "referenceAbstained": "Not located",
+  "referenceError": "{mm} mm off",
+  "@referenceError": {
+    "placeholders": {
+      "mm": {
+        "type": "String"
+      }
+    }
+  },
+  "referenceCamerasUsed": "{count} cameras",
+  "@referenceCamerasUsed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "referenceLocated": "Located",
+  "referenceMedian": "Median error",
+  "referenceP90": "90 % within",
+  "referenceMax": "Worst",
+  "referenceGood": "The detection is accurate.",
+  "referenceNotGood": "The detection is not accurate enough yet.",
+  "referenceNotGoodHint": "Run the setup diagnosis to see where the error comes from, then calibrate the cameras it names again.",
+  "referenceCamerasDisagree": "The cameras disagree about where it is",
+  "referenceSeenByOneCamera": "Only one camera saw it"
 }

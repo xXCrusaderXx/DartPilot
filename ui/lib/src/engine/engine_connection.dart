@@ -50,6 +50,9 @@ class EngineConnection extends ChangeNotifier {
   /// calibrated)
   BoardImage? boardImage;
 
+  /// Latest state of the reference measurement; null before it ran
+  ReferenceRun? referenceRun;
+
   /// Latest state of the setup diagnosis; null before it ran
   EngineDiagnosis? diagnosis;
 
@@ -123,6 +126,7 @@ class EngineConnection extends ChangeNotifier {
     hello = null;
     boardState = null;
     boardImage = null;
+    referenceRun = null;
     diagnosis = null;
     _clearCalibration();
     if (state != EngineConnectionState.disconnected) {
@@ -193,6 +197,10 @@ class EngineConnection extends ChangeNotifier {
         event is BoardPlaneResult ||
         event is RefinementResult ||
         event is CalibrationCheck) {
+      notifyListeners();
+    }
+    if (event is ReferenceRun) {
+      referenceRun = event;
       notifyListeners();
     }
     if (event is BoardImage) {
@@ -325,6 +333,11 @@ class EngineConnection extends ChangeNotifier {
   void unwatchCalibrationCheck() {
     if (_checkWatchers > 0 && --_checkWatchers == 0) _send({'type': 'unsubscribe_calibration_check'});
   }
+
+  /// Starts the reference measurement afresh, or stops it; its state arrives as [referenceRun].
+  Future<String?> startReferenceRun() => _request({'type': 'start_reference_run'});
+
+  Future<String?> stopReferenceRun() => _request({'type': 'stop_reference_run'});
 
   /// Asks for the real board's image; it arrives as [boardImage]. Engines without one answer with an error.
   void requestBoardImage() => _send({'type': 'get_board_image'});

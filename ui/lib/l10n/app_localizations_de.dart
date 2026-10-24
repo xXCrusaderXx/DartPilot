@@ -1212,4 +1212,79 @@ class AppLocalizationsDe extends AppLocalizations {
   String homeCameraWrongPort(int number) {
     return 'Kamera $number steckt an einem anderen USB-Port als beim Kalibrieren.';
   }
+
+  @override
+  String get referenceRun => 'Referenzmessung';
+
+  @override
+  String get settingsReferenceHint =>
+      'Wie genau ist die Erkennung? Darts an bekannten Stellen zeigen es in Millimetern';
+
+  @override
+  String get referenceIntro =>
+      'Du steckst einen Dart nach dem anderen von Hand an eine bekannte Stelle: in die Mitte des Bulls, dann in Ecken, wo ein Radialdraht auf einen Ringdraht trifft. Die Engine ortet jeden Dart, und der Abstand zur Stelle ist der Fehler des ganzen Systems, von der Kalibrierung bis zur Spitze. Zehn Darts dauern etwa fünf Minuten; die Scheibe muss kalibriert sein.';
+
+  @override
+  String get referenceNotCalibrated => 'Kalibriere zuerst die Kameras (Einstellungen → Kalibrierung).';
+
+  @override
+  String referenceProgress(int number, int total) {
+    return 'Dart $number von $total';
+  }
+
+  @override
+  String get referenceBullCentre => 'Steck einen Dart genau in die Mitte des Bulls und nimm die Hand weg.';
+
+  @override
+  String referenceCorner(String field, int a, int b) {
+    return 'Steck einen Dart in $field, in die Ecke am Draht zwischen $a und $b, und nimm die Hand weg.';
+  }
+
+  @override
+  String get referenceCornerHint =>
+      'Die Spitze berührt beide Drähte: den Radialdraht und den Ringdraht. Von Hand stecken, nicht werfen.';
+
+  @override
+  String get referenceResults => 'Gemessene Darts';
+
+  @override
+  String get referenceAbstained => 'Nicht geortet';
+
+  @override
+  String referenceError(String mm) {
+    return '$mm mm daneben';
+  }
+
+  @override
+  String referenceCamerasUsed(int count) {
+    return '$count Kameras';
+  }
+
+  @override
+  String get referenceLocated => 'Geortet';
+
+  @override
+  String get referenceMedian => 'Median-Fehler';
+
+  @override
+  String get referenceP90 => '90 % innerhalb';
+
+  @override
+  String get referenceMax => 'Schlechtester';
+
+  @override
+  String get referenceGood => 'Die Erkennung ist genau.';
+
+  @override
+  String get referenceNotGood => 'Die Erkennung ist noch nicht genau genug.';
+
+  @override
+  String get referenceNotGoodHint =>
+      'Lass die Einrichtungsdiagnose laufen, um zu sehen, woher der Fehler kommt, und kalibriere die genannten Kameras neu.';
+
+  @override
+  String get referenceCamerasDisagree => 'Die Kameras sind sich nicht einig, wo er steckt';
+
+  @override
+  String get referenceSeenByOneCamera => 'Nur eine Kamera hat ihn gesehen';
 }

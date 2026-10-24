@@ -1,0 +1,212 @@
+{
+ "first": {
+  "results": [],
+  "running": true,
+  "step": "insert_dart",
+  "summary": {
+   "abstained": 0,
+   "located": 0,
+   "max_error_mm": null,
+   "median_error_mm": null,
+   "p90_error_mm": null
+  },
+  "target": {
+   "board_mm": [
+    0.0,
+    0.0
+   ],
+   "field": "Bull",
+   "hint_code": "bull_centre",
+   "index": 0,
+   "label": "Centre of the bull",
+   "total": 10,
+   "wires": []
+  },
+  "type": "reference_run"
+ },
+ "remove": {
+  "results": [
+   {
+    "board_mm": [
+     0.0,
+     0.0
+    ],
+    "cameras_used": 2,
+    "error_mm": 0.3,
+    "index": 0,
+    "located_mm": [
+     0.3,
+     0.0
+    ]
+   }
+  ],
+  "running": true,
+  "step": "remove_dart",
+  "summary": {
+   "abstained": 0,
+   "located": 1,
+   "max_error_mm": 0.3,
+   "median_error_mm": 0.3,
+   "p90_error_mm": 0.3
+  },
+  "target": {
+   "board_mm": [
+    24.532965273284116,
+    166.4012428285914
+   ],
+   "field": "D20",
+   "hint_code": "corner",
+   "index": 1,
+   "label": "D20, corner of the 20/1 wire and the outer double wire",
+   "total": 10,
+   "wires": [
+    20,
+    1
+   ]
+  },
+  "type": "reference_run"
+ },
+ "done": {
+  "results": [
+   {
+    "board_mm": [
+     0.0,
+     0.0
+    ],
+    "cameras_used": 2,
+    "error_mm": 0.3,
+    "index": 0,
+    "located_mm": [
+     0.3,
+     0.0
+    ]
+   },
+   {
+    "board_mm": [
+     24.532965273284116,
+     166.4012428285914
+    ],
+    "cameras_used": 3,
+    "error_mm": 0.41999999999999355,
+    "index": 1,
+    "located_mm": [
+     24.22325991275679,
+     166.68493736442286
+    ]
+   },
+   {
+    "board_mm": [
+     166.40124282859136,
+     24.53296527328414
+    ],
+    "cameras_used": 3,
+    "error_mm": 0.5399999999999999,
+    "index": 2,
+    "located_mm": [
+     166.44849227964866,
+     23.995036384512787
+    ]
+   },
+   {
+    "board_mm": [
+     -24.53296527328411,
+     -166.4012428285914
+    ],
+    "cameras_used": 2,
+    "error_mm": 0.6599999999999946,
+    "index": 3,
+    "located_mm": [
+     -24.13145340569282,
+     -165.87742203845096
+    ]
+   },
+   {
+    "board_mm": [
+     -166.4012428285914,
+     24.5329652732841
+    ],
+    "cameras_used": 3,
+    "error_mm": 0.7799999999999868,
+    "index": 4,
+    "located_mm": [
+     -167.1692993561108,
+     24.396990383930174
+    ]
+   },
+   {
+    "board_mm": [
+     13.425085434548443,
+     96.26841164720169
+    ],
+    "cameras_used": 3,
+    "error_mm": 0.3000000000000034,
+    "index": 5,
+    "located_mm": [
+     13.67824162216819,
+     96.10743977180155
+    ]
+   },
+   {
+    "board_mm": [
+     96.26841164720169,
+     13.42508543454844
+    ],
+    "cameras_used": 2,
+    "error_mm": 0.42000000000000115,
+    "index": 6,
+    "located_mm": [
+     96.1592883575919,
+     13.830661700699135
+    ]
+   },
+   {
+    "board_mm": [
+     -13.425085434548421,
+     -96.26841164720169
+    ],
+    "cameras_used": 0,
+    "error_mm": null,
+    "index": 7,
+    "located_mm": null,
+    "reason": "cameras_disagree"
+   },
+   {
+    "board_mm": [
+     -96.26841164720167,
+     13.425085434548459
+    ],
+    "cameras_used": 3,
+    "error_mm": 0.6600000000000064,
+    "index": 8,
+    "located_mm": [
+     -95.64852621838173,
+     13.65167328756959
+    ]
+   },
+   {
+    "board_mm": [
+     0.9798083974616771,
+     17.672859856408742
+    ],
+    "cameras_used": 2,
+    "error_mm": 0.7799999999999999,
+    "index": 9,
+    "located_mm": [
+     0.25872041302866333,
+     17.970235239899598
+    ]
+   }
+  ],
+  "running": false,
+  "step": "done",
+  "summary": {
+   "abstained": 1,
+   "located": 9,
+   "max_error_mm": 0.7799999999999999,
+   "median_error_mm": 0.5399999999999999,
+   "p90_error_mm": 0.7799999999999868
+  },
+  "target": null,
+  "type": "reference_run"
+ }
+}
