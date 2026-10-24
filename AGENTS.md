@@ -31,6 +31,7 @@ The design is in [docs/technical_plan.md](docs/technical_plan.md); decisions are
   - `fusion`: temporal association, robust estimation, abstention.
   - `scoring`: deterministic board point (mm) → sector and ring. No image processing, no dependency on other modules.
   - `replay`: offline evaluation of recorded throws.
+  - `api`: the engine API for clients ([docs/engine-api.md](docs/engine-api.md), ADR 0007): WebSocket server, protocol messages, throw log with corrections, and the simulator behind `dartpilot serve --simulate`.
 - `engine/apps/dartpilot_cli/`: command-line entry point.
 - `tests/`: GoogleTest tests, registered with ctest.
 - `ui/`: the Flutter player app (ADR 0004). It talks to the engine only through the engine API (#37); until that exists it takes manual input. Its scorer (`ui/lib/src/board/scoring.dart`) is a port of `engine/scoring` and must give the same result for every point: change both together, with the same test cases.

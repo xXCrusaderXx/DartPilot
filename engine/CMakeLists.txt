@@ -8,6 +8,8 @@ add_subdirectory(tip_candidates)
 add_subdirectory(geometry)
 add_subdirectory(fusion)
 add_subdirectory(replay)
+# Engine API for the player app and other clients (ADR 0007)
+add_subdirectory(api)
 
 add_subdirectory(apps/dartpilot_cli)
 add_subdirectory(apps/dartpilot_setup)

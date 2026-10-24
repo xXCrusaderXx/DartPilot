@@ -176,6 +176,10 @@ The engine sends the camera's own JPEG when it fits `max_width`, otherwise a sca
 3. `takeout` ends the visit. If the client expected three darts and received fewer, it asks the player for the missing ones and sends them with `add_throw`.
 4. The player corrects a wrong dart on the board; the client sends `correct_throw`, and every client updates on `throw_corrected`.
 
+## Implementation status
+
+`dartpilot serve --simulate` implements the protocol with simulated darts, takeouts and camera states (`engine/api`). Not implemented yet: live detection (needs the detection pipeline), `--replay`, previews (`subscribe_preview` answers `not_available`), and storing corrections in a recorded session.
+
 ## Not in version 1
 
 Authentication and encryption (use it in a trusted network only), discovery of engines in the network, several boards per engine, and engine-side game logic.
