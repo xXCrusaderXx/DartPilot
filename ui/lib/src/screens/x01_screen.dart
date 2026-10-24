@@ -4,6 +4,8 @@ import '../../l10n/app_localizations.dart';
 import '../board/dart_throw.dart';
 import '../games/x01.dart';
 import '../input/game_input.dart';
+import '../stats/game_record.dart';
+import '../stats/statistics.dart';
 import '../widgets/winner_dialog.dart';
 import 'x01_setup_screen.dart';
 
@@ -16,8 +18,19 @@ class X01Screen extends StatefulWidget {
   State<X01Screen> createState() => _X01ScreenState();
 }
 
-class _X01ScreenState extends State<X01Screen> {
+class _X01ScreenState extends State<X01Screen> with RecordsGame {
   late final X01Game _game = X01Game(widget.settings);
+
+  @override
+  GameRecord buildRecord(String id, DateTime started, DateTime ended) => GameRecord(
+    id: id,
+    mode: GameMode.x01,
+    started: started,
+    ended: ended,
+    players: widget.settings.players,
+    settings: GameRecord.settingsOfX01(widget.settings),
+    throws: _game.throws,
+  );
 
   void _add(DartThrow dart) {
     final legBefore = _game.legNumber;

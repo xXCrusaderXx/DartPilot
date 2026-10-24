@@ -1399,6 +1399,192 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Only {done} of {target} darts measured; the findings on darts are less certain.'**
   String resultFewDarts(int done, int target);
+
+  /// No description provided for @navStatistics.
+  ///
+  /// In en, this message translates to:
+  /// **'Statistics'**
+  String get navStatistics;
+
+  /// No description provided for @statisticsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No statistics yet. Players who play with their own name (not \"Player 1\") get statistics after their first game.'**
+  String get statisticsEmpty;
+
+  /// No description provided for @statsGamesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 game} other{{count} games}}'**
+  String statsGamesCount(int count);
+
+  /// No description provided for @statsGames.
+  ///
+  /// In en, this message translates to:
+  /// **'Games'**
+  String get statsGames;
+
+  /// No description provided for @statsWon.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} won'**
+  String statsWon(int count);
+
+  /// No description provided for @statsDarts.
+  ///
+  /// In en, this message translates to:
+  /// **'Darts'**
+  String get statsDarts;
+
+  /// No description provided for @statsFirst9.
+  ///
+  /// In en, this message translates to:
+  /// **'First 9 average'**
+  String get statsFirst9;
+
+  /// No description provided for @statsLegs.
+  ///
+  /// In en, this message translates to:
+  /// **'Legs'**
+  String get statsLegs;
+
+  /// No description provided for @statsBestLeg.
+  ///
+  /// In en, this message translates to:
+  /// **'Best leg'**
+  String get statsBestLeg;
+
+  /// No description provided for @statsDartsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 dart} other{{count} darts}}'**
+  String statsDartsCount(int count);
+
+  /// No description provided for @statsCheckoutRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkout rate'**
+  String get statsCheckoutRate;
+
+  /// No description provided for @statsHighestFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Highest finish'**
+  String get statsHighestFinish;
+
+  /// No description provided for @statsMarksPerRound.
+  ///
+  /// In en, this message translates to:
+  /// **'Marks per round'**
+  String get statsMarksPerRound;
+
+  /// No description provided for @statsClockHitRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Around the Clock hits'**
+  String get statsClockHitRate;
+
+  /// No description provided for @periodLastGame.
+  ///
+  /// In en, this message translates to:
+  /// **'Last game'**
+  String get periodLastGame;
+
+  /// No description provided for @periodWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'7 days'**
+  String get periodWeek;
+
+  /// No description provided for @periodMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'30 days'**
+  String get periodMonth;
+
+  /// No description provided for @periodAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get periodAll;
+
+  /// No description provided for @statsNoGamesInPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'No games in this period.'**
+  String get statsNoGamesInPeriod;
+
+  /// No description provided for @statsHits.
+  ///
+  /// In en, this message translates to:
+  /// **'Where the darts landed'**
+  String get statsHits;
+
+  /// No description provided for @ringTriple.
+  ///
+  /// In en, this message translates to:
+  /// **'Triple'**
+  String get ringTriple;
+
+  /// No description provided for @ringDouble.
+  ///
+  /// In en, this message translates to:
+  /// **'Double'**
+  String get ringDouble;
+
+  /// No description provided for @ringSingleInner.
+  ///
+  /// In en, this message translates to:
+  /// **'Single (inner)'**
+  String get ringSingleInner;
+
+  /// No description provided for @ringSingleOuter.
+  ///
+  /// In en, this message translates to:
+  /// **'Single (outer)'**
+  String get ringSingleOuter;
+
+  /// No description provided for @ringOuterBull.
+  ///
+  /// In en, this message translates to:
+  /// **'Outer bull'**
+  String get ringOuterBull;
+
+  /// No description provided for @ringBull.
+  ///
+  /// In en, this message translates to:
+  /// **'Bull'**
+  String get ringBull;
+
+  /// No description provided for @ringMiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Miss'**
+  String get ringMiss;
+
+  /// No description provided for @statsFavouriteDoubles.
+  ///
+  /// In en, this message translates to:
+  /// **'Finished on'**
+  String get statsFavouriteDoubles;
+
+  /// No description provided for @statsHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Games'**
+  String get statsHistory;
+
+  /// No description provided for @statsOpponents.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{against 1 player} other{against {count} players}}'**
+  String statsOpponents(int count);
+
+  /// No description provided for @statsSolo.
+  ///
+  /// In en, this message translates to:
+  /// **'solo'**
+  String get statsSolo;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

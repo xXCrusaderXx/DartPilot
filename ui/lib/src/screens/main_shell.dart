@@ -5,6 +5,7 @@ import '../engine/engine_connection.dart';
 import 'connect_screen.dart';
 import 'home_screen.dart';
 import 'settings_screen.dart';
+import 'statistics_screen.dart';
 
 /// The app's root: the connection page until an engine is connected (or the player chose to play without one), then
 /// the main view. A lost connection leads back to the connection page; games opened on top of it stay open.
@@ -26,7 +27,7 @@ class _RootScreenState extends State<RootScreen> {
   }
 }
 
-/// Home and settings, with a navigation bar at the bottom on phones and a rail at the side on wide screens.
+/// Home, statistics and settings, with a navigation bar at the bottom on phones and a rail at the side on wide screens.
 class MainShell extends StatefulWidget {
   const MainShell({super.key, required this.onConnect});
 
@@ -43,7 +44,11 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final pages = [HomeScreen(onConnect: widget.onConnect), SettingsScreen(onConnect: widget.onConnect)];
+    final pages = [
+      HomeScreen(onConnect: widget.onConnect),
+      const StatisticsScreen(),
+      SettingsScreen(onConnect: widget.onConnect),
+    ];
     final body = IndexedStack(index: _index, children: pages);
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -60,6 +65,11 @@ class _MainShellState extends State<MainShell> {
                       icon: const Icon(Icons.home_outlined),
                       selectedIcon: const Icon(Icons.home),
                       label: Text(l10n.navHome),
+                    ),
+                    NavigationRailDestination(
+                      icon: const Icon(Icons.insights_outlined),
+                      selectedIcon: const Icon(Icons.insights),
+                      label: Text(l10n.navStatistics),
                     ),
                     NavigationRailDestination(
                       icon: const Icon(Icons.settings_outlined),
@@ -84,6 +94,11 @@ class _MainShellState extends State<MainShell> {
                 icon: const Icon(Icons.home_outlined),
                 selectedIcon: const Icon(Icons.home),
                 label: l10n.navHome,
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.insights_outlined),
+                selectedIcon: const Icon(Icons.insights),
+                label: l10n.navStatistics,
               ),
               NavigationDestination(
                 icon: const Icon(Icons.settings_outlined),

@@ -4,6 +4,8 @@ import '../../l10n/app_localizations.dart';
 import '../board/dart_throw.dart';
 import '../games/cricket.dart';
 import '../input/game_input.dart';
+import '../stats/game_record.dart';
+import '../stats/statistics.dart';
 import '../widgets/winner_dialog.dart';
 import 'game_layout.dart';
 import 'players_setup_screen.dart';
@@ -25,8 +27,18 @@ class CricketScreen extends StatefulWidget {
   State<CricketScreen> createState() => _CricketScreenState();
 }
 
-class _CricketScreenState extends State<CricketScreen> {
+class _CricketScreenState extends State<CricketScreen> with RecordsGame {
   late final CricketGame _game = CricketGame(widget.names);
+
+  @override
+  GameRecord buildRecord(String id, DateTime started, DateTime ended) => GameRecord(
+    id: id,
+    mode: GameMode.cricket,
+    started: started,
+    ended: ended,
+    players: widget.names,
+    throws: _game.throws,
+  );
 
   void _add(DartThrow dart) {
     setState(() => _game.add(dart));
