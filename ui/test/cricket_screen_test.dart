@@ -13,7 +13,7 @@ void main() {
     await playOffline(tester);
     await tester.tap(find.text(mode));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Spieler entfernen').last);
+    await pickPlayers(tester, ['Anna']);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Spiel starten'));
     await tester.pumpAndSettle();
@@ -39,7 +39,7 @@ void main() {
     await dart(tester, '', 'keypad-bull');
     expect(find.text('✕'), findsOneWidget);
     await dart(tester, '', 'keypad-25');
-    expect(find.text('Spieler 1 gewinnt!'), findsOneWidget);
+    expect(find.text('Anna gewinnt!'), findsOneWidget);
   });
 
   testWidgets('a solo Around the Clock game without the bull', (tester) async {
@@ -50,7 +50,7 @@ void main() {
     await playOffline(tester);
     await tester.tap(find.text('Around the Clock'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Spieler entfernen').last);
+    await pickPlayers(tester, ['Anna']);
     await tester.tap(find.text('Mit Bull beenden'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Spiel starten'));
@@ -59,10 +59,10 @@ void main() {
     await tester.pumpAndSettle();
 
     await dart(tester, '', 'keypad-5');
-    expect(tester.widget<Text>(find.byKey(const ValueKey('target-Spieler 1'))).data, '1');
+    expect(tester.widget<Text>(find.byKey(const ValueKey('target-Anna'))).data, '1');
     for (var n = 1; n <= 20; ++n) {
       await dart(tester, '', 'keypad-$n');
     }
-    expect(find.text('Spieler 1 gewinnt!'), findsOneWidget);
+    expect(find.text('Anna gewinnt!'), findsOneWidget);
   });
 }

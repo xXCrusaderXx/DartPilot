@@ -27,11 +27,11 @@ void main() {
     await playOffline(tester);
     await tester.tap(find.text('X01'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Spieler entfernen').last);
+    await pickPlayers(tester, ['Anna']);
     await tester.tap(find.text('301'));
     await tester.tap(find.text('Spiel starten'));
     await tester.pumpAndSettle();
-    String remaining() => tester.widget<Text>(find.byKey(const ValueKey('remaining-Spieler 1'))).data!;
+    String remaining() => tester.widget<Text>(find.byKey(const ValueKey('remaining-Anna'))).data!;
 
     // A detected T20 counts at once.
     engine.receiveForTest(throwJson('s/1', 0, 103));

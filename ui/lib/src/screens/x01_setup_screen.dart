@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../games/x01.dart';
 import '../widgets/board_check.dart';
-import '../widgets/player_names.dart';
+import '../widgets/player_picker.dart';
 import 'x01_screen.dart';
 
 class X01SetupScreen extends StatefulWidget {
@@ -14,7 +14,8 @@ class X01SetupScreen extends StatefulWidget {
 }
 
 class _X01SetupScreenState extends State<X01SetupScreen> {
-  final PlayerNamesController _players = PlayerNamesController();
+  // The start button follows whether anyone is picked.
+  late final PlayerSelection _players = PlayerSelection()..addListener(() => setState(() {}));
   int _startScore = 501;
   bool _doubleIn = false;
   bool _doubleOut = true;
@@ -28,9 +29,8 @@ class _X01SetupScreenState extends State<X01SetupScreen> {
 
   Future<void> _start() async {
     if (!await confirmBoardEmpty(context) || !mounted) return;
-    final l10n = AppLocalizations.of(context);
     final settings = X01Settings(
-      players: _players.names(l10n),
+      players: List.of(_players.players),
       startScore: _startScore,
       doubleIn: _doubleIn,
       doubleOut: _doubleOut,
@@ -51,7 +51,7 @@ class _X01SetupScreenState extends State<X01SetupScreen> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              PlayerNamesEditor(controller: _players),
+              PlayerPicker(selection: _players),
               const SizedBox(height: 16),
               Text(l10n.startScore, style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),
@@ -88,7 +88,12 @@ class _X01SetupScreenState extends State<X01SetupScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              FilledButton.icon(onPressed: _start, icon: const Icon(Icons.play_arrow), label: Text(l10n.startGame)),
+              FilledButton.icon(
+                key: const ValueKey('start-game'),
+                onPressed: _players.isEmpty ? null : _start,
+                icon: const Icon(Icons.play_arrow),
+                label: Text(l10n.startGame),
+              ),
             ],
           ),
         ),

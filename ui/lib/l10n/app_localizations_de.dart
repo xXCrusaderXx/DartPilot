@@ -757,11 +757,10 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get navStatistics => 'Statistik';
+  String get navStatistics => 'Spieler';
 
   @override
-  String get statisticsEmpty =>
-      'Noch keine Statistik. Wer mit eigenem Namen spielt (nicht „Spieler 1“), bekommt nach dem ersten Spiel eine Statistik.';
+  String get statisticsEmpty => 'Noch keine Spieler. Leg ein Profil an; jedes Spiel zählt für seine Statistik.';
 
   @override
   String statsGamesCount(int count) {
@@ -869,4 +868,47 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get localEngineNoAnswer =>
       'Das Programm hat sich nicht als Engine gemeldet und wurde beendet. Prüf das Engine-Programm unter Log.';
+
+  @override
+  String get newProfile => 'Neues Profil';
+
+  @override
+  String get profileName => 'Name';
+
+  @override
+  String get profileNameEmpty => 'Gib einen Namen ein.';
+
+  @override
+  String get profileNameExists => 'Es gibt schon ein Profil mit diesem Namen.';
+
+  @override
+  String get createProfile => 'Anlegen';
+
+  @override
+  String get pickPlayersHint => 'Tipp die Spieler in der Reihenfolge an, in der sie werfen.';
+
+  @override
+  String throwingOrder(String order) {
+    return 'Reihenfolge: $order';
+  }
+
+  @override
+  String get statsNoGamesYet => 'Noch keine Spiele';
+
+  @override
+  String get deleteProfile => 'Profil löschen';
+
+  @override
+  String deleteProfileText(String name) {
+    return '$name wird aus den Spielern entfernt. Die Spiele bleiben gespeichert und zählen wieder, wenn ein Profil mit diesem Namen angelegt wird.';
+  }
+
+  @override
+  String get delete => 'Löschen';
+
+  @override
+  String get firstProfileTitle => 'Wer spielt?';
+
+  @override
+  String get firstProfileText => 'Leg ein Spielerprofil an; jedes Spiel zählt für seine Statistik.';
 }

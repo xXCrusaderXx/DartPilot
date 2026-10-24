@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../../l10n/app_localizations.dart';
 import '../engine/engine_connection.dart';
+import '../stats/statistics.dart';
 import '../widgets/board_check.dart';
+import '../widgets/player_picker.dart';
 import 'around_the_clock_screen.dart';
 import 'cricket_screen.dart';
 import 'training_screen.dart';
@@ -58,6 +60,18 @@ class HomeScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             children: [
               _StatusCard(onConnect: onConnect),
+              if (StatisticsScope.maybeOf(context)?.profiles.isEmpty ?? false) ...[
+                const SizedBox(height: 16),
+                Card(
+                  key: const ValueKey('first-profile'),
+                  child: ListTile(
+                    leading: const Icon(Icons.person_add, size: 32),
+                    title: Text(l10n.firstProfileTitle),
+                    subtitle: Text(l10n.firstProfileText),
+                    trailing: FilledButton(onPressed: () => createProfile(context), child: Text(l10n.newProfile)),
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
               Text(l10n.chooseGame, style: theme.textTheme.titleLarge),
               const SizedBox(height: 12),
