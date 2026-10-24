@@ -1292,4 +1292,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String cameraMovedNotice(String camera) {
     return 'Camera $camera was moved – its calibration is being checked.';
   }
+
+  @override
+  String get rigKnockedNotice => 'The rig was knocked – the calibration is being checked.';
 }

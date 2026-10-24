@@ -98,8 +98,44 @@ void main() {
         'shift_px': [5.0, 1.0],
       }),
     );
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
     await tester.pump();
     expect(find.text('Kamera 3 wurde verschoben – die Kalibrierung wird geprüft.'), findsOneWidget);
+    await tester.pumpAndSettle(const Duration(seconds: 9));
+  });
+
+  testWidgets('a knocked rig moves all cameras and back: one notice', (tester) async {
+    final engine = EngineConnection.forTest((_) {});
+    addTearDown(engine.dispose);
+    engine.receiveForTest(jsonEncode(fixtures['hello']));
+    await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
+    await tester.pumpAndSettle();
+    void moved(double dx) {
+      for (final camera in ['sim-1', 'sim-2', 'sim-3']) {
+        engine.receiveForTest(
+          jsonEncode({
+            'type': 'camera_moved',
+            'camera': camera,
+            'shift_px': [dx, 1.0],
+          }),
+        );
+      }
+    }
+
+    moved(2);
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump();
+    expect(find.text('Das Gestell wurde angestoßen – die Kalibrierung wird geprüft.'), findsOneWidget);
+    // A snack bar's time starts once it has slid in.
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 9));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('camera-moved')), findsNothing);
+    // Swaying back a few seconds later gives no second notice.
+    moved(-2);
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump();
+    expect(find.byKey(const ValueKey('camera-moved')), findsNothing);
+    await tester.pump(const Duration(seconds: 15));
   });
 }
