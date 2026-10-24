@@ -26,9 +26,11 @@ void main() {
     engine.receiveForTest(jsonEncode(hello));
     await tester.pumpAndSettle();
     expect(find.byType(NavigationBar), findsOneWidget);
-    expect(find.text('Lokal oder solo spielen'), findsOneWidget);
-    expect(find.text('Zusammen spielen'), findsOneWidget);
     expect(find.text('Verbunden (simuliert)'), findsOneWidget);
+    // Without a profile, home asks for one first.
+    expect(find.text('Wer spielt?'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Zusammen spielen'), 200);
+    expect(find.text('Lokal oder solo spielen'), findsOneWidget);
 
     await openSettings(tester);
     expect(find.text('Verbunden mit einer Engine im Netzwerk'), findsOneWidget);

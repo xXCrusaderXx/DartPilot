@@ -11,7 +11,7 @@ import 'navigation.dart';
 DartThrow at(Ring ring, [int sector = 20]) => DartThrow(fieldCentre(ring, sector: sector), ThrowInput.keypad);
 
 void main() {
-  testWidgets('a game is kept when the player leaves it; guests are not listed', (tester) async {
+  testWidgets('a game is kept when the player leaves it, and its players are listed', (tester) async {
     tester.view.physicalSize = const Size(1400, 1000);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -20,7 +20,7 @@ void main() {
     await playOffline(tester);
     await tester.tap(find.text('X01'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(const ValueKey('player-name-0')), 'Anna');
+    await pickPlayers(tester, ['Anna', 'Ben']);
     await tester.tap(find.text('301'));
     await tester.tap(find.text('Spiel starten'));
     await tester.pumpAndSettle();
@@ -36,14 +36,14 @@ void main() {
     await tester.pumpAndSettle();
     final game = statistics.games.single;
     expect(game.mode, GameMode.x01);
-    expect(game.players, ['Anna', 'Spieler 2']);
+    expect(game.players, ['Anna', 'Ben']);
     expect(game.x01Settings.startScore, 301);
     expect(game.throws.single.score.label, 'T20');
 
     await tester.tap(find.byIcon(Icons.insights_outlined));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('stats-player-Anna')), findsOneWidget);
-    expect(find.byKey(const ValueKey('stats-player-Spieler 2')), findsNothing);
+    expect(find.byKey(const ValueKey('stats-player-Ben')), findsOneWidget);
   });
 
   testWidgets('the player page shows the figures for the chosen period and the games behind them', (tester) async {

@@ -1403,13 +1403,13 @@ abstract class AppLocalizations {
   /// No description provided for @navStatistics.
   ///
   /// In en, this message translates to:
-  /// **'Statistics'**
+  /// **'Players'**
   String get navStatistics;
 
   /// No description provided for @statisticsEmpty.
   ///
   /// In en, this message translates to:
-  /// **'No statistics yet. Players who play with their own name (not \"Player 1\") get statistics after their first game.'**
+  /// **'No players yet. Create a profile; every game counts for its statistics.'**
   String get statisticsEmpty;
 
   /// No description provided for @statsGamesCount.
@@ -1591,6 +1591,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The program did not answer as the engine and was stopped. Check the engine program under Log.'**
   String get localEngineNoAnswer;
+
+  /// No description provided for @newProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'New profile'**
+  String get newProfile;
+
+  /// No description provided for @profileName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get profileName;
+
+  /// No description provided for @profileNameEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name.'**
+  String get profileNameEmpty;
+
+  /// No description provided for @profileNameExists.
+  ///
+  /// In en, this message translates to:
+  /// **'There is a profile with this name already.'**
+  String get profileNameExists;
+
+  /// No description provided for @createProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get createProfile;
+
+  /// No description provided for @pickPlayersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the players in the order they throw.'**
+  String get pickPlayersHint;
+
+  /// No description provided for @throwingOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Order: {order}'**
+  String throwingOrder(String order);
+
+  /// No description provided for @statsNoGamesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No games yet'**
+  String get statsNoGamesYet;
+
+  /// No description provided for @deleteProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete profile'**
+  String get deleteProfile;
+
+  /// No description provided for @deleteProfileText.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is removed from the players. The games stay kept and count again if a profile with this name is created.'**
+  String deleteProfileText(String name);
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @firstProfileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Who is playing?'**
+  String get firstProfileTitle;
+
+  /// No description provided for @firstProfileText.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a player profile; every game counts for its statistics.'**
+  String get firstProfileText;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

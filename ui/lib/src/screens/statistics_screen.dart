@@ -7,10 +7,27 @@ import '../board/scoring.dart';
 import '../stats/game_record.dart';
 import '../stats/player_stats.dart';
 import '../stats/statistics.dart';
+import '../widgets/player_picker.dart';
 
-/// The players with statistics on this device
+/// The player profiles of this device with their statistics; profiles are created and deleted here.
 class StatisticsScreen extends StatelessWidget {
   const StatisticsScreen({super.key});
+
+  Future<void> _delete(BuildContext context, Statistics statistics, String player) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.deleteProfile),
+        content: Text(l10n.deleteProfileText(player)),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.cancel)),
+          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.delete)),
+        ],
+      ),
+    );
+    if (confirmed == true) await statistics.removeProfile(player);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,6 +36,14 @@ class StatisticsScreen extends StatelessWidget {
     final players = statistics?.players ?? const <String>[];
     return Scaffold(
       appBar: AppBar(title: Text(l10n.navStatistics)),
+      floatingActionButton: statistics == null
+          ? null
+          : FloatingActionButton.extended(
+              key: const ValueKey('create-profile'),
+              onPressed: () => createProfile(context),
+              icon: const Icon(Icons.person_add),
+              label: Text(l10n.newProfile),
+            ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 720),
@@ -28,7 +53,7 @@ class StatisticsScreen extends StatelessWidget {
                   child: Text(l10n.statisticsEmpty, textAlign: TextAlign.center),
                 )
               : ListView(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
                   children: [
                     for (final player in players)
                       Builder(
@@ -41,12 +66,22 @@ class StatisticsScreen extends StatelessWidget {
                               leading: CircleAvatar(child: Text(player.characters.first.toUpperCase())),
                               title: Text(player),
                               subtitle: Text(
-                                [
-                                  l10n.statsGamesCount(stats.games),
-                                  if (average != null) '${l10n.average} ${_number(l10n, average)}',
-                                ].join('  ·  '),
+                                stats.games == 0
+                                    ? l10n.statsNoGamesYet
+                                    : [
+                                        l10n.statsGamesCount(stats.games),
+                                        if (average != null) '${l10n.average} ${_number(l10n, average)}',
+                                      ].join('  ·  '),
                               ),
-                              trailing: const Icon(Icons.chevron_right),
+                              trailing: PopupMenuButton<void>(
+                                key: ValueKey('profile-menu-$player'),
+                                itemBuilder: (_) => [
+                                  PopupMenuItem(
+                                    onTap: () => _delete(context, statistics, player),
+                                    child: Text(l10n.deleteProfile),
+                                  ),
+                                ],
+                              ),
                               onTap: () =>
                                   Navigator.of(context)
                                       .push(MaterialPageRoute<void>(builder: (_) => PlayerStatsScreen(player: player))),

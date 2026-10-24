@@ -758,11 +758,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get navStatistics => 'Statistics';
+  String get navStatistics => 'Players';
 
   @override
-  String get statisticsEmpty =>
-      'No statistics yet. Players who play with their own name (not \"Player 1\") get statistics after their first game.';
+  String get statisticsEmpty => 'No players yet. Create a profile; every game counts for its statistics.';
 
   @override
   String statsGamesCount(int count) {
@@ -870,4 +869,47 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get localEngineNoAnswer =>
       'The program did not answer as the engine and was stopped. Check the engine program under Log.';
+
+  @override
+  String get newProfile => 'New profile';
+
+  @override
+  String get profileName => 'Name';
+
+  @override
+  String get profileNameEmpty => 'Enter a name.';
+
+  @override
+  String get profileNameExists => 'There is a profile with this name already.';
+
+  @override
+  String get createProfile => 'Create';
+
+  @override
+  String get pickPlayersHint => 'Tap the players in the order they throw.';
+
+  @override
+  String throwingOrder(String order) {
+    return 'Order: $order';
+  }
+
+  @override
+  String get statsNoGamesYet => 'No games yet';
+
+  @override
+  String get deleteProfile => 'Delete profile';
+
+  @override
+  String deleteProfileText(String name) {
+    return '$name is removed from the players. The games stay kept and count again if a profile with this name is created.';
+  }
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get firstProfileTitle => 'Who is playing?';
+
+  @override
+  String get firstProfileText => 'Create a player profile; every game counts for its statistics.';
 }

@@ -14,7 +14,7 @@ void main() {
     await playOffline(tester);
     await tester.tap(find.text('X01'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(const ValueKey('player-name-0')), 'Anna');
+    await pickPlayers(tester, ['Anna', 'Ben']);
     await tester.tap(find.text('301'));
     await tester.tap(find.text('Spiel starten'));
     await tester.pumpAndSettle();
@@ -37,7 +37,7 @@ void main() {
     for (var i = 0; i < 3; ++i) {
       await dart('', 'keypad-miss');
     }
-    expect(tester.widget<Text>(find.byKey(const ValueKey('remaining-Spieler 2'))).data, '301');
+    expect(tester.widget<Text>(find.byKey(const ValueKey('remaining-Ben'))).data, '301');
     expect(tester.widget<Text>(find.byKey(const ValueKey('checkout'))).data, 'T20  T15  D8');
 
     await dart('Triple', 'keypad-20');

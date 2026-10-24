@@ -5,6 +5,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'game_record.dart';
 
@@ -61,18 +62,93 @@ class MemoryGameStore implements GameStore {
   Future<void> add(GameRecord record) async => records.add(record);
 }
 
-/// The played games of this device, for the statistics pages
+/// The player profiles of this device, in the order they were created
+abstract interface class ProfileStore {
+  Future<List<String>> load();
+  Future<void> save(List<String> profiles);
+}
+
+class PrefsProfileStore implements ProfileStore {
+  static const _key = 'players.profiles';
+
+  @override
+  Future<List<String>> load() async => (await SharedPreferences.getInstance()).getStringList(_key) ?? [];
+
+  @override
+  Future<void> save(List<String> profiles) async =>
+      (await SharedPreferences.getInstance()).setStringList(_key, profiles);
+}
+
+class MemoryProfileStore implements ProfileStore {
+  MemoryProfileStore([List<String>? profiles]) : profiles = profiles ?? [];
+
+  List<String> profiles;
+
+  @override
+  Future<List<String>> load() async => List.of(profiles);
+
+  @override
+  Future<void> save(List<String> profiles) async => this.profiles = List.of(profiles);
+}
+
+/// Why a name cannot become a profile
+enum ProfileError { empty, exists }
+
+/// The played games and the player profiles of this device. Every player plays under a profile, so every game counts
+/// for someone's statistics.
 class Statistics extends ChangeNotifier {
-  Statistics(this.store);
+  Statistics(this.store, [ProfileStore? profileStore]) : profileStore = profileStore ?? MemoryProfileStore();
 
   final GameStore store;
+  final ProfileStore profileStore;
   List<GameRecord> games = [];
+  List<String> profiles = [];
   bool loaded = false;
 
   Future<void> load() async {
     games = await store.load();
+    profiles = await profileStore.load();
+    // Players of games kept before profiles existed become profiles, so their statistics stay reachable.
+    final known = {for (final p in profiles) p.toLowerCase()};
+    final missing = [
+      for (final p in _playedNames())
+        if (known.add(p.toLowerCase())) p,
+    ];
+    if (missing.isNotEmpty) {
+      profiles = [...profiles, ...missing];
+      await profileStore.save(profiles);
+    }
     loaded = true;
     notifyListeners();
+  }
+
+  Iterable<String> _playedNames() sync* {
+    for (final g in games) {
+      for (final p in g.players) {
+        if (!isGuestName(p)) yield p;
+      }
+    }
+  }
+
+  /// Adds a profile; null when it was added. Names are compared without case, so "anna" and "Anna" are one player.
+  Future<ProfileError?> addProfile(String name) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return ProfileError.empty;
+    if (profiles.any((p) => p.toLowerCase() == trimmed.toLowerCase())) return ProfileError.exists;
+    profiles = [...profiles, trimmed];
+    notifyListeners();
+    await profileStore.save(profiles);
+    return null;
+  }
+
+  /// Removes a profile; its games stay kept and count again if a profile of the same name is created.
+  Future<void> removeProfile(String name) async {
+    profiles = [
+      for (final p in profiles)
+        if (p != name) p,
+    ];
+    notifyListeners();
+    await profileStore.save(profiles);
   }
 
   /// Keeps a game; games without darts are not worth keeping.
@@ -83,17 +159,24 @@ class Statistics extends ChangeNotifier {
     await store.add(game);
   }
 
-  /// Players with a profile, i.e. a name of their own, most recently played first
+  /// The profiles, most recently played first, then those without games in the order they were created
   List<String> get players {
     final last = <String, DateTime>{};
     for (final g in games) {
       for (final p in g.players) {
-        if (isGuestName(p)) continue;
         final seen = last[p];
         if (seen == null || g.ended.isAfter(seen)) last[p] = g.ended;
       }
     }
-    return last.keys.toList()..sort((a, b) => last[b]!.compareTo(last[a]!));
+    final played = [
+      for (final p in profiles)
+        if (last.containsKey(p)) p,
+    ]..sort((a, b) => last[b]!.compareTo(last[a]!));
+    return [
+      ...played,
+      for (final p in profiles)
+        if (!last.containsKey(p)) p,
+    ];
   }
 
   static String newId() =>
