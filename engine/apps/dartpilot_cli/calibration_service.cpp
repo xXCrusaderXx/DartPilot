@@ -41,6 +41,16 @@ constexpr double kBoardImageRadius_mm = 250.0;
 constexpr double kBoardImageSharp_mm = 222.0;
 constexpr int kBoardImageFrames = 5;
 
+// Calibration monitoring, as the setup GUI's check: a fresh detection matches its own refinement within 0.4 to 1.0 mm in
+// the light it was made in and within about 1.6 mm under other light; a camera that moved or sits on another port is
+// off by far more. Another camera's calibration that fits kSwapFactor times better marks swapped ports.
+constexpr double kGoodCheck_mm = 1.0;
+constexpr double kOffCheck_mm = 2.5;
+constexpr double kSwapFactor = 3.0;
+constexpr int kCheckFrames = 10;
+constexpr auto kDetailedCheckInterval = std::chrono::seconds(2);
+constexpr auto kBackgroundCheckInterval = std::chrono::seconds(60);
+
 json point (const cv::Point2f& p) { return {p.x, p.y}; }
 
 std::string base64 (const std::vector<std::uint8_t>& data)
@@ -93,15 +103,21 @@ CalibrationService::CalibrationService (api::Server& server, const CameraPreview
     , directory_(std::move(calibration_directory))
     , cameras_started_(started)
     , detections_(devices_.size())
+    , checks_(devices_.size())
 {
     server_.setCalibrationStatus(status());
     server_.onCalibration([this] (const api::CalibrationRequest& request) { return handle(request); });
+    checker_ = std::thread([this] { runChecks(); });
 }
 
 CalibrationService::~CalibrationService ()
 {
     server_.onCalibration({});
     stop_ = true;
+    if(checker_.joinable())
+    {
+        checker_.join();
+    }
     std::lock_guard lock(mutex_);
     if(worker_.joinable())
     {
@@ -158,6 +174,18 @@ bool CalibrationService::startJob (std::function<json()> job)
 std::optional<api::Server::CalibrationError> CalibrationService::handle (const api::CalibrationRequest& request)
 {
     const auto busy = api::Server::CalibrationError{"busy", "Another calibration step is running"};
+    if(request.type == "subscribe_calibration_check" || request.type == "unsubscribe_calibration_check")
+    {
+        if(request.type == "subscribe_calibration_check")
+        {
+            ++subscribers_;
+        }
+        else if(subscribers_ > 0)
+        {
+            --subscribers_;
+        }
+        return std::nullopt;
+    }
     if(request.type == "tune_white_balance")
     {
         return startJob([this] { return tuneWhiteBalance(); }) ? std::nullopt : std::optional(busy);
@@ -488,6 +516,111 @@ json CalibrationService::boardImage (int size_px, double radius_mm)
             {"jpeg_base64", base64(jpeg)}};
 }
 
+void CalibrationService::runChecks ()
+{
+    auto last = std::chrono::steady_clock::now() - kBackgroundCheckInterval;
+    while(!stop_)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        const auto now = std::chrono::steady_clock::now();
+        const bool detailed = subscribers_ > 0;
+        // In the background only on a board that the board check sees empty and still, e.g. after a takeout
+        const bool due =
+            detailed ? now - last >= kDetailedCheckInterval : now - last >= kBackgroundCheckInterval && server_.boardState().state == "empty";
+        if(!due || busy_)
+        {
+            continue;
+        }
+        last = now;
+        const auto extrinsics = geometry::loadExtrinsics((directory_ / geometry::kExtrinsicsFileName).string());
+        for(std::size_t c = 0; c < devices_.size() && !stop_; ++c)
+        {
+            CameraCheck summary;
+            const json event = checkCamera(c, extrinsics ? &*extrinsics : nullptr, summary);
+            {
+                std::lock_guard lock(checks_mutex_);
+                checks_[c] = summary;
+            }
+            if(subscribers_ > 0)
+            {
+                server_.publishEvent(event);
+            }
+        }
+        publishStatus();
+    }
+}
+
+json CalibrationService::checkCamera (std::size_t camera, const geometry::StoredExtrinsics* extrinsics, CameraCheck& summary)
+{
+    const std::string& port = devices_[camera].usb_port;
+    json event = {{"type", "calibration_check"},  {"camera", "usb-" + port},   {"mm", nullptr},          {"shift_px", nullptr}, {"count", 0},
+                  {"expected_px", json::array()}, {"found_px", json::array()}, {"image_size_px", {0, 0}}};
+    summary.checked_at = utcNow();
+    const geometry::RefinedCamera* own = nullptr;
+    for(std::size_t r = 0; extrinsics && r < extrinsics->refinement.cameras.size(); ++r)
+    {
+        if(extrinsics->refinement.cameras[r].usb_port == port)
+        {
+            own = &extrinsics->refinement.cameras[r];
+        }
+    }
+    if(!own)
+    {
+        summary.state = "not_calibrated";
+        event["state"] = summary.state;
+        return event;
+    }
+    const cv::Mat image = averageFrames(camera, kCheckFrames);
+    event["image_size_px"] = {image.cols, image.rows};
+    const auto detection = image.empty() ? std::nullopt : geometry::detectBoard(image);
+    if(!detection)
+    {
+        summary.state = "no_board";
+        event["state"] = summary.state;
+        return event;
+    }
+    const auto check = geometry::checkCalibration(*detection, *own, extrinsics->refinement.board);
+    // Another camera's calibration that fits far better means the cameras were plugged into other ports.
+    std::optional<geometry::CalibrationCheck> best_other;
+    std::string other_port;
+    for(const auto& refined : extrinsics->refinement.cameras)
+    {
+        if(refined.usb_port == port)
+        {
+            continue;
+        }
+        auto other = geometry::checkCalibration(*detection, refined, extrinsics->refinement.board);
+        if(other && (!best_other || other->rms_mm < best_other->rms_mm))
+        {
+            best_other = std::move(other);
+            other_port = refined.usb_port;
+        }
+    }
+    if(!check)
+    {
+        summary.state = "no_board";
+        event["state"] = summary.state;
+        return event;
+    }
+    summary.mm = check->rms_mm;
+    const bool swapped = best_other && best_other->rms_mm * kSwapFactor <= check->rms_mm && best_other->rms_mm <= kOffCheck_mm;
+    summary.state = swapped ? "wrong_port" : check->rms_mm <= kGoodCheck_mm ? "ok" : check->rms_mm <= kOffCheck_mm ? "off" : "moved";
+    event["state"] = summary.state;
+    event["mm"] = check->rms_mm;
+    event["shift_px"] = {check->mean_shift_px.x, check->mean_shift_px.y};
+    event["count"] = check->points;
+    for(std::size_t i = 0; i < detection->points.size() && i < check->predicted_px.size(); ++i)
+    {
+        event["found_px"].push_back(point(detection->points[i].image_px));
+        event["expected_px"].push_back(point(check->predicted_px[i]));
+    }
+    if(swapped)
+    {
+        event["fits_camera"] = "usb-" + other_port;
+    }
+    return event;
+}
+
 std::vector<geometry::SetupCamera> CalibrationService::setupCameras () const
 {
     std::vector<geometry::SetupCamera> cameras;
@@ -527,6 +660,14 @@ json CalibrationService::status () const
         }
         camera["refined"] = refined;
         camera["white_balance_kelvin"] = capture::storedWhiteBalance((directory_ / capture::whiteBalanceFileName(device.usb_port)).string());
+        {
+            std::lock_guard lock(checks_mutex_);
+            const auto& check = checks_[&device - devices_.data()];
+            camera["check"] =
+                check.state.empty()
+                    ? json(nullptr)
+                    : json{{"state", check.state}, {"mm", check.mm ? json(*check.mm) : json(nullptr)}, {"checked_at", check.checked_at}};
+        }
         cameras.push_back(camera);
     }
     return {{"cameras", cameras},

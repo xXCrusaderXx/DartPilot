@@ -177,6 +177,7 @@ The calibration wizard of the app runs on the engine's cameras (`serve --cameras
 ```
 
 - `intrinsics`: `valid` (a lens calibration in the reference mode), `invalid` (one of another capture mode, `intrinsics_reason`: `other_capture_mode`) or `none`.
+- `check`: the latest calibration check of the camera, `{state, mm, checked_at}` or `null` before the first one (see "Calibration check" below); a home screen warns from it when a camera moved.
 - `board_plane_mm`: error of the measured board plane, `null` before the board was measured. `refined`: the camera is part of the stored refinement. `refinement_stale`: a board was measured or a lens calibrated after the refinement, so it should run again.
 
 The steps, in the order of the wizard:
@@ -215,6 +216,17 @@ The steps, in the order of the wizard:
    ```
 
    `state`: `running`, `done`, `failed` (`code`: `no_board_planes`, `pose_failed`, `save_failed`). `quality` from the error on held-out wires: `good` up to 0.5 mm, `fair` up to 1 mm, else `poor`; `advice` then says what helps: `detect_again` (measure the board again in even light) or `lens_calibration` (the camera has no lens calibration of its own). `lens_from`: `own`, `model` (borrowed from a camera of the same model) or `board`.
+
+**Calibration check** (`subscribe_calibration_check` / `unsubscribe_calibration_check`). Each camera's board is compared with its calibration, as the calibration check of the setup GUI (#92) does: the detected wire points against where the calibration puts them. In the background the engine does this every minute while the board is empty and still, e.g. after a takeout, and puts the verdict into `calibration_status` (`cameras[].check`). While a client is subscribed it checks every 2 s and sends the details per camera:
+
+```json
+{ "type": "calibration_check", "camera": "usb-2.4.3.1.3", "state": "moved", "mm": 4.2, "shift_px": [ 6.0, -3.0 ], "count": 60,
+  "expected_px": [ [ 652.1, 254.3 ] ], "found_px": [ [ 658.0, 251.2 ] ], "image_size_px": [ 1280, 720 ] }
+```
+
+- `state`: `ok` (up to 1 mm), `off` (up to 2.5 mm: other light, or the camera moved a little), `moved` (more: calibrate the camera again and refine), `wrong_port` (another camera's calibration fits at least three times better and within 2.5 mm, named in `fits_camera`: the cameras were plugged into other ports), `no_board` (darts in the board, a hand, or no light), `not_calibrated`.
+- `mm`: how far the wire points lie from the calibration on the board; `shift_px`: their mean displacement in the image, the same for all points when the camera moved. `expected_px` and `found_px` pair up for drawing.
+- `--simulate` answers with one camera `moved`.
 
 **Board image** (`get_board_image`, optional `size_px`, default 600, and `radius_mm`, default 250). The real board seen from the front, put together from the refined cameras: each pixel comes mostly from the camera that sees that part with the most pixels per millimetre, with soft transitions between cameras of matched brightness. Outside the number ring (222 mm) the surround is blurred and darkened. A client shows it instead of a drawn board and places hits by their board point: board point (x, y) mm lies at column `(x + radius_mm) / mm_per_px` and row `(radius_mm - y) / mm_per_px`. Taken from the current frames, so ask for it with the board empty, e.g. after a takeout.
 
@@ -279,6 +291,7 @@ Every request carries a `request_id` chosen by the client and is answered with `
 | `set_sector_20` | `camera`, `point_px` | Orients and stores the board plane; answered with `board_plane` |
 | `refine_cameras` | – | Refines all cameras together; answered with `refinement` |
 | `start_reference_run` / `stop_reference_run` | – | The guided reference measurement; its state comes as `reference_run` |
+| `subscribe_calibration_check` / `unsubscribe_calibration_check` | – | Detailed calibration checks every 2 s as `calibration_check` |
 | `get_board_image` | `size_px`, `radius_mm` (optional) | The real board from the front; answered with `board_image` |
 | `subscribe_preview` | `camera`, `max_fps`, `max_width` | Starts preview frames of a camera |
 | `unsubscribe_preview` | `camera` | Stops them |
