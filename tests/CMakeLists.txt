@@ -69,3 +69,7 @@ gtest_discover_tests(DartLocationTest)
 add_executable(BoardStateTest BoardStateTest.cpp)
 target_link_libraries(BoardStateTest PRIVATE dartpilot::geometry opencv_imgcodecs GTest::gtest_main)
 gtest_discover_tests(BoardStateTest)
+
+add_executable(DiagnosisTest DiagnosisTest.cpp)
+target_link_libraries(DiagnosisTest PRIVATE dartpilot::replay opencv_imgcodecs GTest::gtest_main)
+gtest_discover_tests(DiagnosisTest)
