@@ -216,7 +216,8 @@ ColumnLayout {
                     Layout.fillWidth: true
                     step: 4
                     title: "Check"
-                    done: view.hasPlane && view.rmsMm <= 1.0
+                    // Done once checked and saved; how good the fit is shows the board fit chip
+                    done: view.hasPlane
 
                     Label {
                         Layout.fillWidth: true
