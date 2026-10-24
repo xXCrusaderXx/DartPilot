@@ -96,3 +96,13 @@ The calibration check compares each camera with itself; the page "Pin check" com
 - "Save" appends the measurement to `pin_checks.jsonl` in the calibration directory, with the image points, the board points and the refinement it was made with. Ten pins spread over the board, also near the double ring, give a first set for the error budget (#48).
 
 The spread is provisionally good up to 1 mm and acceptable up to 2 mm.
+
+## Guided validation
+
+The page "Validation" checks the whole chain with real darts and needs no clicks (#48). It watches all cameras and measures each time the image has been still for about two thirds of a second, averaging 30 frames per camera:
+
+1. **Empty board:** the reference image of every camera, and each camera's calibration check against it, as on the calibration check page.
+2. **Dart in the bull centre:** where the cameras together put it (`geometry::locateDart`, #100) and its distance from (0, 0), the one point whose true position is known.
+3. **Darts anywhere:** one dart at a time, put in or moved and the hand taken away; each gives its board point with uncertainty, its score, the cameras that agree on it and how far their axis planes are apart. Where no two cameras agree, the engine abstains and the page says so. Pull the dart out before the next one; eight or more spread over the board, also near the double ring, make a good set.
+
+The cameras show a red cross where the engine puts the dart and green rings on the visible ends each camera found. Every measurement is appended to `validation.jsonl` in the calibration directory, with the refinement it used. The pin check page remains for checking single points by hand.
