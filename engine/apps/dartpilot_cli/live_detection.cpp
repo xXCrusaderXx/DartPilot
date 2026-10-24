@@ -1,6 +1,8 @@
 #include "live_detection.hpp"
 
 #include <chrono>
+#include <cstdio>
+#include <cstdlib>
 
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
@@ -18,6 +20,9 @@ constexpr double kStillMotion = 2.5;
 // Samples every camera must be still before averaging starts, and samples averaged
 constexpr int kSettleSamples = 15;
 constexpr int kSamplesToAverage = 10;
+// While it waits for an empty board, a still board is checked again this often: the first check may have come while
+// the exposure was still settling after the cameras started.
+constexpr auto kRetryWhileWaiting = std::chrono::seconds(3);
 // Confidence of a located dart by the number of cameras that agree, and of an abstention (provisional, #48)
 constexpr double kConfidenceTwoCameras = 0.8;
 constexpr double kConfidenceThreeCameras = 0.95;
@@ -117,6 +122,7 @@ void LiveDetection::run ()
     int still_samples = 0;
     bool measured_since_motion = false;
     std::int64_t still_since_ns = 0;
+    auto last_measured = std::chrono::steady_clock::now();
     while(!stop_)
     {
         const auto next = std::chrono::steady_clock::now() + kSampleInterval;
@@ -137,7 +143,8 @@ void LiveDetection::run ()
                 camera.frames.clear();
             }
         }
-        else if(!measured_since_motion && ++still_samples >= kSettleSamples)
+        else if((!measured_since_motion || (!tracker_->ready() && std::chrono::steady_clock::now() - last_measured >= kRetryWhileWaiting)) &&
+                ++still_samples >= kSettleSamples)
         {
             if(still_samples == kSettleSamples)
             {
@@ -171,9 +178,15 @@ void LiveDetection::run ()
                 }
                 const auto started = std::chrono::steady_clock::now();
                 const auto update = tracker_->addStill(means);
+                if(std::getenv("DARTPILOT_TRACE"))
+                {
+                    std::fprintf(stderr, "still: ready %d darts %d dart %s takeout %d\n", tracker_->ready(), tracker_->dartsInBoard(),
+                                 update.dart ? (update.dart->location ? "located" : update.dart->reason.c_str()) : "-", update.takeout.value_or(-1));
+                }
                 const double latency_ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started).count();
                 publish(update, still_since_ns, latency_ms);
                 measured_since_motion = true;
+                last_measured = std::chrono::steady_clock::now();
                 for(auto& camera : cameras_)
                 {
                     camera.sum.release();

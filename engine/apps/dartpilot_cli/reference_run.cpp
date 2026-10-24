@@ -24,11 +24,13 @@ json referenceRunMessage (bool running, const std::string& step, const std::vect
                           const std::vector<ReferenceResult>& results)
 {
     json message = {{"type", "reference_run"}, {"running", running}, {"step", step}, {"target", nullptr}, {"results", json::array()}};
-    if(results.size() < targets.size() && step != "done")
+    // While a dart waits to be pulled, its target is still the current one.
+    const std::size_t current = step == "remove_dart" && !results.empty() ? results.size() - 1 : results.size();
+    if(current < targets.size() && step != "done")
     {
-        const auto& t = targets[results.size() < targets.size() ? results.size() : 0];
-        message["target"] = {{"index", results.size()}, {"total", targets.size()}, {"board_mm", {t.board_mm.x, t.board_mm.y}},
-                             {"label", t.label},        {"field", t.field},        {"hint_code", t.kind},
+        const auto& t = targets[current];
+        message["target"] = {{"index", current}, {"total", targets.size()}, {"board_mm", {t.board_mm.x, t.board_mm.y}},
+                             {"label", t.label}, {"field", t.field},        {"hint_code", t.kind},
                              {"wires", t.wires}};
     }
     std::vector<double> errors;

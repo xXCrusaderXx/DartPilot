@@ -79,7 +79,9 @@ TrackerUpdate DartTracker::addStill (const std::vector<cv::Mat>& means)
     {
         against_empty[c] = tip_candidates::observeDart(means[c], reference_[c]);
     }
-    if(darts_in_board_ > 0 && std::none_of(against_empty.begin(), against_empty.end(), [] (const auto& o) { return o.has_value(); }))
+    // Pulled when at most one camera still sees something against the empty board: a dart in the board stands out to
+    // at least two cameras, while a single camera may keep a trace of a pushed-out fibre.
+    if(darts_in_board_ > 0 && std::count_if(against_empty.begin(), against_empty.end(), [] (const auto& o) { return o.has_value(); }) <= 1)
     {
         // All darts pulled: the empty board, as it is now, becomes the reference for the next visit.
         update.takeout = darts_in_board_;
