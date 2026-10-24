@@ -3,6 +3,7 @@
 #include <QStandardPaths>
 #include <QString>
 
+#include "dartpilot/geometry/calibration_store.hpp"
 #include "dartpilot/geometry/charuco.hpp"
 
 namespace dartpilot::setup
@@ -15,6 +16,7 @@ constexpr int kReferenceWidth_px = 1280;
 constexpr int kReferenceHeight_px = 720;
 constexpr int kReferenceFps = 30;
 inline const char* const kReferencePixelFormat = "MJPG 1280x720 30fps";
+inline geometry::ReferenceMode referenceMode () { return {cv::Size(kReferenceWidth_px, kReferenceHeight_px), kReferencePixelFormat}; }
 
 // The pattern image in the repository, for opening it on a phone or tablet
 inline QString patternDownloadUrl (const geometry::CharucoTarget& target)
@@ -23,11 +25,17 @@ inline QString patternDownloadUrl (const geometry::CharucoTarget& target)
 }
 
 // A calibration belongs to the USB port, because all reference cameras report the same serial number.
-inline QString intrinsicsPath (const QString& usb_port) { return calibrationDirectory() + "/intrinsics-usb-" + usb_port + ".yml"; }
+inline QString intrinsicsPath (const QString& usb_port)
+{
+    return calibrationDirectory() + "/" + QString::fromStdString(geometry::intrinsicsFileName(usb_port.toStdString()));
+}
 
 // Board plane (orientation and homography) of the camera on that USB port
-inline QString boardPlanePath (const QString& usb_port) { return calibrationDirectory() + "/board-usb-" + usb_port + ".yml"; }
+inline QString boardPlanePath (const QString& usb_port)
+{
+    return calibrationDirectory() + "/" + QString::fromStdString(geometry::boardPlaneFileName(usb_port.toStdString()));
+}
 
 // Joint refinement of all cameras: poses, refined lenses and the measured board (#13)
-inline QString extrinsicsPath () { return calibrationDirectory() + "/extrinsics.yml"; }
+inline QString extrinsicsPath () { return calibrationDirectory() + "/" + geometry::kExtrinsicsFileName; }
 }  // namespace dartpilot::setup

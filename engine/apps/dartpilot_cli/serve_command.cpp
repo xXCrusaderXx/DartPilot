@@ -10,6 +10,7 @@
 #include <thread>
 
 #include "board_watch.hpp"
+#include "calibration_service.hpp"
 #include "dartpilot/api/server.hpp"
 #include "dartpilot/api/simulator.hpp"
 #include "live_diagnosis.hpp"
@@ -96,6 +97,7 @@ int runServe (int argc, char* argv[])
     SimulatedPreviews simulated_previews(server, simulated);
     std::unique_ptr<BoardWatch> board_watch;
     std::unique_ptr<LiveDiagnosis> live_diagnosis;
+    std::unique_ptr<CalibrationService> calibration;
     if(cameras)
     {
         std::vector<api::CameraInfo> infos;
@@ -116,6 +118,7 @@ int runServe (int argc, char* argv[])
         settings.diagnosis = false;
         board_watch = std::make_unique<BoardWatch>(server, camera_previews, devices, dataHome() / "calibration");
         live_diagnosis = std::make_unique<LiveDiagnosis>(server, camera_previews, devices, dataHome() / "calibration", cameras_started);
+        calibration = std::make_unique<CalibrationService>(server, camera_previews, devices, dataHome() / "calibration", cameras_started);
     }
     else
     {
@@ -145,6 +148,7 @@ int runServe (int argc, char* argv[])
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     simulator.stop();
+    calibration.reset();
     live_diagnosis.reset();
     board_watch.reset();
     simulated_previews.stop();

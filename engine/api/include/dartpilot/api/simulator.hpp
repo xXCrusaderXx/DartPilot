@@ -5,6 +5,7 @@
 #include <chrono>
 #include <cstdint>
 #include <thread>
+#include <vector>
 
 #include "dartpilot/api/server.hpp"
 
@@ -24,7 +25,8 @@ struct SimulatorSettings
     bool camera_status = true;
     // Simulated board check (#121): occupied while darts are in the board; off with real cameras
     bool board_state = true;
-    // Example setup diagnosis (#137) on start_diagnosis; off with real cameras, which run the real one
+    // Example setup diagnosis (#137) on start_diagnosis and example answers of the calibration wizard; off with real
+    // cameras, which run the real ones
     bool diagnosis = true;
     // Darts are already in the board at start; they are pulled out after takeout_delay
     bool occupied_at_start = false;
@@ -50,6 +52,10 @@ class Simulator
     static BoardStateInfo boardState (bool occupied);
     // A fixed diagnosis message with typical findings, for clients to show without cameras
     static nlohmann::json exampleDiagnosis (bool running);
+    // The calibration wizard without cameras: the status of three calibrated simulated cameras, and the events a
+    // calibration request would give, in the geometry of the simulated previews
+    static nlohmann::json exampleCalibrationStatus ();
+    static std::vector<nlohmann::json> exampleCalibrationEvents (const CalibrationRequest& request);
 
    private:
     void run ();

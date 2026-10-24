@@ -1,0 +1,462 @@
+#include "calibration_service.hpp"
+
+#include <linux/videodev2.h>
+
+#include <algorithm>
+#include <array>
+#include <ctime>
+
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
+
+#include "dartpilot/capture/v4l2_device.hpp"
+#include "dartpilot/capture/white_balance.hpp"
+#include "dartpilot/geometry/board_plane.hpp"
+#include "dartpilot/geometry/board_refinement.hpp"
+#include "white_balance_sweep.hpp"
+
+namespace dartpilot::cli
+{
+namespace
+{
+using json = nlohmann::json;
+
+// As the setup GUI: frames averaged for a board detection
+constexpr int kDetectionFrames = 10;
+// The automatic exposure settles in about 25 s after the cameras start.
+constexpr auto kExposureSettle = std::chrono::seconds(25);
+// Sector numbers counter-clockwise from 20, the order of the image sectors after the one the user picked
+constexpr std::array<int, 20> kSectorsCounterClockwiseFromTwenty = {20, 5, 12, 9, 14, 11, 8, 16, 7, 19, 3, 17, 2, 15, 10, 6, 13, 4, 18, 1};
+// Provisional quality gate in board millimetres on held-out wires, as in the setup GUI; #48 sets the error budget.
+constexpr double kGoodHeldOut_mm = 0.5;
+constexpr double kFairHeldOut_mm = 1.0;
+
+json point (const cv::Point2f& p) { return {p.x, p.y}; }
+
+std::string utcNow ()
+{
+    const std::time_t now = std::time(nullptr);
+    std::tm utc{};
+    gmtime_r(&now, &utc);
+    std::array<char, 32> text{};
+    std::strftime(text.data(), text.size(), "%Y-%m-%dT%H:%M:%SZ", &utc);
+    return text.data();
+}
+
+std::string lensSource (geometry::IntrinsicsSource source)
+{
+    switch(source)
+    {
+        case geometry::IntrinsicsSource::OwnCalibration:
+            return "own";
+        case geometry::IntrinsicsSource::ModelPrior:
+            return "model";
+        case geometry::IntrinsicsSource::BoardOnly:
+            return "board";
+    }
+    return "board";
+}
+}  // namespace
+
+CalibrationService::CalibrationService (api::Server& server, const CameraPreviews& previews, std::vector<capture::CameraDevice> devices,
+                                        std::filesystem::path calibration_directory, std::chrono::steady_clock::time_point started)
+    : server_(server)
+    , previews_(previews)
+    , devices_(std::move(devices))
+    , directory_(std::move(calibration_directory))
+    , cameras_started_(started)
+    , detections_(devices_.size())
+{
+    server_.setCalibrationStatus(status());
+    server_.onCalibration([this] (const api::CalibrationRequest& request) { return handle(request); });
+}
+
+CalibrationService::~CalibrationService ()
+{
+    server_.onCalibration({});
+    stop_ = true;
+    std::lock_guard lock(mutex_);
+    if(worker_.joinable())
+    {
+        worker_.join();
+    }
+}
+
+std::optional<std::size_t> CalibrationService::cameraIndex (const json& body) const
+{
+    const std::string id = body.value("camera", std::string());
+    for(std::size_t i = 0; i < devices_.size(); ++i)
+    {
+        if("usb-" + devices_[i].usb_port == id)
+        {
+            return i;
+        }
+    }
+    return std::nullopt;
+}
+
+bool CalibrationService::startJob (std::function<json()> job)
+{
+    if(busy_.exchange(true))
+    {
+        return false;
+    }
+    std::lock_guard lock(mutex_);
+    if(worker_.joinable())
+    {
+        worker_.join();
+    }
+    worker_ = std::thread(
+        [this, job = std::move(job)]
+        {
+            const json last = job();
+            busy_ = false;
+            server_.publishEvent(last);
+        });
+    return true;
+}
+
+std::optional<api::Server::CalibrationError> CalibrationService::handle (const api::CalibrationRequest& request)
+{
+    const auto busy = api::Server::CalibrationError{"busy", "Another calibration step is running"};
+    if(request.type == "tune_white_balance")
+    {
+        return startJob([this] { return tuneWhiteBalance(); }) ? std::nullopt : std::optional(busy);
+    }
+    if(request.type == "refine_cameras")
+    {
+        if(geometry::refinementInputs(directory_, setupCameras(), mode_).empty())
+        {
+            return api::Server::CalibrationError{"no_board_planes", "No camera has a measured board yet"};
+        }
+        return startJob([this] { return refine(); }) ? std::nullopt : std::optional(busy);
+    }
+    const auto camera = cameraIndex(request.body);
+    if(!camera)
+    {
+        return api::Server::CalibrationError{"unknown_camera", "No camera " + request.body.value("camera", std::string())};
+    }
+    if(request.type == "detect_board")
+    {
+        return startJob([this, c = *camera] { return detectBoard(c); }) ? std::nullopt : std::optional(busy);
+    }
+    if(request.type == "set_sector_20")
+    {
+        const auto& p = request.body.at("point_px");
+        return setSectorTwenty(*camera, cv::Point2f(p.at(0).get<float>(), p.at(1).get<float>()));
+    }
+    return api::Server::CalibrationError{"unknown_type", "Unknown calibration request " + request.type};
+}
+
+void CalibrationService::waitInterruptibly (std::chrono::steady_clock::duration duration)
+{
+    const auto end = std::chrono::steady_clock::now() + duration;
+    while(!stop_ && std::chrono::steady_clock::now() < end)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    }
+}
+
+cv::Mat CalibrationService::averageFrames (std::size_t camera, int count)
+{
+    cv::Mat sum;
+    int summed = 0;
+    std::optional<std::uint32_t> last;
+    const auto give_up = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+    while(summed < count && !stop_ && std::chrono::steady_clock::now() < give_up)
+    {
+        std::vector<std::uint8_t> jpeg;
+        std::uint32_t sequence = 0;
+        if(!previews_.latest(camera, jpeg, sequence) || (last && *last == sequence))
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            continue;
+        }
+        last = sequence;
+        const cv::Mat image = cv::imdecode(jpeg, cv::IMREAD_COLOR);
+        if(image.empty())
+        {
+            continue;
+        }
+        if(sum.empty())
+        {
+            sum = cv::Mat::zeros(image.size(), CV_32FC3);
+        }
+        cv::accumulate(image, sum);
+        ++summed;
+    }
+    if(summed < count)
+    {
+        return {};
+    }
+    cv::Mat mean;
+    sum.convertTo(mean, CV_8UC3, 1.0 / summed);
+    return mean;
+}
+
+json CalibrationService::detectBoard (std::size_t camera)
+{
+    const cv::Mat image = averageFrames(camera, kDetectionFrames);
+    const auto detection = image.empty() ? std::nullopt : geometry::detectBoard(image);
+    {
+        std::lock_guard lock(mutex_);
+        detections_[camera] = detection;
+    }
+    json message = {{"type", "board_detection"},
+                    {"camera", "usb-" + devices_[camera].usb_port},
+                    {"ok", detection.has_value()},
+                    {"code", detection ? "found" : "not_found"},
+                    {"image_size_px", {image.cols, image.rows}},
+                    {"ellipses", json::array()},
+                    {"wires_px", json::array()},
+                    {"points_px", json::array()}};
+    if(detection)
+    {
+        for(const auto& circle : detection->circles)
+        {
+            message["ellipses"].push_back(
+                {{"center_px", point(circle.center)}, {"axes_px", {circle.size.width / 2.0, circle.size.height / 2.0}}, {"angle_deg", circle.angle}});
+        }
+        // From the bull to a little beyond the double ring
+        const auto& outer = detection->circles.back();
+        const float reach_px = 0.6f * std::max(outer.size.width, outer.size.height);
+        for(const auto& wire : detection->wires)
+        {
+            message["wires_px"].push_back({wire[0], wire[1], wire[0] + wire[2] * reach_px, wire[1] + wire[3] * reach_px});
+        }
+        for(const auto& p : detection->points)
+        {
+            message["points_px"].push_back(point(p.image_px));
+        }
+    }
+    return message;
+}
+
+std::optional<api::Server::CalibrationError> CalibrationService::setSectorTwenty (std::size_t camera, const cv::Point2f& point_px)
+{
+    std::optional<geometry::BoardDetection> detection;
+    {
+        std::lock_guard lock(mutex_);
+        detection = detections_[camera];
+    }
+    if(!detection)
+    {
+        return api::Server::CalibrationError{"no_detection", "Detect the board of this camera first"};
+    }
+    const auto twenty = geometry::sectorAt(*detection, point_px);
+    if(!twenty)
+    {
+        return api::Server::CalibrationError{"outside_board", "The point is not in a sector of the board"};
+    }
+    const std::string& usb_port = devices_[camera].usb_port;
+    geometry::StoredBoardPlane plane;
+    plane.twenty_sector = *twenty;
+    plane.usb_port = usb_port;
+    plane.created = utcNow();
+    plane.correspondences = geometry::orientBoard(*detection, *twenty);
+    const auto lens = geometry::referenceIntrinsics(directory_, usb_port, mode_);
+    const auto fit = geometry::fitBoardPlane(plane.correspondences, lens ? &lens->calibration : nullptr);
+    if(!fit)
+    {
+        return api::Server::CalibrationError{"fit_failed", "The board plane could not be fitted"};
+    }
+    plane.fit = *fit;
+    std::error_code error;
+    std::filesystem::create_directories(directory_, error);
+    if(!geometry::saveBoardPlane((directory_ / geometry::boardPlaneFileName(usb_port)).string(), plane))
+    {
+        return api::Server::CalibrationError{"save_failed", "Cannot write the board plane"};
+    }
+    json sectors = json::array();
+    for(int s = 0; s < geometry::kRadialWireCount; ++s)
+    {
+        cv::Point2f sum(0, 0);
+        int n = 0;
+        for(const auto& p : detection->points)
+        {
+            if((p.wire == s || p.wire == (s + 1) % geometry::kRadialWireCount) && p.circle != geometry::BoardCircle::OuterBull)
+            {
+                sum += p.image_px;
+                ++n;
+            }
+        }
+        if(n > 0)
+        {
+            const int number = kSectorsCounterClockwiseFromTwenty[(s - *twenty + geometry::kRadialWireCount) % geometry::kRadialWireCount];
+            sectors.push_back({{"sector", number}, {"label_px", point(sum * (1.0f / static_cast<float>(n)))}});
+        }
+    }
+    server_.publishEvent({{"type", "board_plane"},
+                          {"camera", "usb-" + usb_port},
+                          {"fit_mm", fit->rms_mm},
+                          {"worst_mm", fit->worst_mm},
+                          {"rms_px", fit->rms_px},
+                          {"lens_corrected", fit->undistorted},
+                          {"sectors", sectors}});
+    publishStatus();
+    return std::nullopt;
+}
+
+json CalibrationService::refine ()
+{
+    server_.publishEvent({{"type", "refinement"}, {"state", "running"}});
+    const auto inputs = geometry::refinementInputs(directory_, setupCameras(), mode_);
+    const auto refinement = inputs.empty() ? std::nullopt : geometry::refineBoardCameras(inputs);
+    if(!refinement)
+    {
+        return {{"type", "refinement"}, {"state", "failed"}, {"code", inputs.empty() ? "no_board_planes" : "pose_failed"}};
+    }
+    geometry::StoredExtrinsics stored;
+    stored.created = utcNow();
+    stored.refinement = *refinement;
+    stored.inputs = inputs;
+    std::error_code error;
+    std::filesystem::create_directories(directory_, error);
+    if(!geometry::saveExtrinsics((directory_ / geometry::kExtrinsicsFileName).string(), stored))
+    {
+        return {{"type", "refinement"}, {"state", "failed"}, {"code", "save_failed"}};
+    }
+    json cameras = json::array();
+    for(const auto& camera : refinement->cameras)
+    {
+        const double held_out_mm = camera.held_out_rms_mm;
+        const std::string quality = held_out_mm <= kGoodHeldOut_mm ? "good" : held_out_mm <= kFairHeldOut_mm ? "fair" : "poor";
+        json advice = nullptr;
+        if(quality != "good")
+        {
+            advice = camera.source == geometry::IntrinsicsSource::OwnCalibration ? "detect_again" : "lens_calibration";
+        }
+        cameras.push_back({{"camera", "usb-" + camera.usb_port},
+                           {"held_out_mm", held_out_mm},
+                           {"quality", quality},
+                           {"uncertainty_mm", camera.uncertainty_mm},
+                           {"focal_px", camera.intrinsics.camera_matrix(0, 0)},
+                           {"lens_from", lensSource(camera.source)},
+                           {"advice", advice}});
+    }
+    publishStatus();
+    const auto& radii = refinement->board.radii_mm;
+    return {{"type", "refinement"},
+            {"state", "done"},
+            {"cameras", cameras},
+            {"board",
+             {{"outer_bull_mm", radii[static_cast<int>(geometry::BoardCircle::OuterBull)]},
+              {"treble_centre_mm", radii[static_cast<int>(geometry::BoardCircle::TripleCentre)]}}}};
+}
+
+json CalibrationService::tuneWhiteBalance ()
+{
+    std::vector<SweepCamera> sweep;
+    for(const auto& device : devices_)
+    {
+        sweep.push_back({device.path, {}});
+    }
+    const auto message = [&] (const std::string& state, std::optional<int> kelvin_now, bool chosen)
+    {
+        json cameras = json::array();
+        for(std::size_t c = 0; c < sweep.size(); ++c)
+        {
+            json found_at = json::array();
+            for(const auto& [kelvin, found] : sweep[c].found_at_K)
+            {
+                found_at.push_back({{"kelvin", kelvin}, {"found", found}});
+            }
+            json camera = {{"camera", "usb-" + devices_[c].usb_port}, {"found_at", found_at}, {"chosen_kelvin", nullptr}};
+            if(chosen)
+            {
+                if(const auto kelvin = capture::chooseWhiteBalance(sweep[c].found_at_K))
+                {
+                    camera["chosen_kelvin"] = *kelvin;
+                }
+                else
+                {
+                    camera["code"] = "board_not_found_at_any";
+                }
+            }
+            cameras.push_back(camera);
+        }
+        json event = {{"type", "white_balance"}, {"state", state}, {"cameras", cameras}};
+        if(kelvin_now)
+        {
+            event["kelvin_now"] = *kelvin_now;
+        }
+        if(state == "settling")
+        {
+            event["settle_s"] =
+                std::max(0.0, std::chrono::duration<double>(cameras_started_ + kExposureSettle - std::chrono::steady_clock::now()).count());
+        }
+        return event;
+    };
+    server_.publishEvent(message("settling", std::nullopt, false));
+    waitInterruptibly(cameras_started_ + kExposureSettle - std::chrono::steady_clock::now());
+    server_.publishEvent(message("sweeping", capture::kMinWhiteBalance_K, false));
+    const bool complete = sweepWhiteBalance(
+        sweep, [this] (std::chrono::steady_clock::duration duration) { waitInterruptibly(duration); }, [this] (std::size_t c)
+        { return averageFrames(c, kWhiteBalanceFrames); }, [&] (int kelvin) { server_.publishEvent(message("sweeping", kelvin, false)); }, stop_);
+    bool any_failed = !complete;
+    for(std::size_t c = 0; complete && c < sweep.size(); ++c)
+    {
+        const auto path = directory_ / capture::whiteBalanceFileName(devices_[c].usb_port);
+        const auto chosen = capture::chooseWhiteBalance(sweep[c].found_at_K);
+        std::error_code error;
+        std::filesystem::create_directories(directory_, error);
+        if(!chosen || !capture::saveWhiteBalance(path.string(), *chosen, sweep[c].found_at_K))
+        {
+            any_failed = true;
+        }
+        // The camera keeps the stored value, or its previous one if none was found.
+        capture::CameraControls(devices_[c].path).set(V4L2_CID_WHITE_BALANCE_TEMPERATURE, capture::storedWhiteBalance(path.string()));
+    }
+    publishStatus();
+    return message(any_failed ? "failed" : "done", std::nullopt, true);
+}
+
+std::vector<geometry::SetupCamera> CalibrationService::setupCameras () const
+{
+    std::vector<geometry::SetupCamera> cameras;
+    for(const auto& device : devices_)
+    {
+        cameras.push_back({device.usb_port, device.name});
+    }
+    return cameras;
+}
+
+json CalibrationService::status () const
+{
+    const auto extrinsics = geometry::loadExtrinsics((directory_ / geometry::kExtrinsicsFileName).string());
+    json cameras = json::array();
+    for(const auto& device : devices_)
+    {
+        json camera = {{"camera", "usb-" + device.usb_port}};
+        if(geometry::referenceIntrinsics(directory_, device.usb_port, mode_))
+        {
+            camera["intrinsics"] = "valid";
+        }
+        else if(geometry::loadIntrinsics((directory_ / geometry::intrinsicsFileName(device.usb_port)).string()))
+        {
+            camera["intrinsics"] = "invalid";
+            camera["intrinsics_reason"] = "other_capture_mode";
+        }
+        else
+        {
+            camera["intrinsics"] = "none";
+        }
+        const auto plane = geometry::loadBoardPlane((directory_ / geometry::boardPlaneFileName(device.usb_port)).string());
+        camera["board_plane_mm"] = plane ? json(plane->fit.rms_mm) : json(nullptr);
+        bool refined = false;
+        for(const auto& refined_camera : extrinsics ? extrinsics->refinement.cameras : std::vector<geometry::RefinedCamera>{})
+        {
+            refined = refined || refined_camera.usb_port == device.usb_port;
+        }
+        camera["refined"] = refined;
+        camera["white_balance_kelvin"] = capture::storedWhiteBalance((directory_ / capture::whiteBalanceFileName(device.usb_port)).string());
+        cameras.push_back(camera);
+    }
+    return {{"cameras", cameras},
+            {"refinement_stale",
+             extrinsics ? geometry::refinementStale(*extrinsics, geometry::refinementInputs(directory_, setupCameras(), mode_)) : false},
+            {"extrinsics_created", extrinsics ? json(extrinsics->created) : json(nullptr)}};
+}
+
+void CalibrationService::publishStatus () { server_.setCalibrationStatus(status()); }
+}  // namespace dartpilot::cli

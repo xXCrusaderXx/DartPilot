@@ -66,6 +66,18 @@ class Server
     void onDiagnosis (std::function<void(bool running)> handler);
     void publishDiagnosis (const nlohmann::json& message);
 
+    // Calibration wizard: requests go to the handler, which answers with an error or nothing (ok); its results come as
+    // events through publishEvent(). The status is part of hello and sent to every client when it changes.
+    struct CalibrationError
+    {
+        std::string code;
+        std::string message;
+    };
+    void onCalibration (std::function<std::optional<CalibrationError>(const CalibrationRequest&)> handler);
+    void setCalibrationStatus (const nlohmann::json& status);
+    // Sends an event message to every client
+    void publishEvent (const nlohmann::json& message);
+
     // Board points of the darts since the last takeout, e.g. for a simulated camera image
     std::vector<BoardPoint> visitPoints () const;
 
@@ -107,6 +119,7 @@ class Server
     std::function<std::optional<std::string>(bool)> store_reference_handler_;
     std::vector<BoardPoint> visit_points_;
     std::function<void(bool)> diagnosis_handler_;
+    std::function<std::optional<CalibrationError>(const CalibrationRequest&)> calibration_handler_;
     nlohmann::json last_diagnosis_;
 };
 }  // namespace dartpilot::api

@@ -165,6 +165,59 @@ The state of the live setup diagnosis (#137), sent to every client after `start_
 - `findings`: most severe first, as in [setup-diagnosis.md](setup-diagnosis.md). `code` and `values` name the finding and its numbers, so a client can word it in its own language; `message` and `hint` are the English text. Codes: `lost_frames`, `few_still_moments`, `not_empty_at_start`, `no_refinement`, `board_not_found`, `calibration_off`, `drift`, `exposure_settling`, `light_changed`, `board_changed`, `no_darts`, `darts_located`, `darts_cut_lost`, `darts_cut`, `darts_not_seen`, `camera_disagrees`, `planes_agree`.
 - `periods`: the measured still moments (successive moments with an object, such as the dart and then the hand pulling it, count as one dart), per camera in the order of `cameras`; a dart period has `dart` (`none`, `cut`, `seen`) per camera and, if located, `board_mm`, `agreeing_cameras` and `worst_plane_mm`.
 
+### Calibration
+
+The calibration wizard of the app runs on the engine's cameras (`serve --cameras`); `serve --simulate` alone answers with fixed examples in the geometry of its simulated previews, so a client can be built without cameras. Cameras are named by their `id` from `hello` (`usb-<port>`); points are in pixels of the camera's full image, with `image_size_px` beside them. Results come as `code` plus numbers, so a client words them in its own language.
+
+`calibration_status` is part of `hello` (`null` without cameras) and sent to every client when it changes:
+
+```json
+{ "type": "calibration_status", "refinement_stale": false, "extrinsics_created": "2026-10-24T17:41:00Z",
+  "cameras": [ { "camera": "usb-2.4.3.1.2", "intrinsics": "valid", "board_plane_mm": 0.41, "refined": true, "white_balance_kelvin": 3000 } ] }
+```
+
+- `intrinsics`: `valid` (a lens calibration in the reference mode), `invalid` (one of another capture mode, `intrinsics_reason`: `other_capture_mode`) or `none`.
+- `board_plane_mm`: error of the measured board plane, `null` before the board was measured. `refined`: the camera is part of the stored refinement. `refinement_stale`: a board was measured or a lens calibrated after the refinement, so it should run again.
+
+The steps, in the order of the wizard:
+
+1. **White balance** (`tune_white_balance`). Board detection only works within a few hundred kelvin of the light's colour, so the engine fixes each camera's white balance (ADR 0002) and this step finds it for the user's light. It needs the empty, lit board; it waits until the cameras' exposure has settled (25 s after they started), then tries 2800 to 6400 K in steps of 200 K on all cameras, about 50 s, and stores the middle of the range in which the board was found. Events while it runs and at the end:
+
+   ```json
+   { "type": "white_balance", "state": "sweeping", "kelvin_now": 3400,
+     "cameras": [ { "camera": "usb-2.4.3.1.2", "found_at": [ { "kelvin": 2800, "found": true } ], "chosen_kelvin": null } ] }
+   ```
+
+   `state`: `settling` (with `settle_s`), `sweeping`, `done`, `failed`. At the end each camera has `chosen_kelvin`, or `code`: `board_not_found_at_any`, in which case it keeps its previous value.
+2. **Board measurement** (`detect_board` with `camera`). Averages ten frames and looks for the board; the event shows what was found, so the user can check it:
+
+   ```json
+   { "type": "board_detection", "camera": "usb-2.4.3.1.2", "ok": true, "code": "found", "image_size_px": [ 1280, 720 ],
+     "ellipses": [ { "center_px": [ 652.1, 254.3 ], "axes_px": [ 31.2, 17.0 ], "angle_deg": 1.5 } ],
+     "wires_px": [ [ 655.0, 238.1, 700.4, 12.9 ] ], "points_px": [ [ 660.2, 222.4 ] ] }
+   ```
+
+   `ellipses`: outer bull, centre of the treble, centre of the double ring; `axes_px` are the half axes. `wires_px`: the 20 radial wires from the bull outwards. `code`: `found` or `not_found` (darts in the board, poor light, or the white balance).
+3. **Sector 20** (`set_sector_20` with `camera` and `point_px`, a point the user tapped in the sector 20). The colour pattern repeats every second sector, so the orientation has to come from the user. The engine fits and stores the board plane and answers with the numbers where it now sees them, so the user can check them:
+
+   ```json
+   { "type": "board_plane", "camera": "usb-2.4.3.1.2", "fit_mm": 0.41, "worst_mm": 0.93, "rms_px": 0.38, "lens_corrected": true,
+     "sectors": [ { "sector": 20, "label_px": [ 640.0, 120.5 ] } ] }
+   ```
+
+   Errors: `no_detection` (detect the board first), `outside_board` (the point is not in a sector), `fit_failed`, `save_failed`.
+4. **Refinement** (`refine_cameras`). Refines all cameras with a measured board together (#13) and stores the result:
+
+   ```json
+   { "type": "refinement", "state": "done", "board": { "outer_bull_mm": 15.9, "treble_centre_mm": 103.0 },
+     "cameras": [ { "camera": "usb-2.4.3.1.2", "held_out_mm": 0.42, "quality": "good", "uncertainty_mm": 0.3, "focal_px": 1012.0,
+                    "lens_from": "own", "advice": null } ] }
+   ```
+
+   `state`: `running`, `done`, `failed` (`code`: `no_board_planes`, `pose_failed`, `save_failed`). `quality` from the error on held-out wires: `good` up to 0.5 mm, `fair` up to 1 mm, else `poor`; `advice` then says what helps: `detect_again` (measure the board again in even light) or `lens_calibration` (the camera has no lens calibration of its own). `lens_from`: `own`, `model` (borrowed from a camera of the same model) or `board`.
+
+Long steps run one at a time; a request while one runs fails with `busy`. Events may arrive before the request's `result`.
+
 ### engine_status
 
 ```json
@@ -179,7 +232,7 @@ The answer to every client request that has a `request_id`.
 { "type": "result", "request_id": "7", "ok": false, "error": { "code": "unknown_throw", "message": "No throw 20261024T190000Z-7c1e/99" } }
 ```
 
-Error codes: `bad_request`, `unknown_type`, `unknown_throw`, `unknown_camera`, `not_available`, `board_not_empty`, `not_still` (the image has not been still long enough to store the empty board), `save_failed`.
+Error codes: `bad_request`, `unknown_type`, `unknown_throw`, `unknown_camera`, `not_available`, `board_not_empty`, `not_still` (the image has not been still long enough to store the empty board), `save_failed`, and those of the calibration steps (`busy`, `no_detection`, `outside_board`, `fit_failed`, `no_board_planes`).
 
 ## Client → engine
 
@@ -196,6 +249,10 @@ Every request carries a `request_id` chosen by the client and is answered with `
 | `check_board` | – | Checks the board now; the answer comes as `board_state` |
 | `store_empty_reference` | `force` (optional) | Stores the current images as the empty board; fails with `board_not_empty` while a camera sees an object, unless `force` is `true` (the user confirmed that the board is empty, e.g. when an outdated reference makes the check see an object) |
 | `start_diagnosis` / `stop_diagnosis` | – | Starts the live setup diagnosis afresh, or stops it; its state comes as `diagnosis` |
+| `tune_white_balance` | – | Finds each camera's white balance for the user's light; see "Calibration" |
+| `detect_board` | `camera` | Measures the board of a camera; answered with `board_detection` |
+| `set_sector_20` | `camera`, `point_px` | Orients and stores the board plane; answered with `board_plane` |
+| `refine_cameras` | – | Refines all cameras together; answered with `refinement` |
 | `subscribe_preview` | `camera`, `max_fps`, `max_width` | Starts preview frames of a camera |
 | `unsubscribe_preview` | `camera` | Stops them |
 
