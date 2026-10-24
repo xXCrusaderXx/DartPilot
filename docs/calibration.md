@@ -59,7 +59,7 @@ Once every camera has its board plane (extrinsic page, steps 1 to 4), "Refine al
 
 The detected points stand on the wires, 1.2 mm above the playing surface; board points for darts are taken on the surface (z = 0).
 
-Each camera is judged on wires it did not see: the wires are split into four groups, each group is held out once, and its points are projected onto the board with the refinement of the others. The **quality** is good below 0.5 mm of this held-out error and usable below 1.0 mm, provisional until #48 sets the error budget. The **uncertainty** is the 1-sigma position error over the scoring area that follows from the uncertainty of the camera's parameters.
+Each camera is judged on wires it did not see: the wires are split into four groups, each group is held out once, and its points are projected onto the board with the refinement of the others. The **quality** is good below 0.5 mm of this held-out error and usable below 1.0 mm ([ADR 0009](adr/0009-board-calibration-validated.md)). The **uncertainty** is the 1-sigma position error over the scoring area that follows from the uncertainty of the camera's parameters.
 
 On the reference cameras (board points as detected, before and after):
 
@@ -74,6 +74,20 @@ The detection measures each radial wire on seven tracks through the singles, to 
 The result is stored in `~/.local/share/dartpilot/calibration/extrinsics.yml`, together with the board points, the lens priors and the creation times of the board planes and intrinsics it was computed from. The page marks it as outdated when any of them changes.
 
 
+## Error budget
+
+Measured on the reference setup ([ADR 0009](adr/0009-board-calibration-validated.md)):
+
+| Camera | Lens | Held-out wires | Uncertainty |
+| - | - | - | - |
+| usb-2.4.3.1.2 | own ChArUco calibration | 0.39 mm | 0.12 mm |
+| usb-2.4.3.1.3 | same model | 0.63 mm | 0.20 mm |
+| usb-2.4.3.1.4 | same model | 0.72 mm | 0.22 mm |
+
+- Where three cameras see a dart, their axis planes agree within 0.26 to 0.44 mm (median).
+- The board is found in every still image of the empty board.
+- Good is below 0.5 mm held-out, fair below 1.0 mm. A camera at "fair" gets better with its own lens calibration.
+
 ## Calibration check
 
 The page "Calibration check" watches every camera: every few seconds each camera averages ten frames, finds the empty board again and compares the points with where its stored refinement puts them (blue rings expected, green dots found). It needs no click on the sector 20: the orientation that fits the calibration is taken. The edge offset is measured again each time, because it changes with the light, not with the camera.
@@ -85,7 +99,7 @@ The page "Calibration check" watches every camera: every few seconds each camera
 | Red, above 2.5 mm | The camera or the board has moved: calibrate it again on the extrinsic page. |
 | Wrong port | The image fits the calibration of another camera much better: the cameras were plugged into other USB ports. |
 
-On the stills of the reference cameras, a fresh detection matched its own refinement within 0.4 to 1.0 mm in the light it was made in and within 1.1 to 1.6 mm under evening light, while the calibration of another camera was off by 27 to 61 mm. The thresholds are provisional until #48 sets the error budget. Darts in the board pause the check ("No board").
+On the stills of the reference cameras, a fresh detection matched its own refinement within 0.4 to 1.0 mm in the light it was made in and within 1.1 to 1.6 mm under evening light, while the calibration of another camera was off by 27 to 61 mm. The thresholds follow the error budget of [ADR 0009](adr/0009-board-calibration-validated.md). Darts in the board pause the check ("No board").
 
 ## Pin check
 
@@ -93,7 +107,7 @@ The calibration check compares each camera with itself; the page "Pin check" com
 
 - Click the tip where it enters the board, not the shaft: the click is mapped onto the playing surface (z = 0). A point 1 mm higher looks up to about 2 mm shifted to a camera at a grazing angle.
 - With the option "Pin exactly in the bull centre" each camera's distance from the true point (0, 0) is shown as well.
-- "Save" appends the measurement to `pin_checks.jsonl` in the calibration directory, with the image points, the board points and the refinement it was made with. Ten pins spread over the board, also near the double ring, give a first set for the error budget (#48).
+- "Save" appends the measurement to `pin_checks.jsonl` in the calibration directory, with the image points, the board points and the refinement it was made with. Clicking measures about 1 mm per camera itself, so the pin check is a plausibility check; the error budget comes from the held-out wires and the agreement of the cameras on real darts ([ADR 0009](adr/0009-board-calibration-validated.md)).
 
 The spread is provisionally good up to 1 mm and acceptable up to 2 mm.
 
