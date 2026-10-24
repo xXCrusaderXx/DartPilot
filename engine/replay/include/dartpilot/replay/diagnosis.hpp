@@ -91,7 +91,7 @@ class DiagnosisBuilder
     DiagnosisBuilder (std::vector<Camera> cameras, std::optional<geometry::BoardModel> board, bool wait_for_empty_board);
 
     // Adds a still period with each camera's mean image (empty if the camera had none). False, without adding it, while
-    // waiting for an empty board.
+    // waiting for an empty board. Successive periods with an object are one dart and kept as one period.
     bool addPeriod (double start_s, double end_s, const std::vector<cv::Mat>& means);
     // Frames received and lost by a camera so far
     void setCapture (std::size_t camera, std::uint64_t frames, std::uint64_t lost_frames);

@@ -161,9 +161,9 @@ The state of the live setup diagnosis (#137), sent to every client after `start_
 ```
 
 - `step`, what the user should do next: `empty_board` (leave the board empty, hand out of view), `remove_darts` (the board was not empty at the start), `insert_dart` (put one dart in and take the hand away), `remove_dart` (pull it).
-- `state`: `moving` (a camera's image moves), `settling` (still, waiting 1.5 s), `measuring` (averaging about a second), `measured` (done until something moves; an empty board that stays still is measured again every 20 s, so drift and light show over time), `stopped`.
+- `state`: `moving` (a camera's image moves), `settling` (still, waiting 1.5 s), `measuring` (averaging about a second), `measured` (done until something moves; a board that stays still is measured again every 20 s, so drift and light show over time, and a moment of the hand pulling a dart is followed by one of the board), `stopped`.
 - `findings`: most severe first, as in [setup-diagnosis.md](setup-diagnosis.md). `code` and `values` name the finding and its numbers, so a client can word it in its own language; `message` and `hint` are the English text. Codes: `lost_frames`, `few_still_moments`, `not_empty_at_start`, `no_refinement`, `board_not_found`, `calibration_off`, `drift`, `exposure_settling`, `light_changed`, `board_changed`, `no_darts`, `darts_located`, `darts_cut_lost`, `darts_cut`, `darts_not_seen`, `camera_disagrees`, `planes_agree`.
-- `periods`: the measured still moments, per camera in the order of `cameras`; a dart period has `dart` (`none`, `cut`, `seen`) per camera and, if located, `board_mm`, `agreeing_cameras` and `worst_plane_mm`.
+- `periods`: the measured still moments (successive moments with an object, such as the dart and then the hand pulling it, count as one dart), per camera in the order of `cameras`; a dart period has `dart` (`none`, `cut`, `seen`) per camera and, if located, `board_mm`, `agreeing_cameras` and `worst_plane_mm`.
 
 ### engine_status
 
