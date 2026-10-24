@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../theme.dart';
 import '../../l10n/app_localizations.dart';
 import '../engine/engine_connection.dart';
 import '../widgets/board_check.dart';
@@ -113,7 +114,7 @@ class _StatusCard extends StatelessWidget {
               children: [
                 Icon(
                   connected ? Icons.link : Icons.keyboard,
-                  color: connected ? Colors.greenAccent : theme.disabledColor,
+                  color: connected ? StatusColors.of(context).good : theme.disabledColor,
                 ),
                 const SizedBox(width: 12),
                 Expanded(

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../theme.dart';
 import '../../l10n/app_localizations.dart';
 import '../engine/engine_connection.dart';
 import '../engine/engine_events.dart';
@@ -346,8 +347,8 @@ class _StateDot extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final (label, color) = switch (state) {
       'lost' => (l10n.cameraLost, Theme.of(context).colorScheme.error),
-      'degraded' => (l10n.cameraDegraded, Colors.orange),
-      _ => (l10n.cameraOk, Colors.green),
+      'degraded' => (l10n.cameraDegraded, StatusColors.of(context).warning),
+      _ => (l10n.cameraOk, StatusColors.of(context).good),
     };
     return Tooltip(
       message: label,

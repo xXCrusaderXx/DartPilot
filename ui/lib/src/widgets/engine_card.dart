@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../theme.dart';
 import '../../l10n/app_localizations.dart';
 import '../engine/engine_choice.dart';
 import '../engine/engine_connection.dart';
@@ -85,7 +86,7 @@ class _EngineCardState extends State<EngineCard> {
     final (icon, color, text) = switch (engine.state) {
       EngineConnectionState.connected => (
         Icons.link,
-        Colors.greenAccent,
+        StatusColors.of(context).good,
         engine.hello?.mode == 'simulate' ? '${l10n.engineConnected} (${l10n.engineSimulated})' : l10n.engineConnected,
       ),
       EngineConnectionState.connecting => (Icons.sync, theme.colorScheme.secondary, l10n.engineConnecting),

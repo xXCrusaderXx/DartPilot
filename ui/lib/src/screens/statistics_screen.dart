@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../theme.dart';
 import '../../l10n/app_localizations.dart';
 import '../board/scoring.dart';
 import '../stats/game_record.dart';
@@ -244,7 +245,10 @@ class _HistoryTile extends StatelessWidget {
     final others = record.players.length - 1;
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      leading: Icon(game.won ? Icons.emoji_events : Icons.sports_score, color: game.won ? Colors.amber : null),
+      leading: Icon(
+        game.won ? Icons.emoji_events : Icons.sports_score,
+        color: game.won ? StatusColors.of(context).warning : null,
+      ),
       title: Text('$mode  ·  $figure'),
       subtitle: Text(
         [
