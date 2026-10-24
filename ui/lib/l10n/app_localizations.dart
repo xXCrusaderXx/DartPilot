@@ -715,6 +715,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The image is not still yet; wait a moment and try again.'**
   String get boardNotStill;
+
+  /// No description provided for @engineThisDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'On this device'**
+  String get engineThisDevice;
+
+  /// No description provided for @engineNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'In the network'**
+  String get engineNetwork;
+
+  /// No description provided for @localEngineStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'The engine on this device is stopped.'**
+  String get localEngineStopped;
+
+  /// No description provided for @localEngineStarting.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting the engine…'**
+  String get localEngineStarting;
+
+  /// No description provided for @localEngineRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'The engine runs on this device ({url}).'**
+  String localEngineRunning(String url);
+
+  /// No description provided for @localEngineNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'The engine program was not found. Enter its path under Log.'**
+  String get localEngineNotFound;
+
+  /// No description provided for @localEngineNoCameras.
+  ///
+  /// In en, this message translates to:
+  /// **'No camera could be started: are they plugged in, or used by another program?'**
+  String get localEngineNoCameras;
+
+  /// No description provided for @localEnginePortInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'The engine\'s port is in use; another engine may be running.'**
+  String get localEnginePortInUse;
+
+  /// No description provided for @localEngineCrashed.
+  ///
+  /// In en, this message translates to:
+  /// **'The engine stopped unexpectedly; the log shows why.'**
+  String get localEngineCrashed;
+
+  /// No description provided for @useCameras.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the cameras'**
+  String get useCameras;
+
+  /// No description provided for @useCamerasHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Live images and the board check; darts are still simulated until detection is ready.'**
+  String get useCamerasHint;
+
+  /// No description provided for @engineLog.
+  ///
+  /// In en, this message translates to:
+  /// **'Log'**
+  String get engineLog;
+
+  /// No description provided for @startEngine.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get startEngine;
+
+  /// No description provided for @stopEngine.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get stopEngine;
+
+  /// No description provided for @engineProgram.
+  ///
+  /// In en, this message translates to:
+  /// **'Engine program'**
+  String get engineProgram;
+
+  /// No description provided for @engineProgramHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave empty to find it automatically'**
+  String get engineProgramHint;
+
+  /// No description provided for @engineLogEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No output yet.'**
+  String get engineLogEmpty;
+
+  /// No description provided for @close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

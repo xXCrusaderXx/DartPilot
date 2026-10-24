@@ -342,4 +342,62 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get boardNotStill => 'Das Bild ist noch nicht ruhig; warte einen Moment und versuch es noch einmal.';
+
+  @override
+  String get engineThisDevice => 'Auf diesem Gerät';
+
+  @override
+  String get engineNetwork => 'Im Netzwerk';
+
+  @override
+  String get localEngineStopped => 'Die Engine auf diesem Gerät ist gestoppt.';
+
+  @override
+  String get localEngineStarting => 'Engine startet…';
+
+  @override
+  String localEngineRunning(String url) {
+    return 'Die Engine läuft auf diesem Gerät ($url).';
+  }
+
+  @override
+  String get localEngineNotFound => 'Das Engine-Programm wurde nicht gefunden. Trag seinen Pfad unter Log ein.';
+
+  @override
+  String get localEngineNoCameras =>
+      'Keine Kamera ließ sich starten: Sind sie eingesteckt oder von einem anderen Programm belegt?';
+
+  @override
+  String get localEnginePortInUse => 'Der Port der Engine ist belegt; vielleicht läuft schon eine andere Engine.';
+
+  @override
+  String get localEngineCrashed => 'Die Engine hat sich unerwartet beendet; das Log zeigt warum.';
+
+  @override
+  String get useCameras => 'Kameras verwenden';
+
+  @override
+  String get useCamerasHint =>
+      'Livebilder und die Scheibenprüfung; Darts sind simuliert, bis die Erkennung fertig ist.';
+
+  @override
+  String get engineLog => 'Log';
+
+  @override
+  String get startEngine => 'Starten';
+
+  @override
+  String get stopEngine => 'Stoppen';
+
+  @override
+  String get engineProgram => 'Engine-Programm';
+
+  @override
+  String get engineProgramHint => 'Leer lassen, um es automatisch zu suchen';
+
+  @override
+  String get engineLogEmpty => 'Noch keine Ausgabe.';
+
+  @override
+  String get close => 'Schließen';
 }
