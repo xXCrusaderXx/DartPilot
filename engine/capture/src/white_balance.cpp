@@ -2,7 +2,7 @@
 
 #include <filesystem>
 
-#include <opencv2/core/persistence.hpp>
+#include <opencv2/core.hpp>
 
 namespace dartpilot::capture
 {
