@@ -67,6 +67,8 @@ If libuvc does not reach three cameras at 30 fps, the alternatives are fewer cam
 
 ## Consequences
 
+- The work is planned in the roadmap's platform track: *Platform: remote play and engine choice* first, because it needs no new capture backend, then *Platform: engine on Android and Windows*.
+
 - The engine build gains Android (NDK) and Windows targets; CI builds them once they exist.
 - New capture backends: libuvc (Android), Media Foundation (Windows). Their timestamp quality is measured and documented like ADR 0005.
 - The app gains an engine manager per platform (start, stop, port, logs) and an engine list from mDNS.
