@@ -292,7 +292,7 @@ std::variant<Request, ParseError> parseRequest (const std::string& text)
         }
         else if(type == "store_empty_reference")
         {
-            request.body = StoreEmptyReference{};
+            request.body = StoreEmptyReference{message.value("force", false)};
         }
         else if(type == "subscribe_status" || type == "unsubscribe_status")
         {

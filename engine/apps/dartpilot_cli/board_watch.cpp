@@ -67,7 +67,7 @@ void BoardWatch::start ()
             std::lock_guard lock(mutex_);
             server_.setBoardState(info());
         });
-    server_.onStoreEmptyReference([this] { return storeReferences(); });
+    server_.onStoreEmptyReference([this] (bool force) { return storeReferences(force); });
     {
         std::lock_guard lock(mutex_);
         server_.setBoardState(info());
@@ -183,12 +183,12 @@ api::BoardStateInfo BoardWatch::info () const
     return board;
 }
 
-std::optional<std::string> BoardWatch::storeReferences ()
+std::optional<std::string> BoardWatch::storeReferences (bool force)
 {
     std::lock_guard lock(mutex_);
     for(const auto& camera : cameras_)
     {
-        if(camera.check.state == geometry::BoardState::Occupied)
+        if(camera.check.state == geometry::BoardState::Occupied && !force)
         {
             return "board_not_empty";
         }

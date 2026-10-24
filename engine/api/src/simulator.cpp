@@ -121,12 +121,14 @@ void Simulator::start ()
     {
         server_.onCheckBoard([this] { server_.setBoardState(boardState(occupied_)); });
         server_.onStoreEmptyReference(
-            [this] () -> std::optional<std::string>
+            [this] (bool force) -> std::optional<std::string>
             {
-                if(occupied_)
+                if(occupied_ && !force)
                 {
                     return "board_not_empty";
                 }
+                // The darts are part of the new reference, so the board counts as empty from now on.
+                publishBoard(false);
                 return std::nullopt;
             });
     }

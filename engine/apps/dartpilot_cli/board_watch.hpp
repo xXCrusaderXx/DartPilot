@@ -50,7 +50,7 @@ class BoardWatch
     // Takes a sample of the camera; true when a new average was checked
     bool sample (Camera& camera, std::size_t index);
     api::BoardStateInfo info () const;
-    std::optional<std::string> storeReferences ();
+    std::optional<std::string> storeReferences (bool force);
 
     api::Server& server_;
     const CameraPreviews& previews_;

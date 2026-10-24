@@ -146,6 +146,8 @@ struct CheckBoard
 };
 struct StoreEmptyReference
 {
+    // Store even while a camera sees an object, after the user confirmed that the board is empty
+    bool force = false;
 };
 struct Subscription
 {

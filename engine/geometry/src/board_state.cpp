@@ -3,6 +3,7 @@
 #include <filesystem>
 
 #include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
 
 #include "dartpilot/geometry/board_detection.hpp"
 #include "dartpilot/tip_candidates/dart_observation.hpp"
@@ -14,6 +15,37 @@ namespace
 // Without a reference: a board whose wire crossings are further than this from the calibration is partly hidden
 // (unhidden boards check within about 1 mm under the light they were calibrated in, #92).
 constexpr double kHiddenBoard_mm = 2.5;
+// An object found against the reference is confirmed only if it still stands out when every pixel may match the
+// reference anywhere within kEdgeTolerance_px: a camera that warmed up since the reference was stored zooms and softens
+// its image a little, which leaves traces along every wire and number, but a dart is far wider than that. It needs
+// kMinConfirmed_px pixels that differ by more than kConfirmLevel in some colour channel.
+constexpr int kEdgeTolerance_px = 2;
+constexpr double kConfirmLevel = 30.0;
+constexpr int kMinConfirmed_px = 150;
+
+// Pixels of the image outside the range of the reference's values around them, after matching each channel's mean
+int pixelsStandingOut (const cv::Mat& image, const cv::Mat& reference)
+{
+    cv::Mat a, b;
+    image.convertTo(a, CV_32FC3);
+    reference.convertTo(b, CV_32FC3);
+    const cv::Scalar mean_a = cv::mean(a), mean_b = cv::mean(b);
+    std::vector<cv::Mat> a_channels, b_channels;
+    cv::split(a, a_channels);
+    cv::split(b, b_channels);
+    const cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2 * kEdgeTolerance_px + 1, 2 * kEdgeTolerance_px + 1));
+    cv::Mat out(a.size(), CV_8U, cv::Scalar(0));
+    for(int c = 0; c < 3; ++c)
+    {
+        a_channels[c] *= mean_b[c] / std::max(1.0, mean_a[c]);
+        cv::Mat low, high;
+        cv::erode(b_channels[c], low, kernel);
+        cv::dilate(b_channels[c], high, kernel);
+        out |= (a_channels[c] > high + kConfirmLevel) | (a_channels[c] < low - kConfirmLevel);
+    }
+    cv::morphologyEx(out, out, cv::MORPH_OPEN, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)));
+    return cv::countNonZero(out);
+}
 }  // namespace
 
 std::string_view toString (BoardState state)
@@ -40,7 +72,8 @@ BoardCheck checkBoard (const cv::Mat& image, const cv::Mat* reference, const Ref
     }
     if(reference && !reference->empty() && reference->size() == image.size())
     {
-        if(const auto observation = tip_candidates::observeDart(image, *reference))
+        const auto observation = tip_candidates::observeDart(image, *reference);
+        if(observation && pixelsStandingOut(image, *reference) >= kMinConfirmed_px)
         {
             cv::Point2d sum(0, 0);
             for(const auto& p : observation->axis_px)

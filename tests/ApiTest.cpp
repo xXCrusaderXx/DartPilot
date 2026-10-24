@@ -321,7 +321,9 @@ TEST(Protocol, BoardStateCombinesCamerasAndIsPartOfHello)
     const auto check = api::parseRequest(R"({"type":"check_board","request_id":"1"})");
     EXPECT_TRUE(std::holds_alternative<api::CheckBoard>(std::get<api::Request>(check).body));
     const auto store = api::parseRequest(R"({"type":"store_empty_reference","request_id":"2"})");
-    EXPECT_TRUE(std::holds_alternative<api::StoreEmptyReference>(std::get<api::Request>(store).body));
+    EXPECT_FALSE(std::get<api::StoreEmptyReference>(std::get<api::Request>(store).body).force);
+    const auto forced = api::parseRequest(R"({"type":"store_empty_reference","request_id":"3","force":true})");
+    EXPECT_TRUE(std::get<api::StoreEmptyReference>(std::get<api::Request>(forced).body).force);
 }
 
 TEST(Server, BoardStateGoesToEveryoneAndRequestsReachTheSource)
@@ -346,12 +348,15 @@ TEST(Server, BoardStateGoesToEveryoneAndRequestsReachTheSource)
 
     int checks = 0;
     server.onCheckBoard([&] { ++checks; });
-    server.onStoreEmptyReference([&] () -> std::optional<std::string> { return std::string("board_not_empty"); });
+    server.onStoreEmptyReference([&] (bool force) -> std::optional<std::string>
+                                 { return force ? std::nullopt : std::optional<std::string>("board_not_empty"); });
     client.send({{"type", "check_board"}, {"request_id", "2"}});
     EXPECT_TRUE(client.next("result")["ok"]);
     EXPECT_EQ(checks, 1);
     client.send({{"type", "store_empty_reference"}, {"request_id", "3"}});
     EXPECT_EQ(client.next("result")["error"]["code"], "board_not_empty");
+    client.send({{"type", "store_empty_reference"}, {"request_id", "4"}, {"force", true}});
+    EXPECT_TRUE(client.next("result")["ok"]);
 
     TestClient late(port);
     EXPECT_EQ(late.next("hello")["board_state"]["state"], "occupied");

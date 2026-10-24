@@ -143,7 +143,8 @@ double boardChange (const cv::Mat& before, const cv::Mat& after)
     cv::cvtColor(after, b, cv::COLOR_BGR2GRAY);
     cv::Mat window;
     cv::createHanningWindow(window, a.size(), CV_32F);
-    const cv::Point2d shift = cv::phaseCorrelate(a, b, window);
+    // cv::phaseCorrelate multiplies its inputs by the window in place.
+    const cv::Point2d shift = cv::phaseCorrelate(a.clone(), b.clone(), window);
     cv::warpAffine(a, a, cv::Matx23d(1, 0, shift.x, 0, 1, shift.y), a.size(), cv::INTER_LINEAR, cv::BORDER_REPLICATE);
     a *= cv::mean(b)[0] / std::max(1.0, cv::mean(a)[0]);
     cv::Mat difference;
