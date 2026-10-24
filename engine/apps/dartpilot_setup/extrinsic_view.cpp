@@ -218,9 +218,5 @@ void ExtrinsicView::paintOverlay (QPainter* painter, const QRectF& target, doubl
             }
         }
     }
-    if(!message_.isEmpty())
-    {
-        drawLabel(painter, target.topLeft() + QPointF(14, 28), message_, std::max(12, static_cast<int>(target.height() / 34)));
-    }
 }
 }  // namespace dartpilot::setup
