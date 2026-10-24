@@ -322,5 +322,20 @@
   "calibErrorPoseFailed": "Eine Kamera ließ sich nicht einordnen; miss ihre Scheibe noch einmal ein.",
   "calibErrorSaveFailed": "Die Kalibrierung konnte nicht gespeichert werden.",
   "calibErrorOther": "Fehlgeschlagen ({code}).",
-  "calibrationHint": "Licht, Scheibe und Verfeinern, Schritt für Schritt"
+  "calibrationHint": "Licht, Scheibe und Verfeinern, Schritt für Schritt",
+  "addBot": "Bot",
+  "botDifficulty": "Schwierigkeit",
+  "botAverage": "Average etwa {average}",
+  "botName": "Bot · {name}",
+  "statsAgainstBots": "gegen Bot Stufe {levels}",
+  "botLevel1": "Anfänger",
+  "botLevel2": "Gelegenheitsspieler",
+  "botLevel3": "Kneipenspieler",
+  "botLevel4": "Hobbyspieler",
+  "botLevel5": "Vereinsspieler",
+  "botLevel6": "Ligaspieler",
+  "botLevel7": "Stark",
+  "botLevel8": "Sehr stark",
+  "botLevel9": "Halbprofi",
+  "botLevel10": "Profi"
 }

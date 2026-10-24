@@ -289,7 +289,9 @@ class _HistoryTile extends StatelessWidget {
         [
           DateFormat.yMMMd(l10n.localeName).add_Hm().format(record.ended),
           l10n.statsDartsCount(game.darts),
-          if (others > 0) l10n.statsOpponents(others) else l10n.statsSolo,
+          if (others - record.bots.length > 0) l10n.statsOpponents(others - record.bots.length),
+          if (record.bots.isNotEmpty) l10n.statsAgainstBots(record.bots.values.join(', ')),
+          if (others == 0) l10n.statsSolo,
         ].join('  ·  '),
       ),
     );

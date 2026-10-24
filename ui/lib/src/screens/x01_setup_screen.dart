@@ -36,7 +36,11 @@ class _X01SetupScreenState extends State<X01SetupScreen> {
       doubleOut: _doubleOut,
       legsToWin: _legsToWin,
     );
-    Navigator.of(context).pushReplacement(MaterialPageRoute<void>(builder: (_) => X01Screen(settings: settings)));
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => X01Screen(settings: settings, bots: _players.botIndexes),
+      ),
+    );
   }
 
   @override

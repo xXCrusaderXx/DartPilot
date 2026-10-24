@@ -1113,4 +1113,55 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calibrationHint => 'Light, board and refinement, step by step';
+
+  @override
+  String get addBot => 'Bot';
+
+  @override
+  String get botDifficulty => 'Difficulty';
+
+  @override
+  String botAverage(int average) {
+    return 'Average about $average';
+  }
+
+  @override
+  String botName(int level, String name) {
+    return 'Bot · $name';
+  }
+
+  @override
+  String statsAgainstBots(String levels) {
+    return 'against bot level $levels';
+  }
+
+  @override
+  String get botLevel1 => 'Beginner';
+
+  @override
+  String get botLevel2 => 'Occasional player';
+
+  @override
+  String get botLevel3 => 'Pub player';
+
+  @override
+  String get botLevel4 => 'Hobby player';
+
+  @override
+  String get botLevel5 => 'Club player';
+
+  @override
+  String get botLevel6 => 'League player';
+
+  @override
+  String get botLevel7 => 'Strong';
+
+  @override
+  String get botLevel8 => 'Very strong';
+
+  @override
+  String get botLevel9 => 'Semi-pro';
+
+  @override
+  String get botLevel10 => 'Pro';
 }
