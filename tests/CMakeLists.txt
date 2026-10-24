@@ -40,3 +40,7 @@ gtest_discover_tests(ScoringTest)
 add_executable(SessionTest SessionTest.cpp)
 target_link_libraries(SessionTest PRIVATE dartpilot::session GTest::gtest_main)
 gtest_discover_tests(SessionTest)
+
+add_executable(BoardDetectionTest BoardDetectionTest.cpp)
+target_link_libraries(BoardDetectionTest PRIVATE dartpilot::geometry opencv_imgcodecs GTest::gtest_main)
+gtest_discover_tests(BoardDetectionTest)
