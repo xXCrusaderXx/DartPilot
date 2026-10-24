@@ -69,7 +69,7 @@ On the reference cameras (board points as detected, before and after):
 | 2 (lens prior of camera 1) | 1.62 mm | 0.67 mm | ±0.18 mm |
 | 3 (lens prior of camera 1) | 1.58 mm | 0.64 mm | ±0.18 mm |
 
-What remains is largest along the double ring. The detection still fits the wires as straight lines in the distorted image, where they bend slightly towards the image edge; fitting them in the undistorted image is the next step.
+The detection measures each radial wire on seven tracks through the singles, to a fraction of a pixel, and follows the slight bend the lens gives it towards the image edge, so the crossing with the double ring is no longer extrapolated along a straight line. On the stills of the reference cameras this lowered the mean held-out error from 0.70 to 0.54 mm in daylight and from 0.95 to 0.81 mm under the evening light; the table above was measured before.
 
 The result is stored in `~/.local/share/dartpilot/calibration/extrinsics.yml`, together with the board points, the lens priors and the creation times of the board planes and intrinsics it was computed from. The page marks it as outdated when any of them changes.
 
