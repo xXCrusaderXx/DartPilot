@@ -61,3 +61,7 @@ gtest_discover_tests(ReplayTest)
 add_executable(ApiTest ApiTest.cpp)
 target_link_libraries(ApiTest PRIVATE dartpilot::api GTest::gtest_main)
 gtest_discover_tests(ApiTest)
+
+add_executable(DartLocationTest DartLocationTest.cpp)
+target_link_libraries(DartLocationTest PRIVATE dartpilot::geometry GTest::gtest_main)
+gtest_discover_tests(DartLocationTest)
