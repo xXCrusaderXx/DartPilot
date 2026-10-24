@@ -1112,4 +1112,55 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get calibrationHint => 'Licht, Scheibe und Verfeinern, Schritt für Schritt';
+
+  @override
+  String get addBot => 'Bot';
+
+  @override
+  String get botDifficulty => 'Schwierigkeit';
+
+  @override
+  String botAverage(int average) {
+    return 'Average etwa $average';
+  }
+
+  @override
+  String botName(int level, String name) {
+    return 'Bot · $name';
+  }
+
+  @override
+  String statsAgainstBots(String levels) {
+    return 'gegen Bot Stufe $levels';
+  }
+
+  @override
+  String get botLevel1 => 'Anfänger';
+
+  @override
+  String get botLevel2 => 'Gelegenheitsspieler';
+
+  @override
+  String get botLevel3 => 'Kneipenspieler';
+
+  @override
+  String get botLevel4 => 'Hobbyspieler';
+
+  @override
+  String get botLevel5 => 'Vereinsspieler';
+
+  @override
+  String get botLevel6 => 'Ligaspieler';
+
+  @override
+  String get botLevel7 => 'Stark';
+
+  @override
+  String get botLevel8 => 'Sehr stark';
+
+  @override
+  String get botLevel9 => 'Halbprofi';
+
+  @override
+  String get botLevel10 => 'Profi';
 }

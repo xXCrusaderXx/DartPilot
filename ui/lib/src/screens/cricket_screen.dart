@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../board/dart_throw.dart';
 import '../games/cricket.dart';
+import '../bots/bot_turns.dart';
+import '../games/dart_game.dart';
 import '../input/game_input.dart';
 import '../stats/game_record.dart';
 import '../stats/statistics.dart';
@@ -11,15 +13,18 @@ import 'game_layout.dart';
 import 'players_setup_screen.dart';
 
 class CricketScreen extends StatefulWidget {
-  const CricketScreen({super.key, required this.names});
+  const CricketScreen({super.key, required this.names, this.bots = const {}});
 
   final List<String> names;
+
+  /// Bot level per player index; the others are people
+  final Map<int, int> bots;
 
   static Widget setup(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return PlayersSetupScreen(
       title: l10n.cricketSetup,
-      start: (names, _) => CricketScreen(names: names),
+      start: (names, bots, _) => CricketScreen(names: names, bots: bots),
     );
   }
 
@@ -27,7 +32,7 @@ class CricketScreen extends StatefulWidget {
   State<CricketScreen> createState() => _CricketScreenState();
 }
 
-class _CricketScreenState extends State<CricketScreen> with RecordsGame {
+class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurns {
   late final CricketGame _game = CricketGame(widget.names);
 
   @override
@@ -38,7 +43,17 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame {
     ended: ended,
     players: widget.names,
     throws: _game.throws,
+    bots: widget.bots,
   );
+
+  @override
+  Map<int, int> get botPlayers => widget.bots;
+  @override
+  DartGame get botGame => _game;
+  @override
+  int get playerAtOche => _game.current;
+  @override
+  void addBotDart(DartThrow dart) => _add(dart);
 
   void _add(DartThrow dart) {
     setState(() => _game.add(dart));
@@ -65,6 +80,7 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame {
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) => scheduleBotTurn());
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final players = _game.players;
@@ -112,7 +128,10 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame {
         input: GameInput(
           game: _game,
           shownThrows: [for (final d in _game.currentVisit) d.dart],
-          onDart: _add,
+          onDart: (dart) {
+            // While a bot is at the oche, its darts are its own.
+            if (!isBotTurn) _add(dart);
+          },
           onChanged: () => setState(() {}),
         ),
         panel: panel,

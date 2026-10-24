@@ -1,23 +1,84 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../bots/bot.dart';
 import '../stats/statistics.dart';
 
-/// The players of a game, picked from the profiles in throwing order
+/// The players of a game in throwing order: profiles, and bots with their level
 class PlayerSelection extends ChangeNotifier {
   final List<String> players = [];
+
+  /// Level of every bot among [players], by its name
+  final Map<String, int> bots = {};
 
   static const int maxPlayers = 8;
 
   bool get isEmpty => players.isEmpty;
 
+  /// Bot level per player index, as the game screens take it
+  Map<int, int> get botIndexes => {
+    for (var i = 0; i < players.length; ++i)
+      if (bots.containsKey(players[i])) i: bots[players[i]]!,
+  };
+
   void toggle(String name) {
-    if (!players.remove(name)) {
+    if (players.remove(name)) {
+      bots.remove(name);
+    } else {
       if (players.length >= maxPlayers) return;
       players.add(name);
     }
     notifyListeners();
   }
+
+  /// Adds a bot; a second bot of the same level gets a number, so every player's name is unique in the game.
+  void addBot(int level, String name) {
+    if (players.length >= maxPlayers) return;
+    var unique = name;
+    for (var n = 2; players.contains(unique); ++n) {
+      unique = '$name ($n)';
+    }
+    players.add(unique);
+    bots[unique] = level;
+    notifyListeners();
+  }
+}
+
+String botLevelName(AppLocalizations l10n, int level) => switch (level) {
+  1 => l10n.botLevel1,
+  2 => l10n.botLevel2,
+  3 => l10n.botLevel3,
+  4 => l10n.botLevel4,
+  5 => l10n.botLevel5,
+  6 => l10n.botLevel6,
+  7 => l10n.botLevel7,
+  8 => l10n.botLevel8,
+  9 => l10n.botLevel9,
+  _ => l10n.botLevel10,
+};
+
+/// Asks which level a bot plays at; the level, or null when cancelled.
+Future<int?> pickBotLevel(BuildContext context) {
+  final l10n = AppLocalizations.of(context);
+  return showDialog<int>(
+    context: context,
+    builder: (context) => SimpleDialog(
+      title: Text(l10n.botDifficulty),
+      children: [
+        for (final level in botLevels)
+          SimpleDialogOption(
+            key: ValueKey('bot-level-${level.level}'),
+            onPressed: () => Navigator.of(context).pop(level.level),
+            child: ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: CircleAvatar(child: Text('${level.level}')),
+              title: Text(botLevelName(l10n, level.level)),
+              subtitle: Text(l10n.botAverage(level.average)),
+            ),
+          ),
+      ],
+    ),
+  );
 }
 
 /// Asks for the name of a new profile and adds it; the name, or null when cancelled.
@@ -119,6 +180,27 @@ class PlayerPicker extends StatelessWidget {
                     selected: chosen.contains(name),
                     onSelected: (_) => selection.toggle(name),
                   ),
+                for (final name in chosen)
+                  if (selection.bots.containsKey(name))
+                    InputChip(
+                      key: ValueKey('picked-bot-$name'),
+                      avatar: CircleAvatar(child: Text('${chosen.indexOf(name) + 1}')),
+                      label: Text(name),
+                      selected: true,
+                      showCheckmark: false,
+                      onDeleted: () => selection.toggle(name),
+                    ),
+                ActionChip(
+                  key: const ValueKey('pick-bot'),
+                  avatar: const Icon(Icons.smart_toy_outlined),
+                  label: Text(l10n.addBot),
+                  onPressed: () async {
+                    final level = await pickBotLevel(context);
+                    if (level != null && context.mounted) {
+                      selection.addBot(level, l10n.botName(level, botLevelName(l10n, level)));
+                    }
+                  },
+                ),
                 ActionChip(
                   key: const ValueKey('pick-new-profile'),
                   avatar: const Icon(Icons.person_add),

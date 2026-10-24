@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../board/dart_throw.dart';
 import '../games/around_the_clock.dart';
+import '../bots/bot_turns.dart';
+import '../games/dart_game.dart';
 import '../input/game_input.dart';
 import '../stats/game_record.dart';
 import '../stats/statistics.dart';
@@ -11,17 +13,20 @@ import 'game_layout.dart';
 import 'players_setup_screen.dart';
 
 class AroundTheClockScreen extends StatefulWidget {
-  const AroundTheClockScreen({super.key, required this.names, this.endWithBull = true});
+  const AroundTheClockScreen({super.key, required this.names, this.endWithBull = true, this.bots = const {}});
 
   final List<String> names;
   final bool endWithBull;
+
+  /// Bot level per player index; the others are people
+  final Map<int, int> bots;
 
   static Widget setup(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return PlayersSetupScreen(
       title: l10n.aroundTheClockSetup,
       options: [(l10n.endWithBull, true)],
-      start: (names, options) => AroundTheClockScreen(names: names, endWithBull: options[0]),
+      start: (names, bots, options) => AroundTheClockScreen(names: names, endWithBull: options[0], bots: bots),
     );
   }
 
@@ -29,7 +34,7 @@ class AroundTheClockScreen extends StatefulWidget {
   State<AroundTheClockScreen> createState() => _AroundTheClockScreenState();
 }
 
-class _AroundTheClockScreenState extends State<AroundTheClockScreen> with RecordsGame {
+class _AroundTheClockScreenState extends State<AroundTheClockScreen> with RecordsGame, BotTurns {
   late final AroundTheClockGame _game = AroundTheClockGame(widget.names, endWithBull: widget.endWithBull);
 
   @override
@@ -41,7 +46,17 @@ class _AroundTheClockScreenState extends State<AroundTheClockScreen> with Record
     players: widget.names,
     settings: {'end_with_bull': widget.endWithBull},
     throws: _game.throws,
+    bots: widget.bots,
   );
+
+  @override
+  Map<int, int> get botPlayers => widget.bots;
+  @override
+  DartGame get botGame => _game;
+  @override
+  int get playerAtOche => _game.current;
+  @override
+  void addBotDart(DartThrow dart) => _add(dart);
 
   void _add(DartThrow dart) {
     setState(() => _game.add(dart));
@@ -61,6 +76,7 @@ class _AroundTheClockScreenState extends State<AroundTheClockScreen> with Record
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) => scheduleBotTurn());
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final panel = Column(
@@ -99,7 +115,10 @@ class _AroundTheClockScreenState extends State<AroundTheClockScreen> with Record
         input: GameInput(
           game: _game,
           shownThrows: [for (final (dart, _) in _game.currentVisit) dart],
-          onDart: _add,
+          onDart: (dart) {
+            // While a bot is at the oche, its darts are its own.
+            if (!isBotTurn) _add(dart);
+          },
           onChanged: () => setState(() {}),
         ),
         panel: panel,

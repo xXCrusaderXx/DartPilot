@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../board/dart_throw.dart';
 import '../games/x01.dart';
+import '../bots/bot_turns.dart';
+import '../games/dart_game.dart';
 import '../input/game_input.dart';
 import '../stats/game_record.dart';
 import '../stats/statistics.dart';
@@ -10,15 +12,18 @@ import '../widgets/winner_dialog.dart';
 import 'x01_setup_screen.dart';
 
 class X01Screen extends StatefulWidget {
-  const X01Screen({super.key, required this.settings});
+  const X01Screen({super.key, required this.settings, this.bots = const {}});
 
   final X01Settings settings;
+
+  /// Bot level per player index; the others are people
+  final Map<int, int> bots;
 
   @override
   State<X01Screen> createState() => _X01ScreenState();
 }
 
-class _X01ScreenState extends State<X01Screen> with RecordsGame {
+class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
   late final X01Game _game = X01Game(widget.settings);
 
   @override
@@ -30,7 +35,17 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame {
     players: widget.settings.players,
     settings: GameRecord.settingsOfX01(widget.settings),
     throws: _game.throws,
+    bots: widget.bots,
   );
+
+  @override
+  Map<int, int> get botPlayers => widget.bots;
+  @override
+  DartGame get botGame => _game;
+  @override
+  int get playerAtOche => _game.current;
+  @override
+  void addBotDart(DartThrow dart) => _add(dart);
 
   void _add(DartThrow dart) {
     final legBefore = _game.legNumber;
@@ -61,6 +76,7 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame {
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) => scheduleBotTurn());
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final visit = _game.currentVisit;
@@ -112,7 +128,10 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame {
     final input = GameInput(
       game: _game,
       shownThrows: [for (final d in visit.darts) d.dart],
-      onDart: _add,
+      onDart: (dart) {
+        // While a bot is at the oche, its darts are its own.
+        if (!isBotTurn) _add(dart);
+      },
       onChanged: () => setState(() {}),
     );
 

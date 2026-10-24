@@ -124,8 +124,8 @@ class Statistics extends ChangeNotifier {
 
   Iterable<String> _playedNames() sync* {
     for (final g in games) {
-      for (final p in g.players) {
-        if (!isGuestName(p)) yield p;
+      for (var i = 0; i < g.players.length; ++i) {
+        if (!isGuestName(g.players[i]) && !g.bots.containsKey(i)) yield g.players[i];
       }
     }
   }

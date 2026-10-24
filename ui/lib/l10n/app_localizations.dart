@@ -2029,6 +2029,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Light, board and refinement, step by step'**
   String get calibrationHint;
+
+  /// No description provided for @addBot.
+  ///
+  /// In en, this message translates to:
+  /// **'Bot'**
+  String get addBot;
+
+  /// No description provided for @botDifficulty.
+  ///
+  /// In en, this message translates to:
+  /// **'Difficulty'**
+  String get botDifficulty;
+
+  /// No description provided for @botAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Average about {average}'**
+  String botAverage(int average);
+
+  /// No description provided for @botName.
+  ///
+  /// In en, this message translates to:
+  /// **'Bot · {name}'**
+  String botName(int level, String name);
+
+  /// No description provided for @statsAgainstBots.
+  ///
+  /// In en, this message translates to:
+  /// **'against bot level {levels}'**
+  String statsAgainstBots(String levels);
+
+  /// No description provided for @botLevel1.
+  ///
+  /// In en, this message translates to:
+  /// **'Beginner'**
+  String get botLevel1;
+
+  /// No description provided for @botLevel2.
+  ///
+  /// In en, this message translates to:
+  /// **'Occasional player'**
+  String get botLevel2;
+
+  /// No description provided for @botLevel3.
+  ///
+  /// In en, this message translates to:
+  /// **'Pub player'**
+  String get botLevel3;
+
+  /// No description provided for @botLevel4.
+  ///
+  /// In en, this message translates to:
+  /// **'Hobby player'**
+  String get botLevel4;
+
+  /// No description provided for @botLevel5.
+  ///
+  /// In en, this message translates to:
+  /// **'Club player'**
+  String get botLevel5;
+
+  /// No description provided for @botLevel6.
+  ///
+  /// In en, this message translates to:
+  /// **'League player'**
+  String get botLevel6;
+
+  /// No description provided for @botLevel7.
+  ///
+  /// In en, this message translates to:
+  /// **'Strong'**
+  String get botLevel7;
+
+  /// No description provided for @botLevel8.
+  ///
+  /// In en, this message translates to:
+  /// **'Very strong'**
+  String get botLevel8;
+
+  /// No description provided for @botLevel9.
+  ///
+  /// In en, this message translates to:
+  /// **'Semi-pro'**
+  String get botLevel9;
+
+  /// No description provided for @botLevel10.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro'**
+  String get botLevel10;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

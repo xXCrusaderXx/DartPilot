@@ -16,6 +16,7 @@ class GameRecord {
     required this.players,
     required this.throws,
     this.settings = const {},
+    this.bots = const {},
   });
 
   final String id;
@@ -27,6 +28,9 @@ class GameRecord {
   /// Mode settings: X01 start score, double in/out, legs to win; Around the Clock: end with the bull
   final Map<String, Object?> settings;
   final List<DartThrow> throws;
+
+  /// Bot level per player index; bots have no profile and no statistics
+  final Map<int, int> bots;
 
   /// Replays the game: its final state, and for every dart the player who threw it
   ({Object game, List<int> playerOf}) replay() {
@@ -78,6 +82,7 @@ class GameRecord {
     'ended': ended.toUtc().toIso8601String(),
     'players': players,
     'settings': settings,
+    if (bots.isNotEmpty) 'bots': {for (final e in bots.entries) '${e.key}': e.value},
     'throws': [
       for (final t in throws)
         {
@@ -100,6 +105,10 @@ class GameRecord {
       ended: DateTime.parse(json['ended'] as String).toLocal(),
       players: [for (final p in json['players'] as List<dynamic>) p as String],
       settings: Map<String, Object?>.from(json['settings'] as Map? ?? const {}),
+      bots: {
+        for (final e in (json['bots'] as Map? ?? const {}).entries)
+          int.parse(e.key as String): (e.value as num).toInt(),
+      },
       throws: [
         for (final t in json['throws'] as List<dynamic>)
           DartThrow(

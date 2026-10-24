@@ -13,8 +13,8 @@ class PlayersSetupScreen extends StatefulWidget {
   /// Switches shown under the players, with their default values
   final List<(String, bool)> options;
 
-  /// Builds the game screen from the names and the option values
-  final Widget Function(List<String> names, List<bool> options) start;
+  /// Builds the game screen from the names, the bot level per player index and the option values
+  final Widget Function(List<String> names, Map<int, int> bots, List<bool> options) start;
 
   @override
   State<PlayersSetupScreen> createState() => _PlayersSetupScreenState();
@@ -58,7 +58,8 @@ class _PlayersSetupScreenState extends State<PlayersSetupScreen> {
                         if (!await confirmBoardEmpty(context) || !context.mounted) return;
                         Navigator.of(context).pushReplacement(
                           MaterialPageRoute<void>(
-                            builder: (_) => widget.start(List.of(_players.players), List.of(_options)),
+                            builder: (_) =>
+                                widget.start(List.of(_players.players), _players.botIndexes, List.of(_options)),
                           ),
                         );
                       },
