@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The engine runs on another device or behind adb reverse; debug builds get this permission implicitly. -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:label="DartPilot"
         android:name="${applicationName}"

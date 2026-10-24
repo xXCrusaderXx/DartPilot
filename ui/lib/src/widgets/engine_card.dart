@@ -137,16 +137,13 @@ class _EngineCardState extends State<EngineCard> {
               if (connected) _CamerasButton(l10n: l10n),
             ] else ...[
               const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _url,
-                      enabled: !connected,
-                      decoration: InputDecoration(labelText: l10n.engineAddress, isDense: true),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
+              _AddressRow(
+                field: TextField(
+                  controller: _url,
+                  enabled: !connected,
+                  decoration: InputDecoration(labelText: l10n.engineAddress, isDense: true),
+                ),
+                buttons: [
                   if (!connected && engine.discovery.available) ...[
                     IconButton(
                       key: const ValueKey('engine-search'),
@@ -387,4 +384,32 @@ class _EngineLogDialogState extends State<_EngineLogDialog> {
     settings.executable = program.isEmpty || program == findEngineExecutable() ? null : program;
     settings.save();
   }
+}
+
+/// The address field with its buttons: in one line, or the buttons under the field where a phone is too narrow.
+class _AddressRow extends StatelessWidget {
+  const _AddressRow({required this.field, required this.buttons});
+
+  final Widget field;
+  final List<Widget> buttons;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => constraints.maxWidth < 520
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              field,
+              const SizedBox(height: 8),
+              Wrap(alignment: WrapAlignment.end, runSpacing: 8, children: buttons),
+            ],
+          )
+        : Row(
+            children: [
+              Expanded(child: field),
+              const SizedBox(width: 12),
+              ...buttons,
+            ],
+          ),
+  );
 }
