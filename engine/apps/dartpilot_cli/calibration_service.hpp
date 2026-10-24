@@ -46,6 +46,17 @@ class CalibrationService
     cv::Mat averageFrames (std::size_t camera, int count);
     void waitInterruptibly (std::chrono::steady_clock::duration duration);
     std::vector<geometry::SetupCamera> setupCameras () const;
+    // Calibration monitoring: every camera's board against its calibration, often while a client subscribed to the
+    // details, else now and then while the board is empty, for calibration_status
+    struct CameraCheck
+    {
+        std::string state;
+        std::optional<double> mm;
+        std::string checked_at;
+    };
+    void runChecks ();
+    nlohmann::json checkCamera (std::size_t camera, const geometry::StoredExtrinsics* extrinsics, CameraCheck& summary);
+
     nlohmann::json status () const;
     void publishStatus ();
 
@@ -62,5 +73,9 @@ class CalibrationService
     std::thread worker_;
     std::atomic<bool> busy_{false};
     std::atomic<bool> stop_{false};
+    std::thread checker_;
+    std::atomic<int> subscribers_{0};
+    mutable std::mutex checks_mutex_;
+    std::vector<CameraCheck> checks_;
 };
 }  // namespace dartpilot::cli

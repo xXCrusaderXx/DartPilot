@@ -455,8 +455,20 @@ TEST(Server, CalibrationRequestsReachTheSourceAndTheStatusIsPartOfHello)
     ASSERT_FALSE(balance.is_null());
     EXPECT_EQ(balance["cameras"][0]["chosen_kelvin"], 3000);
 
+    client.send({{"type", "subscribe_calibration_check"}, {"request_id", "5"}});
+    int moved = 0;
+    for(int i = 0; i < 3; ++i)
+    {
+        const auto check = client.next("calibration_check");
+        moved += check["state"] == "moved" ? 1 : 0;
+        EXPECT_EQ(check["expected_px"].size(), check["found_px"].size());
+    }
+    EXPECT_EQ(moved, 1);
+
     TestClient late(port);
-    EXPECT_EQ(late.next("hello")["calibration_status"]["cameras"][0]["white_balance_kelvin"], 3000);
+    const auto status = late.next("hello")["calibration_status"];
+    EXPECT_EQ(status["cameras"][0]["white_balance_kelvin"], 3000);
+    EXPECT_EQ(status["cameras"][1]["check"]["state"], "moved");
     simulator.stop();
     server.stop();
 }
