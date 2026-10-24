@@ -6,6 +6,8 @@
 #include <string_view>
 #include <vector>
 
+#include "dartpilot/capture/frame.hpp"
+
 // Linux V4L2 cameras: discovery by USB port and access to camera controls.
 namespace dartpilot::capture
 {
@@ -41,6 +43,10 @@ struct ControlRange
     // Set while another control overrides it, e.g. the exposure time under automatic exposure
     bool inactive = false;
 };
+
+// Sets the controls of docs/adr/0002 on a camera: automatic exposure that never lowers the frame rate, 50 Hz, and the
+// white balance of the settings. Every program that opens a camera applies them, so the image looks the same in each.
+void applyReferenceControls (const std::string& path, const StreamSettings& settings);
 
 // Reads and writes camera controls through their own file descriptor, so it works while another handle streams.
 class CameraControls

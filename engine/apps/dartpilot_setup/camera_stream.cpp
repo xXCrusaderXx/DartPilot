@@ -9,6 +9,8 @@
 
 #include "calibration_paths.hpp"
 #include "dartpilot/capture/focus.hpp"
+#include "dartpilot/capture/v4l2_device.hpp"
+#include "dartpilot/capture/white_balance.hpp"
 
 namespace dartpilot::setup
 {
@@ -61,6 +63,17 @@ CameraSnapshot CameraStream::latest () const
 
 void CameraStream::run ()
 {
+    // The white balance the setup tuned for the camera on this port (`dartpilot white-balance`)
+    capture::StreamSettings settings;
+    for(const auto& device : capture::findCameras())
+    {
+        if(device.path == path_)
+        {
+            settings.white_balance_K =
+                capture::storedWhiteBalance((calibrationDirectory() + "/").toStdString() + capture::whiteBalanceFileName(device.usb_port));
+        }
+    }
+    capture::applyReferenceControls(path_, settings);
     cv::VideoCapture camera(path_, cv::CAP_V4L2);
     if(!camera.isOpened())
     {

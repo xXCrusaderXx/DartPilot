@@ -164,4 +164,17 @@ bool CameraControls::set (std::uint32_t id, std::int32_t value) const
     control.value = value;
     return fd_ >= 0 && retryIoctl(fd_, VIDIOC_S_CTRL, &control) == 0;
 }
+void applyReferenceControls (const std::string& path, const StreamSettings& settings)
+{
+    const CameraControls controls(path);
+    controls.set(V4L2_CID_EXPOSURE_AUTO, V4L2_EXPOSURE_APERTURE_PRIORITY);
+    controls.set(V4L2_CID_EXPOSURE_AUTO_PRIORITY, 0);
+    controls.set(V4L2_CID_POWER_LINE_FREQUENCY, V4L2_CID_POWER_LINE_FREQUENCY_50HZ);
+    // The temperature is only accepted while the automatic white balance is off.
+    controls.set(V4L2_CID_AUTO_WHITE_BALANCE, settings.white_balance_K > 0 ? 0 : 1);
+    if(settings.white_balance_K > 0)
+    {
+        controls.set(V4L2_CID_WHITE_BALANCE_TEMPERATURE, settings.white_balance_K);
+    }
+}
 }  // namespace dartpilot::capture
