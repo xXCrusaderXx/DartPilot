@@ -52,6 +52,8 @@ class StreamView : public QQuickPaintedItem
     void releaseStream ();
     QRectF imageRect () const;
     cv::Size imageSize () const { return {image_.width(), image_.height()}; }
+    // The latest frame as shown, in RGB
+    const QImage& image () const { return image_; }
 
    private:
     void poll ();
