@@ -80,4 +80,69 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noThrowsYet => 'Tap the board or use the keypad';
+
+  @override
+  String get x01Setup => 'New X01 game';
+
+  @override
+  String get players => 'Players';
+
+  @override
+  String get addPlayer => 'Add player';
+
+  @override
+  String playerName(int number) {
+    return 'Player $number';
+  }
+
+  @override
+  String get startScore => 'Start score';
+
+  @override
+  String get doubleIn => 'Double in';
+
+  @override
+  String get doubleOut => 'Double out';
+
+  @override
+  String get legsToWin => 'Legs to win';
+
+  @override
+  String get startGame => 'Start game';
+
+  @override
+  String leg(int number) {
+    return 'Leg $number';
+  }
+
+  @override
+  String get legs => 'Legs';
+
+  @override
+  String get checkout => 'Checkout';
+
+  @override
+  String get bust => 'Bust';
+
+  @override
+  String get notIn => 'not in';
+
+  @override
+  String legWonBy(String name) {
+    return '$name wins the leg';
+  }
+
+  @override
+  String matchWonBy(String name) {
+    return '$name wins!';
+  }
+
+  @override
+  String get newGame => 'New game';
+
+  @override
+  String get backToMenu => 'Menu';
+
+  @override
+  String get removePlayer => 'Remove player';
 }

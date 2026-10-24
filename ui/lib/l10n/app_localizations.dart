@@ -235,6 +235,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap the board or use the keypad'**
   String get noThrowsYet;
+
+  /// No description provided for @x01Setup.
+  ///
+  /// In en, this message translates to:
+  /// **'New X01 game'**
+  String get x01Setup;
+
+  /// No description provided for @players.
+  ///
+  /// In en, this message translates to:
+  /// **'Players'**
+  String get players;
+
+  /// No description provided for @addPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Add player'**
+  String get addPlayer;
+
+  /// No description provided for @playerName.
+  ///
+  /// In en, this message translates to:
+  /// **'Player {number}'**
+  String playerName(int number);
+
+  /// No description provided for @startScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Start score'**
+  String get startScore;
+
+  /// No description provided for @doubleIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Double in'**
+  String get doubleIn;
+
+  /// No description provided for @doubleOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Double out'**
+  String get doubleOut;
+
+  /// No description provided for @legsToWin.
+  ///
+  /// In en, this message translates to:
+  /// **'Legs to win'**
+  String get legsToWin;
+
+  /// No description provided for @startGame.
+  ///
+  /// In en, this message translates to:
+  /// **'Start game'**
+  String get startGame;
+
+  /// No description provided for @leg.
+  ///
+  /// In en, this message translates to:
+  /// **'Leg {number}'**
+  String leg(int number);
+
+  /// No description provided for @legs.
+  ///
+  /// In en, this message translates to:
+  /// **'Legs'**
+  String get legs;
+
+  /// No description provided for @checkout.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkout'**
+  String get checkout;
+
+  /// No description provided for @bust.
+  ///
+  /// In en, this message translates to:
+  /// **'Bust'**
+  String get bust;
+
+  /// No description provided for @notIn.
+  ///
+  /// In en, this message translates to:
+  /// **'not in'**
+  String get notIn;
+
+  /// No description provided for @legWonBy.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} wins the leg'**
+  String legWonBy(String name);
+
+  /// No description provided for @matchWonBy.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} wins!'**
+  String matchWonBy(String name);
+
+  /// No description provided for @newGame.
+  ///
+  /// In en, this message translates to:
+  /// **'New game'**
+  String get newGame;
+
+  /// No description provided for @backToMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Menu'**
+  String get backToMenu;
+
+  /// No description provided for @removePlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove player'**
+  String get removePlayer;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

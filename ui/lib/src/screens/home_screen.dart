@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import 'training_screen.dart';
+import 'x01_setup_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -11,7 +12,12 @@ class HomeScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     void comingSoon() => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.comingSoon)));
     final modes = [
-      (Icons.flag, l10n.modeX01, l10n.modeX01Description, comingSoon),
+      (
+        Icons.flag,
+        l10n.modeX01,
+        l10n.modeX01Description,
+        () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const X01SetupScreen())),
+      ),
       (Icons.grid_on, l10n.modeCricket, l10n.modeCricketDescription, comingSoon),
       (Icons.schedule, l10n.modeAroundTheClock, l10n.modeAroundTheClockDescription, comingSoon),
       (
