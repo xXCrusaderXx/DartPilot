@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Between the two colours of the icon's background gradient -->
+    <color name="ic_launcher_background">#161C26</color>
+</resources>

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Foreground of the DartPilot icon (engine/apps/dartpilot_setup/icons/dartpilot.svg) for adaptive and maskable
+       icons: no background, scaled to fit the safe zone of a masked icon. -->
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#222b3a"/>
+      <stop offset="1" stop-color="#0f1216"/>
+    </linearGradient>
+    <linearGradient id="flight-left" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7dd3fc"/>
+      <stop offset="1" stop-color="#38bdf8"/>
+    </linearGradient>
+    <linearGradient id="flight-right" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#38bdf8"/>
+      <stop offset="1" stop-color="#0284c7"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(256 256) scale(0.8) translate(-256 -256)">
+    <!-- Measuring ring -->
+    <circle cx="256" cy="256" r="164" fill="none" stroke="#38bdf8" stroke-opacity="0.6" stroke-width="14"/>
+
+    <!-- Camera positions on the ring: top, lower left, lower right -->
+    <g fill="#0f1216" stroke="#7dd3fc" stroke-width="10">
+      <circle cx="256" cy="92" r="20"/>
+      <circle cx="114" cy="338" r="20"/>
+      <circle cx="398" cy="338" r="20"/>
+    </g>
+
+    <!-- Dart flight: two halves for a folded look, tip pointing to the impact point -->
+    <path d="M256 150 C298 150 336 168 344 204 C346 216 342 228 334 240 L268 330 L256 338 Z" fill="url(#flight-right)"/>
+    <path d="M256 150 C214 150 176 168 168 204 C166 216 170 228 178 240 L244 330 L256 338 Z" fill="url(#flight-left)"/>
+    <path d="M247 336 L265 336 L256 404 Z" fill="#7dd3fc"/>
+    <circle cx="256" cy="412" r="9" fill="#e0f7ff"/>
+  </g>
+</svg>
