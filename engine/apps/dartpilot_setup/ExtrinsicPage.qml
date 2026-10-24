@@ -5,8 +5,8 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import DartPilotSetup
 
-// Extrinsic calibration of one camera from the dartboard (#13, #47): detect the board, click the sector 20, check the
-// numbers and the fit. The full pose and lens refinement (ADR 0006) follow.
+// Extrinsic calibration from the dartboard (#13, #47): per camera detect the board, click the sector 20 and check the
+// numbers, then refine all cameras together (ADR 0006).
 ColumnLayout {
     id: page
 
@@ -28,6 +28,12 @@ ColumnLayout {
         }
     }
     Component.onCompleted: activeChanged()
+
+    BoardRefiner {
+        id: refiner
+
+        cameras: page.cameras
+    }
 
     ExtrinsicGuideDialog {
         id: guideDialog
@@ -261,20 +267,84 @@ ColumnLayout {
                         wrapMode: Text.WordWrap
                         font.pixelSize: Tokens.captionSize
                         color: Tokens.textMuted
-                        text: "The fit still ignores the lens distortion of cameras without an intrinsic calibration and assumes the nominal board size; the refinement in the next step removes both."
+                        text: "This fit still ignores the lens distortion of cameras without an intrinsic calibration and assumes the nominal board size; the refinement in the next step removes both."
                     }
                 }
 
                 StepCard {
                     Layout.fillWidth: true
                     step: 5
-                    title: "Pose and lens refinement"
+                    title: "Refine all cameras"
+                    // Done once refined and saved for the current board planes; the quality shows per camera
+                    done: refiner.hasResult && !refiner.stale
 
                     Label {
                         Layout.fillWidth: true
                         wrapMode: Text.WordWrap
                         color: Tokens.textMuted
-                        text: "Next: pose, focal length and distortion of every camera and the actual size of the board, from the points of all three cameras together (#13, ADR 0006)."
+                        text: "Pose, focal length and lens distortion of every camera and the actual size of the board, from the points of all cameras together. Run it once the board of every camera is saved."
+                    }
+                    Button {
+                        text: refiner.running ? "Refining …" : refiner.hasResult ? "Refine again" : "Refine all cameras"
+                        highlighted: !refiner.hasResult || refiner.stale
+                        enabled: !refiner.running && refiner.refinableCount > 0
+                        onClicked: refiner.refine()
+                        ToolTip.visible: hovered
+                        ToolTip.text: refiner.refinableCount + " of " + page.cameras.length + " cameras have a board plane; takes a second"
+                    }
+                    Label {
+                        visible: refiner.stale
+                        Layout.fillWidth: true
+                        wrapMode: Text.WordWrap
+                        color: Tokens.warning
+                        text: "A board plane or lens calibration changed since the last refinement, or a camera was added. Refine again."
+                    }
+                    Label {
+                        visible: refiner.message !== "" && !refiner.hasResult
+                        Layout.fillWidth: true
+                        wrapMode: Text.WordWrap
+                        color: Tokens.textMuted
+                        text: refiner.message
+                    }
+                    Repeater {
+                        model: refiner.results
+
+                        delegate: ColumnLayout {
+                            id: result
+
+                            required property var modelData
+                            readonly property int number: page.cameras.findIndex(c => c.usbPort === modelData.usbPort) + 1
+
+                            Layout.fillWidth: true
+                            spacing: 2
+
+                            Chip {
+                                text: (result.number > 0 ? "Camera " + result.number : "USB " + result.modelData.usbPort) + "  ·  " + result.modelData.heldOutMm.toFixed(2) + " mm"
+                                tone: result.modelData.quality === "good" ? Tokens.good : result.modelData.quality === "fair" ? Tokens.warning : Tokens.bad
+                                dot: true
+
+                                HoverHandler {
+                                    id: resultHover
+                                }
+                                ToolTip.visible: resultHover.hovered
+                                ToolTip.text: "Back-projection error on wires the refinement did not see, in board millimetres. Green up to 0.5 mm, yellow up to 1 mm."
+                            }
+                            Label {
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
+                                font.pixelSize: Tokens.captionSize
+                                color: Tokens.textMuted
+                                text: result.modelData.qualityText + " Uncertainty ±" + result.modelData.uncertaintyMm.toFixed(2) + " mm, focal length " + result.modelData.focalPx.toFixed(0) + " px, lens from: " + result.modelData.source + "."
+                            }
+                        }
+                    }
+                    Label {
+                        visible: refiner.hasResult
+                        Layout.fillWidth: true
+                        wrapMode: Text.WordWrap
+                        font.pixelSize: Tokens.captionSize
+                        color: Tokens.textMuted
+                        text: "Measured board: outer bull " + refiner.outerBullMm.toFixed(1) + " mm, treble centre " + refiner.trebleMm.toFixed(1) + " mm (nominal 15.9 and 103.0, the double ring is the scale)."
                     }
                 }
             }

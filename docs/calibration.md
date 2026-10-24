@@ -48,3 +48,28 @@ Set the focus first ([hardware](hardware.md)); it must not change afterwards. Ke
 - "Load saved views" continues from the stored calibration of the selected camera.
 
 The calibration is stored per USB port in `~/.local/share/dartpilot/calibration/intrinsics-usb-<port>.yml`, together with the views it was computed from and its held-out error.
+
+## Refining all cameras from the board
+
+Once every camera has its board plane (extrinsic page, steps 1 to 4), "Refine all cameras" fits all cameras to one board model together (#13, [ADR 0006](adr/0006-calibration-without-user-held-targets.md)):
+
+- **Per camera:** the pose relative to the board, the focal length, the principal point and the lens distortion. The lens starts from the camera's own ChArUco calibration if it has one, else from the calibration of another camera of the same model (focal length ±2 %, principal point ±30 px), else from the board alone (radial distortion only). How far the refinement may move each value from that start is part of the stored record.
+- **Per camera, from the detection:** the edge offset. The wires are bright, so the light/dark transition the detection finds lies beside the wire centre, towards the dark sector, alternately to either side of successive wires. On the reference cameras it is 0.5 to 0.7 mm; ignoring it left an error of about 1 mm alternating from wire to wire.
+- **For all cameras together:** the radii of the outer bull edge and the treble centre line. The double ring centre keeps its nominal 166 mm as the scale reference.
+
+The detected points stand on the wires, 1.2 mm above the playing surface; board points for darts are taken on the surface (z = 0).
+
+Each camera is judged on wires it did not see: the wires are split into four groups, each group is held out once, and its points are projected onto the board with the refinement of the others. The **quality** is good below 0.5 mm of this held-out error and usable below 1.0 mm, provisional until #48 sets the error budget. The **uncertainty** is the 1-sigma position error over the scoring area that follows from the uncertainty of the camera's parameters.
+
+On the reference cameras (board points as detected, before and after):
+
+| Camera | Homography, held-out | Refinement, held-out | Uncertainty |
+| - | - | - | - |
+| 1 (own lens calibration) | 1.21 mm | 0.48 mm | ±0.15 mm |
+| 2 (lens prior of camera 1) | 1.62 mm | 0.67 mm | ±0.18 mm |
+| 3 (lens prior of camera 1) | 1.58 mm | 0.64 mm | ±0.18 mm |
+
+What remains is largest along the double ring. The detection still fits the wires as straight lines in the distorted image, where they bend slightly towards the image edge; fitting them in the undistorted image is the next step.
+
+The result is stored in `~/.local/share/dartpilot/calibration/extrinsics.yml`, together with the board points, the lens priors and the creation times of the board planes and intrinsics it was computed from. The page marks it as outdated when any of them changes.
+
