@@ -57,6 +57,8 @@ ColumnLayout {
             Layout.preferredWidth: 420
             model: page.cameras.map((c, i) => "Camera " + (i + 1) + "  ·  USB " + c.usbPort + (c.hasBoardPlane ? "  ·  board " + c.boardRmsMm.toFixed(2) + " mm" : "  ·  not yet"))
             currentIndex: page.selected
+            // A new model resets the index and choosing an entry breaks the binding, so the selection is set again.
+            onModelChanged: Qt.callLater(() => currentIndex = page.selected)
             onActivated: index => page.selected = index
             ToolTip.visible: hovered
             ToolTip.text: "Calibrate one camera after the other; the list shows each camera's board fit"
