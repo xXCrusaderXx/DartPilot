@@ -94,5 +94,10 @@
   "storeEmptyReference": "Leere Scheibe speichern",
   "emptyReferenceStored": "Leere Scheibe gespeichert",
   "boardNotEmpty": "Die Scheibe ist nicht leer; zieh zuerst die Darts.",
-  "storeReferenceFailed": "Leere Scheibe konnte nicht gespeichert werden"
+  "storeReferenceFailed": "Leere Scheibe konnte nicht gespeichert werden",
+  "searchEngines": "Engines im Netzwerk suchen",
+  "searchingEngines": "Suche im Netzwerk…",
+  "noEnginesFound": "Keine Engine gefunden. Gast-WLAN, Client-Isolation oder getrennte Netze verhindern die Suche; gib die Adresse dann von Hand ein.",
+  "foundEngines": "Engines im Netzwerk",
+  "engineIncompatible": "inkompatibel ({protocol})"
 }

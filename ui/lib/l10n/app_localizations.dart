@@ -661,6 +661,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not store the empty board'**
   String get storeReferenceFailed;
+
+  /// No description provided for @searchEngines.
+  ///
+  /// In en, this message translates to:
+  /// **'Search the network for engines'**
+  String get searchEngines;
+
+  /// No description provided for @searchingEngines.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching the network…'**
+  String get searchingEngines;
+
+  /// No description provided for @noEnginesFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No engine found. Guest Wi-Fi, client isolation or separate networks block the search; type the address instead.'**
+  String get noEnginesFound;
+
+  /// No description provided for @foundEngines.
+  ///
+  /// In en, this message translates to:
+  /// **'Engines in the network'**
+  String get foundEngines;
+
+  /// No description provided for @engineIncompatible.
+  ///
+  /// In en, this message translates to:
+  /// **'incompatible ({protocol})'**
+  String engineIncompatible(String protocol);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

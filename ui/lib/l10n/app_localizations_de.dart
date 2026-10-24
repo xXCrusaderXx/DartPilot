@@ -311,4 +311,22 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get storeReferenceFailed => 'Leere Scheibe konnte nicht gespeichert werden';
+
+  @override
+  String get searchEngines => 'Engines im Netzwerk suchen';
+
+  @override
+  String get searchingEngines => 'Suche im Netzwerk…';
+
+  @override
+  String get noEnginesFound =>
+      'Keine Engine gefunden. Gast-WLAN, Client-Isolation oder getrennte Netze verhindern die Suche; gib die Adresse dann von Hand ein.';
+
+  @override
+  String get foundEngines => 'Engines im Netzwerk';
+
+  @override
+  String engineIncompatible(String protocol) {
+    return 'inkompatibel ($protocol)';
+  }
 }

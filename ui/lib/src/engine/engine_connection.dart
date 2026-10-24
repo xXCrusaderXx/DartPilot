@@ -8,24 +8,30 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../board/dart_throw.dart';
 import '../board/scoring.dart';
+import 'engine_discovery.dart';
 import 'engine_events.dart';
 
 enum EngineConnectionState { disconnected, connecting, connected, failed }
 
 /// The app's connection to an engine (docs/engine-api.md). One per app; screens listen to [events].
 class EngineConnection extends ChangeNotifier {
-  EngineConnection({WebSocketChannel Function(Uri uri)? connector})
+  EngineConnection({WebSocketChannel Function(Uri uri)? connector, EngineDiscovery? discovery})
     : _connector = connector ?? WebSocketChannel.connect,
+      discovery = discovery ?? EngineDiscovery.network(),
       clientName = 'dartpilot-app-${math.Random().nextInt(0x7fffffff).toRadixString(16)}';
 
   /// For tests: requests go to `onSend` instead of a socket
   @visibleForTesting
-  EngineConnection.forTest(void Function(Map<String, dynamic>) onSend)
+  EngineConnection.forTest(void Function(Map<String, dynamic>) onSend, {EngineDiscovery? discovery})
     : _connector = WebSocketChannel.connect,
+      discovery = discovery ?? EngineDiscovery(const []),
       clientName = 'test',
       _testSink = onSend;
 
   final WebSocketChannel Function(Uri uri) _connector;
+
+  /// Finds engines in the network for the engine card
+  final EngineDiscovery discovery;
   void Function(Map<String, dynamic>)? _testSink;
 
   /// Sent in hello, so the app recognises its own corrections in throw_corrected
