@@ -14,8 +14,8 @@ constexpr double kStillMotion = 2.5;
 // samples per average
 constexpr int kSettleSamples = 15;
 constexpr int kSamplesToAverage = 10;
-// An empty board, or one waiting to be emptied, that stays still is measured again after this long, so that drift and
-// light show over time without the user doing anything.
+// A board that stays still is measured again after this long: an empty one, so that drift and light show over time
+// without the user doing anything, and one with a dart, in case the moment measured was the hand pulling it.
 constexpr auto kRepeat = std::chrono::seconds(20);
 
 double seconds (std::chrono::steady_clock::duration duration) { return std::chrono::duration<double>(duration).count(); }
@@ -127,8 +127,7 @@ void LiveDiagnosis::run ()
         else
         {
             ++still_samples;
-            const bool waiting = !builder_->hasReference() || rejected;
-            const bool repeat = (waiting || builder_->periods().back().empty) && now - last_measured >= kRepeat;
+            const bool repeat = now - last_measured >= kRepeat;
             if(measured_since_motion && !repeat)
             {
                 state = "measured";

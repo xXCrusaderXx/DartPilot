@@ -222,6 +222,12 @@ TEST(Diagnosis, LiveItWaitsForAnEmptyBoardAndFollowsTheDarts)
     EXPECT_TRUE(builder.addPeriod(5.0, 6.0, dart));
     ASSERT_EQ(builder.periods().size(), 2u);
     EXPECT_FALSE(builder.periods()[1].empty);
+    // The hand pulling the dart, still for a moment, is the same dart.
+    EXPECT_TRUE(builder.addPeriod(7.0, 8.0, covered));
+    EXPECT_EQ(builder.periods().size(), 2u);
+    EXPECT_EQ(builder.periods()[1].start_s, 5.0);
+    EXPECT_TRUE(builder.addPeriod(9.0, 10.0, empty));
+    EXPECT_EQ(builder.periods().size(), 3u);
 
     const auto diagnosis = builder.diagnosis();
     EXPECT_FALSE(has(diagnosis, "board", "usb-1.2", replay::Severity::Problem));

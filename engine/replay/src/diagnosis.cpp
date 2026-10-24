@@ -37,6 +37,8 @@ constexpr double kLightChange = 0.10;
 // A light change that involves a period this early after the start is the automatic exposure settling.
 constexpr double kExposureSettle_s = 30.0;
 constexpr double kPlaneWarning_mm = 1.0;
+// Located points of successive still moments this close are the same dart
+constexpr double kSameDart_mm = 5.0;
 // A share of dart periods from which a camera's trouble with darts is reported
 constexpr double kDartTroubleShare = 0.3;
 // Pixels changed by more than this, after aligning two empty boards, count as a change of the board
@@ -141,6 +143,8 @@ double boardChange (const cv::Mat& before, const cv::Mat& after)
     cv::Mat a, b;
     cv::cvtColor(before, a, cv::COLOR_BGR2GRAY);
     cv::cvtColor(after, b, cv::COLOR_BGR2GRAY);
+    a.convertTo(a, CV_32F);
+    b.convertTo(b, CV_32F);
     cv::Mat window;
     cv::createHanningWindow(window, a.size(), CV_32F);
     // cv::phaseCorrelate multiplies its inputs by the window in place.
@@ -287,6 +291,19 @@ bool DiagnosisBuilder::addPeriod (double start_s, double end_s, const std::vecto
                 period.worst_plane_mm = std::max(period.worst_plane_mm, std::abs(location->plane_distance_mm[i]));
             }
         }
+    }
+    // Without an empty board in between, a later still moment may show the same dart again, or the hand pulling it: a
+    // moment in which nothing was located, or the same point, counts with the dart before it, by the moment in which
+    // it was located. Two located points apart are two darts, pulled and put in without a still empty board between.
+    const auto same_dart = [&] (const Period& before)
+    { return !period.board_mm || !before.board_mm || cv::norm(*period.board_mm - *before.board_mm) <= kSameDart_mm; };
+    if(!period.empty && !periods_.empty() && !periods_.back().empty && same_dart(periods_.back()))
+    {
+        if(period.board_mm && !periods_.back().board_mm)
+        {
+            periods_.back() = std::move(period);
+        }
+        return true;
     }
     periods_.push_back(std::move(period));
     return true;
