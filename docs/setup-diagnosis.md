@@ -4,7 +4,7 @@ Every user should be able to set DartPilot up well and find and fix problems wit
 
 ## Live
 
-With `dartpilot serve --cameras`, a client sends `start_diagnosis` and receives `diagnosis` messages ([engine-api.md](engine-api.md)): the step the user should take next, whether the cameras are still, and the findings so far, updated with every still moment. It waits for an empty board before it starts, so darts left in the board are not taken as the reference, and it measures an empty board that stays still again every 20 s, so that a camera that drifts while warming up or a change of light shows without a recording.
+With `dartpilot serve --cameras`, a client sends `start_diagnosis` and receives `diagnosis` messages ([engine-api.md](engine-api.md)): the step the user should take next, whether the cameras are still, and the findings so far, updated with every still moment. It waits for an empty board before it starts, checked against the stored image of the empty board if there is one, so darts left in the board are not taken as the reference, and it measures an empty board that stays still again every 20 s, so that a camera that drifts while warming up or a change of light shows without a recording.
 
 ## From a recording
 

@@ -14,6 +14,7 @@
 
 #include "dartpilot/api/server.hpp"
 #include "dartpilot/geometry/board_refinement.hpp"
+#include "dartpilot/geometry/board_state.hpp"
 #include "dartpilot/replay/diagnosis.hpp"
 #include "preview_sources.hpp"
 

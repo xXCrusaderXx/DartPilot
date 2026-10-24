@@ -201,7 +201,9 @@ bool DiagnosisBuilder::addPeriod (double start_s, double end_s, const std::vecto
     {
         for(std::size_t c = 0; c < camera_count; ++c)
         {
-            if(!means[c].empty() && geometry::checkBoard(means[c], nullptr, cameras_[c].calibration, *board_).state == geometry::BoardState::Occupied)
+            const cv::Mat& stored = cameras_[c].empty_reference;
+            if(!means[c].empty() && geometry::checkBoard(means[c], stored.empty() ? nullptr : &stored, cameras_[c].calibration, *board_).state ==
+                                        geometry::BoardState::Occupied)
             {
                 if(wait_for_empty_board_)
                 {
