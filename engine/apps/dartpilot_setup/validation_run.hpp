@@ -126,5 +126,7 @@ class ValidationRun : public QObject
     QVariantList darts_;
     QVariantMap markers_;
     std::optional<cv::Point2f> last_dart_mm_;
+    // Measurements of the run so far, numbering the saved images
+    int image_count_ = 0;
 };
 }  // namespace dartpilot::setup

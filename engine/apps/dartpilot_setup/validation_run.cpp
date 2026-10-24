@@ -8,7 +8,9 @@
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QStandardPaths>
 #include <QtConcurrent/QtConcurrentRun>
+#include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 
 #include "calibration_paths.hpp"
@@ -32,6 +34,15 @@ constexpr double kGoodCheck_mm = 1.0;
 constexpr double kFairCheck_mm = 2.5;
 
 QString validationPath () { return calibrationDirectory() + "/validation.jsonl"; }
+
+// The averaged images of a run, so that every measurement can be repeated offline; board images only, kept on this
+// computer next to the calibrations
+QString imageDirectory (const QString& run_started)
+{
+    QString name = run_started;
+    name.remove(':');
+    return QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/dartpilot/validation/" + name;
+}
 
 QString checkQuality (double rms_mm) { return rms_mm <= kGoodCheck_mm ? "good" : rms_mm <= kFairCheck_mm ? "fair" : "poor"; }
 }  // namespace
@@ -134,6 +145,7 @@ void ValidationRun::restart ()
     darts_.clear();
     markers_.clear();
     last_dart_mm_.reset();
+    image_count_ = 0;
     emit stateChanged();
     emit resultsChanged();
     if(active_)
@@ -324,6 +336,27 @@ void ValidationRun::onMeasured ()
                       {"created", QDateTime::currentDateTimeUtc().toString(Qt::ISODate)},
                       {"extrinsics_created", QString::fromStdString(extrinsics_->created)},
                       {"step", step_}};
+    const QString directory = imageDirectory(run_started_);
+    if(QDir().mkpath(directory))
+    {
+        QJsonArray images;
+        const int number = ++image_count_;
+        for(std::size_t i = 0; i < streams_.size(); ++i)
+        {
+            if(measurement.means[i].empty())
+            {
+                continue;
+            }
+            const QString path = directory + QString("/%1-%2-usb-%3.png").arg(number, 3, 10, QChar('0')).arg(step_, streams_[i].usb_port);
+            cv::Mat image;
+            measurement.means[i].convertTo(image, CV_8UC3);
+            if(cv::imwrite(path.toStdString(), image))
+            {
+                images.append(path);
+            }
+        }
+        entry.insert("images", images);
+    }
     if(step_ == "empty")
     {
         calibration_checks_.clear();

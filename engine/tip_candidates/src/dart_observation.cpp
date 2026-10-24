@@ -31,6 +31,13 @@ constexpr std::size_t kMinAxisPoints = 8;
 constexpr float kEndLine_px = 50.0f;
 constexpr int kBorder_px = 5;
 
+float median (const cv::Mat& channel)
+{
+    std::vector<float> values(channel.begin<float>(), channel.end<float>());
+    std::nth_element(values.begin(), values.begin() + values.size() / 2, values.end());
+    return values[values.size() / 2];
+}
+
 float sample (const cv::Mat& image, const cv::Point2f& p)
 {
     cv::Mat patch;
@@ -115,6 +122,20 @@ std::optional<DartObservation> observeDart (const cv::Mat& image, const cv::Mat&
     cv::Mat a, b, diff;
     image.convertTo(a, CV_32FC3);
     empty_board.convertTo(b, CV_32FC3);
+    // The automatic exposure may still settle after a hand has left the view, which brightens or darkens the whole
+    // image: each channel is scaled to the empty board by the ratio of their medians, which a dart barely moves.
+    std::vector<cv::Mat> a_channels, b_channels;
+    cv::split(a, a_channels);
+    cv::split(b, b_channels);
+    for(int c = 0; c < 3; ++c)
+    {
+        const float a_median = median(a_channels[c]), b_median = median(b_channels[c]);
+        if(a_median > 1.0f)
+        {
+            a_channels[c] *= b_median / a_median;
+        }
+    }
+    cv::merge(a_channels, a);
     cv::absdiff(a, b, diff);
     std::vector<cv::Mat> channels;
     cv::split(diff, channels);
@@ -122,9 +143,7 @@ std::optional<DartObservation> observeDart (const cv::Mat& image, const cv::Mat&
     cv::Mat d = cv::max(cv::max(channels[0], channels[1]), channels[2]);
     cv::GaussianBlur(d, d, cv::Size(), 0.7);
     // Robust noise level: the median of the difference, as nearly all of the image is unchanged board
-    std::vector<float> values(d.begin<float>(), d.end<float>());
-    std::nth_element(values.begin(), values.begin() + values.size() / 2, values.end());
-    const float noise = 1.4826f * values[values.size() / 2];
+    const float noise = 1.4826f * median(d);
 
     // Hysteresis: the clearly changed part seeds the object, weakly changed parts connected to it (a dark barrel on a
     // dark sector, a steel point on a light one) belong to it as well.
