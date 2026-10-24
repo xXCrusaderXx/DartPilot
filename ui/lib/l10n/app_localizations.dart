@@ -2119,6 +2119,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pro'**
   String get botLevel10;
+
+  /// No description provided for @calibrationCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Calibration check'**
+  String get calibrationCheck;
+
+  /// No description provided for @calibrationCheckHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Has a camera moved? Every camera against its calibration'**
+  String get calibrationCheckHint;
+
+  /// No description provided for @calibrationCheckIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep the board empty. Blue rings show where the calibration expects the board\'s points, green dots where they are now; long amber lines mean the camera or the board has moved. The engine also checks this in the background whenever the board is empty.'**
+  String get calibrationCheckIntro;
+
+  /// No description provided for @checkOk.
+  ///
+  /// In en, this message translates to:
+  /// **'Matches the calibration ({mm} mm).'**
+  String checkOk(String mm);
+
+  /// No description provided for @checkOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Slightly off ({mm} mm), e.g. other light. Detection still works.'**
+  String checkOff(String mm);
+
+  /// No description provided for @checkMoved.
+  ///
+  /// In en, this message translates to:
+  /// **'The camera or the board has moved ({mm} mm). Measure this camera again.'**
+  String checkMoved(String mm);
+
+  /// No description provided for @checkWrongPort.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong USB port? This image fits the calibration of camera {camera}.'**
+  String checkWrongPort(String camera);
+
+  /// No description provided for @checkNoBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'No board found – darts in the board or a hand in view?'**
+  String get checkNoBoard;
+
+  /// No description provided for @checkNotCalibrated.
+  ///
+  /// In en, this message translates to:
+  /// **'Not calibrated yet.'**
+  String get checkNotCalibrated;
+
+  /// No description provided for @checkChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking …'**
+  String get checkChecking;
+
+  /// No description provided for @homeCameraMoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera {number} has moved – measure it again.'**
+  String homeCameraMoved(int number);
+
+  /// No description provided for @homeCameraWrongPort.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera {number} is on another USB port than when it was calibrated.'**
+  String homeCameraWrongPort(int number);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

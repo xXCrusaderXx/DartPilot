@@ -1164,4 +1164,53 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get botLevel10 => 'Pro';
+
+  @override
+  String get calibrationCheck => 'Calibration check';
+
+  @override
+  String get calibrationCheckHint => 'Has a camera moved? Every camera against its calibration';
+
+  @override
+  String get calibrationCheckIntro =>
+      'Keep the board empty. Blue rings show where the calibration expects the board\'s points, green dots where they are now; long amber lines mean the camera or the board has moved. The engine also checks this in the background whenever the board is empty.';
+
+  @override
+  String checkOk(String mm) {
+    return 'Matches the calibration ($mm mm).';
+  }
+
+  @override
+  String checkOff(String mm) {
+    return 'Slightly off ($mm mm), e.g. other light. Detection still works.';
+  }
+
+  @override
+  String checkMoved(String mm) {
+    return 'The camera or the board has moved ($mm mm). Measure this camera again.';
+  }
+
+  @override
+  String checkWrongPort(String camera) {
+    return 'Wrong USB port? This image fits the calibration of camera $camera.';
+  }
+
+  @override
+  String get checkNoBoard => 'No board found – darts in the board or a hand in view?';
+
+  @override
+  String get checkNotCalibrated => 'Not calibrated yet.';
+
+  @override
+  String get checkChecking => 'Checking …';
+
+  @override
+  String homeCameraMoved(int number) {
+    return 'Camera $number has moved – measure it again.';
+  }
+
+  @override
+  String homeCameraWrongPort(int number) {
+    return 'Camera $number is on another USB port than when it was calibrated.';
+  }
 }

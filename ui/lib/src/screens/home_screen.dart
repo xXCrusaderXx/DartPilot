@@ -7,6 +7,7 @@ import '../stats/statistics.dart';
 import '../widgets/board_check.dart';
 import '../widgets/player_picker.dart';
 import 'around_the_clock_screen.dart';
+import 'calibration_screen.dart';
 import 'cricket_screen.dart';
 import 'training_screen.dart';
 import 'x01_setup_screen.dart';
@@ -145,6 +146,31 @@ class _StatusCard extends StatelessWidget {
               ],
             ),
             if (connected) const BoardStateRow(),
+            if (connected)
+              for (final (i, camera) in (engine.hello?.cameras ?? const <String>[]).indexed)
+                if (engine.calibration?.of(camera)?.check?.needsCalibration ?? false)
+                  Padding(
+                    key: ValueKey('calibration-warning-$camera'),
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Row(
+                      children: [
+                        Icon(Icons.warning_amber, color: StatusColors.of(context).bad),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            engine.calibration!.of(camera)!.check!.state == 'wrong_port'
+                                ? l10n.homeCameraWrongPort(i + 1)
+                                : l10n.homeCameraMoved(i + 1),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(context)
+                              .push(MaterialPageRoute<void>(builder: (_) => CalibrationScreen(startCamera: camera))),
+                          child: Text(l10n.calibMeasureAgain),
+                        ),
+                      ],
+                    ),
+                  ),
           ],
         ),
       ),

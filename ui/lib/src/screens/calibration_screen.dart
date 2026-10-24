@@ -15,17 +15,20 @@ enum CalibrationStep { overview, light, board, refine, done }
 /// The calibration wizard (docs/engine-api.md, "Calibration"): light, the board of every camera, refinement. The
 /// player works step by step, one camera after the other; the engine computes and stores.
 class CalibrationScreen extends StatefulWidget {
-  const CalibrationScreen({super.key});
+  const CalibrationScreen({super.key, this.startCamera});
+
+  /// Opens the board step of this camera directly, e.g. when the check found it moved
+  final String? startCamera;
 
   @override
   State<CalibrationScreen> createState() => _CalibrationScreenState();
 }
 
 class _CalibrationScreenState extends State<CalibrationScreen> {
-  CalibrationStep _step = CalibrationStep.overview;
+  late CalibrationStep _step = widget.startCamera == null ? CalibrationStep.overview : CalibrationStep.board;
 
   /// Camera of the board step
-  int _camera = 0;
+  late int _camera = math.max(0, EngineScope.of(context).hello?.cameras.indexOf(widget.startCamera ?? '') ?? 0);
 
   /// Error code of the last request, shown until the next one
   String? _error;

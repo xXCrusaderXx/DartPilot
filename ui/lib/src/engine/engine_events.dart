@@ -24,6 +24,7 @@ sealed class EngineEvent {
     'board_detection' => BoardDetection.fromJson(json),
     'board_plane' => BoardPlaneResult.fromJson(json),
     'refinement' => RefinementResult.fromJson(json),
+    'calibration_check' => CalibrationCheck.fromJson(json),
     'engine_status' => EngineStatus(json['detection'] as String, json['message'] as String? ?? ''),
     _ => null,
   };
@@ -438,6 +439,7 @@ class CameraCalibration {
     this.boardPlaneMm,
     this.refined = false,
     this.whiteBalanceKelvin,
+    this.check,
   });
 
   final String camera;
@@ -448,12 +450,18 @@ class CameraCalibration {
   final bool refined;
   final int? whiteBalanceKelvin;
 
+  /// Latest background check against the calibration; null before the first one
+  final CalibrationCheck? check;
+
   factory CameraCalibration.fromJson(Map<String, dynamic> json) => CameraCalibration(
     camera: json['camera'] as String,
     intrinsics: json['intrinsics'] as String? ?? 'none',
     boardPlaneMm: _number(json['board_plane_mm']),
     refined: json['refined'] == true,
     whiteBalanceKelvin: (json['white_balance_kelvin'] as num?)?.round(),
+    check: json['check'] is Map<String, dynamic>
+        ? CalibrationCheck.fromJson({'camera': json['camera'], ...json['check'] as Map<String, dynamic>})
+        : null,
   );
 }
 
@@ -648,5 +656,52 @@ class BoardImage extends EngineEvent {
     jpeg: base64Decode(json['jpeg_base64'] as String),
     radiusMm: (json['radius_mm'] as num).toDouble(),
     mmPerPx: (json['mm_per_px'] as num).toDouble(),
+  );
+}
+
+/// One camera against its calibration (docs/engine-api.md, "Calibration check"): has it moved? The background check
+/// carries only [state] and [mm]; a subscription adds where the board is expected and where it is found.
+class CalibrationCheck extends EngineEvent {
+  const CalibrationCheck({
+    required this.camera,
+    required this.state,
+    this.mm,
+    this.shiftPx,
+    this.count = 0,
+    this.expectedPx = const [],
+    this.foundPx = const [],
+    this.imageSizePx,
+    this.fitsCamera,
+  });
+
+  final String camera;
+
+  /// checking, ok, off, moved, wrong_port, no_board or not_calibrated
+  final String state;
+  final double? mm;
+  final Offset? shiftPx;
+  final int count;
+
+  /// Pairs in the same order: where the calibration expects a point, and where it is found now
+  final List<Offset> expectedPx;
+  final List<Offset> foundPx;
+  final Size? imageSizePx;
+
+  /// With wrong_port: the camera whose calibration fits this image
+  final String? fitsCamera;
+
+  /// The camera has to be measured again
+  bool get needsCalibration => state == 'moved' || state == 'wrong_port';
+
+  factory CalibrationCheck.fromJson(Map<String, dynamic> json) => CalibrationCheck(
+    camera: json['camera'] as String,
+    state: json['state'] as String? ?? 'checking',
+    mm: _number(json['mm']),
+    shiftPx: json['shift_px'] is List ? _offset(json['shift_px']) : null,
+    count: (json['count'] as num? ?? 0).toInt(),
+    expectedPx: [for (final p in json['expected_px'] as List<dynamic>? ?? const []) _offset(p)],
+    foundPx: [for (final p in json['found_px'] as List<dynamic>? ?? const []) _offset(p)],
+    imageSizePx: _size(json['image_size_px']),
+    fitsCamera: json['fits_camera'] as String?,
   );
 }
