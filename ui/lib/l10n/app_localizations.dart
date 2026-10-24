@@ -1327,6 +1327,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Play with friends on other devices – coming with #124'**
   String get lobbyComingSoon;
+
+  /// No description provided for @diagnosisProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Darts: {done} of {target}'**
+  String diagnosisProgress(int done, int target);
+
+  /// No description provided for @stepRemoveLastDart.
+  ///
+  /// In en, this message translates to:
+  /// **'Pull the last dart out – then you are done.'**
+  String get stepRemoveLastDart;
+
+  /// No description provided for @diagnosisEnough.
+  ///
+  /// In en, this message translates to:
+  /// **'Enough darts measured – the diagnosis is complete.'**
+  String get diagnosisEnough;
+
+  /// No description provided for @finishDiagnosis.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish the diagnosis'**
+  String get finishDiagnosis;
+
+  /// No description provided for @diagnosisMoreDartsOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'More darts are possible, but not needed.'**
+  String get diagnosisMoreDartsOptional;
+
+  /// No description provided for @diagnosisFinished.
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnosis finished'**
+  String get diagnosisFinished;
+
+  /// No description provided for @resultProblems.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 problem found} other{{count} problems found}}'**
+  String resultProblems(int count);
+
+  /// No description provided for @resultWarnings.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 warning} other{{count} warnings}}'**
+  String resultWarnings(int count);
+
+  /// No description provided for @resultFixHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The findings below say what to do. Run the diagnosis again afterwards.'**
+  String get resultFixHint;
+
+  /// No description provided for @resultAllGood.
+  ///
+  /// In en, this message translates to:
+  /// **'All good'**
+  String get resultAllGood;
+
+  /// No description provided for @resultAllGoodHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The setup is ready to play.'**
+  String get resultAllGoodHint;
+
+  /// No description provided for @resultFewDarts.
+  ///
+  /// In en, this message translates to:
+  /// **'Only {done} of {target} darts measured; the findings on darts are less certain.'**
+  String resultFewDarts(int done, int target);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

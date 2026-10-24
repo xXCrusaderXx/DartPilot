@@ -205,5 +205,17 @@
   "calibrationInSetupTool": "Vorerst im Einrichtungsprogramm dartpilot_setup unter Linux",
   "playTogether": "Zusammen spielen",
   "lobby": "Lobby",
-  "lobbyComingSoon": "Mit Freunden auf anderen Geräten spielen – kommt mit #124"
+  "lobbyComingSoon": "Mit Freunden auf anderen Geräten spielen – kommt mit #124",
+  "diagnosisProgress": "Darts: {done} von {target}",
+  "stepRemoveLastDart": "Zieh den letzten Dart heraus – dann bist du fertig.",
+  "diagnosisEnough": "Genug Darts gemessen – die Diagnose ist fertig.",
+  "finishDiagnosis": "Diagnose beenden",
+  "diagnosisMoreDartsOptional": "Weitere Darts sind möglich, aber nicht nötig.",
+  "diagnosisFinished": "Diagnose abgeschlossen",
+  "resultProblems": "{count, plural, =1{1 Problem gefunden} other{{count} Probleme gefunden}}",
+  "resultWarnings": "{count, plural, =1{1 Warnung} other{{count} Warnungen}}",
+  "resultFixHint": "Die Befunde unten sagen, was zu tun ist. Danach die Diagnose noch einmal laufen lassen.",
+  "resultAllGood": "Alles in Ordnung",
+  "resultAllGoodHint": "Die Einrichtung ist bereit zum Spielen.",
+  "resultFewDarts": "Nur {done} von {target} Darts gemessen; die Befunde zu Darts sind weniger sicher."
 }

@@ -145,6 +145,59 @@ void main() {
     expect(sent.last, {'type': 'stop_diagnosis'});
   });
 
+  testWidgets('shows the progress, says clearly when enough darts are measured, and gives a verdict', (tester) async {
+    tester.view.physicalSize = const Size(1200, 2000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final sent = <Map<String, dynamic>>[];
+    final engine = EngineConnection.forTest(sent.add);
+    addTearDown(engine.dispose);
+    engine.receiveForTest(jsonEncode(hello));
+    await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
+    await openSettings(tester);
+    await tester.tap(find.byKey(const ValueKey('open-diagnosis')));
+    await tester.pumpAndSettle();
+
+    Map<String, dynamic> withDarts(int darts, String step) {
+      final json = diagnosisJson(step: step);
+      final dart = (json['periods'] as List).last;
+      json['periods'] = [(json['periods'] as List).first, for (var i = 0; i < darts; ++i) dart];
+      return json;
+    }
+
+    engine.receiveForTest(jsonEncode(withDarts(3, 'insert_dart')));
+    await tester.pump();
+    expect(find.text('Darts: 3 von 8'), findsOneWidget);
+    expect(find.byKey(const ValueKey('diagnosis-finish')), findsNothing);
+
+    engine.receiveForTest(jsonEncode(withDarts(8, 'remove_dart')));
+    await tester.pump();
+    expect(find.text('Zieh den letzten Dart heraus – dann bist du fertig.'), findsOneWidget);
+    expect(find.byKey(const ValueKey('diagnosis-finish')), findsNothing);
+
+    engine.receiveForTest(jsonEncode(withDarts(8, 'insert_dart')));
+    await tester.pump();
+    expect(find.text('Genug Darts gemessen – die Diagnose ist fertig.'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('diagnosis-finish')));
+    await tester.pump();
+    expect(sent.last, {'type': 'stop_diagnosis'});
+
+    final stopped = withDarts(8, 'insert_dart')
+      ..['running'] = false
+      ..['state'] = 'stopped';
+    engine.receiveForTest(jsonEncode(stopped));
+    await tester.pump();
+    expect(find.text('Diagnose abgeschlossen'), findsOneWidget);
+    expect(find.text('1 Problem gefunden'), findsOneWidget);
+    expect(find.byKey(const ValueKey('diagnosis-progress')), findsNothing);
+
+    // Without problems or warnings the verdict is plain.
+    stopped['findings'] = [(stopped['findings'] as List)[2]];
+    engine.receiveForTest(jsonEncode(stopped));
+    await tester.pump();
+    expect(find.text('Alles in Ordnung'), findsOneWidget);
+  });
+
   testWidgets('says when the engine cannot run the diagnosis', (tester) async {
     final sent = <Map<String, dynamic>>[];
     final engine = EngineConnection.forTest(sent.add);

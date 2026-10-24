@@ -705,4 +705,55 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lobbyComingSoon => 'Play with friends on other devices – coming with #124';
+
+  @override
+  String diagnosisProgress(int done, int target) {
+    return 'Darts: $done of $target';
+  }
+
+  @override
+  String get stepRemoveLastDart => 'Pull the last dart out – then you are done.';
+
+  @override
+  String get diagnosisEnough => 'Enough darts measured – the diagnosis is complete.';
+
+  @override
+  String get finishDiagnosis => 'Finish the diagnosis';
+
+  @override
+  String get diagnosisMoreDartsOptional => 'More darts are possible, but not needed.';
+
+  @override
+  String get diagnosisFinished => 'Diagnosis finished';
+
+  @override
+  String resultProblems(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count problems found',
+      one: '1 problem found',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String resultWarnings(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count warnings', one: '1 warning');
+    return '$_temp0';
+  }
+
+  @override
+  String get resultFixHint => 'The findings below say what to do. Run the diagnosis again afterwards.';
+
+  @override
+  String get resultAllGood => 'All good';
+
+  @override
+  String get resultAllGoodHint => 'The setup is ready to play.';
+
+  @override
+  String resultFewDarts(int done, int target) {
+    return 'Only $done of $target darts measured; the findings on darts are less certain.';
+  }
 }

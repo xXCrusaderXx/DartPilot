@@ -704,4 +704,55 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get lobbyComingSoon => 'Mit Freunden auf anderen Geräten spielen – kommt mit #124';
+
+  @override
+  String diagnosisProgress(int done, int target) {
+    return 'Darts: $done von $target';
+  }
+
+  @override
+  String get stepRemoveLastDart => 'Zieh den letzten Dart heraus – dann bist du fertig.';
+
+  @override
+  String get diagnosisEnough => 'Genug Darts gemessen – die Diagnose ist fertig.';
+
+  @override
+  String get finishDiagnosis => 'Diagnose beenden';
+
+  @override
+  String get diagnosisMoreDartsOptional => 'Weitere Darts sind möglich, aber nicht nötig.';
+
+  @override
+  String get diagnosisFinished => 'Diagnose abgeschlossen';
+
+  @override
+  String resultProblems(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Probleme gefunden',
+      one: '1 Problem gefunden',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String resultWarnings(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Warnungen', one: '1 Warnung');
+    return '$_temp0';
+  }
+
+  @override
+  String get resultFixHint => 'Die Befunde unten sagen, was zu tun ist. Danach die Diagnose noch einmal laufen lassen.';
+
+  @override
+  String get resultAllGood => 'Alles in Ordnung';
+
+  @override
+  String get resultAllGoodHint => 'Die Einrichtung ist bereit zum Spielen.';
+
+  @override
+  String resultFewDarts(int done, int target) {
+    return 'Nur $done von $target Darts gemessen; die Befunde zu Darts sind weniger sicher.';
+  }
 }

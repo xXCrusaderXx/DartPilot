@@ -465,5 +465,21 @@
   "calibrationInSetupTool": "For now in the setup program dartpilot_setup on Linux",
   "playTogether": "Play together",
   "lobby": "Lobby",
-  "lobbyComingSoon": "Play with friends on other devices – coming with #124"
+  "lobbyComingSoon": "Play with friends on other devices – coming with #124",
+  "diagnosisProgress": "Darts: {done} of {target}",
+  "@diagnosisProgress": {"placeholders": {"done": {"type": "int"}, "target": {"type": "int"}}},
+  "stepRemoveLastDart": "Pull the last dart out – then you are done.",
+  "diagnosisEnough": "Enough darts measured – the diagnosis is complete.",
+  "finishDiagnosis": "Finish the diagnosis",
+  "diagnosisMoreDartsOptional": "More darts are possible, but not needed.",
+  "diagnosisFinished": "Diagnosis finished",
+  "resultProblems": "{count, plural, =1{1 problem found} other{{count} problems found}}",
+  "@resultProblems": {"placeholders": {"count": {"type": "int"}}},
+  "resultWarnings": "{count, plural, =1{1 warning} other{{count} warnings}}",
+  "@resultWarnings": {"placeholders": {"count": {"type": "int"}}},
+  "resultFixHint": "The findings below say what to do. Run the diagnosis again afterwards.",
+  "resultAllGood": "All good",
+  "resultAllGoodHint": "The setup is ready to play.",
+  "resultFewDarts": "Only {done} of {target} darts measured; the findings on darts are less certain.",
+  "@resultFewDarts": {"placeholders": {"done": {"type": "int"}, "target": {"type": "int"}}}
 }
