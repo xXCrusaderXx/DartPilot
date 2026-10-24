@@ -61,6 +61,10 @@ class EngineConnection extends ChangeNotifier {
   final Map<String, BoardDetection> boardDetections = {};
   final Map<String, BoardPlaneResult> boardPlanes = {};
   RefinementResult? refinement;
+
+  /// Detailed checks while someone watches them, per camera
+  final Map<String, CalibrationCheck> calibrationChecks = {};
+  int _checkWatchers = 0;
   String? error;
 
   WebSocketChannel? _channel;
@@ -178,6 +182,8 @@ class EngineConnection extends ChangeNotifier {
         boardPlanes[event.camera] = event;
       case RefinementResult():
         refinement = event;
+      case CalibrationCheck():
+        calibrationChecks[event.camera] = event;
       default:
         break;
     }
@@ -185,7 +191,8 @@ class EngineConnection extends ChangeNotifier {
         event is WhiteBalanceState ||
         event is BoardDetection ||
         event is BoardPlaneResult ||
-        event is RefinementResult) {
+        event is RefinementResult ||
+        event is CalibrationCheck) {
       notifyListeners();
     }
     if (event is BoardImage) {
@@ -292,6 +299,7 @@ class EngineConnection extends ChangeNotifier {
     boardDetections.clear();
     boardPlanes.clear();
     refinement = null;
+    calibrationChecks.clear();
   }
 
   /// The calibration steps (docs/engine-api.md, "Calibration"); each completes with an error code, or null. Their
@@ -307,6 +315,16 @@ class EngineConnection extends ChangeNotifier {
   });
 
   Future<String?> refineCameras() => _request({'type': 'refine_cameras'});
+
+  /// Detailed calibration checks every 2 s while at least one caller watches; the engine counts subscribers, so call
+  /// [unwatchCalibrationCheck] once for every call.
+  void watchCalibrationCheck() {
+    if (_checkWatchers++ == 0) _send({'type': 'subscribe_calibration_check'});
+  }
+
+  void unwatchCalibrationCheck() {
+    if (_checkWatchers > 0 && --_checkWatchers == 0) _send({'type': 'unsubscribe_calibration_check'});
+  }
 
   /// Asks for the real board's image; it arrives as [boardImage]. Engines without one answer with an error.
   void requestBoardImage() => _send({'type': 'get_board_image'});

@@ -1163,4 +1163,53 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get botLevel10 => 'Profi';
+
+  @override
+  String get calibrationCheck => 'Kalibriercheck';
+
+  @override
+  String get calibrationCheckHint => 'Hat sich eine Kamera bewegt? Jede Kamera gegen ihre Kalibrierung';
+
+  @override
+  String get calibrationCheckIntro =>
+      'Lass die Scheibe leer. Blaue Ringe zeigen, wo die Kalibrierung die Punkte der Scheibe erwartet, grüne Punkte, wo sie gerade liegen; lange gelbe Linien heißen, dass sich Kamera oder Scheibe bewegt haben. Die Engine prüft das auch im Hintergrund, immer wenn die Scheibe leer ist.';
+
+  @override
+  String checkOk(String mm) {
+    return 'Passt zur Kalibrierung ($mm mm).';
+  }
+
+  @override
+  String checkOff(String mm) {
+    return 'Leicht daneben ($mm mm), z. B. anderes Licht. Die Erkennung funktioniert noch.';
+  }
+
+  @override
+  String checkMoved(String mm) {
+    return 'Kamera oder Scheibe hat sich bewegt ($mm mm). Miss diese Kamera neu ein.';
+  }
+
+  @override
+  String checkWrongPort(String camera) {
+    return 'Falscher USB-Port? Dieses Bild passt zur Kalibrierung von Kamera $camera.';
+  }
+
+  @override
+  String get checkNoBoard => 'Keine Scheibe gefunden – Darts in der Scheibe oder eine Hand im Bild?';
+
+  @override
+  String get checkNotCalibrated => 'Noch nicht kalibriert.';
+
+  @override
+  String get checkChecking => 'Prüfe …';
+
+  @override
+  String homeCameraMoved(int number) {
+    return 'Kamera $number hat sich bewegt – miss sie neu ein.';
+  }
+
+  @override
+  String homeCameraWrongPort(int number) {
+    return 'Kamera $number steckt an einem anderen USB-Port als beim Kalibrieren.';
+  }
 }

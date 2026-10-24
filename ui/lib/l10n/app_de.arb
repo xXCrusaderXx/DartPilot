@@ -337,5 +337,17 @@
   "botLevel7": "Stark",
   "botLevel8": "Sehr stark",
   "botLevel9": "Halbprofi",
-  "botLevel10": "Profi"
+  "botLevel10": "Profi",
+  "calibrationCheck": "Kalibriercheck",
+  "calibrationCheckHint": "Hat sich eine Kamera bewegt? Jede Kamera gegen ihre Kalibrierung",
+  "calibrationCheckIntro": "Lass die Scheibe leer. Blaue Ringe zeigen, wo die Kalibrierung die Punkte der Scheibe erwartet, grüne Punkte, wo sie gerade liegen; lange gelbe Linien heißen, dass sich Kamera oder Scheibe bewegt haben. Die Engine prüft das auch im Hintergrund, immer wenn die Scheibe leer ist.",
+  "checkOk": "Passt zur Kalibrierung ({mm} mm).",
+  "checkOff": "Leicht daneben ({mm} mm), z. B. anderes Licht. Die Erkennung funktioniert noch.",
+  "checkMoved": "Kamera oder Scheibe hat sich bewegt ({mm} mm). Miss diese Kamera neu ein.",
+  "checkWrongPort": "Falscher USB-Port? Dieses Bild passt zur Kalibrierung von Kamera {camera}.",
+  "checkNoBoard": "Keine Scheibe gefunden – Darts in der Scheibe oder eine Hand im Bild?",
+  "checkNotCalibrated": "Noch nicht kalibriert.",
+  "checkChecking": "Prüfe …",
+  "homeCameraMoved": "Kamera {number} hat sich bewegt – miss sie neu ein.",
+  "homeCameraWrongPort": "Kamera {number} steckt an einem anderen USB-Port als beim Kalibrieren."
 }
