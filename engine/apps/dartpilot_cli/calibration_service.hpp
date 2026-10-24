@@ -40,6 +40,7 @@ class CalibrationService
     std::optional<api::Server::CalibrationError> setSectorTwenty (std::size_t camera, const cv::Point2f& point_px);
     nlohmann::json refine ();
     nlohmann::json tuneWhiteBalance ();
+    nlohmann::json boardImage (int size_px, double radius_mm);
 
     // Mean of `count` new frames of a camera; empty if stopped or the camera delivers none
     cv::Mat averageFrames (std::size_t camera, int count);

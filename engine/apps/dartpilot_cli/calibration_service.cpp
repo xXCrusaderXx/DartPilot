@@ -4,7 +4,9 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdio>
 #include <ctime>
+#include <exception>
 
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
@@ -13,6 +15,7 @@
 #include "dartpilot/capture/white_balance.hpp"
 #include "dartpilot/geometry/board_plane.hpp"
 #include "dartpilot/geometry/board_refinement.hpp"
+#include "dartpilot/geometry/board_view.hpp"
 #include "white_balance_sweep.hpp"
 
 namespace dartpilot::cli
@@ -31,7 +34,31 @@ constexpr std::array<int, 20> kSectorsCounterClockwiseFromTwenty = {20, 5, 12, 9
 constexpr double kGoodHeldOut_mm = 0.5;
 constexpr double kFairHeldOut_mm = 1.0;
 
+// The board image: a square of 600 px with the board and a little of its surround, sharp up to the outer edge of the
+// number ring, from a few frames averaged against noise
+constexpr int kBoardImageSize_px = 600;
+constexpr double kBoardImageRadius_mm = 250.0;
+constexpr double kBoardImageSharp_mm = 222.0;
+constexpr int kBoardImageFrames = 5;
+
 json point (const cv::Point2f& p) { return {p.x, p.y}; }
+
+std::string base64 (const std::vector<std::uint8_t>& data)
+{
+    static constexpr char kAlphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    std::string out;
+    out.reserve((data.size() + 2) / 3 * 4);
+    for(std::size_t i = 0; i < data.size(); i += 3)
+    {
+        const std::uint32_t chunk =
+            (static_cast<std::uint32_t>(data[i]) << 16) | (i + 1 < data.size() ? data[i + 1] << 8 : 0) | (i + 2 < data.size() ? data[i + 2] : 0);
+        out += kAlphabet[(chunk >> 18) & 63];
+        out += kAlphabet[(chunk >> 12) & 63];
+        out += i + 1 < data.size() ? kAlphabet[(chunk >> 6) & 63] : '=';
+        out += i + 2 < data.size() ? kAlphabet[chunk & 63] : '=';
+    }
+    return out;
+}
 
 std::string utcNow ()
 {
@@ -109,9 +136,21 @@ bool CalibrationService::startJob (std::function<json()> job)
     worker_ = std::thread(
         [this, job = std::move(job)]
         {
-            const json last = job();
+            // A failing step must not take the engine down with it.
+            json last;
+            try
+            {
+                last = job();
+            }
+            catch(const std::exception& error)
+            {
+                std::fprintf(stderr, "Calibration step failed: %s\n", error.what());
+            }
             busy_ = false;
-            server_.publishEvent(last);
+            if(!last.is_null())
+            {
+                server_.publishEvent(last);
+            }
         });
     return true;
 }
@@ -122,6 +161,16 @@ std::optional<api::Server::CalibrationError> CalibrationService::handle (const a
     if(request.type == "tune_white_balance")
     {
         return startJob([this] { return tuneWhiteBalance(); }) ? std::nullopt : std::optional(busy);
+    }
+    if(request.type == "get_board_image")
+    {
+        if(!geometry::loadExtrinsics((directory_ / geometry::kExtrinsicsFileName).string()))
+        {
+            return api::Server::CalibrationError{"not_calibrated", "The cameras are not refined yet"};
+        }
+        const int size_px = std::clamp(request.body.value("size_px", kBoardImageSize_px), 64, 2048);
+        const double radius_mm = std::clamp(request.body.value("radius_mm", kBoardImageRadius_mm), 100.0, 300.0);
+        return startJob([this, size_px, radius_mm] { return boardImage(size_px, radius_mm); }) ? std::nullopt : std::optional(busy);
     }
     if(request.type == "refine_cameras")
     {
@@ -409,6 +458,34 @@ json CalibrationService::tuneWhiteBalance ()
     }
     publishStatus();
     return message(any_failed ? "failed" : "done", std::nullopt, true);
+}
+
+json CalibrationService::boardImage (int size_px, double radius_mm)
+{
+    const auto extrinsics = geometry::loadExtrinsics((directory_ / geometry::kExtrinsicsFileName).string());
+    std::vector<const geometry::RefinedCamera*> cameras;
+    std::vector<cv::Mat> images;
+    for(std::size_t c = 0; c < devices_.size(); ++c)
+    {
+        const geometry::RefinedCamera* camera = nullptr;
+        for(std::size_t r = 0; extrinsics && r < extrinsics->refinement.cameras.size(); ++r)
+        {
+            if(extrinsics->refinement.cameras[r].usb_port == devices_[c].usb_port)
+            {
+                camera = &extrinsics->refinement.cameras[r];
+            }
+        }
+        cameras.push_back(camera);
+        images.push_back(camera ? averageFrames(c, kBoardImageFrames) : cv::Mat());
+    }
+    const auto view = geometry::renderBoardView(cameras, images, size_px, radius_mm, std::min(radius_mm, kBoardImageSharp_mm));
+    std::vector<std::uint8_t> jpeg;
+    cv::imencode(".jpg", view.image, jpeg, {cv::IMWRITE_JPEG_QUALITY, 90});
+    return {{"type", "board_image"},
+            {"image_size_px", {view.image.cols, view.image.rows}},
+            {"mm_per_px", view.mm_per_px},
+            {"radius_mm", view.radius_mm},
+            {"jpeg_base64", base64(jpeg)}};
 }
 
 std::vector<geometry::SetupCamera> CalibrationService::setupCameras () const

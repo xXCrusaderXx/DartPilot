@@ -216,6 +216,14 @@ The steps, in the order of the wizard:
 
    `state`: `running`, `done`, `failed` (`code`: `no_board_planes`, `pose_failed`, `save_failed`). `quality` from the error on held-out wires: `good` up to 0.5 mm, `fair` up to 1 mm, else `poor`; `advice` then says what helps: `detect_again` (measure the board again in even light) or `lens_calibration` (the camera has no lens calibration of its own). `lens_from`: `own`, `model` (borrowed from a camera of the same model) or `board`.
 
+**Board image** (`get_board_image`, optional `size_px`, default 600, and `radius_mm`, default 250). The real board seen from the front, put together from the refined cameras: each pixel comes mostly from the camera that sees that part with the most pixels per millimetre, with soft transitions between cameras of matched brightness. Outside the number ring (222 mm) the surround is blurred and darkened. A client shows it instead of a drawn board and places hits by their board point: board point (x, y) mm lies at column `(x + radius_mm) / mm_per_px` and row `(radius_mm - y) / mm_per_px`. Taken from the current frames, so ask for it with the board empty, e.g. after a takeout.
+
+```json
+{ "type": "board_image", "image_size_px": [ 600, 600 ], "mm_per_px": 0.8333, "radius_mm": 250.0, "jpeg_base64": "/9j/4AAQ..." }
+```
+
+Fails with `not_calibrated` before the refinement; `not_available` with `--simulate` alone, where a client draws its board.
+
 Long steps run one at a time; a request while one runs fails with `busy`. Events may arrive before the request's `result`.
 
 ### engine_status
@@ -253,6 +261,7 @@ Every request carries a `request_id` chosen by the client and is answered with `
 | `detect_board` | `camera` | Measures the board of a camera; answered with `board_detection` |
 | `set_sector_20` | `camera`, `point_px` | Orients and stores the board plane; answered with `board_plane` |
 | `refine_cameras` | – | Refines all cameras together; answered with `refinement` |
+| `get_board_image` | `size_px`, `radius_mm` (optional) | The real board from the front; answered with `board_image` |
 | `subscribe_preview` | `camera`, `max_fps`, `max_width` | Starts preview frames of a camera |
 | `unsubscribe_preview` | `camera` | Stops them |
 
