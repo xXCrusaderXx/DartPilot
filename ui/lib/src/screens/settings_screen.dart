@@ -4,6 +4,7 @@ import '../../l10n/app_localizations.dart';
 import '../engine/engine_choice.dart';
 import '../engine/engine_connection.dart';
 import '../widgets/board_check.dart';
+import 'calibration_screen.dart';
 import 'cameras_screen.dart';
 import 'diagnosis_screen.dart';
 
@@ -87,10 +88,13 @@ class SettingsScreen extends StatelessWidget {
               ),
               section(l10n.settingsCalibration),
               ListTile(
-                enabled: false,
+                key: const ValueKey('settings-calibration'),
+                enabled: connected && engine.calibration != null,
                 leading: const Icon(Icons.straighten),
                 title: Text(l10n.calibration),
-                subtitle: Text(l10n.calibrationInSetupTool),
+                subtitle: Text(engine.calibration == null ? l10n.calibNeedsCameras : l10n.calibrationHint),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => open(const CalibrationScreen()),
               ),
             ],
           ),

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../engine/engine_connection.dart';
 import '../engine/engine_events.dart';
+import 'overlay_preview.dart';
 
 /// Before a game starts: true when the board is empty, unknown or no engine is connected; otherwise asks the player
 /// to pull out the darts and is true once the board is empty or the player starts anyway.
@@ -126,78 +127,30 @@ class _BoardOccupiedDialogState extends State<BoardOccupiedDialog> {
 }
 
 /// The live image of a camera with a ring around the object it sees in the board.
-class MarkedPreview extends StatefulWidget {
+class MarkedPreview extends StatelessWidget {
   const MarkedPreview({super.key, required this.board});
 
   final CameraBoardState board;
 
   @override
-  State<MarkedPreview> createState() => _MarkedPreviewState();
-}
-
-class _MarkedPreviewState extends State<MarkedPreview> {
-  PreviewHandle? _handle;
-  StreamSubscription<PreviewFrame>? _frames;
-  PreviewFrame? _frame;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_handle != null) return;
-    final engine = EngineScope.of(context);
-    _handle = engine.watchPreview(widget.board.camera, maxFps: 5, maxWidth: 640);
-    _frames = engine.previews.where((f) => f.camera == widget.board.camera).listen((f) => setState(() => _frame = f));
-  }
-
-  @override
-  void dispose() {
-    _frames?.cancel();
-    _handle?.release();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final frame = _frame;
-    final aspect = frame == null || frame.height == 0 ? 16 / 9 : frame.width / frame.height;
-    return AspectRatio(
-      aspectRatio: aspect,
-      child: frame == null
-          ? Center(child: Text(AppLocalizations.of(context).waitingForImage))
-          : Stack(
-              fit: StackFit.expand,
-              children: [
-                Image.memory(frame.jpeg, fit: BoxFit.fill, gaplessPlayback: true),
-                CustomPaint(painter: _MarkPainter(widget.board, Theme.of(context).colorScheme.error)),
-              ],
-            ),
+    final color = Theme.of(context).colorScheme.error;
+    return OverlayPreview(
+      camera: board.camera,
+      imageSizePx: board.imageSizePx,
+      maxFps: 5,
+      repaintKey: (board.imagePointPx, color),
+      paint: (canvas, size, scale) {
+        final point = board.imagePointPx;
+        if (point == null) return;
+        final ring = Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3;
+        canvas.drawCircle(point * scale, size.shortestSide * 0.08, ring);
+      },
     );
   }
-}
-
-class _MarkPainter extends CustomPainter {
-  _MarkPainter(this.board, this.color);
-
-  final CameraBoardState board;
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final point = board.imagePointPx;
-    final image = board.imageSizePx;
-    if (point == null || image == null) return;
-    // The preview is a scaled copy of the image the point refers to.
-    final centre = Offset(point.dx / image.width * size.width, point.dy / image.height * size.height);
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3;
-    canvas.drawCircle(centre, size.shortestSide * 0.08, paint);
-  }
-
-  @override
-  bool shouldRepaint(_MarkPainter old) =>
-      old.board.imagePointPx != board.imagePointPx || old.board.imageSizePx != board.imageSizePx || old.color != color;
 }
 
 /// In the engine card: a warning while the board is occupied, and the action to store the empty board.

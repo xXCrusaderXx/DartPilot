@@ -912,4 +912,205 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get firstProfileText => 'Create a player profile; every game counts for its statistics.';
+
+  @override
+  String get calibStepLight => 'Light';
+
+  @override
+  String get calibStepBoard => 'Board';
+
+  @override
+  String get calibStepRefine => 'Refine';
+
+  @override
+  String get calibStepDone => 'Done';
+
+  @override
+  String get calibNeedsCameras => 'Calibration needs an engine with cameras. Connect one first.';
+
+  @override
+  String get calibIntro =>
+      'The engine measures the board from every camera: no target to hold, no measuring tape. You need an empty board and the light you play in; it takes a few minutes.';
+
+  @override
+  String get calibStale => 'A camera was measured again after the last refinement: refine all cameras once more.';
+
+  @override
+  String get calibBoardMissing => 'board not measured';
+
+  @override
+  String calibBoardMeasured(String mm) {
+    return 'board $mm mm';
+  }
+
+  @override
+  String get calibLensOwn => 'own lens calibration';
+
+  @override
+  String get calibLensNone => 'no lens calibration';
+
+  @override
+  String get calibStart => 'Start calibration';
+
+  @override
+  String get calibLightInstruction => 'Empty the board and switch on the light you play in.';
+
+  @override
+  String get calibLightHint =>
+      'The engine tries every colour temperature on all cameras and keeps the one in the middle of where the board is found. This takes about a minute.';
+
+  @override
+  String calibLightSettling(int seconds) {
+    return 'Waiting for the cameras\' exposure: $seconds s';
+  }
+
+  @override
+  String calibLightSweeping(int kelvin) {
+    return 'Trying $kelvin K …';
+  }
+
+  @override
+  String get calibLightDone => 'Light set for every camera.';
+
+  @override
+  String get calibLightFailed => 'The light could not be set.';
+
+  @override
+  String get calibLightNotFound => 'board not found';
+
+  @override
+  String get calibLightTune => 'Set the light';
+
+  @override
+  String get calibLightAgain => 'Set again';
+
+  @override
+  String get calibNext => 'Next';
+
+  @override
+  String calibCameraOf(int number, int count) {
+    return 'Camera $number of $count';
+  }
+
+  @override
+  String get calibBoardDetectInstruction => 'Keep the board empty, hand out of view, and detect it.';
+
+  @override
+  String get calibBoardDetectHint =>
+      'The engine finds the rings and the 20 wires of the board in this camera\'s image.';
+
+  @override
+  String get calibBoardTap20 => 'Tap into the field of the 20.';
+
+  @override
+  String get calibBoardTap20Hint =>
+      'Anywhere between the bull and the double ring. The colours repeat every second field, so the engine needs to be told which one is the 20.';
+
+  @override
+  String get calibBoardCheck => 'Do the numbers match the board?';
+
+  @override
+  String get calibBoardCheckHint => 'If not, tap into the 20 again.';
+
+  @override
+  String get calibBoardNotFound =>
+      'Board not found: remove all darts, keep the hand out of view, and check the light (step 1).';
+
+  @override
+  String calibBoardFit(String fit, String worst) {
+    return 'Board fit $fit mm (worst $worst mm)';
+  }
+
+  @override
+  String get calibBoardDetect => 'Detect the board';
+
+  @override
+  String get calibBoardDetectAgain => 'Detect again';
+
+  @override
+  String get calibNumbersMatchNext => 'Numbers match – next camera';
+
+  @override
+  String get calibNumbersMatchRefine => 'Numbers match – refine';
+
+  @override
+  String get calibRefineInstruction => 'Refine all cameras together.';
+
+  @override
+  String get calibRefineHint =>
+      'From the boards of all cameras the engine computes every camera\'s position and lens, and the real size of your board.';
+
+  @override
+  String get calibQualityGood => 'good';
+
+  @override
+  String get calibQualityFair => 'usable';
+
+  @override
+  String get calibQualityPoor => 'not good enough';
+
+  @override
+  String get calibLensFromOwn => 'Lens from its own lens calibration';
+
+  @override
+  String get calibLensFromModel => 'Lens from another camera of the same model';
+
+  @override
+  String get calibLensFromBoard => 'Lens from the board only';
+
+  @override
+  String get calibAdviceDetectAgain => 'Measure the board of this camera again in even light.';
+
+  @override
+  String get calibAdviceLens => 'A lens calibration of this camera would make it more accurate.';
+
+  @override
+  String get calibMeasureAgain => 'Measure again';
+
+  @override
+  String calibMeasuredBoard(String bull, String treble) {
+    return 'Your board: outer bull $bull mm, treble centre $treble mm';
+  }
+
+  @override
+  String get calibRefine => 'Refine';
+
+  @override
+  String get calibRefineAgain => 'Refine again';
+
+  @override
+  String get calibDone => 'The cameras are calibrated.';
+
+  @override
+  String get calibDoneHint => 'Check the whole setup with a few darts in the setup diagnosis.';
+
+  @override
+  String get calibErrorBusy => 'The engine is still busy with another step.';
+
+  @override
+  String get calibErrorNoDetection => 'Detect the board first.';
+
+  @override
+  String get calibErrorOutsideBoard =>
+      'That point is not in a field of the board; tap into the 20 between bull and double ring.';
+
+  @override
+  String get calibErrorFitFailed => 'The board could not be fitted; detect it again.';
+
+  @override
+  String get calibErrorNoBoardPlanes => 'No camera has a measured board yet.';
+
+  @override
+  String get calibErrorPoseFailed => 'A camera could not be placed; measure its board again.';
+
+  @override
+  String get calibErrorSaveFailed => 'The calibration could not be saved.';
+
+  @override
+  String calibErrorOther(String code) {
+    return 'Failed ($code).';
+  }
+
+  @override
+  String get calibrationHint => 'Light, board and refinement, step by step';
 }
