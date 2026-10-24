@@ -3,6 +3,7 @@
 
 #include <opencv2/imgcodecs.hpp>
 
+#include "analyse_command.hpp"
 #include "capture_check_command.hpp"
 #include "dartpilot/capture/capture.hpp"
 #include "dartpilot/event_detection/event_detection.hpp"
@@ -43,6 +44,10 @@ int main (int argc, char* argv[])
     if(arg == "record")
     {
         return dartpilot::cli::runRecord(argc - 2, argv + 2);
+    }
+    if(arg == "analyse")
+    {
+        return dartpilot::cli::runAnalyse(argc - 2, argv + 2);
     }
     if(arg == "replay")
     {

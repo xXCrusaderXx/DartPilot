@@ -25,8 +25,9 @@ constexpr double kMinWeak = 6.0;
 constexpr float kBin_px = 2.0f;
 // The largest shift between image and empty board that is taken for a drifting camera and compensated
 constexpr double kMaxDrift_px = 5.0;
-// A level counts for the tone curve with this many pixels; the curve needs the middle 90 % of the pixels to span this
-// many levels, and drops levels further than kToneOutlier from it.
+// A level counts for the tone curve with this many pixels; the curve needs the middle 96 % of the pixels to span this
+// many levels (a scene of one colour with a small dart does not, so the dart cannot bend the curve onto the
+// background), and drops levels further than kToneOutlier from it.
 constexpr int kMinTonePixels = 50;
 constexpr int kMinToneRange = 60;
 constexpr double kToneOutlier = 12.0;
@@ -77,11 +78,11 @@ cv::Mat matchTones (const cv::Mat& from, const cv::Mat& to)
     for(int level = 0; level < kLevels; ++level)
     {
         seen += counts[level];
-        if(low < 0 && seen >= total / 20)
+        if(low < 0 && seen >= total / 50)
         {
             low = level;
         }
-        if(high < 0 && seen >= total - total / 20)
+        if(high < 0 && seen >= total - total / 50)
         {
             high = level;
         }
