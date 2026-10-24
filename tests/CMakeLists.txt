@@ -52,3 +52,7 @@ gtest_discover_tests(BoardPlaneTest)
 add_executable(BoardRefinementTest BoardRefinementTest.cpp)
 target_link_libraries(BoardRefinementTest PRIVATE dartpilot::geometry GTest::gtest_main)
 gtest_discover_tests(BoardRefinementTest)
+
+add_executable(ReplayTest ReplayTest.cpp)
+target_link_libraries(ReplayTest PRIVATE dartpilot::replay opencv_imgcodecs GTest::gtest_main)
+gtest_discover_tests(ReplayTest)

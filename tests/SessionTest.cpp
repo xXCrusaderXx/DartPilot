@@ -63,8 +63,9 @@ session::SessionInfo twoCameras ()
                             {},
                             true,
                             {{"auto_exposure", 3}},
-                            session::FileReference{"intrinsics-usb-1.2.yml", "ab12"}});
-    info.cameras.push_back({"usb-1.3", "1.3", "/dev/v4l/by-path/y", "Cam B", {}, false, {}, std::nullopt});
+                            session::FileReference{"intrinsics-usb-1.2.yml", "ab12"},
+                            session::FileReference{"extrinsics.yml", "cd34"}});
+    info.cameras.push_back({"usb-1.3", "1.3", "/dev/v4l/by-path/y", "Cam B", {}, false, {}, std::nullopt, std::nullopt});
     return info;
 }
 

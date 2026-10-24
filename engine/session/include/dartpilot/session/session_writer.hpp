@@ -36,6 +36,8 @@ struct CameraInfo
     // Control values read back from the camera after they were applied
     std::vector<std::pair<std::string, int>> controls;
     std::optional<FileReference> intrinsics;
+    // The joint refinement of all cameras (extrinsics.yml), if it covers this camera
+    std::optional<FileReference> extrinsics;
 };
 
 struct SessionInfo

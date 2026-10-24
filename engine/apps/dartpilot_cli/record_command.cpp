@@ -2,6 +2,7 @@
 
 #include <linux/videodev2.h>
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <csignal>
@@ -19,9 +20,11 @@
 #include "dartpilot/capture/capture_thread.hpp"
 #include "dartpilot/capture/v4l2_device.hpp"
 #include "dartpilot/capture/v4l2_frame_source.hpp"
+#include "dartpilot/geometry/board_refinement.hpp"
 #include "dartpilot/geometry/intrinsics.hpp"
 #include "dartpilot/session/session_writer.hpp"
 #include "dartpilot/session/sha256.hpp"
+#include "paths.hpp"
 
 namespace dartpilot::cli
 {
@@ -34,16 +37,6 @@ constexpr std::chrono::milliseconds kHealthInterval{1000};
 std::atomic<bool> interrupted{false};
 
 void onInterrupt (int) { interrupted = true; }
-
-std::filesystem::path dataHome ()
-{
-    if(const char* xdg = std::getenv("XDG_DATA_HOME"); xdg && *xdg)
-    {
-        return std::filesystem::path(xdg) / "dartpilot";
-    }
-    const char* home = std::getenv("HOME");
-    return std::filesystem::path(home ? home : ".") / ".local/share/dartpilot";
-}
 
 // Mean brightness of a JPEG at an eighth of its size, enough for the exposure trend of ADR 0002
 double meanBrightness (const std::vector<std::uint8_t>& jpeg)
@@ -76,6 +69,25 @@ std::optional<session::FileReference> intrinsicsReference (const capture::Camera
         {
             std::fprintf(stderr, "%s: calibration not used: %s\n", device.usb_port.c_str(), mismatch.c_str());
         }
+        return std::nullopt;
+    }
+    const auto digest = session::sha256File(path.string());
+    if(!digest)
+    {
+        return std::nullopt;
+    }
+    return session::FileReference{path.filename().string(), *digest};
+}
+
+// The joint refinement (#13), if it covers this camera; replay reads the board model and pose from it
+std::optional<session::FileReference> extrinsicsReference (const capture::CameraDevice& device)
+{
+    const std::filesystem::path path = dataHome() / "calibration" / "extrinsics.yml";
+    const auto stored = geometry::loadExtrinsics(path.string());
+    if(!stored || std::none_of(stored->refinement.cameras.begin(), stored->refinement.cameras.end(),
+                               [&] (const auto& camera) { return camera.usb_port == device.usb_port; }))
+    {
+        std::fprintf(stderr, "%s: no board refinement in %s\n", device.usb_port.c_str(), path.c_str());
         return std::nullopt;
     }
     const auto digest = session::sha256File(path.string());
@@ -140,7 +152,7 @@ int runRecord (int argc, char* argv[])
             continue;
         }
         session::CameraInfo camera{
-            "usb-" + device.usb_port, device.usb_port, device.path, device.name, stream, !device.metadata_path.empty(), {}, {}};
+            "usb-" + device.usb_port, device.usb_port, device.path, device.name, stream, !device.metadata_path.empty(), {}, {}, {}};
         const capture::CameraControls controls(device.path);
         for(const auto& [name, id] : {std::pair<const char*, std::uint32_t>{"auto_exposure", V4L2_CID_EXPOSURE_AUTO},
                                       {"exposure_dynamic_framerate", V4L2_CID_EXPOSURE_AUTO_PRIORITY},
@@ -152,6 +164,7 @@ int runRecord (int argc, char* argv[])
             }
         }
         camera.intrinsics = intrinsicsReference(device, stream);
+        camera.extrinsics = extrinsicsReference(device);
         info.cameras.push_back(camera);
         recorders.push_back(std::move(recorder));
     }
