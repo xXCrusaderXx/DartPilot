@@ -869,6 +869,19 @@
   "referenceCamerasDisagree": "The cameras disagree about where it is",
   "referenceSeenByOneCamera": "Only one camera saw it",
   "cameraMovedNotice": "Camera {camera} was moved – its calibration is being checked.",
-  "@cameraMovedNotice": {"placeholders": {"camera": {"type": "String"}}},
-  "rigKnockedNotice": "The rig was knocked – the calibration is being checked."
+  "@cameraMovedNotice": {
+    "placeholders": {
+      "camera": {
+        "type": "String"
+      }
+    }
+  },
+  "rigKnockedNotice": "The rig was knocked – the calibration is being checked.",
+  "simulateDarts": "Simulate darts",
+  "simulateDartsHint": "For trying the app: the engine plays generated darts instead of detecting them.",
+  "localEngineLiveUnavailable": "This engine cannot detect darts yet. Switch on \"Simulate darts\", or update the engine.",
+  "detectionNotCalibrated": "Not calibrated yet – darts are not detected. Calibrate the cameras under Settings.",
+  "detectionWaitingForEmptyBoard": "Waiting for an empty, still board before detecting darts.",
+  "detectionPaused": "Detection paused",
+  "detectionUnavailable": "Darts are not detected right now."
 }

@@ -9,12 +9,20 @@ enum EngineMode { thisDevice, network }
 
 /// The player's last choice, stored on the device
 class EngineSettings {
-  EngineSettings({this.mode = EngineMode.network, this.url = EngineConnection.defaultUrl, this.cameras = true});
+  EngineSettings({
+    this.mode = EngineMode.network,
+    this.url = EngineConnection.defaultUrl,
+    this.simulate = false,
+    this.cameras = true,
+  });
 
   EngineMode mode;
   String url;
 
-  /// The local engine streams the real cameras; off for trying the app without them
+  /// The local engine plays generated darts instead of detecting them, for trying the app
+  bool simulate;
+
+  /// With simulated darts: stream the real cameras all the same; off for trying the app without them
   bool cameras;
 
   /// Path of the engine program when the player chose one; found automatically otherwise
@@ -22,6 +30,7 @@ class EngineSettings {
 
   static const _mode = 'engine.mode';
   static const _url = 'engine.url';
+  static const _simulate = 'engine.simulate';
   static const _cameras = 'engine.cameras';
   static const _executable = 'engine.executable';
 
@@ -30,6 +39,7 @@ class EngineSettings {
     return EngineSettings(
       mode: prefs.getString(_mode) == EngineMode.thisDevice.name ? EngineMode.thisDevice : EngineMode.network,
       url: prefs.getString(_url) ?? EngineConnection.defaultUrl,
+      simulate: prefs.getBool(_simulate) ?? false,
       cameras: prefs.getBool(_cameras) ?? true,
     )..executable = prefs.getString(_executable);
   }
@@ -38,6 +48,7 @@ class EngineSettings {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_mode, mode.name);
     await prefs.setString(_url, url);
+    await prefs.setBool(_simulate, simulate);
     await prefs.setBool(_cameras, cameras);
     final program = executable;
     program == null ? await prefs.remove(_executable) : await prefs.setString(_executable, program);
@@ -48,7 +59,7 @@ class EngineSettings {
 Future<void> startLocalEngine(EngineManager manager, EngineConnection connection, EngineSettings settings) async {
   await connection.disconnect();
   manager.executable = settings.executable;
-  final url = await manager.start(cameras: settings.cameras);
+  final url = await manager.start(simulate: settings.simulate, cameras: settings.cameras);
   if (url != null) await connection.connect(url);
 }
 

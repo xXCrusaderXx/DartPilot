@@ -221,6 +221,7 @@ class _LocalEngineSection extends StatelessWidget {
         LocalEngineError.noCameras => l10n.localEngineNoCameras,
         LocalEngineError.portInUse => l10n.localEnginePortInUse,
         LocalEngineError.noAnswer => l10n.localEngineNoAnswer,
+        LocalEngineError.liveUnavailable => l10n.localEngineLiveUnavailable,
         _ => l10n.localEngineCrashed,
       },
     };
@@ -233,17 +234,36 @@ class _LocalEngineSection extends StatelessWidget {
           style: manager.state == LocalEngineState.failed ? TextStyle(color: theme.colorScheme.error) : null,
         ),
         StatefulBuilder(
-          builder: (context, setState) => SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(l10n.useCameras),
-            subtitle: Text(l10n.useCamerasHint),
-            value: settings.cameras,
-            onChanged: busy
-                ? null
-                : (value) {
-                    setState(() => settings.cameras = value);
-                    settings.save();
-                  },
+          builder: (context, setState) => Column(
+            children: [
+              SwitchListTile(
+                key: const ValueKey('simulate-darts'),
+                contentPadding: EdgeInsets.zero,
+                title: Text(l10n.simulateDarts),
+                subtitle: Text(l10n.simulateDartsHint),
+                value: settings.simulate,
+                onChanged: busy
+                    ? null
+                    : (value) {
+                        setState(() => settings.simulate = value);
+                        settings.save();
+                      },
+              ),
+              // Live detection always needs the cameras; only simulated darts can do without them.
+              if (settings.simulate)
+                SwitchListTile(
+                  contentPadding: const EdgeInsets.only(left: 16),
+                  title: Text(l10n.useCameras),
+                  subtitle: Text(l10n.useCamerasHint),
+                  value: settings.cameras,
+                  onChanged: busy
+                      ? null
+                      : (value) {
+                          setState(() => settings.cameras = value);
+                          settings.save();
+                        },
+                ),
+            ],
           ),
         ),
         Wrap(

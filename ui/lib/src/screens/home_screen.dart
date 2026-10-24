@@ -145,6 +145,28 @@ class _StatusCard extends StatelessWidget {
                 if (!connected) TextButton(onPressed: onConnect, child: Text(l10n.connect)),
               ],
             ),
+            if (connected && engine.detection != 'running')
+              Padding(
+                key: const ValueKey('detection-state'),
+                padding: const EdgeInsets.only(top: 8, right: 8),
+                child: Row(
+                  children: [
+                    Icon(
+                      engine.detection == 'paused' ? Icons.pause_circle_outline : Icons.visibility_off_outlined,
+                      color: StatusColors.of(context).warning,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(switch ((engine.detection, engine.detectionReason)) {
+                        (_, 'not_calibrated') => l10n.detectionNotCalibrated,
+                        (_, 'no_empty_reference') => l10n.detectionWaitingForEmptyBoard,
+                        ('paused', _) => l10n.detectionPaused,
+                        _ => l10n.detectionUnavailable,
+                      }),
+                    ),
+                  ],
+                ),
+              ),
             if (connected) const BoardStateRow(),
             if (connected)
               for (final (i, camera) in (engine.hello?.cameras ?? const <String>[]).indexed)

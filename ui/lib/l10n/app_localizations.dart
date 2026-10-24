@@ -2329,6 +2329,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The rig was knocked – the calibration is being checked.'**
   String get rigKnockedNotice;
+
+  /// No description provided for @simulateDarts.
+  ///
+  /// In en, this message translates to:
+  /// **'Simulate darts'**
+  String get simulateDarts;
+
+  /// No description provided for @simulateDartsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For trying the app: the engine plays generated darts instead of detecting them.'**
+  String get simulateDartsHint;
+
+  /// No description provided for @localEngineLiveUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This engine cannot detect darts yet. Switch on \"Simulate darts\", or update the engine.'**
+  String get localEngineLiveUnavailable;
+
+  /// No description provided for @detectionNotCalibrated.
+  ///
+  /// In en, this message translates to:
+  /// **'Not calibrated yet – darts are not detected. Calibrate the cameras under Settings.'**
+  String get detectionNotCalibrated;
+
+  /// No description provided for @detectionWaitingForEmptyBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for an empty, still board before detecting darts.'**
+  String get detectionWaitingForEmptyBoard;
+
+  /// No description provided for @detectionPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Detection paused'**
+  String get detectionPaused;
+
+  /// No description provided for @detectionUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Darts are not detected right now.'**
+  String get detectionUnavailable;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

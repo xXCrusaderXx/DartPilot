@@ -68,6 +68,10 @@ class EngineConnection extends ChangeNotifier {
   /// Detailed checks while someone watches them, per camera
   final Map<String, CalibrationCheck> calibrationChecks = {};
   int _checkWatchers = 0;
+
+  /// Whether the engine detects darts now (running, paused, unavailable), and why not (not_calibrated, …)
+  String detection = 'running';
+  String? detectionReason;
   String? error;
 
   WebSocketChannel? _channel;
@@ -165,6 +169,8 @@ class EngineConnection extends ChangeNotifier {
       boardState = event.boardState;
       // Taken from the current frames, so only from an empty board
       if (boardState?.state == 'empty') requestBoardImage();
+      detection = event.detection;
+      detectionReason = event.detectionReason;
       diagnosis = null;
       _clearCalibration();
       calibration = event.calibration;
@@ -209,6 +215,12 @@ class EngineConnection extends ChangeNotifier {
     }
     // After a takeout the board is empty: the image follows changes of light without a dart in it.
     if (event is EngineTakeout) requestBoardImage();
+    if (event is EngineStatus) {
+      detection = event.detection;
+      // The message carries the reason code (docs/engine-api.md, engine_status).
+      detectionReason = event.message.isEmpty ? null : event.message;
+      notifyListeners();
+    }
     if (event is EngineDiagnosis) {
       diagnosis = event;
       notifyListeners();

@@ -9,7 +9,7 @@ import 'package:flutter/foundation.dart';
 enum LocalEngineState { stopped, starting, running, failed }
 
 /// Why the engine could not start or stopped; the log has the details.
-enum LocalEngineError { notFound, noCameras, portInUse, crashed, noAnswer }
+enum LocalEngineError { notFound, noCameras, portInUse, crashed, noAnswer, liveUnavailable }
 
 typedef ProcessStarter = Future<Process> Function(String executable, List<String> arguments);
 
@@ -55,9 +55,9 @@ class EngineManager extends ChangeNotifier {
   String? get resolvedExecutable => executable ?? _findEngine();
 
   /// Starts the engine and completes with its address, or null if it could not start ([error] says why).
-  /// Live detection does not exist yet (milestones 0.3 to 0.6), so darts are simulated; [cameras] streams the real
-  /// cameras for previews, status and the board check.
-  Future<String?> start({bool cameras = true}) async {
+  /// Live detection on the cameras; [simulate] plays generated darts instead, for trying the app without detection,
+  /// where [cameras] still streams the real cameras for previews, status and the board check.
+  Future<String?> start({bool simulate = false, bool cameras = true}) async {
     await stop();
     final program = resolvedExecutable;
     if (program == null || !File(program).existsSync()) {
@@ -73,7 +73,7 @@ class EngineManager extends ChangeNotifier {
     url = null;
     log.clear();
     notifyListeners();
-    final arguments = ['serve', '--simulate', if (cameras) '--cameras', '--port', '$port'];
+    final arguments = ['serve', if (simulate) '--simulate', if (!simulate || cameras) '--cameras', '--port', '$port'];
     _addLog('\$ $program ${arguments.join(' ')}');
     final ready = _ready = Completer<String?>();
     final Process process;
@@ -118,7 +118,9 @@ class EngineManager extends ChangeNotifier {
     if (state == LocalEngineState.stopped) return;
     _addLog('Engine exited with code $code');
     final text = log.join('\n');
-    final reason = text.contains('No camera could be started')
+    final reason = text.contains('Live detection is not available')
+        ? LocalEngineError.liveUnavailable
+        : text.contains('No camera could be started')
         ? LocalEngineError.noCameras
         : text.contains('Address already in use') || text.contains('address in use')
         ? LocalEngineError.portInUse

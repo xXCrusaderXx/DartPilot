@@ -1295,4 +1295,27 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rigKnockedNotice => 'The rig was knocked – the calibration is being checked.';
+
+  @override
+  String get simulateDarts => 'Simulate darts';
+
+  @override
+  String get simulateDartsHint => 'For trying the app: the engine plays generated darts instead of detecting them.';
+
+  @override
+  String get localEngineLiveUnavailable =>
+      'This engine cannot detect darts yet. Switch on \"Simulate darts\", or update the engine.';
+
+  @override
+  String get detectionNotCalibrated =>
+      'Not calibrated yet – darts are not detected. Calibrate the cameras under Settings.';
+
+  @override
+  String get detectionWaitingForEmptyBoard => 'Waiting for an empty, still board before detecting darts.';
+
+  @override
+  String get detectionPaused => 'Detection paused';
+
+  @override
+  String get detectionUnavailable => 'Darts are not detected right now.';
 }
