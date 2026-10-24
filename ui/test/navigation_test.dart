@@ -32,6 +32,17 @@ void main() {
     await tester.scrollUntilVisible(find.text('Zusammen spielen'), 200);
     expect(find.text('Lokal oder solo spielen'), findsOneWidget);
 
+    // A live engine that is not calibrated says so on home.
+    engine.receiveForTest(
+      jsonEncode({'type': 'engine_status', 'detection': 'unavailable', 'message': 'not_calibrated'}),
+    );
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.byKey(const ValueKey('detection-state')), -200);
+    expect(find.textContaining('Noch nicht kalibriert'), findsOneWidget);
+    engine.receiveForTest(jsonEncode({'type': 'engine_status', 'detection': 'running', 'message': ''}));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('detection-state')), findsNothing);
+
     await openSettings(tester);
     expect(find.text('Verbunden mit einer Engine im Netzwerk'), findsOneWidget);
     expect(tester.widget<ListTile>(find.byKey(const ValueKey('settings-cameras'))).enabled, isTrue);

@@ -27,7 +27,7 @@ sealed class EngineEvent {
     'refinement' => RefinementResult.fromJson(json),
     'calibration_check' => CalibrationCheck.fromJson(json),
     'camera_moved' => CameraMoved(json['camera'] as String),
-    'engine_status' => EngineStatus(json['detection'] as String, json['message'] as String? ?? ''),
+    'engine_status' => EngineStatus(json['detection'] as String? ?? 'running', json['message'] as String? ?? ''),
     _ => null,
   };
 }
@@ -45,6 +45,8 @@ class EngineHello extends EngineEvent {
     required this.cameras,
     this.boardState,
     this.calibration,
+    this.detection = 'running',
+    this.detectionReason,
   });
 
   final String protocol;
@@ -57,6 +59,10 @@ class EngineHello extends EngineEvent {
 
   /// Missing without cameras and with engines before the calibration wizard
   final CalibrationStatus? calibration;
+
+  /// running, paused or unavailable; [detectionReason] says why: not_calibrated, no_empty_reference
+  final String detection;
+  final String? detectionReason;
 
   factory EngineHello.fromJson(Map<String, dynamic> json) {
     final g = json['board_geometry'] as Map<String, dynamic>;
@@ -77,6 +83,8 @@ class EngineHello extends EngineEvent {
       calibration: json['calibration_status'] is Map<String, dynamic>
           ? CalibrationStatus.fromJson(json['calibration_status'] as Map<String, dynamic>)
           : null,
+      detection: json['detection'] as String? ?? 'running',
+      detectionReason: json['detection_reason'] as String?,
       boardState: json['board_state'] is Map<String, dynamic>
           ? EngineBoardState.fromJson(json['board_state'] as Map<String, dynamic>)
           : null,

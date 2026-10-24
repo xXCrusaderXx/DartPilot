@@ -1295,4 +1295,27 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get rigKnockedNotice => 'Das Gestell wurde angestoßen – die Kalibrierung wird geprüft.';
+
+  @override
+  String get simulateDarts => 'Darts simulieren';
+
+  @override
+  String get simulateDartsHint => 'Zum Ausprobieren: Die Engine spielt erzeugte Darts, statt sie zu erkennen.';
+
+  @override
+  String get localEngineLiveUnavailable =>
+      'Diese Engine kann noch keine Darts erkennen. Schalte „Darts simulieren“ ein oder aktualisiere die Engine.';
+
+  @override
+  String get detectionNotCalibrated =>
+      'Noch nicht kalibriert – Darts werden nicht erkannt. Kalibriere die Kameras unter Einstellungen.';
+
+  @override
+  String get detectionWaitingForEmptyBoard => 'Warte auf eine leere, ruhige Scheibe, bevor Darts erkannt werden.';
+
+  @override
+  String get detectionPaused => 'Erkennung pausiert';
+
+  @override
+  String get detectionUnavailable => 'Darts werden gerade nicht erkannt.';
 }

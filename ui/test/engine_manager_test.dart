@@ -68,7 +68,8 @@ void main() {
     final started = manager.start();
     await Future<void>.delayed(Duration.zero);
     expect(manager.state, LocalEngineState.starting);
-    expect(calls.single, [program, 'serve', '--simulate', '--cameras', '--port', '8500']);
+    // Live detection on the cameras by default
+    expect(calls.single, [program, 'serve', '--cameras', '--port', '8500']);
 
     process.out('Engine API (simulated darts, real cameras) on ws://127.0.0.1:8500/ - Ctrl+C to stop');
     expect(await started, 'ws://127.0.0.1:8500/');
@@ -102,6 +103,30 @@ void main() {
     expect(manager.error, LocalEngineError.noCameras);
     expect(manager.log.last, 'Engine exited with code 1');
   });
+
+  test(
+    'simulated darts are an option, with or without the cameras; an engine without live detection says so',
+    () async {
+      final calls = <List<String>>[];
+      final process = FakeProcess();
+      final manager = EngineManager(
+        start: (_, args) async {
+          calls.add(args);
+          return process;
+        },
+        findEngine: () => program,
+        freePort: () async => 8484,
+      );
+      final first = manager.start(simulate: true, cameras: false);
+      await Future<void>.delayed(Duration.zero);
+      expect(calls.last, ['serve', '--simulate', '--port', '8484']);
+      process.err('Live detection is not available yet; use --simulate.');
+      await Future<void>.delayed(Duration.zero);
+      process.exit(2);
+      expect(await first, isNull);
+      expect(manager.error, LocalEngineError.liveUnavailable);
+    },
+  );
 
   test('never starts the app itself, which would start the app again and again', () async {
     var started = 0;
