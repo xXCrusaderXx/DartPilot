@@ -159,5 +159,9 @@
   "noEnginesFound": "No engine found. Guest Wi-Fi, client isolation or separate networks block the search; type the address instead.",
   "foundEngines": "Engines in the network",
   "engineIncompatible": "incompatible ({protocol})",
-  "@engineIncompatible": {"placeholders": {"protocol": {"type": "String"}}}
+  "@engineIncompatible": {"placeholders": {"protocol": {"type": "String"}}},
+  "boardIsEmpty": "The board is empty",
+  "boardIsEmptyTitle": "Store the empty board again?",
+  "boardIsEmptyText": "Only if no dart or other object is in the board. The current camera images become the new empty board, and the check compares with them from now on.",
+  "boardNotStill": "The image is not still yet; wait a moment and try again."
 }

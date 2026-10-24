@@ -99,5 +99,9 @@
   "searchingEngines": "Suche im Netzwerk…",
   "noEnginesFound": "Keine Engine gefunden. Gast-WLAN, Client-Isolation oder getrennte Netze verhindern die Suche; gib die Adresse dann von Hand ein.",
   "foundEngines": "Engines im Netzwerk",
-  "engineIncompatible": "inkompatibel ({protocol})"
+  "engineIncompatible": "inkompatibel ({protocol})",
+  "boardIsEmpty": "Die Scheibe ist leer",
+  "boardIsEmptyTitle": "Leere Scheibe neu speichern?",
+  "boardIsEmptyText": "Nur wenn wirklich kein Dart und nichts anderes in der Scheibe steckt. Die aktuellen Kamerabilder werden das neue Bild der leeren Scheibe, und die Prüfung vergleicht ab jetzt damit.",
+  "boardNotStill": "Das Bild ist noch nicht ruhig; warte einen Moment und versuch es noch einmal."
 }

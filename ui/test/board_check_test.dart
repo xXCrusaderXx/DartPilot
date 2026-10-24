@@ -99,6 +99,34 @@ void main() {
     expect(sent.last, {'type': 'unsubscribe_preview', 'camera': 'usb-1'});
   });
 
+  testWidgets('a player who sees an empty board can store it again from the warning', (tester) async {
+    tester.view.physicalSize = const Size(1200, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final sent = <Map<String, dynamic>>[];
+    final engine = EngineConnection.forTest(sent.add);
+    addTearDown(engine.dispose);
+    engine.receiveForTest(jsonEncode({...hello, 'board_state': boardState('occupied')}));
+    await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('mode-Freies Werfen')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Die Scheibe ist leer'));
+    await tester.pumpAndSettle();
+    expect(find.text('Leere Scheibe neu speichern?'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Leere Scheibe speichern'));
+    await tester.pump();
+    expect(sent.last, {'type': 'store_empty_reference', 'force': true});
+
+    // Every request so far had an id; the store request is the last one.
+    engine.receiveForTest(jsonEncode({'type': 'result', 'request_id': '${sent.length}', 'ok': true}));
+    engine.receiveForTest(jsonEncode({'type': 'board_state', ...boardState('empty')}));
+    await tester.pumpAndSettle();
+    expect(find.text('Leere Scheibe gespeichert'), findsOneWidget);
+    expect(find.byType(TrainingScreen), findsOneWidget);
+  });
+
   testWidgets('offers to store the empty board when the engine has none', (tester) async {
     final engine = EngineConnection.forTest((_) {});
     addTearDown(engine.dispose);
