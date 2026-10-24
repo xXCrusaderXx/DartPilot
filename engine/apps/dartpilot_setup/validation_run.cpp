@@ -14,6 +14,7 @@
 #include <opencv2/imgproc.hpp>
 
 #include "calibration_paths.hpp"
+#include "dartpilot/geometry/board_state.hpp"
 #include "dartpilot/scoring/score.hpp"
 
 namespace dartpilot::setup
@@ -365,6 +366,9 @@ void ValidationRun::onMeasured ()
         {
             auto& camera = streams_[i];
             camera.empty_board = measurement.means[i];
+            // The engine's board check (#121) compares with this reference as well.
+            geometry::saveEmptyReference(
+                (calibrationDirectory() + "/").toStdString() + geometry::emptyReferenceFileName(camera.usb_port.toStdString()), measurement.means[i]);
             const auto& check = measurement.checks[i];
             calibration_checks_.append(QVariantMap{{"usbPort", camera.usb_port},
                                                    {"number", camera.number},

@@ -155,3 +155,29 @@ TEST(DetectBoard, NothingWithoutABoard)
     EXPECT_FALSE(dartpilot::geometry::detectBoard(empty));
     EXPECT_FALSE(dartpilot::geometry::detectBoard(cv::Mat()));
 }
+
+// A dart hides a wire on every track but one, so that wire keeps only two points, its transition on the reference
+// track and the bull; the detection must not fail on that (OpenCV 5 refuses under-determined systems).
+TEST(DetectBoard, CopesWithAWireSeenOnlyOnce)
+{
+    const cv::Matx33d h = boardToImage(40.0, 600.0, 15.0);
+    cv::Mat image = renderCameraImage(h, 1.0, 85);
+    // Dark patches across the wire at 9 degrees on every track through the singles except the middle of the outer
+    // singles, each wide enough that the sector changes at its edges lie outside the matching window.
+    const double angle = 9.0 * CV_PI / 180.0;
+    for(const double r_mm : {46.0, 68.0, 90.0, 116.0, 141.0, 154.0})
+    {
+        std::vector<cv::Point> patch;
+        for(const double a : {angle - 0.13, angle + 0.13})
+        {
+            for(const double rr : {r_mm - 4.0, r_mm + 4.0})
+            {
+                const cv::Point2f p = project(h, rr * std::cos(a), rr * std::sin(a));
+                patch.emplace_back(cvRound(p.x), cvRound(p.y));
+            }
+        }
+        std::swap(patch[2], patch[3]);
+        cv::fillConvexPoly(image, patch, cv::Scalar(40, 40, 40), cv::LINE_AA);
+    }
+    EXPECT_NO_THROW(dartpilot::geometry::detectBoard(image));
+}
