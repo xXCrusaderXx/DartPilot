@@ -27,4 +27,7 @@ struct DartObservation
 // image and empty_board are images of the same camera, ideally means of several frames, 8-bit or float BGR. Nothing if
 // no object large enough stands out from the empty board.
 std::optional<DartObservation> observeDart (const cv::Mat& image, const cv::Mat& empty_board);
+// The shift of the whole image if a camera's view changed as a whole from one still image to the next: it was knocked,
+// tilted or sways. A dart changes one place of the image, a knocked camera the edges all over it. Nothing otherwise.
+std::optional<cv::Point2d> viewChange (const cv::Mat& before, const cv::Mat& after);
 }  // namespace dartpilot::tip_candidates

@@ -586,4 +586,53 @@ std::optional<DartObservation> observeDart (const cv::Mat& image, const cv::Mat&
     }
     return observation;
 }
+namespace
+{
+// A knocked camera changes its whole view: it shifts, tilts a little or sways and comes back. Measured on the reference
+// setup, a dart changed at most 10 of the 8x8 cells of the image (after aligning the shift of the whole image), a
+// knocked camera 23 to 59; and a shift beyond kMovedCamera_px that explains most of the difference is a moved camera
+// as well.
+constexpr int kCells = 8;
+constexpr double kChangedLevel = 25.0;
+constexpr double kChangedCellShare = 0.002;
+constexpr int kMaxCellsForADart = 16;
+constexpr double kMovedCamera_px = 3.0;
+constexpr double kExplainedShare = 0.5;
+
+}  // namespace
+
+std::optional<cv::Point2d> viewChange (const cv::Mat& before, const cv::Mat& after)
+{
+    cv::Mat a, b;
+    cv::cvtColor(before, a, cv::COLOR_BGR2GRAY);
+    cv::cvtColor(after, b, cv::COLOR_BGR2GRAY);
+    a.convertTo(a, CV_32F);
+    b.convertTo(b, CV_32F);
+    cv::Mat window;
+    cv::createHanningWindow(window, a.size(), CV_32F);
+    // phaseCorrelate multiplies its inputs by the window in place.
+    const cv::Point2d shift = cv::phaseCorrelate(a.clone(), b.clone(), window);
+    cv::Mat moved;
+    cv::warpAffine(a, moved, cv::Matx23d(1, 0, shift.x, 0, 1, shift.y), a.size(), cv::INTER_LINEAR, cv::BORDER_REPLICATE);
+    const cv::Mat changed = cv::abs(b - moved) > kChangedLevel;
+    int cells = 0;
+    for(int y = 0; y < kCells; ++y)
+    {
+        for(int x = 0; x < kCells; ++x)
+        {
+            const cv::Rect cell(x * changed.cols / kCells, y * changed.rows / kCells, changed.cols / kCells, changed.rows / kCells);
+            cells += cv::countNonZero(changed(cell)) > kChangedCellShare * cell.area() ? 1 : 0;
+        }
+    }
+    if(cells > kMaxCellsForADart)
+    {
+        return shift;
+    }
+    if(std::hypot(shift.x, shift.y) > kMovedCamera_px && cv::mean(cv::abs(b - moved))[0] <= kExplainedShare * cv::mean(cv::abs(b - a))[0])
+    {
+        return shift;
+    }
+    return std::nullopt;
+}
+
 }  // namespace dartpilot::tip_candidates
