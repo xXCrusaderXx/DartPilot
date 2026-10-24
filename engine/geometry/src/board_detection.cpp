@@ -1,7 +1,9 @@
 #include "dartpilot/geometry/board_detection.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <optional>
 
 #include <opencv2/calib3d.hpp>
 #include <opencv2/imgproc.hpp>
@@ -16,6 +18,13 @@ constexpr double kTripleToDouble = 103.0 / 166.0;
 constexpr double kBullLimitToDouble = 0.14;
 constexpr int kRays = 720;
 constexpr int kTrackSamples = 4000;
+// Tracks the radial wires are measured on: between which circles (BoardCircle) and at what share of the way, clear of
+// the treble and double rings
+constexpr std::array<std::pair<int, double>, 7> kWireTracks = {{{0, 0.35}, {0, 0.6}, {0, 0.85}, {1, 0.2}, {1, 0.4}, {1, 0.6}, {1, 0.8}}};
+// The middle of the outer singles is the widest place between the rings, where the sector changes are clearest.
+constexpr std::array<int, 7> kReferenceTrackOrder = {4, 5, 3, 6, 2, 1, 0};
+// With fewer points on a wire its bend is not fitted.
+constexpr std::size_t kMinPointsForBend = 5;
 // A coloured run shorter than this along a ray is noise, not a ring
 constexpr double kMinRun_px = 2.0;
 constexpr double kMinSigma_px = 0.3;
@@ -256,20 +265,16 @@ cv::RotatedRect blend (const cv::RotatedRect& a, const cv::RotatedRect& b, doubl
         static_cast<float>((1 - w) * a.angle + w * b.angle));
 }
 
-// Points where the brightness changes between dark and light sectors along a closed track through the singles
+// Points where the brightness changes between dark and light sectors along a closed track through the singles, to a
+// fraction of a pixel: where the brightness crosses half way between the dark and the light sectors. gray is CV_32F.
 std::vector<cv::Point2f> transitionsAlong (const cv::RotatedRect& track, const cv::Mat& gray)
 {
-    std::vector<double> score(kTrackSamples, 0.0);
+    std::vector<double> brightness(kTrackSamples, 0.0);
     for(int k = 0; k < kTrackSamples; ++k)
     {
-        const cv::Point2f p = pointOnEllipse(track, 2 * CV_PI * k / kTrackSamples);
-        const int x = cvRound(p.x), y = cvRound(p.y);
-        if(x < 0 || y < 0 || x >= gray.cols || y >= gray.rows)
-        {
-            continue;
-        }
-        score[k] = gray.at<uchar>(y, x);
+        brightness[k] = sampleBilinear(gray, pointOnEllipse(track, 2 * CV_PI * k / kTrackSamples));
     }
+    std::vector<double> score = brightness;
     // Half way between the dark and the bright sectors
     std::vector<double> sorted = score;
     std::sort(sorted.begin(), sorted.end());
@@ -307,7 +312,24 @@ std::vector<cv::Point2f> transitionsAlong (const cv::RotatedRect& track, const c
     std::vector<cv::Point2f> found;
     for(const int k : indices)
     {
-        found.push_back(pointOnEllipse(track, 2 * CV_PI * k / kTrackSamples));
+        // The crossing of the middle brightness nearest to the flip of the majority
+        double t = k;
+        for(int j = 0; j <= kWindow; ++j)
+        {
+            const auto crossing = [&] (int i) -> std::optional<double>
+            {
+                const double a = brightness[(i + kTrackSamples) % kTrackSamples] - middle;
+                const double b = brightness[(i + 1 + kTrackSamples) % kTrackSamples] - middle;
+                return a * b <= 0 && a != b ? std::optional<double>(i + a / (a - b)) : std::nullopt;
+            };
+            const auto hit = crossing(k - 1 + j) ? crossing(k - 1 + j) : crossing(k - 1 - j);
+            if(hit)
+            {
+                t = *hit;
+                break;
+            }
+        }
+        found.push_back(pointOnEllipse(track, 2 * CV_PI * t / kTrackSamples));
     }
     return found;
 }
@@ -478,40 +500,59 @@ std::optional<BoardDetection> detectBoard (const cv::Mat& bgr)
         circle_rms_px[k] = *rms_px;
     }
 
-    // Radial wires from the bright/dark changes on two tracks through the inner and the outer singles; the red/green
+    // Radial wires from the bright/dark changes on tracks through the inner and the outer singles; the red/green
     // changes on the rings are left out, because the hue of dark pixels is unreliable. Every radial wire also runs through
-    // the board centre, which the bull marks. Whichever track shows exactly 20 changes serves as reference.
+    // the board centre, which the bull marks. A track with exactly 20 changes serves as reference, preferably one
+    // through the middle of the outer singles.
     cv::Mat gray;
     cv::cvtColor(bgr, gray, cv::COLOR_BGR2GRAY);
+    gray.convertTo(gray, CV_32F);
     cv::GaussianBlur(gray, gray, cv::Size(), 1.0);
     const auto& c = detection.circles;
-    const std::array<std::vector<cv::Point2f>, 2> transitions = {transitionsAlong(blend(c[1], c[2], 0.5), gray),
-                                                                 transitionsAlong(blend(c[0], c[1], 0.5), gray)};
-    const int reference = transitions[0].size() == kRadialWireCount ? 0 : transitions[1].size() == kRadialWireCount ? 1 : -1;
+    std::vector<std::vector<cv::Point2f>> transitions;
+    for(const auto& [inner, share] : kWireTracks)
+    {
+        transitions.push_back(transitionsAlong(blend(c[inner], c[inner + 1], share), gray));
+    }
+    int reference = -1;
+    for(const int t : kReferenceTrackOrder)
+    {
+        if(transitions[t].size() == kRadialWireCount)
+        {
+            reference = t;
+            break;
+        }
+    }
     if(reference < 0)
     {
         return std::nullopt;
     }
-    const int other = 1 - reference;
     std::vector<std::vector<cv::Point2f>> wire_points;
     for(const auto& reference_point : transitions[reference])
     {
         std::vector<cv::Point2f> points{reference_point};
         const double reference_angle = imageAngle(*bull, reference_point);
-        double best = 0.08;
-        std::optional<cv::Point2f> match;
-        for(const auto& q : transitions[other])
+        for(std::size_t t = 0; t < transitions.size(); ++t)
         {
-            const double d = std::abs(std::remainder(imageAngle(*bull, q) - reference_angle, 2 * CV_PI));
-            if(d < best)
+            if(static_cast<int>(t) == reference)
             {
-                best = d;
-                match = q;
+                continue;
             }
-        }
-        if(match)
-        {
-            points.push_back(*match);
+            double best = 0.08;
+            std::optional<cv::Point2f> match;
+            for(const auto& q : transitions[t])
+            {
+                const double d = std::abs(std::remainder(imageAngle(*bull, q) - reference_angle, 2 * CV_PI));
+                if(d < best)
+                {
+                    best = d;
+                    match = q;
+                }
+            }
+            if(match)
+            {
+                points.push_back(*match);
+            }
         }
         points.push_back(*bull);
         wire_points.push_back(points);
@@ -521,34 +562,65 @@ std::optional<BoardDetection> detectBoard (const cv::Mat& bgr)
 
     for(int w = 0; w < kRadialWireCount; ++w)
     {
+        const auto& points = wire_points[w];
         cv::Vec4f line;
-        cv::fitLine(wire_points[w], line, cv::DIST_L2, 0, 0.01, 0.01);
+        cv::fitLine(points, line, cv::DIST_L2, 0, 0.01, 0.01);
         cv::Point2f dir(line[0], line[1]);
         const cv::Point2f base(line[2], line[3]);
-        if((wire_points[w].front() - *bull).dot(dir) < 0)
+        if((points.front() - *bull).dot(dir) < 0)
         {
             dir = -dir;
         }
-        double sum_sq = 0.0;
-        for(const auto& q : wire_points[w])
-        {
-            const double d = std::abs((q - base).cross(dir));
-            sum_sq += d * d;
-            detection.worst_wire_residual_px = std::max(detection.worst_wire_residual_px, d);
-        }
-        const double line_rms_px = std::sqrt(sum_sq / wire_points[w].size());
         // Start on the line at the bull's foot point, so intersections are found outwards from the centre
         const cv::Point2f foot = base + dir * static_cast<float>((*bull - base).dot(dir));
         detection.wires[w] = cv::Vec4f(foot.x, foot.y, dir.x, dir.y);
+        for(const auto& q : points)
+        {
+            detection.worst_wire_residual_px = std::max(detection.worst_wire_residual_px, static_cast<double>(std::abs((q - foot).cross(dir))));
+        }
+
+        // The lens bends straight wires slightly towards the image edge, so the wire is followed as a parabola beside
+        // the line: offset = a + b s + c s^2 at the distance s from the bull's foot point.
+        const cv::Point2f normal(dir.y, -dir.x);
+        cv::Mat design(static_cast<int>(points.size()), 3, CV_64F), offsets(static_cast<int>(points.size()), 1, CV_64F);
+        for(std::size_t k = 0; k < points.size(); ++k)
+        {
+            const double s_px = (points[k] - foot).dot(dir);
+            design.at<double>(static_cast<int>(k), 0) = 1.0;
+            design.at<double>(static_cast<int>(k), 1) = s_px;
+            design.at<double>(static_cast<int>(k), 2) = points.size() >= kMinPointsForBend ? s_px * s_px : 0.0;
+            offsets.at<double>(static_cast<int>(k)) = (points[k] - foot).dot(normal);
+        }
+        cv::Mat bend;
+        cv::solve(design, offsets, bend, cv::DECOMP_SVD);
+        const cv::Mat residuals = design * bend - offsets;
+        const double wire_rms_px = std::sqrt(residuals.dot(residuals) / points.size());
+        const auto onWire = [&] (double s_px)
+        {
+            const double offset_px = bend.at<double>(0) + bend.at<double>(1) * s_px + bend.at<double>(2) * s_px * s_px;
+            return foot + dir * static_cast<float>(s_px) + normal * static_cast<float>(offset_px);
+        };
+
         for(int k = 0; k < kBoardCircleCount; ++k)
         {
-            const auto point = lineEllipseIntersection(foot, dir, detection.circles[k]);
-            if(!point)
+            const auto straight = lineEllipseIntersection(foot, dir, detection.circles[k]);
+            if(!straight)
             {
                 return std::nullopt;
             }
-            const double sigma_px = std::max(kMinSigma_px, std::hypot(line_rms_px, circle_rms_px[k]));
-            detection.points.push_back({w, static_cast<BoardCircle>(k), *point, sigma_px});
+            // Bisection between the bull, inside every circle, and well beyond where the straight line leaves it
+            double inside_px = 0.0, outside_px = 1.5 * (*straight - foot).dot(dir) + 10.0;
+            if(ellipseOffset(detection.circles[k], onWire(outside_px)) <= 0)
+            {
+                return std::nullopt;
+            }
+            for(int iteration = 0; iteration < 50; ++iteration)
+            {
+                const double middle_px = 0.5 * (inside_px + outside_px);
+                (ellipseOffset(detection.circles[k], onWire(middle_px)) < 0 ? inside_px : outside_px) = middle_px;
+            }
+            const double sigma_px = std::max(kMinSigma_px, std::hypot(wire_rms_px, circle_rms_px[k]));
+            detection.points.push_back({w, static_cast<BoardCircle>(k), onWire(0.5 * (inside_px + outside_px)), sigma_px});
         }
     }
     return detection;
