@@ -2,6 +2,8 @@ import 'package:dartpilot/src/app.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'navigation.dart';
+
 void main() {
   testWidgets('free throwing with board and keypad', (tester) async {
     tester.view.physicalSize = const Size(1400, 900);
@@ -9,7 +11,8 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(const DartPilotApp(locale: Locale('de')));
-    expect(find.text('Spiel wählen'), findsOneWidget);
+    await playOffline(tester);
+    expect(find.text('Lokal oder solo spielen'), findsOneWidget);
     await tester.tap(find.text('Freies Werfen'));
     await tester.pumpAndSettle();
 
@@ -35,7 +38,9 @@ void main() {
 
   testWidgets('English follows the locale', (tester) async {
     await tester.pumpWidget(const DartPilotApp(locale: Locale('en')));
-    expect(find.text('Choose a game'), findsOneWidget);
+    expect(find.text('Connect an engine'), findsOneWidget);
+    await playOffline(tester);
+    expect(find.text('Play locally or solo'), findsOneWidget);
     expect(find.text('Free throwing'), findsOneWidget);
   });
 }

@@ -5,6 +5,8 @@ import 'package:dartpilot/src/engine/engine_connection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'navigation.dart';
+
 String throwJson(String id, double x, double y, {bool accepted = true, double confidence = 0.9}) => jsonEncode({
   'type': 'throw',
   'throw_id': id,
@@ -22,6 +24,7 @@ void main() {
     addTearDown(engine.dispose);
 
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
+    await playOffline(tester);
     await tester.tap(find.text('X01'));
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Spieler entfernen').last);

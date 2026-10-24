@@ -101,7 +101,7 @@ abstract class AppLocalizations {
   /// No description provided for @chooseGame.
   ///
   /// In en, this message translates to:
-  /// **'Choose a game'**
+  /// **'Play locally or solo'**
   String get chooseGame;
 
   /// No description provided for @modeX01.
@@ -1207,6 +1207,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Refine all cameras again; if one camera stands out, calibrate it first.'**
   String get hintPlanesAgree;
+
+  /// No description provided for @connectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect an engine'**
+  String get connectTitle;
+
+  /// No description provided for @connectIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'The engine runs the cameras and detects the darts. It runs on this device or on another one in your network.'**
+  String get connectIntro;
+
+  /// No description provided for @playWithoutEngine.
+  ///
+  /// In en, this message translates to:
+  /// **'Play without an engine (enter darts by hand)'**
+  String get playWithoutEngine;
+
+  /// No description provided for @navHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get navHome;
+
+  /// No description provided for @navSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get navSettings;
+
+  /// No description provided for @settingsConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection'**
+  String get settingsConnection;
+
+  /// No description provided for @connectedThisDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected to the engine on this device'**
+  String get connectedThisDevice;
+
+  /// No description provided for @connectedNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected to an engine in the network'**
+  String get connectedNetwork;
+
+  /// No description provided for @playingWithoutEngine.
+  ///
+  /// In en, this message translates to:
+  /// **'Without an engine – darts are entered by hand'**
+  String get playingWithoutEngine;
+
+  /// No description provided for @playingWithoutEngineHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect an engine to detect darts and use the cameras.'**
+  String get playingWithoutEngineHint;
+
+  /// No description provided for @settingsCamerasBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'Cameras and board'**
+  String get settingsCamerasBoard;
+
+  /// No description provided for @settingsCamerasHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Live images and the state of each camera'**
+  String get settingsCamerasHint;
+
+  /// No description provided for @settingsDiagnosisHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Find out what is wrong with the setup, step by step'**
+  String get settingsDiagnosisHint;
+
+  /// No description provided for @settingsEmptyBoardHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Store the cameras\' images of the empty board for the board check'**
+  String get settingsEmptyBoardHint;
+
+  /// No description provided for @settingsCalibration.
+  ///
+  /// In en, this message translates to:
+  /// **'Calibration'**
+  String get settingsCalibration;
+
+  /// No description provided for @calibration.
+  ///
+  /// In en, this message translates to:
+  /// **'Calibrate the cameras'**
+  String get calibration;
+
+  /// No description provided for @calibrationInSetupTool.
+  ///
+  /// In en, this message translates to:
+  /// **'For now in the setup program dartpilot_setup on Linux'**
+  String get calibrationInSetupTool;
+
+  /// No description provided for @playTogether.
+  ///
+  /// In en, this message translates to:
+  /// **'Play together'**
+  String get playTogether;
+
+  /// No description provided for @lobby.
+  ///
+  /// In en, this message translates to:
+  /// **'Lobby'**
+  String get lobby;
+
+  /// No description provided for @lobbyComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Play with friends on other devices – coming with #124'**
+  String get lobbyComingSoon;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

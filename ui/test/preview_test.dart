@@ -7,6 +7,8 @@ import 'package:dartpilot/src/engine/engine_events.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'navigation.dart';
+
 /// A 1x1 grey JPEG
 final Uint8List tinyJpeg = base64Decode(
   '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/9oACAEBAAA/APvT/9k=',
@@ -61,7 +63,8 @@ void main() {
 
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Kameras'));
+    await openSettings(tester);
+    await tester.tap(find.byKey(const ValueKey('settings-cameras')));
     await tester.pumpAndSettle();
     expect(find.text('Warte auf das erste Bild…'), findsNWidgets(2));
 
@@ -119,7 +122,8 @@ void main() {
     addTearDown(engine.dispose);
     engine.receiveForTest(jsonEncode(hello));
     await tester.pumpWidget(DartPilotApp(locale: const Locale('en'), engine: engine));
-    await tester.tap(find.text('Cameras'));
+    await openSettings(tester);
+    await tester.tap(find.byKey(const ValueKey('settings-cameras')));
     await tester.pumpAndSettle();
     // One column of 368 px: the next step of 160 px is 480.
     expect(sent.where((r) => r['type'] == 'subscribe_preview').map((r) => r['max_width']).toSet(), {480});

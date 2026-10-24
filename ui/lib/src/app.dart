@@ -7,7 +7,7 @@ import '../l10n/app_localizations.dart';
 import 'engine/engine_choice.dart';
 import 'engine/engine_connection.dart';
 import 'engine/engine_manager.dart';
-import 'screens/home_screen.dart';
+import 'screens/main_shell.dart';
 
 class DartPilotApp extends StatefulWidget {
   const DartPilotApp({super.key, this.locale, this.engine, this.manager, this.settings});
@@ -83,7 +83,7 @@ class _DartPilotAppState extends State<DartPilotApp> {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1E8F4E), brightness: Brightness.dark),
       ),
-      home: const HomeScreen(),
+      home: const RootScreen(),
     );
     return EngineScope(
       connection: _engine,

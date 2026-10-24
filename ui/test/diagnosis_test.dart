@@ -6,6 +6,8 @@ import 'package:dartpilot/src/engine/engine_events.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'navigation.dart';
+
 import 'preview_test.dart' show hello;
 
 const cameras = ['usb-1', 'usb-2'];
@@ -107,6 +109,7 @@ void main() {
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
     await tester.pumpAndSettle();
 
+    await openSettings(tester);
     await tester.tap(find.byKey(const ValueKey('open-diagnosis')));
     await tester.pumpAndSettle();
     expect(find.textContaining('Die Diagnose beobachtet die Kameras'), findsOneWidget);
@@ -149,6 +152,7 @@ void main() {
     engine.receiveForTest(jsonEncode(hello));
     await tester.pumpWidget(DartPilotApp(locale: const Locale('en'), engine: engine));
     await tester.pumpAndSettle();
+    await openSettings(tester);
     await tester.tap(find.byKey(const ValueKey('open-diagnosis')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('diagnosis-start')));
