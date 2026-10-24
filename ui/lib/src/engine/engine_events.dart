@@ -18,6 +18,7 @@ sealed class EngineEvent {
     'camera_status' => EngineCameraStatus.fromJson(json),
     'board_state' => EngineBoardState.fromJson(json),
     'board_image' => BoardImage.fromJson(json),
+    'reference_run' => ReferenceRun.fromJson(json),
     'diagnosis' => EngineDiagnosis.fromJson(json),
     'calibration_status' => CalibrationStatus.fromJson(json),
     'white_balance' => WhiteBalanceState.fromJson(json),
@@ -704,4 +705,120 @@ class CalibrationCheck extends EngineEvent {
     imageSizePx: _size(json['image_size_px']),
     fitsCamera: json['fits_camera'] as String?,
   );
+}
+
+BoardPoint? _mmPoint(Object? json) =>
+    json is List && json.length >= 2 ? BoardPoint((json[0] as num).toDouble(), (json[1] as num).toDouble()) : null;
+
+/// The guided reference measurement (docs/engine-api.md, "reference_run"): darts pushed into known positions, and how
+/// far the engine located them from there
+class ReferenceRun extends EngineEvent {
+  const ReferenceRun({required this.running, required this.step, this.target, this.results = const [], this.summary});
+
+  final bool running;
+
+  /// empty_board, insert_dart, remove_dart or done
+  final String step;
+  final ReferenceTarget? target;
+  final List<ReferenceResult> results;
+  final ReferenceSummary? summary;
+
+  factory ReferenceRun.fromJson(Map<String, dynamic> json) {
+    final target = json['target'] as Map<String, dynamic>?;
+    final summary = json['summary'] as Map<String, dynamic>?;
+    return ReferenceRun(
+      running: json['running'] == true,
+      step: json['step'] as String? ?? '',
+      target: target == null
+          ? null
+          : ReferenceTarget(
+              index: (target['index'] as num).toInt(),
+              total: (target['total'] as num).toInt(),
+              boardMm: _mmPoint(target['board_mm']) ?? const BoardPoint(0, 0),
+              field: target['field'] as String? ?? '',
+              wires: [for (final w in target['wires'] as List<dynamic>? ?? const []) (w as num).toInt()],
+              hintCode: target['hint_code'] as String? ?? '',
+            ),
+      results: [
+        for (final r in json['results'] as List<dynamic>? ?? const [])
+          ReferenceResult(
+            index: ((r as Map)['index'] as num).toInt(),
+            boardMm: _mmPoint(r['board_mm']) ?? const BoardPoint(0, 0),
+            locatedMm: _mmPoint(r['located_mm']),
+            errorMm: _number(r['error_mm']),
+            camerasUsed: (r['cameras_used'] as num? ?? 0).toInt(),
+            reason: r['reason'] as String?,
+          ),
+      ],
+      summary: summary == null
+          ? null
+          : ReferenceSummary(
+              located: (summary['located'] as num? ?? 0).toInt(),
+              abstained: (summary['abstained'] as num? ?? 0).toInt(),
+              medianErrorMm: _number(summary['median_error_mm']),
+              p90ErrorMm: _number(summary['p90_error_mm']),
+              maxErrorMm: _number(summary['max_error_mm']),
+            ),
+    );
+  }
+}
+
+class ReferenceTarget {
+  const ReferenceTarget({
+    required this.index,
+    required this.total,
+    required this.boardMm,
+    required this.field,
+    required this.wires,
+    required this.hintCode,
+  });
+
+  final int index;
+  final int total;
+  final BoardPoint boardMm;
+
+  /// D20, S6, Bull …
+  final String field;
+
+  /// The sector numbers on either side of the corner's radial wire; empty for the bull centre
+  final List<int> wires;
+
+  /// bull_centre or corner
+  final String hintCode;
+}
+
+class ReferenceResult {
+  const ReferenceResult({
+    required this.index,
+    required this.boardMm,
+    this.locatedMm,
+    this.errorMm,
+    this.camerasUsed = 0,
+    this.reason,
+  });
+
+  final int index;
+  final BoardPoint boardMm;
+
+  /// null when the engine abstained, with [reason]
+  final BoardPoint? locatedMm;
+  final double? errorMm;
+  final int camerasUsed;
+  final String? reason;
+}
+
+class ReferenceSummary {
+  const ReferenceSummary({
+    required this.located,
+    required this.abstained,
+    this.medianErrorMm,
+    this.p90ErrorMm,
+    this.maxErrorMm,
+  });
+
+  final int located;
+  final int abstained;
+  final double? medianErrorMm;
+  final double? p90ErrorMm;
+  final double? maxErrorMm;
 }

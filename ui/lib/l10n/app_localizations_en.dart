@@ -1213,4 +1213,72 @@ class AppLocalizationsEn extends AppLocalizations {
   String homeCameraWrongPort(int number) {
     return 'Camera $number is on another USB port than when it was calibrated.';
   }
+
+  @override
+  String get referenceRun => 'Reference measurement';
+
+  @override
+  String get settingsReferenceHint => 'How accurate is the detection? Darts in known positions show it in millimetres';
+
+  @override
+  String get referenceIntro =>
+      'You push one dart after the other by hand into a known position: the centre of the bull, then corners where a radial wire meets a ring wire. The engine locates every dart, and the distance from the position is the error of the whole system, from calibration to tip. Ten darts take about five minutes; the board must be calibrated.';
+
+  @override
+  String get referenceNotCalibrated => 'Calibrate the cameras first (Settings → Calibration).';
+
+  @override
+  String referenceProgress(int number, int total) {
+    return 'Dart $number of $total';
+  }
+
+  @override
+  String get referenceBullCentre => 'Push a dart into the very centre of the bull, then take your hand away.';
+
+  @override
+  String referenceCorner(String field, int a, int b) {
+    return 'Push a dart into $field, into the corner at the wire between $a and $b, then take your hand away.';
+  }
+
+  @override
+  String get referenceCornerHint =>
+      'The point touches both wires: the radial wire and the ring wire. Push it in by hand, do not throw.';
+
+  @override
+  String get referenceResults => 'Measured darts';
+
+  @override
+  String get referenceAbstained => 'Not located';
+
+  @override
+  String referenceError(String mm) {
+    return '$mm mm off';
+  }
+
+  @override
+  String referenceCamerasUsed(int count) {
+    return '$count cameras';
+  }
+
+  @override
+  String get referenceLocated => 'Located';
+
+  @override
+  String get referenceMedian => 'Median error';
+
+  @override
+  String get referenceP90 => '90 % within';
+
+  @override
+  String get referenceMax => 'Worst';
+
+  @override
+  String get referenceGood => 'The detection is accurate.';
+
+  @override
+  String get referenceNotGood => 'The detection is not accurate enough yet.';
+
+  @override
+  String get referenceNotGoodHint =>
+      'Run the setup diagnosis to see where the error comes from, then calibrate the cameras it names again.';
 }

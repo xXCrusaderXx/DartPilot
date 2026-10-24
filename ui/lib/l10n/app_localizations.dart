@@ -2191,6 +2191,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Camera {number} is on another USB port than when it was calibrated.'**
   String homeCameraWrongPort(int number);
+
+  /// No description provided for @referenceRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference measurement'**
+  String get referenceRun;
+
+  /// No description provided for @settingsReferenceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'How accurate is the detection? Darts in known positions show it in millimetres'**
+  String get settingsReferenceHint;
+
+  /// No description provided for @referenceIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'You push one dart after the other by hand into a known position: the centre of the bull, then corners where a radial wire meets a ring wire. The engine locates every dart, and the distance from the position is the error of the whole system, from calibration to tip. Ten darts take about five minutes; the board must be calibrated.'**
+  String get referenceIntro;
+
+  /// No description provided for @referenceNotCalibrated.
+  ///
+  /// In en, this message translates to:
+  /// **'Calibrate the cameras first (Settings → Calibration).'**
+  String get referenceNotCalibrated;
+
+  /// No description provided for @referenceProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Dart {number} of {total}'**
+  String referenceProgress(int number, int total);
+
+  /// No description provided for @referenceBullCentre.
+  ///
+  /// In en, this message translates to:
+  /// **'Push a dart into the very centre of the bull, then take your hand away.'**
+  String get referenceBullCentre;
+
+  /// No description provided for @referenceCorner.
+  ///
+  /// In en, this message translates to:
+  /// **'Push a dart into {field}, into the corner at the wire between {a} and {b}, then take your hand away.'**
+  String referenceCorner(String field, int a, int b);
+
+  /// No description provided for @referenceCornerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The point touches both wires: the radial wire and the ring wire. Push it in by hand, do not throw.'**
+  String get referenceCornerHint;
+
+  /// No description provided for @referenceResults.
+  ///
+  /// In en, this message translates to:
+  /// **'Measured darts'**
+  String get referenceResults;
+
+  /// No description provided for @referenceAbstained.
+  ///
+  /// In en, this message translates to:
+  /// **'Not located'**
+  String get referenceAbstained;
+
+  /// No description provided for @referenceError.
+  ///
+  /// In en, this message translates to:
+  /// **'{mm} mm off'**
+  String referenceError(String mm);
+
+  /// No description provided for @referenceCamerasUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} cameras'**
+  String referenceCamerasUsed(int count);
+
+  /// No description provided for @referenceLocated.
+  ///
+  /// In en, this message translates to:
+  /// **'Located'**
+  String get referenceLocated;
+
+  /// No description provided for @referenceMedian.
+  ///
+  /// In en, this message translates to:
+  /// **'Median error'**
+  String get referenceMedian;
+
+  /// No description provided for @referenceP90.
+  ///
+  /// In en, this message translates to:
+  /// **'90 % within'**
+  String get referenceP90;
+
+  /// No description provided for @referenceMax.
+  ///
+  /// In en, this message translates to:
+  /// **'Worst'**
+  String get referenceMax;
+
+  /// No description provided for @referenceGood.
+  ///
+  /// In en, this message translates to:
+  /// **'The detection is accurate.'**
+  String get referenceGood;
+
+  /// No description provided for @referenceNotGood.
+  ///
+  /// In en, this message translates to:
+  /// **'The detection is not accurate enough yet.'**
+  String get referenceNotGood;
+
+  /// No description provided for @referenceNotGoodHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Run the setup diagnosis to see where the error comes from, then calibrate the cameras it names again.'**
+  String get referenceNotGoodHint;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
