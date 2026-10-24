@@ -4,6 +4,7 @@
 
 #include "calibration_paths.hpp"
 #include "dartpilot/capture/v4l2_device.hpp"
+#include "dartpilot/geometry/board_plane.hpp"
 #include "dartpilot/geometry/intrinsics.hpp"
 
 namespace dartpilot::setup
@@ -42,7 +43,10 @@ void CameraFinder::refresh ()
                 }
             }
         }
+        const auto board = geometry::loadBoardPlane(boardPlanePath(usb_port).toStdString());
         cameras_.append(QVariantMap{{"path", QString::fromStdString(camera.path)},
+                                    {"hasBoardPlane", board.has_value()},
+                                    {"boardRmsMm", board ? board->fit.rms_mm : 0.0},
                                     {"usbPort", usb_port},
                                     {"intrinsicsPath", path},
                                     {"hasIntrinsics", has_intrinsics},

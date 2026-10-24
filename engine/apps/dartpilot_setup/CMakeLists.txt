@@ -18,6 +18,7 @@ qt_add_qml_module(dartpilot_setup
     Card.qml Chip.qml NavButton.qml PageHeader.qml StepCard.qml
     CamerasPage.qml CameraPane.qml IntrinsicPage.qml ExtrinsicPage.qml
     CaptureGuide.qml GuideDialog.qml PatternWindow.qml
+    BoardIllustration.qml ExtrinsicGuideDialog.qml
   RESOURCES icons/dartpilot.svg
   SOURCES
     calibration_paths.hpp
