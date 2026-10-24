@@ -16,7 +16,7 @@ This project uses the [Developer Certificate of Origin](https://developercertifi
 git commit -s -m "Your message"
 ```
 
-**Per PR:** put one `Signed-off-by: Your Name <your@email>` line in the pull request description, or tick the sign-off box in the PR template. That one sign-off covers all commits of the PR.
+**Per PR:** put one `Signed-off-by: Your Name <your@email>` line in the pull request description, or tick the sign-off box in the PR template. PRs are squash-merged, so that one sign-off covers the whole PR.
 
 The `DCO` check enforces this. PRs opened from the repository owner's account are exempt: the owner certifies them as a standing decision. Use your real identity and a reachable email address. Never sign off for someone else.
 
@@ -71,7 +71,7 @@ Recordings and annotations are valuable, but they are **not committed to this re
 
 1. Open an issue first for larger changes, so the approach can be agreed on before you invest time.
 2. Fork the repository and create a branch from `dev` (`feat/…`, `fix/…`, `docs/…`, `chore/…`).
-3. Keep each PR focused on one topic. Use a [Conventional Commits](https://www.conventionalcommits.org/)-style PR title, for example `feat: per-frame capture timestamps from V4L2`. It becomes the title of the merge commit and the changelog entry.
+3. Keep each PR focused on one topic. Use a [Conventional Commits](https://www.conventionalcommits.org/)-style PR title, for example `feat: per-frame capture timestamps from V4L2`. It becomes the message of the squash commit on `dev` and the changelog entry.
 4. Open a pull request against `dev` and fill in the template.
 
 ### Branches
@@ -82,7 +82,9 @@ Recordings and annotations are valuable, but they are **not committed to this re
 | `dev` | Integration branch and default branch. All development happens here, through feature and fix PRs. |
 | `feat/…`, `fix/…`, `docs/…`, `chore/…` | One topic each, branched from `dev`, deleted after the merge. |
 
-PRs are merged with a merge commit, never squashed or rebased, so the history shows which commits belong to which branch. The `Branch policy` check fails every PR into `main` whose source is not `dev`. After `dev` is merged into `main`, work simply continues on `dev`.
+PRs into `dev` are **squash-merged**: each PR becomes one commit, and `dev` stays a straight line. `dev` → `main` is the only merge commit, made by a maintainer at a release point. The `Branch policy` check fails every PR into `main` whose source is not `dev`. After `dev` is merged into `main`, work simply continues on `dev`.
+
+To bring a branch up to date, rebase it onto `dev` (`git rebase origin/dev`, or `gh pr update-branch --rebase`). Never merge `dev` into a feature branch.
 
 ### How a PR gets merged
 
@@ -119,7 +121,7 @@ cd tools && ruff check . && ruff format --check . && pytest
 
 Optional: `.githooks/pre-push` stops a push when a commit's author or committer email matches a pattern you set locally, so a work or private address never reaches GitHub by accident (Git GUIs often use their own identity). Enable it with `git config core.hooksPath .githooks` and `git config --add hooks.blockedEmail 'example\.com'`. The patterns stay in your local config.
 
-Optional: `.githooks/post-merge` cleans up after every `git pull`: local branches whose PR was merged (remote branch gone) are deleted, together with their worktree if it has no changes. Enable it with `git config core.hooksPath .githooks` and `git config fetch.prune true`.
+Optional: `.githooks/post-merge` cleans up after every `git pull`: local branches whose PR was merged (remote branch gone) are deleted, together with their worktree if it has no changes. If you use worktrees, keep them under `.worktrees/` in the repository; that folder is ignored by Git. Enable it with `git config core.hooksPath .githooks` and `git config fetch.prune true`.
 
 CI checks only the lines your PR changes. To fix them in place, run `git clang-format origin/dev`. Don't reformat code you didn't otherwise touch.
 
@@ -127,6 +129,8 @@ CI checks only the lines your PR changes. To fix them in place, run `git clang-f
 
 - C++20, formatted with the repository's `.clang-format` (Allman braces, 4-space indent, 150 columns).
 - Python 3.11+, formatted and linted with `ruff` (settings in `tools/pyproject.toml`).
+- Dart in `ui/` (Flutter): formatted with `dart format` (120 columns), `flutter analyze` clean. User-visible text goes into `ui/lib/l10n/app_en.arb` and `app_de.arb`. Game rules are plain Dart classes with unit tests; widgets only display them.
+- QML (developer GUI `engine/apps/dartpilot_setup`): 4-space indent, no warnings from `cmake --build build --target dartpilot_setup_qmllint`. Colours and sizes come from `Tokens.qml`. Logic and image processing stay in C++; QML only arranges views and controls.
 - **Code comments and log messages are written in English.**
 - Each engine module is a library under `engine/<module>/` with its public headers in `include/dartpilot/<module>/`. Modules depend only on the modules before them in the pipeline; `scoring` depends on none of them.
 - Results carry their units in the name (`board_xy_mm`, `latency_ms`). Board coordinates follow the convention defined in phase 1.

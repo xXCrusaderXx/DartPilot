@@ -1,0 +1,621 @@
+{
+  "@@locale": "en",
+  "appTitle": "DartPilot",
+  "chooseGame": "Play locally or solo",
+  "modeX01": "X01",
+  "modeX01Description": "501 or 301, double out",
+  "modeCricket": "Cricket",
+  "modeCricketDescription": "Close 15 to 20 and bull",
+  "modeAroundTheClock": "Around the Clock",
+  "modeAroundTheClockDescription": "Hit 1 to 20 in order",
+  "modeTraining": "Free throwing",
+  "modeTrainingDescription": "Every dart is shown and counted",
+  "inputBoard": "Board",
+  "inputKeypad": "Keypad",
+  "single": "Single",
+  "double": "Double",
+  "triple": "Triple",
+  "miss": "Miss",
+  "undo": "Undo",
+  "visit": "Visit",
+  "darts": "Darts",
+  "points": "Points",
+  "average": "3-dart average",
+  "newVisit": "Next visit",
+  "noThrowsYet": "Tap the board or use the keypad",
+  "x01Setup": "New X01 game",
+  "players": "Players",
+  "addPlayer": "Add player",
+  "playerName": "Player {number}",
+  "@playerName": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "startScore": "Start score",
+  "doubleIn": "Double in",
+  "doubleOut": "Double out",
+  "legsToWin": "Legs to win",
+  "startGame": "Start game",
+  "leg": "Leg {number}",
+  "@leg": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "legs": "Legs",
+  "checkout": "Checkout",
+  "bust": "Bust",
+  "notIn": "not in",
+  "legWonBy": "{name} wins the leg",
+  "@legWonBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "matchWonBy": "{name} wins!",
+  "@matchWonBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "newGame": "New game",
+  "backToMenu": "Menu",
+  "removePlayer": "Remove player",
+  "cricketSetup": "New Cricket game",
+  "aroundTheClockSetup": "New Around the Clock game",
+  "endWithBull": "Finish with the bull",
+  "target": "Target",
+  "marksPerRound": "Marks per round",
+  "hitRate": "Hit rate",
+  "bull": "Bull",
+  "engine": "Engine",
+  "engineAddress": "Engine address",
+  "connect": "Connect",
+  "disconnect": "Disconnect",
+  "engineConnected": "Connected",
+  "engineConnecting": "Connecting…",
+  "engineDisconnected": "Not connected",
+  "engineFailed": "Connection failed",
+  "engineSimulated": "simulated",
+  "uncertainDart": "Uncertain: {label} ({percent} %)",
+  "@uncertainDart": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "uncertainNoPoint": "A dart was detected, but not where",
+  "confirm": "Confirm",
+  "discard": "Discard",
+  "tapToCorrect": "Tap the board where the dart is",
+  "recentDarts": "Last darts",
+  "correctingDart": "Correcting {label} – tap the board",
+  "@correctingDart": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "cancel": "Cancel",
+  "missingDarts": "{count, plural, =1{1 dart is missing} other{{count} darts are missing}}",
+  "@missingDarts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "countAsMiss": "Count as miss",
+  "enterManually": "Enter them",
+  "cameras": "Cameras",
+  "waitingForImage": "Waiting for the first image…",
+  "cameraOk": "OK",
+  "cameraDegraded": "Degraded",
+  "cameraLost": "Lost",
+  "noCameras": "The engine has no cameras",
+  "fps": "{value} fps",
+  "@fps": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "lostFrames": "Lost",
+  "droppedFrames": "Dropped",
+  "brightness": "Brightness",
+  "preview": "Preview",
+  "expandAll": "Expand all",
+  "collapseAll": "Collapse all",
+  "tapToEnlarge": "Tap the image to enlarge it",
+  "latency": "Latency",
+  "boardOccupiedTitle": "Pull the darts out of the board",
+  "boardOccupiedText": "The cameras see something in the board. Pull out the darts before the game starts.",
+  "boardOccupiedBanner": "Darts in the board",
+  "checkBoardAgain": "Check again",
+  "startAnyway": "Start anyway",
+  "show": "Show",
+  "emptyReferenceMissing": "No image of the empty board stored",
+  "storeEmptyReference": "Store empty board",
+  "emptyReferenceStored": "Empty board stored",
+  "boardNotEmpty": "The board is not empty; pull out the darts first.",
+  "storeReferenceFailed": "Could not store the empty board",
+  "searchEngines": "Search the network for engines",
+  "searchingEngines": "Searching the network…",
+  "noEnginesFound": "No engine found. Guest Wi-Fi, client isolation or separate networks block the search; type the address instead.",
+  "foundEngines": "Engines in the network",
+  "engineIncompatible": "incompatible ({protocol})",
+  "@engineIncompatible": {
+    "placeholders": {
+      "protocol": {
+        "type": "String"
+      }
+    }
+  },
+  "boardIsEmpty": "The board is empty",
+  "boardIsEmptyTitle": "Store the empty board again?",
+  "boardIsEmptyText": "Only if no dart or other object is in the board. The current camera images become the new empty board, and the check compares with them from now on.",
+  "boardNotStill": "The image is not still yet; wait a moment and try again.",
+  "engineThisDevice": "On this device",
+  "engineNetwork": "In the network",
+  "localEngineStopped": "The engine on this device is stopped.",
+  "localEngineStarting": "Starting the engine…",
+  "localEngineRunning": "The engine runs on this device ({url}).",
+  "localEngineNotFound": "The engine program was not found. Enter its path under Log.",
+  "localEngineNoCameras": "No camera could be started: are they plugged in, or used by another program?",
+  "localEnginePortInUse": "The engine's port is in use; another engine may be running.",
+  "localEngineCrashed": "The engine stopped unexpectedly; the log shows why.",
+  "useCameras": "Use the cameras",
+  "useCamerasHint": "Live images and the board check; darts are still simulated until detection is ready.",
+  "engineLog": "Log",
+  "startEngine": "Start",
+  "stopEngine": "Stop",
+  "engineProgram": "Engine program",
+  "engineProgramHint": "Leave empty to find it automatically",
+  "engineLogEmpty": "No output yet.",
+  "close": "Close",
+  "@localEngineRunning": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "diagnosis": "Setup diagnosis",
+  "startDiagnosis": "Start",
+  "restartDiagnosis": "Start again",
+  "stopDiagnosis": "Stop",
+  "diagnosisIntro": "The diagnosis watches the cameras while you follow the steps: an empty board, then one dart at a time at 8 to 10 places. It lists what is wrong with the setup and what to do about it. Start the cameras about 30 s before, so their exposure has settled.",
+  "diagnosisNeedsEngine": "Connect to an engine first.",
+  "diagnosisNotAvailable": "This engine cannot run the diagnosis; it needs the cameras (start it with the cameras).",
+  "diagnosisFailed": "The diagnosis could not start ({code}).",
+  "@diagnosisFailed": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "stepEmptyBoard": "Leave the board empty and take your hand out of view.",
+  "stepRemoveDarts": "Pull all darts out of the board.",
+  "stepInsertDart": "Put one dart into the board and take your hand away.",
+  "stepInsertDartHint": "Repeat at 8 to 10 places, also the bull and near the double ring.",
+  "stepRemoveDart": "Pull the dart out again.",
+  "diagnosisMoving": "The image moves – hold still",
+  "diagnosisSettling": "Still – waiting a moment",
+  "diagnosisMeasuring": "Measuring…",
+  "diagnosisMeasured": "Measured",
+  "diagnosisStopped": "Stopped",
+  "diagnosisSummary": "{time} · {empty} empty boards · {darts} darts",
+  "@diagnosisSummary": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "empty": {
+        "type": "int"
+      },
+      "darts": {
+        "type": "int"
+      }
+    }
+  },
+  "diagnosisFindings": "Findings",
+  "diagnosisNoFindings": "Nothing found so far.",
+  "cameraNumber": "Camera {number}",
+  "@cameraNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "diagnosisPeriods": "Measured moments ({count})",
+  "@diagnosisPeriods": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "periodEmpty": "empty board",
+  "periodDartNotLocated": "dart, not located",
+  "periodDartLocated": "dart at {x}, {y} mm, {cameras} cameras agree within {plane} mm",
+  "@periodDartLocated": {
+    "placeholders": {
+      "x": {
+        "type": "String"
+      },
+      "y": {
+        "type": "String"
+      },
+      "cameras": {
+        "type": "int"
+      },
+      "plane": {
+        "type": "String"
+      }
+    }
+  },
+  "dartSeen": "dart seen",
+  "dartCut": "dart cut at the border",
+  "dartNotSeen": "dart not seen",
+  "periodCalibration": "{mm} mm off calibration",
+  "@periodCalibration": {
+    "placeholders": {
+      "mm": {
+        "type": "String"
+      }
+    }
+  },
+  "periodBrightness": "brightness {value}",
+  "@periodBrightness": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "findingLostFrames": "Lost {percent} % of its frames.",
+  "@findingLostFrames": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "hintLostFrames": "Plug the camera into another USB port or a powered hub, and close other programs that use the cameras.",
+  "findingFewStillMoments": "Only {count} still moments in {seconds} s.",
+  "@findingFewStillMoments": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "hintFewStillMoments": "Hold each state still for a few seconds with the hand out of view; if the image never settles, check for vibrations.",
+  "findingNotEmptyAtStart": "The board was not empty at the start: its wires are partly hidden.",
+  "hintNotEmptyAtStart": "Start with an empty board; everything after it is compared with this first image.",
+  "findingNoRefinement": "No refinement for this camera: calibration and darts were not checked.",
+  "hintNoRefinement": "Calibrate it on the extrinsic page and refine all cameras (step 5).",
+  "findingBoardNotFound": "The board was not found on any empty board.",
+  "hintBoardNotFound": "Check the camera's view and focus, and the light on the board.",
+  "findingCalibrationOff": "The board is {mm} mm off this camera's calibration.",
+  "@findingCalibrationOff": {
+    "placeholders": {
+      "mm": {
+        "type": "String"
+      }
+    }
+  },
+  "hintCalibrationOff": "If the camera or the board moved, calibrate the camera again and refine all cameras (extrinsic page, step 5).",
+  "findingDrift": "The image moved by {px} px within {minutes} min.",
+  "@findingDrift": {
+    "placeholders": {
+      "px": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "hintDrift": "Let the cameras run for about 10 minutes before calibrating and playing, so they are warm; if it keeps moving, tighten the camera's mount.",
+  "findingLightChanged": "The empty board's brightness changed by {percent} % ({low} at {lowS} s, {high} at {highS} s).",
+  "@findingLightChanged": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      },
+      "low": {
+        "type": "String"
+      },
+      "lowS": {
+        "type": "String"
+      },
+      "high": {
+        "type": "String"
+      },
+      "highS": {
+        "type": "String"
+      }
+    }
+  },
+  "hintExposureSettling": "After the cameras start, their automatic exposure needs a moment: begin about 30 s after starting them, and keep the ring light on.",
+  "hintLightChanged": "Use the ring light and keep daylight and room light constant during the test.",
+  "findingBoardChanged": "The empty board changed {count} times between darts.",
+  "@findingBoardChanged": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hintBoardChanged": "Usually fibres pushed out by darts or a slight change of focus; harmless, as the reference is refreshed after every takeout.",
+  "findingNoDarts": "No dart was found in the test.",
+  "hintNoDarts": "Put darts into the board one at a time and take the hand away each time.",
+  "findingDartsLocated": "{located} of {darts} darts located, {abstained} without a result.",
+  "@findingDartsLocated": {
+    "placeholders": {
+      "located": {
+        "type": "int"
+      },
+      "darts": {
+        "type": "int"
+      },
+      "abstained": {
+        "type": "int"
+      }
+    }
+  },
+  "hintDartsLocated": "The findings per camera show why darts were not located.",
+  "findingDartsCutLost": "Cut {cut} of {darts} darts at the image border and could not help locate {lost} of them.",
+  "@findingDartsCutLost": {
+    "placeholders": {
+      "cut": {
+        "type": "int"
+      },
+      "darts": {
+        "type": "int"
+      },
+      "lost": {
+        "type": "int"
+      }
+    }
+  },
+  "hintDartsCutLost": "Tilt or move the camera so that the board and about 15 cm above it are in view, then calibrate it again.",
+  "findingDartsCut": "Cut {cut} of {darts} darts at the image border.",
+  "@findingDartsCut": {
+    "placeholders": {
+      "cut": {
+        "type": "int"
+      },
+      "darts": {
+        "type": "int"
+      }
+    }
+  },
+  "hintDartsCut": "Harmless while the darts are still located; more of the space above the board in view would make it more robust.",
+  "findingDartsNotSeen": "Did not see {missed} of {darts} darts.",
+  "@findingDartsNotSeen": {
+    "placeholders": {
+      "missed": {
+        "type": "int"
+      },
+      "darts": {
+        "type": "int"
+      }
+    }
+  },
+  "hintDartsNotSeen": "Check that the camera sees the whole board; dark darts on dark sectors need good light.",
+  "findingCameraDisagrees": "Disagreed with the other cameras on {disagreed} of {darts} darts.",
+  "@findingCameraDisagrees": {
+    "placeholders": {
+      "disagreed": {
+        "type": "int"
+      },
+      "darts": {
+        "type": "int"
+      }
+    }
+  },
+  "hintCameraDisagrees": "Run the calibration check; if it is off, calibrate this camera again and refine all cameras.",
+  "findingPlanesAgree": "Where three cameras saw a dart, they agreed within {mm} mm (median).",
+  "@findingPlanesAgree": {
+    "placeholders": {
+      "mm": {
+        "type": "String"
+      }
+    }
+  },
+  "hintPlanesAgree": "Refine all cameras again; if one camera stands out, calibrate it first.",
+  "connectTitle": "Connect an engine",
+  "connectIntro": "The engine runs the cameras and detects the darts. It runs on this device or on another one in your network.",
+  "playWithoutEngine": "Play without an engine (enter darts by hand)",
+  "navHome": "Home",
+  "navSettings": "Settings",
+  "settingsConnection": "Connection",
+  "connectedThisDevice": "Connected to the engine on this device",
+  "connectedNetwork": "Connected to an engine in the network",
+  "playingWithoutEngine": "Without an engine – darts are entered by hand",
+  "playingWithoutEngineHint": "Connect an engine to detect darts and use the cameras.",
+  "settingsCamerasBoard": "Cameras and board",
+  "settingsCamerasHint": "Live images and the state of each camera",
+  "settingsDiagnosisHint": "Find out what is wrong with the setup, step by step",
+  "settingsEmptyBoardHint": "Store the cameras' images of the empty board for the board check",
+  "settingsCalibration": "Calibration",
+  "calibration": "Calibrate the cameras",
+  "calibrationInSetupTool": "For now in the setup program dartpilot_setup on Linux",
+  "playTogether": "Play together",
+  "lobby": "Lobby",
+  "lobbyComingSoon": "Play with friends on other devices – coming with #124",
+  "diagnosisProgress": "Darts: {done} of {target}",
+  "@diagnosisProgress": {"placeholders": {"done": {"type": "int"}, "target": {"type": "int"}}},
+  "stepRemoveLastDart": "Pull the last dart out – then you are done.",
+  "diagnosisEnough": "Enough darts measured – the diagnosis is complete.",
+  "finishDiagnosis": "Finish the diagnosis",
+  "diagnosisMoreDartsOptional": "More darts are possible, but not needed.",
+  "diagnosisFinished": "Diagnosis finished",
+  "resultProblems": "{count, plural, =1{1 problem found} other{{count} problems found}}",
+  "@resultProblems": {"placeholders": {"count": {"type": "int"}}},
+  "resultWarnings": "{count, plural, =1{1 warning} other{{count} warnings}}",
+  "@resultWarnings": {"placeholders": {"count": {"type": "int"}}},
+  "resultFixHint": "The findings below say what to do. Run the diagnosis again afterwards.",
+  "resultAllGood": "All good",
+  "resultAllGoodHint": "The setup is ready to play.",
+  "resultFewDarts": "Only {done} of {target} darts measured; the findings on darts are less certain.",
+  "@resultFewDarts": {"placeholders": {"done": {"type": "int"}, "target": {"type": "int"}}},
+  "navStatistics": "Players",
+  "statisticsEmpty": "No players yet. Create a profile; every game counts for its statistics.",
+  "statsGamesCount": "{count, plural, =1{1 game} other{{count} games}}",
+  "@statsGamesCount": {"placeholders": {"count": {"type": "int"}}},
+  "statsGames": "Games",
+  "statsWon": "{count} won",
+  "@statsWon": {"placeholders": {"count": {"type": "int"}}},
+  "statsDarts": "Darts",
+  "statsFirst9": "First 9 average",
+  "statsLegs": "Legs",
+  "statsBestLeg": "Best leg",
+  "statsDartsCount": "{count, plural, =1{1 dart} other{{count} darts}}",
+  "@statsDartsCount": {"placeholders": {"count": {"type": "int"}}},
+  "statsCheckoutRate": "Checkout rate",
+  "statsHighestFinish": "Highest finish",
+  "statsMarksPerRound": "Marks per round",
+  "statsClockHitRate": "Around the Clock hits",
+  "periodLastGame": "Last game",
+  "periodWeek": "7 days",
+  "periodMonth": "30 days",
+  "periodAll": "All",
+  "statsNoGamesInPeriod": "No games in this period.",
+  "statsHits": "Where the darts landed",
+  "ringTriple": "Triple",
+  "ringDouble": "Double",
+  "ringSingleInner": "Single (inner)",
+  "ringSingleOuter": "Single (outer)",
+  "ringOuterBull": "Outer bull",
+  "ringBull": "Bull",
+  "ringMiss": "Miss",
+  "statsFavouriteDoubles": "Finished on",
+  "statsHistory": "Games",
+  "statsOpponents": "{count, plural, =1{against 1 player} other{against {count} players}}",
+  "@statsOpponents": {"placeholders": {"count": {"type": "int"}}},
+  "statsSolo": "solo",
+  "localEngineNoAnswer": "The program did not answer as the engine and was stopped. Check the engine program under Log.",
+  "newProfile": "New profile",
+  "profileName": "Name",
+  "profileNameEmpty": "Enter a name.",
+  "profileNameExists": "There is a profile with this name already.",
+  "createProfile": "Create",
+  "pickPlayersHint": "Tap the players in the order they throw.",
+  "throwingOrder": "Order: {order}",
+  "@throwingOrder": {"placeholders": {"order": {"type": "String"}}},
+  "statsNoGamesYet": "No games yet",
+  "deleteProfile": "Delete profile",
+  "deleteProfileText": "{name} is removed from the players. The games stay kept and count again if a profile with this name is created.",
+  "@deleteProfileText": {"placeholders": {"name": {"type": "String"}}},
+  "delete": "Delete",
+  "firstProfileTitle": "Who is playing?",
+  "firstProfileText": "Create a player profile; every game counts for its statistics.",
+  "calibStepLight": "Light",
+  "calibStepBoard": "Board",
+  "calibStepRefine": "Refine",
+  "calibStepDone": "Done",
+  "calibNeedsCameras": "Calibration needs an engine with cameras. Connect one first.",
+  "calibIntro": "The engine measures the board from every camera: no target to hold, no measuring tape. You need an empty board and the light you play in; it takes a few minutes.",
+  "calibStale": "A camera was measured again after the last refinement: refine all cameras once more.",
+  "calibBoardMissing": "board not measured",
+  "calibBoardMeasured": "board {mm} mm",
+  "@calibBoardMeasured": {"placeholders": {"mm": {"type": "String"}}},
+  "calibLensOwn": "own lens calibration",
+  "calibLensNone": "no lens calibration",
+  "calibStart": "Start calibration",
+  "calibLightInstruction": "Empty the board and switch on the light you play in.",
+  "calibLightHint": "The engine tries every colour temperature on all cameras and keeps the one in the middle of where the board is found. This takes about a minute.",
+  "calibLightSettling": "Waiting for the cameras' exposure: {seconds} s",
+  "@calibLightSettling": {"placeholders": {"seconds": {"type": "int"}}},
+  "calibLightSweeping": "Trying {kelvin} K …",
+  "@calibLightSweeping": {"placeholders": {"kelvin": {"type": "int"}}},
+  "calibLightDone": "Light set for every camera.",
+  "calibLightFailed": "The light could not be set.",
+  "calibLightNotFound": "board not found",
+  "calibLightTune": "Set the light",
+  "calibLightAgain": "Set again",
+  "calibNext": "Next",
+  "calibCameraOf": "Camera {number} of {count}",
+  "@calibCameraOf": {"placeholders": {"number": {"type": "int"}, "count": {"type": "int"}}},
+  "calibBoardDetectInstruction": "Keep the board empty, hand out of view, and detect it.",
+  "calibBoardDetectHint": "The engine finds the rings and the 20 wires of the board in this camera's image.",
+  "calibBoardTap20": "Tap into the field of the 20.",
+  "calibBoardTap20Hint": "Anywhere between the bull and the double ring. The colours repeat every second field, so the engine needs to be told which one is the 20.",
+  "calibBoardCheck": "Do the numbers match the board?",
+  "calibBoardCheckHint": "If not, tap into the 20 again.",
+  "calibBoardNotFound": "Board not found: remove all darts, keep the hand out of view, and check the light (step 1).",
+  "calibBoardFit": "Board fit {fit} mm (worst {worst} mm)",
+  "@calibBoardFit": {"placeholders": {"fit": {"type": "String"}, "worst": {"type": "String"}}},
+  "calibBoardDetect": "Detect the board",
+  "calibBoardDetectAgain": "Detect again",
+  "calibNumbersMatchNext": "Numbers match – next camera",
+  "calibNumbersMatchRefine": "Numbers match – refine",
+  "calibRefineInstruction": "Refine all cameras together.",
+  "calibRefineHint": "From the boards of all cameras the engine computes every camera's position and lens, and the real size of your board.",
+  "calibQualityGood": "good",
+  "calibQualityFair": "usable",
+  "calibQualityPoor": "not good enough",
+  "calibLensFromOwn": "Lens from its own lens calibration",
+  "calibLensFromModel": "Lens from another camera of the same model",
+  "calibLensFromBoard": "Lens from the board only",
+  "calibAdviceDetectAgain": "Measure the board of this camera again in even light.",
+  "calibAdviceLens": "A lens calibration of this camera would make it more accurate.",
+  "calibMeasureAgain": "Measure again",
+  "calibMeasuredBoard": "Your board: outer bull {bull} mm, treble centre {treble} mm",
+  "@calibMeasuredBoard": {"placeholders": {"bull": {"type": "String"}, "treble": {"type": "String"}}},
+  "calibRefine": "Refine",
+  "calibRefineAgain": "Refine again",
+  "calibDone": "The cameras are calibrated.",
+  "calibDoneHint": "Check the whole setup with a few darts in the setup diagnosis.",
+  "calibErrorBusy": "The engine is still busy with another step.",
+  "calibErrorNoDetection": "Detect the board first.",
+  "calibErrorOutsideBoard": "That point is not in a field of the board; tap into the 20 between bull and double ring.",
+  "calibErrorFitFailed": "The board could not be fitted; detect it again.",
+  "calibErrorNoBoardPlanes": "No camera has a measured board yet.",
+  "calibErrorPoseFailed": "A camera could not be placed; measure its board again.",
+  "calibErrorSaveFailed": "The calibration could not be saved.",
+  "calibErrorOther": "Failed ({code}).",
+  "@calibErrorOther": {"placeholders": {"code": {"type": "String"}}},
+  "calibrationHint": "Light, board and refinement, step by step",
+  "addBot": "Bot",
+  "botDifficulty": "Difficulty",
+  "botAverage": "Average about {average}",
+  "@botAverage": {"placeholders": {"average": {"type": "int"}}},
+  "botName": "Bot · {name}",
+  "@botName": {"placeholders": {"level": {"type": "int"}, "name": {"type": "String"}}},
+  "statsAgainstBots": "against bot level {levels}",
+  "@statsAgainstBots": {"placeholders": {"levels": {"type": "String"}}},
+  "botLevel1": "Beginner",
+  "botLevel2": "Occasional player",
+  "botLevel3": "Pub player",
+  "botLevel4": "Hobby player",
+  "botLevel5": "Club player",
+  "botLevel6": "League player",
+  "botLevel7": "Strong",
+  "botLevel8": "Very strong",
+  "botLevel9": "Semi-pro",
+  "botLevel10": "Pro"
+}

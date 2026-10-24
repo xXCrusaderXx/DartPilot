@@ -1,0 +1,40 @@
+name: Install Ubuntu build dependencies
+description: >-
+  Installs the engine's build dependencies with apt and keeps the downloaded
+  packages in the Actions cache. libopencv-dev pulls in several hundred MB, and
+  the runners' mirror is sometimes slow enough to stall the job; with a warm cache
+  apt only verifies and unpacks.
+
+runs:
+  using: composite
+  steps:
+    # Caches written on dev are readable by all PRs into dev. Bump the version in
+    # the key to drop a cache that grew stale.
+    - name: Restore downloaded packages
+      id: cache
+      uses: actions/cache/restore@v4
+      with:
+        path: ~/apt-archives
+        key: apt-${{ runner.os }}-${{ hashFiles('.github/actions/install-ubuntu-deps/action.yml') }}-v1
+        restore-keys: apt-${{ runner.os }}-
+
+    - name: Install
+      shell: bash
+      run: |
+        set -euo pipefail
+        mkdir -p ~/apt-archives
+        if compgen -G ~/apt-archives/'*.deb' > /dev/null; then
+          sudo cp ~/apt-archives/*.deb /var/cache/apt/archives/
+        fi
+        apt_opts=(-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30
+                  -o APT::Keep-Downloaded-Packages=true)
+        sudo apt-get "${apt_opts[@]}" update
+        sudo apt-get "${apt_opts[@]}" install -y --no-install-recommends build-essential cmake ninja-build libopencv-dev
+        cp /var/cache/apt/archives/*.deb ~/apt-archives/
+
+    - name: Save downloaded packages
+      if: steps.cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: ~/apt-archives
+        key: apt-${{ runner.os }}-${{ hashFiles('.github/actions/install-ubuntu-deps/action.yml') }}-v1

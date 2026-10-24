@@ -24,14 +24,17 @@ The design is in [docs/technical_plan.md](docs/technical_plan.md); decisions are
 
 - `engine/<module>/`: one C++ library per pipeline stage, public headers in `include/dartpilot/<module>/`, namespace `dartpilot::<module>`.
   - `capture`: camera threads, per-frame timestamps and IDs, bounded ring buffers, drop counters.
+  - `session`: writes (and later reads) recorded sessions in the format of [docs/replay-format.md](docs/replay-format.md); depends only on `capture`.
   - `event_detection`: throw event, time window, baseline and difference masks.
   - `tip_candidates`: several tip candidates per camera, each with confidence and a 2×2 covariance.
   - `geometry`: board plane, ray–plane projection, triangulation, reprojection error.
   - `fusion`: temporal association, robust estimation, abstention.
   - `scoring`: deterministic board point (mm) → sector and ring. No image processing, no dependency on other modules.
   - `replay`: offline evaluation of recorded throws.
+  - `api`: the engine API for clients ([docs/engine-api.md](docs/engine-api.md), ADR 0007): WebSocket server, protocol messages, throw log with corrections, and the simulator behind `dartpilot serve --simulate`.
 - `engine/apps/dartpilot_cli/`: command-line entry point.
 - `tests/`: GoogleTest tests, registered with ctest.
+- `ui/`: the Flutter player app (ADR 0004). It talks to the engine only through the engine API (#37); until that exists it takes manual input. Its scorer (`ui/lib/src/board/scoring.dart`) is a port of `engine/scoring` and must give the same result for every point: change both together, with the same test cases.
 - `tools/`: Python package `dartpilot_tools` (benchmark, annotation). It reads engine output files and is never part of the detection path.
 - [ROADMAP.md](ROADMAP.md): phases and milestones. Each closed milestone becomes a release. Work on a roadmap item references its issue, and a change to a phase updates ROADMAP.md in the same PR.
 
@@ -47,6 +50,8 @@ Principles that every change keeps:
 
 - C++20, `.clang-format` style (Allman braces, 4-space indent, 150 columns). Format only the lines you change: `git clang-format origin/dev`.
 - Python 3.11+, `ruff` for linting and formatting.
+- Dart in `ui/`: `dart format` (120 columns, set in `analysis_options.yaml`), `flutter analyze` clean, user-visible strings in `lib/l10n/*.arb` (English and German), game rules as plain Dart without widgets so they can be tested.
+- QML in `engine/apps/dartpilot_setup`: 4-space indent, `dartpilot_setup_qmllint` target clean, colours and sizes from `Tokens.qml`, logic in C++ (ADR 0003).
 - Comments and log messages are written in English. A comment states intent the code cannot show; do not narrate history or the change you just made.
 - Units are part of names (`_mm`, `_px`, `_ms`, `_ns`).
 - Match the surrounding code: naming, structure, and comment density. Do not reformat or refactor code unrelated to the task.
@@ -59,6 +64,7 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 git clang-format --diff origin/dev
 (cd tools && ruff check . && ruff format --check . && pytest)
+(cd ui && dart format --output=none --set-exit-if-changed lib/main.dart lib/src test && flutter analyze && flutter test)
 ```
 
 A change is done only when it builds and the tests pass. Say so in the PR if you could not test a code path with real cameras.
@@ -67,7 +73,7 @@ A change is done only when it builds and the tests pass. Say so in the PR if you
 
 - Changes you did not make belong to the human or another agent. Do not commit, revert, stash, or unstage them. Check `git diff --cached --name-only` before you commit.
 - Do not commit build output (`build/`), virtual environments, or anything under `data/`.
-- Branch from `dev` and open PRs against `dev` (merge commit, no squash). `main` only receives `dev` at release points, merged by the human.
-- Never switch branches in the main checkout; it stays on `dev`. Work on a branch in your own worktree (`git worktree add <dir> -b <branch> origin/dev`).
+- Branch from `dev` and open PRs against `dev`; they are squash-merged, so the PR title is the commit message. Update a branch by rebasing onto `origin/dev`, never by merging `dev` into it. `main` only receives `dev` at release points, merged by the human with a merge commit.
+- Never switch branches in the main checkout; it stays on `dev`. Work on a branch in your own worktree inside the repository, under `.worktrees/` (ignored by Git), named after the branch with `/` replaced by `-`: `git worktree add .worktrees/feat-capture-threads -b feat/capture-threads origin/dev`. Never create worktrees next to the repository or in temporary directories.
 - Don't edit `CHANGELOG.md` in feature PRs; it is written once per release. Put the change in the PR title instead.
-- Clean up after every merge: remove your worktree and local branch (`git worktree remove <dir>`, `git branch -D <branch>`) and run `git fetch --prune`. The `Clean up merged branches` workflow deletes the remote branch.
+- Clean up after every merge: remove your worktree and local branch (`git worktree remove .worktrees/<name>`, `git branch -D <branch>`) and run `git fetch --prune`. The `Clean up merged branches` workflow deletes the remote branch.

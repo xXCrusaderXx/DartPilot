@@ -89,10 +89,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7.0.1
 
+      # Cached packages; a cold cache on a slow mirror can still take a while.
       - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends build-essential cmake ninja-build libopencv-dev
+        timeout-minutes: 25
+        uses: ./.github/actions/install-ubuntu-deps
 
       - name: Configure
         env:

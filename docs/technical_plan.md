@@ -445,7 +445,7 @@ These projects are starting points for a technical review, not proof that their 
 
 ## 10. First implementation plan
 
-The phases are tracked as milestones in [ROADMAP.md](../ROADMAP.md).
+The phases are tracked as milestones in [ROADMAP.md](../ROADMAP.md); phase 1 is split into the milestones 0.1.0 to 0.3.0.
 
 ### Phase 1 – Measurability
 
@@ -513,7 +513,7 @@ The phases are tracked as milestones in [ROADMAP.md](../ROADMAP.md).
 
 ### Still to be clarified
 
-- Camera models, resolution, FPS, exposure control and capture backend
+- Capture backend; the first camera model, its modes and exposure controls are recorded in [Reference hardware](hardware.md)
 - Camera positions and viewing angles relative to the board
 - Whether the tip is visible in all three views after the throw
 - How ground truth is produced in practice

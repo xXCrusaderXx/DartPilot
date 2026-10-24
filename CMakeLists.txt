@@ -21,8 +21,9 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 # Without COMPONENTS every installed module is imported; the modules needed are checked below,
-# because the geometry modules differ between OpenCV builds.
-find_package(OpenCV REQUIRED)
+# because the geometry modules differ between OpenCV builds. CONFIG uses OpenCV's own package
+# configuration, so a FindOpenCV.cmake of another project on CMAKE_MODULE_PATH cannot take over.
+find_package(OpenCV REQUIRED CONFIG)
 if(OpenCV_VERSION VERSION_LESS 4)
   message(FATAL_ERROR "OpenCV ${OpenCV_VERSION} found, DartPilot needs OpenCV 4 or newer")
 endif()
@@ -32,15 +33,29 @@ if(TARGET opencv_calib3d)
 else()
   set(DARTPILOT_OPENCV_GEOMETRY opencv_geometry opencv_calib)
 endif()
-foreach(target opencv_core opencv_imgproc opencv_videoio ${DARTPILOT_OPENCV_GEOMETRY})
+foreach(target opencv_core opencv_imgproc opencv_imgcodecs opencv_videoio opencv_highgui ${DARTPILOT_OPENCV_GEOMETRY})
   if(NOT TARGET ${target})
     message(FATAL_ERROR "OpenCV ${OpenCV_VERSION} lacks the ${target} module. Found: ${OpenCV_LIBS}")
   endif()
 endforeach()
+# ChArUco detection (CharucoDetector) needs OpenCV 4.7; older versions build without it.
+if(OpenCV_VERSION VERSION_GREATER_EQUAL 4.7 AND TARGET opencv_objdetect)
+  set(DARTPILOT_HAVE_CHARUCO ON)
+else()
+  set(DARTPILOT_HAVE_CHARUCO OFF)
+  message(STATUS "OpenCV ${OpenCV_VERSION}: ChArUco detection needs 4.7 or newer and is not built")
+endif()
 
 add_compile_options(-Wall -Wextra -Wpedantic)
 
-# Version header shared by the app and the tests
+# Version header shared by the app and the tests; the commit is recorded in session manifests
+execute_process(
+  COMMAND git rev-parse --short HEAD
+  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+  OUTPUT_VARIABLE DARTPILOT_GIT_COMMIT
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  ERROR_QUIET
+)
 configure_file(engine/version.hpp.in ${CMAKE_BINARY_DIR}/generated/dartpilot/version.hpp @ONLY)
 add_library(dartpilot_version INTERFACE)
 target_include_directories(dartpilot_version INTERFACE ${CMAKE_BINARY_DIR}/generated)

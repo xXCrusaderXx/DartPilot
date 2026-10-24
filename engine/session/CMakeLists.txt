@@ -1,0 +1,1 @@
+dartpilot_add_module(session DEPS capture dartpilot_version)

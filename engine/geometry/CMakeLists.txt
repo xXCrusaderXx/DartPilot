@@ -1,1 +1,6 @@
-dartpilot_add_module(geometry DEPS tip_candidates ${DARTPILOT_OPENCV_GEOMETRY})
+if(DARTPILOT_HAVE_CHARUCO)
+  dartpilot_add_module(geometry DEPS tip_candidates ${DARTPILOT_OPENCV_GEOMETRY} opencv_objdetect opencv_imgcodecs)
+  target_compile_definitions(dartpilot_geometry PRIVATE DARTPILOT_HAVE_CHARUCO)
+else()
+  dartpilot_add_module(geometry DEPS tip_candidates ${DARTPILOT_OPENCV_GEOMETRY} opencv_imgcodecs)
+endif()

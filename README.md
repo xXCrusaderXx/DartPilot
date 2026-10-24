@@ -31,10 +31,11 @@ The core metrics are the radial position error in mm (median, P95), segment and 
 
 | Path | Content |
 | ---- | ------- |
-| [`engine/`](engine) | C++20 engine: one library per module, plus `apps/dartpilot_cli` |
+| [`engine/`](engine) | C++20 engine: one library per module, plus `apps/dartpilot_cli` and the developer GUI `apps/dartpilot_setup` (Qt 6, optional) |
 | [`tests/`](tests) | C++ tests (GoogleTest, run with `ctest`) |
+| [`ui/`](ui) | Flutter player app (Linux, Windows, web, Android), see [ADR 0004](docs/adr/0004-user-interface.md) |
 | [`tools/`](tools) | Python tools for benchmark evaluation and annotation |
-| [`docs/`](docs) | [Technical plan](docs/technical_plan.md) and [architecture decisions](docs/adr) |
+| [`docs/`](docs) | [Technical plan](docs/technical_plan.md), [reference hardware](docs/hardware.md), [session format](docs/replay-format.md), [engine API](docs/engine-api.md) and [architecture decisions](docs/adr) |
 | `data/` | Local recordings and datasets; never committed |
 
 ## Building from source
@@ -64,6 +65,16 @@ ctest --test-dir build --output-on-failure
 
 The tests need no cameras and no internet connection (apart from the first GoogleTest download).
 
+### Checking and recording the cameras
+
+```sh
+./build/engine/apps/dartpilot_cli/dartpilot capture-check 30     # frame rate, losses and timestamp quality
+./build/engine/apps/dartpilot_cli/dartpilot record --seconds 60  # session in ~/.local/share/dartpilot/sessions
+python -m dartpilot_tools.capture_report ~/.local/share/dartpilot/sessions/<session>   # capture health of a recording
+```
+
+A recording of three cameras takes about 200–360 MB per minute, depending on the scene; the format is described in [docs/replay-format.md](docs/replay-format.md). Recordings stay on your computer and are never committed (see [LEGAL.md](LEGAL.md)).
+
 ### Python tools
 
 ```sh
@@ -71,6 +82,16 @@ cd tools
 python -m venv .venv && . .venv/bin/activate
 pip install -e '.[dev]'
 pytest
+```
+
+### Player app
+
+The Flutter app in [`ui/`](ui) needs the [Flutter SDK](https://docs.flutter.dev/get-started/install) (3.47 or newer). Until the engine API exists, darts are entered on the screen.
+
+```sh
+cd ui
+flutter run -d linux
+flutter test
 ```
 
 ## Contributing

@@ -1,0 +1,105 @@
+import 'package:flutter/material.dart';
+
+import '../../l10n/app_localizations.dart';
+import '../engine/engine_choice.dart';
+import '../engine/engine_connection.dart';
+import '../widgets/board_check.dart';
+import 'calibration_screen.dart';
+import 'cameras_screen.dart';
+import 'diagnosis_screen.dart';
+
+/// Everything that is set up rather than played: the connection, the cameras, the setup diagnosis and calibration.
+class SettingsScreen extends StatelessWidget {
+  const SettingsScreen({super.key, required this.onConnect});
+
+  /// Opens the connection page, when playing without an engine
+  final VoidCallback onConnect;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final engine = EngineScope.of(context);
+    final local = LocalEngineScope.maybeOf(context);
+    final connected = engine.isConnected;
+    final onThisDevice = local?.settings.mode == EngineMode.thisDevice;
+    void open(Widget page) => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
+
+    Widget section(String title) => Padding(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+      child: Text(title, style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.primary)),
+    );
+
+    return Scaffold(
+      appBar: AppBar(title: Text(l10n.navSettings)),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 720),
+          child: ListView(
+            children: [
+              section(l10n.settingsConnection),
+              ListTile(
+                key: const ValueKey('settings-connection'),
+                leading: Icon(connected ? Icons.link : Icons.link_off),
+                title: Text(
+                  connected
+                      ? (onThisDevice ? l10n.connectedThisDevice : l10n.connectedNetwork)
+                      : l10n.playingWithoutEngine,
+                ),
+                subtitle: Text(connected ? engine.url : l10n.playingWithoutEngineHint),
+                trailing: connected
+                    ? OutlinedButton(
+                        key: const ValueKey('settings-disconnect'),
+                        onPressed: () async {
+                          // The engine this app started goes with the connection.
+                          if (onThisDevice) await local!.notifier!.stop();
+                          await engine.disconnect();
+                        },
+                        child: Text(l10n.disconnect),
+                      )
+                    : FilledButton(onPressed: onConnect, child: Text(l10n.connect)),
+              ),
+              section(l10n.settingsCamerasBoard),
+              ListTile(
+                key: const ValueKey('settings-cameras'),
+                enabled: connected,
+                leading: const Icon(Icons.videocam),
+                title: Text(l10n.cameras),
+                subtitle: Text(l10n.settingsCamerasHint),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => open(const CamerasScreen()),
+              ),
+              ListTile(
+                key: const ValueKey('open-diagnosis'),
+                enabled: connected,
+                leading: const Icon(Icons.troubleshoot),
+                title: Text(l10n.diagnosis),
+                subtitle: Text(l10n.settingsDiagnosisHint),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => open(const DiagnosisScreen()),
+              ),
+              ListTile(
+                key: const ValueKey('settings-empty-board'),
+                enabled: connected,
+                leading: const Icon(Icons.crop_free),
+                title: Text(l10n.storeEmptyReference),
+                subtitle: Text(l10n.settingsEmptyBoardHint),
+                onTap: () => storeEmptyBoard(context),
+              ),
+              section(l10n.settingsCalibration),
+              ListTile(
+                key: const ValueKey('settings-calibration'),
+                enabled: connected && engine.calibration != null,
+                leading: const Icon(Icons.straighten),
+                title: Text(l10n.calibration),
+                subtitle: Text(engine.calibration == null ? l10n.calibNeedsCameras : l10n.calibrationHint),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => open(const CalibrationScreen()),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

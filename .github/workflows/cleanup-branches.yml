@@ -3,9 +3,15 @@ name: Clean up merged branches
 # Deletes the head branch of a merged PR from this repository. GitHub's own
 # "automatically delete head branches" setting does not fire for every merge
 # made by auto-merge, so this does it explicitly. Fork branches are left alone.
+#
+# Merges done by auto-merge with GITHUB_TOKEN do not trigger the closed event
+# either, so a scheduled sweep catches the branches the event job missed.
 on:
   pull_request_target:
     types: [closed]
+  schedule:
+    - cron: "23 * * * *"
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -13,7 +19,7 @@ permissions:
 jobs:
   delete-branch:
     name: delete merged branch
-    if: github.event.pull_request.merged && github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event_name == 'pull_request_target' && github.event.pull_request.merged && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
@@ -39,3 +45,32 @@ jobs:
           else
             echo "::notice::Branch $BRANCH was already deleted."
           fi
+
+  sweep:
+    name: sweep merged branches
+    if: github.event_name != 'pull_request_target'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Delete branches of merged PRs
+        run: |
+          set -euo pipefail
+          # Branches that open PRs use, as head or as base, are kept.
+          in_use="$(gh pr list --state open --limit 500 --json headRefName,baseRefName --jq '.[] | .headRefName, .baseRefName' | sort -u)"
+          gh api --paginate "repos/$GH_REPO/branches" --jq '.[] | "\(.name) \(.commit.sha)"' |
+            while read -r branch sha; do
+              case "$branch" in dev|main) continue ;; esac
+              if grep -qxF "$branch" <<<"$in_use"; then
+                continue
+              fi
+              # Only delete when the branch still points at the head of a merged PR from this
+              # repository, so a reused branch name with new commits is never lost.
+              merged="$(gh pr list --state merged --head "$branch" --limit 20 --json headRefOid,headRepository \
+                          --jq "[.[] | select(.headRefOid == \"$sha\")] | length")"
+              if [ "$merged" -gt 0 ]; then
+                gh api -X DELETE "repos/$GH_REPO/git/refs/heads/$branch" --silent && echo "Deleted $branch"
+              fi
+            done

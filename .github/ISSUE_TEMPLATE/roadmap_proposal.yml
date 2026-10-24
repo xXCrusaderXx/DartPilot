@@ -26,11 +26,16 @@ body:
       label: Fits into phase
       options:
         - Not sure / new phase
-        - 0.1.0 Measurability
-        - 0.2.0 Synchronisation & geometry
-        - 0.3.0 Tip localisation
-        - 0.4.0 Fusion & scoring
+        - 0.1.0 Capture & timing
+        - 0.2.0 Replay & board model
+        - 0.3.0 Ground truth & baseline
+        - 0.4.0 Synchronisation & geometry
+        - 0.5.0 Tip localisation
+        - 0.6.0 Fusion & scoring
         - 1.0.0 Product integration
+        - "Platform: remote play and engine choice"
+        - "Platform: engine on Android and Windows"
+        - "App: games and players"
         - After 1.0.0
   - type: textarea
     id: measurement
