@@ -300,7 +300,7 @@ std::variant<Request, ParseError> parseRequest (const std::string& text)
             request.body = CheckBoard{};
         }
         else if(type == "detect_board" || type == "set_sector_20" || type == "refine_cameras" || type == "tune_white_balance" ||
-                type == "get_board_image")
+                type == "get_board_image" || type == "start_reference_run" || type == "stop_reference_run")
         {
             request.body = CalibrationRequest{type, message};
         }

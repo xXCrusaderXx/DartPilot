@@ -186,8 +186,25 @@ void LiveDetection::run ()
     }
 }
 
+void LiveDetection::intercept (std::function<void(const fusion::TrackerUpdate&)> handler)
+{
+    std::lock_guard lock(intercept_mutex_);
+    intercept_ = std::move(handler);
+}
+
 void LiveDetection::publish (const fusion::TrackerUpdate& update, std::int64_t event_ns, double latency_ms)
 {
+    ready_ = tracker_ && tracker_->ready();
+    std::function<void(const fusion::TrackerUpdate&)> intercept;
+    {
+        std::lock_guard lock(intercept_mutex_);
+        intercept = intercept_;
+    }
+    if(intercept)
+    {
+        intercept(update);
+        return;
+    }
     if(update.became_ready && running_)
     {
         server_.publishEngineStatus("running", "");

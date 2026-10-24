@@ -226,6 +226,23 @@ Fails with `not_calibrated` before the refinement; `not_available` with `--simul
 
 Long steps run one at a time; a request while one runs fails with `busy`. Events may arrive before the request's `result`.
 
+### reference_run
+
+The guided reference measurement (#14), started with `start_reference_run` and stopped with `stop_reference_run`, with `serve --cameras` (`--simulate` alone plays a fixed example run). The user pushes one dart by hand into one known position after the other: the centre of the bull, then corners where a radial wire meets a ring wire, with the point against both wires, so its centre lies 1.8 mm from each wire (about ±0.5 mm). The live detection locates it, and the distance from the target is the error of the whole chain from calibration to tip. While a run is active its darts are not sent as `throw`. Sent on every change, and the latest one after `hello`:
+
+```json
+{ "type": "reference_run", "running": true, "step": "insert_dart",
+  "target": { "index": 1, "total": 10, "board_mm": [ 24.55, 166.40 ], "field": "D20", "wires": [ 20, 1 ], "hint_code": "corner",
+              "label": "D20, corner of the 20/1 wire and the outer double wire" },
+  "results": [ { "index": 0, "board_mm": [ 0.0, 0.0 ], "located_mm": [ 0.31, -0.22 ], "error_mm": 0.38, "cameras_used": 3 } ],
+  "summary": { "located": 1, "abstained": 0, "median_error_mm": 0.38, "p90_error_mm": 0.38, "max_error_mm": 0.38 } }
+```
+
+- `step`: `empty_board` (waiting for a still empty board), `insert_dart`, `remove_dart`, and `done` once the last dart is pulled.
+- `target`: the next position; `wires` are the sector numbers on either side of the corner's radial wire (empty for the bull centre), `field` the field the point sits in. `null` when done.
+- `results`: per placed dart, `located_mm` and `error_mm`, or `null` with `reason` when the engine abstained.
+- Errors of `start_reference_run`: `not_calibrated`.
+
 ### engine_status
 
 ```json
@@ -261,6 +278,7 @@ Every request carries a `request_id` chosen by the client and is answered with `
 | `detect_board` | `camera` | Measures the board of a camera; answered with `board_detection` |
 | `set_sector_20` | `camera`, `point_px` | Orients and stores the board plane; answered with `board_plane` |
 | `refine_cameras` | – | Refines all cameras together; answered with `refinement` |
+| `start_reference_run` / `stop_reference_run` | – | The guided reference measurement; its state comes as `reference_run` |
 | `get_board_image` | `size_px`, `radius_mm` (optional) | The real board from the front; answered with `board_image` |
 | `subscribe_preview` | `camera`, `max_fps`, `max_width` | Starts preview frames of a camera |
 | `unsubscribe_preview` | `camera` | Stops them |

@@ -17,6 +17,7 @@
 #include "live_diagnosis.hpp"
 #include "paths.hpp"
 #include "preview_sources.hpp"
+#include "reference_run.hpp"
 
 namespace dartpilot::cli
 {
@@ -100,6 +101,7 @@ int runServe (int argc, char* argv[])
     std::unique_ptr<LiveDiagnosis> live_diagnosis;
     std::unique_ptr<CalibrationService> calibration;
     std::unique_ptr<LiveDetection> live_detection;
+    std::unique_ptr<ReferenceRun> reference_run;
     if(cameras)
     {
         std::vector<api::CameraInfo> infos;
@@ -124,6 +126,7 @@ int runServe (int argc, char* argv[])
         if(!simulate)
         {
             live_detection = std::make_unique<LiveDetection>(server, camera_previews, devices, dataHome() / "calibration");
+            reference_run = std::make_unique<ReferenceRun>(server, *live_detection, dataHome() / "calibration");
             // Until the first still empty board, darts cannot be told from the board.
             const auto unavailable = live_detection->unavailableReason();
             server.publishEngineStatus("unavailable", unavailable.value_or("no_empty_reference"));
@@ -133,6 +136,16 @@ int runServe (int argc, char* argv[])
     {
         server.setCameras({{"sim-1", "Simulated camera 1", "ok"}, {"sim-2", "Simulated camera 2", "ok"}, {"sim-3", "Simulated camera 3", "ok"}});
         simulated_previews.start();
+        // An example reference run in the nominal board, for building the client's page without cameras
+        server.onCalibrationRequest("start_reference_run",
+                                    [&server] (const api::CalibrationRequest&) -> std::optional<api::Server::CalibrationError>
+                                    {
+                                        for(const auto& message : exampleReferenceRun())
+                                        {
+                                            server.publishState(message);
+                                        }
+                                        return std::nullopt;
+                                    });
     }
     std::string error;
     if(!server.start(error))
@@ -167,6 +180,7 @@ int runServe (int argc, char* argv[])
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     simulator.stop();
+    reference_run.reset();
     live_detection.reset();
     calibration.reset();
     live_diagnosis.reset();

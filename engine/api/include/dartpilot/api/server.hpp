@@ -74,9 +74,14 @@ class Server
         std::string message;
     };
     void onCalibration (std::function<std::optional<CalibrationError>(const CalibrationRequest&)> handler);
+    // A handler for one request type, ahead of the general one (e.g. start_reference_run)
+    void onCalibrationRequest (const std::string& type, std::function<std::optional<CalibrationError>(const CalibrationRequest&)> handler);
     void setCalibrationStatus (const nlohmann::json& status);
     // Sends an event message to every client
     void publishEvent (const nlohmann::json& message);
+    // Sends an event to every client and keeps the latest one of its type for clients that connect later, after hello:
+    // the state of a run that a client may join in the middle (diagnosis, reference_run)
+    void publishState (const nlohmann::json& message);
 
     // Board points of the darts since the last takeout, e.g. for a simulated camera image
     std::vector<BoardPoint> visitPoints () const;
@@ -120,6 +125,7 @@ class Server
     std::vector<BoardPoint> visit_points_;
     std::function<void(bool)> diagnosis_handler_;
     std::function<std::optional<CalibrationError>(const CalibrationRequest&)> calibration_handler_;
-    nlohmann::json last_diagnosis_;
+    std::map<std::string, std::function<std::optional<CalibrationError>(const CalibrationRequest&)>> calibration_handlers_;
+    std::map<std::string, nlohmann::json> last_states_;
 };
 }  // namespace dartpilot::api

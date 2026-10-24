@@ -7,6 +7,7 @@
 #include <opencv2/imgproc.hpp>
 
 #include "dartpilot/fusion/dart_tracker.hpp"
+#include "dartpilot/fusion/reference_targets.hpp"
 #include "dartpilot/geometry/dart_location.hpp"
 
 namespace
@@ -218,4 +219,25 @@ TEST(DartTracker, ThrowsForEachDartAndATakeoutWhenTheBoardIsEmptyAgain)
     EXPECT_FALSE(pulled.dart);
     ASSERT_TRUE(pulled.takeout);
     EXPECT_EQ(*pulled.takeout, 2);
+}
+
+TEST(ReferenceTargets, CornersLieBesideBothWiresInsideTheirField)
+{
+    const auto targets = dartpilot::fusion::referenceTargets({});
+    ASSERT_EQ(targets.size(), 10u);
+    EXPECT_EQ(targets[0].kind, "bull_centre");
+    EXPECT_LT(cv::norm(targets[0].board_mm), 1e-9);
+    // D20 at the 20/1 wire: just inside the outer double wire (170 mm), just on the 20 side of the wire at 9 degrees
+    const auto& d20 = targets[1];
+    EXPECT_EQ(d20.field, "D20");
+    EXPECT_EQ(d20.wires, (std::vector<int>{20, 1}));
+    EXPECT_NEAR(cv::norm(d20.board_mm), 170.0 - dartpilot::fusion::kCornerOffset_mm, 1e-6);
+    const double wire_x_mm = cv::norm(d20.board_mm) * std::sin(9.0 * CV_PI / 180.0);
+    EXPECT_NEAR(wire_x_mm - d20.board_mm.x, dartpilot::fusion::kCornerOffset_mm, 0.05);
+    // S6 inside the treble, at the 13/6 wire on the 6 side, to the right of the bull
+    EXPECT_EQ(targets[6].field, "S6");
+    EXPECT_GT(targets[6].board_mm.x, 90.0);
+    EXPECT_NEAR(cv::norm(targets[6].board_mm), 99.0 - dartpilot::fusion::kCornerOffset_mm, 1e-6);
+    // The last corner lies outside the outer bull
+    EXPECT_NEAR(cv::norm(targets[9].board_mm), 15.9 + dartpilot::fusion::kCornerOffset_mm, 1e-6);
 }

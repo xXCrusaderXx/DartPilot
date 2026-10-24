@@ -2,6 +2,8 @@
 
 #include <atomic>
 #include <filesystem>
+#include <functional>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <thread>
@@ -30,6 +32,10 @@ class LiveDetection
     void start ();
     void stop ();
     void setRunning (bool running) { running_ = running; }
+    // While set, every update of the tracker goes to the handler instead of to the clients, e.g. for a reference run.
+    // Called on the detection thread.
+    void intercept (std::function<void(const fusion::TrackerUpdate&)> handler);
+    bool ready () const { return ready_; }
 
    private:
     struct Camera
@@ -58,5 +64,8 @@ class LiveDetection
     std::thread thread_;
     std::atomic<bool> stop_{false};
     std::atomic<bool> running_{true};
+    std::atomic<bool> ready_{false};
+    std::mutex intercept_mutex_;
+    std::function<void(const fusion::TrackerUpdate&)> intercept_;
 };
 }  // namespace dartpilot::cli
