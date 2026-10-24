@@ -1669,6 +1669,366 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Create a player profile; every game counts for its statistics.'**
   String get firstProfileText;
+
+  /// No description provided for @calibStepLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get calibStepLight;
+
+  /// No description provided for @calibStepBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'Board'**
+  String get calibStepBoard;
+
+  /// No description provided for @calibStepRefine.
+  ///
+  /// In en, this message translates to:
+  /// **'Refine'**
+  String get calibStepRefine;
+
+  /// No description provided for @calibStepDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get calibStepDone;
+
+  /// No description provided for @calibNeedsCameras.
+  ///
+  /// In en, this message translates to:
+  /// **'Calibration needs an engine with cameras. Connect one first.'**
+  String get calibNeedsCameras;
+
+  /// No description provided for @calibIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'The engine measures the board from every camera: no target to hold, no measuring tape. You need an empty board and the light you play in; it takes a few minutes.'**
+  String get calibIntro;
+
+  /// No description provided for @calibStale.
+  ///
+  /// In en, this message translates to:
+  /// **'A camera was measured again after the last refinement: refine all cameras once more.'**
+  String get calibStale;
+
+  /// No description provided for @calibBoardMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'board not measured'**
+  String get calibBoardMissing;
+
+  /// No description provided for @calibBoardMeasured.
+  ///
+  /// In en, this message translates to:
+  /// **'board {mm} mm'**
+  String calibBoardMeasured(String mm);
+
+  /// No description provided for @calibLensOwn.
+  ///
+  /// In en, this message translates to:
+  /// **'own lens calibration'**
+  String get calibLensOwn;
+
+  /// No description provided for @calibLensNone.
+  ///
+  /// In en, this message translates to:
+  /// **'no lens calibration'**
+  String get calibLensNone;
+
+  /// No description provided for @calibStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start calibration'**
+  String get calibStart;
+
+  /// No description provided for @calibLightInstruction.
+  ///
+  /// In en, this message translates to:
+  /// **'Empty the board and switch on the light you play in.'**
+  String get calibLightInstruction;
+
+  /// No description provided for @calibLightHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The engine tries every colour temperature on all cameras and keeps the one in the middle of where the board is found. This takes about a minute.'**
+  String get calibLightHint;
+
+  /// No description provided for @calibLightSettling.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the cameras\' exposure: {seconds} s'**
+  String calibLightSettling(int seconds);
+
+  /// No description provided for @calibLightSweeping.
+  ///
+  /// In en, this message translates to:
+  /// **'Trying {kelvin} K …'**
+  String calibLightSweeping(int kelvin);
+
+  /// No description provided for @calibLightDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Light set for every camera.'**
+  String get calibLightDone;
+
+  /// No description provided for @calibLightFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The light could not be set.'**
+  String get calibLightFailed;
+
+  /// No description provided for @calibLightNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'board not found'**
+  String get calibLightNotFound;
+
+  /// No description provided for @calibLightTune.
+  ///
+  /// In en, this message translates to:
+  /// **'Set the light'**
+  String get calibLightTune;
+
+  /// No description provided for @calibLightAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Set again'**
+  String get calibLightAgain;
+
+  /// No description provided for @calibNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get calibNext;
+
+  /// No description provided for @calibCameraOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera {number} of {count}'**
+  String calibCameraOf(int number, int count);
+
+  /// No description provided for @calibBoardDetectInstruction.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep the board empty, hand out of view, and detect it.'**
+  String get calibBoardDetectInstruction;
+
+  /// No description provided for @calibBoardDetectHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The engine finds the rings and the 20 wires of the board in this camera\'s image.'**
+  String get calibBoardDetectHint;
+
+  /// No description provided for @calibBoardTap20.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap into the field of the 20.'**
+  String get calibBoardTap20;
+
+  /// No description provided for @calibBoardTap20Hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Anywhere between the bull and the double ring. The colours repeat every second field, so the engine needs to be told which one is the 20.'**
+  String get calibBoardTap20Hint;
+
+  /// No description provided for @calibBoardCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Do the numbers match the board?'**
+  String get calibBoardCheck;
+
+  /// No description provided for @calibBoardCheckHint.
+  ///
+  /// In en, this message translates to:
+  /// **'If not, tap into the 20 again.'**
+  String get calibBoardCheckHint;
+
+  /// No description provided for @calibBoardNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Board not found: remove all darts, keep the hand out of view, and check the light (step 1).'**
+  String get calibBoardNotFound;
+
+  /// No description provided for @calibBoardFit.
+  ///
+  /// In en, this message translates to:
+  /// **'Board fit {fit} mm (worst {worst} mm)'**
+  String calibBoardFit(String fit, String worst);
+
+  /// No description provided for @calibBoardDetect.
+  ///
+  /// In en, this message translates to:
+  /// **'Detect the board'**
+  String get calibBoardDetect;
+
+  /// No description provided for @calibBoardDetectAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Detect again'**
+  String get calibBoardDetectAgain;
+
+  /// No description provided for @calibNumbersMatchNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Numbers match – next camera'**
+  String get calibNumbersMatchNext;
+
+  /// No description provided for @calibNumbersMatchRefine.
+  ///
+  /// In en, this message translates to:
+  /// **'Numbers match – refine'**
+  String get calibNumbersMatchRefine;
+
+  /// No description provided for @calibRefineInstruction.
+  ///
+  /// In en, this message translates to:
+  /// **'Refine all cameras together.'**
+  String get calibRefineInstruction;
+
+  /// No description provided for @calibRefineHint.
+  ///
+  /// In en, this message translates to:
+  /// **'From the boards of all cameras the engine computes every camera\'s position and lens, and the real size of your board.'**
+  String get calibRefineHint;
+
+  /// No description provided for @calibQualityGood.
+  ///
+  /// In en, this message translates to:
+  /// **'good'**
+  String get calibQualityGood;
+
+  /// No description provided for @calibQualityFair.
+  ///
+  /// In en, this message translates to:
+  /// **'usable'**
+  String get calibQualityFair;
+
+  /// No description provided for @calibQualityPoor.
+  ///
+  /// In en, this message translates to:
+  /// **'not good enough'**
+  String get calibQualityPoor;
+
+  /// No description provided for @calibLensFromOwn.
+  ///
+  /// In en, this message translates to:
+  /// **'Lens from its own lens calibration'**
+  String get calibLensFromOwn;
+
+  /// No description provided for @calibLensFromModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Lens from another camera of the same model'**
+  String get calibLensFromModel;
+
+  /// No description provided for @calibLensFromBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'Lens from the board only'**
+  String get calibLensFromBoard;
+
+  /// No description provided for @calibAdviceDetectAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Measure the board of this camera again in even light.'**
+  String get calibAdviceDetectAgain;
+
+  /// No description provided for @calibAdviceLens.
+  ///
+  /// In en, this message translates to:
+  /// **'A lens calibration of this camera would make it more accurate.'**
+  String get calibAdviceLens;
+
+  /// No description provided for @calibMeasureAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Measure again'**
+  String get calibMeasureAgain;
+
+  /// No description provided for @calibMeasuredBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'Your board: outer bull {bull} mm, treble centre {treble} mm'**
+  String calibMeasuredBoard(String bull, String treble);
+
+  /// No description provided for @calibRefine.
+  ///
+  /// In en, this message translates to:
+  /// **'Refine'**
+  String get calibRefine;
+
+  /// No description provided for @calibRefineAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Refine again'**
+  String get calibRefineAgain;
+
+  /// No description provided for @calibDone.
+  ///
+  /// In en, this message translates to:
+  /// **'The cameras are calibrated.'**
+  String get calibDone;
+
+  /// No description provided for @calibDoneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the whole setup with a few darts in the setup diagnosis.'**
+  String get calibDoneHint;
+
+  /// No description provided for @calibErrorBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'The engine is still busy with another step.'**
+  String get calibErrorBusy;
+
+  /// No description provided for @calibErrorNoDetection.
+  ///
+  /// In en, this message translates to:
+  /// **'Detect the board first.'**
+  String get calibErrorNoDetection;
+
+  /// No description provided for @calibErrorOutsideBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'That point is not in a field of the board; tap into the 20 between bull and double ring.'**
+  String get calibErrorOutsideBoard;
+
+  /// No description provided for @calibErrorFitFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The board could not be fitted; detect it again.'**
+  String get calibErrorFitFailed;
+
+  /// No description provided for @calibErrorNoBoardPlanes.
+  ///
+  /// In en, this message translates to:
+  /// **'No camera has a measured board yet.'**
+  String get calibErrorNoBoardPlanes;
+
+  /// No description provided for @calibErrorPoseFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'A camera could not be placed; measure its board again.'**
+  String get calibErrorPoseFailed;
+
+  /// No description provided for @calibErrorSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The calibration could not be saved.'**
+  String get calibErrorSaveFailed;
+
+  /// No description provided for @calibErrorOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed ({code}).'**
+  String calibErrorOther(String code);
+
+  /// No description provided for @calibrationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Light, board and refinement, step by step'**
+  String get calibrationHint;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -911,4 +911,205 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get firstProfileText => 'Leg ein Spielerprofil an; jedes Spiel zählt für seine Statistik.';
+
+  @override
+  String get calibStepLight => 'Licht';
+
+  @override
+  String get calibStepBoard => 'Scheibe';
+
+  @override
+  String get calibStepRefine => 'Verfeinern';
+
+  @override
+  String get calibStepDone => 'Fertig';
+
+  @override
+  String get calibNeedsCameras => 'Die Kalibrierung braucht eine Engine mit Kameras. Verbinde zuerst eine.';
+
+  @override
+  String get calibIntro =>
+      'Die Engine misst die Scheibe aus jeder Kamera ein: ohne Muster zum Halten, ohne Maßband. Du brauchst eine leere Scheibe und das Licht, in dem du spielst; das dauert ein paar Minuten.';
+
+  @override
+  String get calibStale =>
+      'Eine Kamera wurde nach dem letzten Verfeinern neu eingemessen: Verfeinere alle Kameras noch einmal.';
+
+  @override
+  String get calibBoardMissing => 'Scheibe nicht eingemessen';
+
+  @override
+  String calibBoardMeasured(String mm) {
+    return 'Scheibe $mm mm';
+  }
+
+  @override
+  String get calibLensOwn => 'eigene Linsenkalibrierung';
+
+  @override
+  String get calibLensNone => 'keine Linsenkalibrierung';
+
+  @override
+  String get calibStart => 'Kalibrierung starten';
+
+  @override
+  String get calibLightInstruction => 'Leere die Scheibe und schalte das Licht ein, in dem du spielst.';
+
+  @override
+  String get calibLightHint =>
+      'Die Engine probiert auf allen Kameras jede Farbtemperatur und behält die in der Mitte des Bereichs, in dem die Scheibe gefunden wird. Das dauert etwa eine Minute.';
+
+  @override
+  String calibLightSettling(int seconds) {
+    return 'Warte auf die Belichtung der Kameras: $seconds s';
+  }
+
+  @override
+  String calibLightSweeping(int kelvin) {
+    return 'Probiere $kelvin K …';
+  }
+
+  @override
+  String get calibLightDone => 'Licht für jede Kamera eingestellt.';
+
+  @override
+  String get calibLightFailed => 'Das Licht ließ sich nicht einstellen.';
+
+  @override
+  String get calibLightNotFound => 'Scheibe nicht gefunden';
+
+  @override
+  String get calibLightTune => 'Licht einstellen';
+
+  @override
+  String get calibLightAgain => 'Erneut einstellen';
+
+  @override
+  String get calibNext => 'Weiter';
+
+  @override
+  String calibCameraOf(int number, int count) {
+    return 'Kamera $number von $count';
+  }
+
+  @override
+  String get calibBoardDetectInstruction => 'Lass die Scheibe leer, die Hand aus dem Bild, und erkenne sie.';
+
+  @override
+  String get calibBoardDetectHint => 'Die Engine findet Ringe und die 20 Drähte der Scheibe im Bild dieser Kamera.';
+
+  @override
+  String get calibBoardTap20 => 'Tippe in das Feld der 20.';
+
+  @override
+  String get calibBoardTap20Hint =>
+      'Irgendwo zwischen Bull und Doppelring. Die Farben wiederholen sich jedes zweite Feld, deshalb muss die Engine gesagt bekommen, welches die 20 ist.';
+
+  @override
+  String get calibBoardCheck => 'Stimmen die Zahlen mit der Scheibe überein?';
+
+  @override
+  String get calibBoardCheckHint => 'Wenn nicht, tipp noch einmal in die 20.';
+
+  @override
+  String get calibBoardNotFound =>
+      'Scheibe nicht gefunden: Zieh alle Darts, nimm die Hand aus dem Bild und prüf das Licht (Schritt 1).';
+
+  @override
+  String calibBoardFit(String fit, String worst) {
+    return 'Passung der Scheibe $fit mm (schlechtester Punkt $worst mm)';
+  }
+
+  @override
+  String get calibBoardDetect => 'Scheibe erkennen';
+
+  @override
+  String get calibBoardDetectAgain => 'Erneut erkennen';
+
+  @override
+  String get calibNumbersMatchNext => 'Zahlen stimmen – nächste Kamera';
+
+  @override
+  String get calibNumbersMatchRefine => 'Zahlen stimmen – verfeinern';
+
+  @override
+  String get calibRefineInstruction => 'Verfeinere alle Kameras zusammen.';
+
+  @override
+  String get calibRefineHint =>
+      'Aus den Scheiben aller Kameras berechnet die Engine Lage und Linse jeder Kamera und die wirkliche Größe deiner Scheibe.';
+
+  @override
+  String get calibQualityGood => 'gut';
+
+  @override
+  String get calibQualityFair => 'brauchbar';
+
+  @override
+  String get calibQualityPoor => 'nicht gut genug';
+
+  @override
+  String get calibLensFromOwn => 'Linse aus der eigenen Linsenkalibrierung';
+
+  @override
+  String get calibLensFromModel => 'Linse von einer anderen Kamera desselben Modells';
+
+  @override
+  String get calibLensFromBoard => 'Linse nur aus der Scheibe';
+
+  @override
+  String get calibAdviceDetectAgain => 'Miss die Scheibe dieser Kamera bei gleichmäßigem Licht noch einmal ein.';
+
+  @override
+  String get calibAdviceLens => 'Eine Linsenkalibrierung dieser Kamera würde sie genauer machen.';
+
+  @override
+  String get calibMeasureAgain => 'Neu einmessen';
+
+  @override
+  String calibMeasuredBoard(String bull, String treble) {
+    return 'Deine Scheibe: Single-Bull $bull mm, Mitte Triple $treble mm';
+  }
+
+  @override
+  String get calibRefine => 'Verfeinern';
+
+  @override
+  String get calibRefineAgain => 'Erneut verfeinern';
+
+  @override
+  String get calibDone => 'Die Kameras sind kalibriert.';
+
+  @override
+  String get calibDoneHint => 'Prüf die ganze Einrichtung mit ein paar Darts in der Einrichtungsdiagnose.';
+
+  @override
+  String get calibErrorBusy => 'Die Engine ist noch mit einem anderen Schritt beschäftigt.';
+
+  @override
+  String get calibErrorNoDetection => 'Erkenne zuerst die Scheibe.';
+
+  @override
+  String get calibErrorOutsideBoard =>
+      'Dieser Punkt liegt in keinem Feld der Scheibe; tipp in die 20 zwischen Bull und Doppelring.';
+
+  @override
+  String get calibErrorFitFailed => 'Die Scheibe ließ sich nicht einpassen; erkenne sie noch einmal.';
+
+  @override
+  String get calibErrorNoBoardPlanes => 'Noch keine Kamera hat eine eingemessene Scheibe.';
+
+  @override
+  String get calibErrorPoseFailed => 'Eine Kamera ließ sich nicht einordnen; miss ihre Scheibe noch einmal ein.';
+
+  @override
+  String get calibErrorSaveFailed => 'Die Kalibrierung konnte nicht gespeichert werden.';
+
+  @override
+  String calibErrorOther(String code) {
+    return 'Fehlgeschlagen ($code).';
+  }
+
+  @override
+  String get calibrationHint => 'Licht, Scheibe und Verfeinern, Schritt für Schritt';
 }
