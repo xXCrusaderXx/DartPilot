@@ -20,6 +20,8 @@ constexpr double kStillMotion = 2.5;
 // Samples without motion before averaging starts, and samples per average (one second each)
 constexpr int kStillSamples = 10;
 constexpr int kSamplesToAverage = 10;
+// How long an object must stay before it is reported; a knocked camera sways for about three seconds
+constexpr auto kOccupiedConfirm = std::chrono::seconds(4);
 }  // namespace
 
 BoardWatch::BoardWatch (api::Server& server, const CameraPreviews& previews, std::vector<capture::CameraDevice> devices,
@@ -49,6 +51,7 @@ BoardWatch::BoardWatch (api::Server& server, const CameraPreviews& previews, std
             }
         }
         camera.check.reason = "Waiting for a still image.";
+        camera.reported = camera.check;
         cameras_.push_back(std::move(camera));
     }
 }
@@ -163,6 +166,21 @@ bool BoardWatch::sample (Camera& camera, std::size_t index)
     }
     camera.check = geometry::checkBoard(camera.mean, camera.reference.empty() ? nullptr : &camera.reference,
                                         camera.calibration ? &*camera.calibration : nullptr, board_);
+    if(camera.check.state != geometry::BoardState::Occupied || camera.reported.state == geometry::BoardState::Occupied)
+    {
+        camera.occupied_since.reset();
+        camera.reported = camera.check;
+        return true;
+    }
+    const auto now = std::chrono::steady_clock::now();
+    if(!camera.occupied_since)
+    {
+        camera.occupied_since = now;
+    }
+    if(now - *camera.occupied_since >= kOccupiedConfirm)
+    {
+        camera.reported = camera.check;
+    }
     return true;
 }
 
@@ -174,12 +192,13 @@ api::BoardStateInfo BoardWatch::info () const
     {
         api::CameraBoardState state;
         state.camera = "usb-" + camera.usb_port;
-        state.state = std::string(geometry::toString(camera.check.state));
-        state.reason = camera.check.reason;
-        if(camera.check.image_point_px)
+        state.state = std::string(geometry::toString(camera.reported.state));
+        state.reason = camera.reported.reason;
+        if(camera.reported.image_point_px)
         {
             // Whole pixels, so a still object does not send a new state with every average
-            state.image_point_px = std::array<double, 2>{std::round(camera.check.image_point_px->x), std::round(camera.check.image_point_px->y)};
+            state.image_point_px =
+                std::array<double, 2>{std::round(camera.reported.image_point_px->x), std::round(camera.reported.image_point_px->y)};
         }
         if(!camera.mean.empty())
         {
@@ -218,6 +237,8 @@ std::optional<std::string> BoardWatch::storeReferences (bool force)
         }
         camera.reference = geometry::loadEmptyReference(path.string());
         camera.check = geometry::checkBoard(camera.mean, &camera.reference, camera.calibration ? &*camera.calibration : nullptr, board_);
+        camera.reported = camera.check;
+        camera.occupied_since.reset();
     }
     server_.setBoardState(info());
     return std::nullopt;

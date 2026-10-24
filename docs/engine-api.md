@@ -124,7 +124,7 @@ Sent when a camera's state changes and once per second while a client watches st
 
 ### board_state
 
-Sent to every client when the board state changes (#121). The engine compares each camera's image of the still board with the stored image of the empty board. It first aligns the stored image with the current one, including the slight zoom of a camera that warmed up since, and counts an object only if it still stands out when every pixel may be off by 2 px, so that the traces a warmer, softer image leaves along the wires do not count.
+Sent to every client when the board state changes (#121). The engine compares each camera's image of the still board with the stored image of the empty board. An object is reported once it has stayed for 4 s, so that a knocked, swaying camera does not raise the warning; an empty board is reported at once. It first aligns the stored image with the current one, including the slight zoom of a camera that warmed up since, and counts an object only if it still stands out when every pixel may be off by 2 px, so that the traces a warmer, softer image leaves along the wires do not count.
 
 ```json
 {
