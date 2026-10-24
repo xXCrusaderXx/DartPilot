@@ -43,6 +43,12 @@ void ExtrinsicView::setUsbPort (const QString& usb_port)
         return;
     }
     usb_port_ = usb_port;
+    // A detection belongs to the camera it was made on; clicking into it must never save it under another camera.
+    frame_sum_.release();
+    frames_summed_ = 0;
+    detection_.reset();
+    twenty_sector_.reset();
+    setState("idle", QString());
     plane_ = usb_port.isEmpty() ? std::nullopt : geometry::loadBoardPlane(boardPlanePath(usb_port).toStdString());
     emit resultChanged();
 }
@@ -57,7 +63,7 @@ void ExtrinsicView::setState (const QString& state, const QString& message)
 
 void ExtrinsicView::detect ()
 {
-    if(watcher_.isRunning() || !stream())
+    if(!stream())
     {
         return;
     }
@@ -85,11 +91,16 @@ void ExtrinsicView::onFrame (const CameraSnapshot& snapshot)
     }
     cv::Mat mean;
     frame_sum_.convertTo(mean, CV_8UC3, 1.0 / frames_summed_);
+    detecting_port_ = usb_port_;
     watcher_.setFuture(QtConcurrent::run([mean] { return geometry::detectBoard(mean); }));
 }
 
 void ExtrinsicView::onDetected ()
 {
+    if(detecting_port_ != usb_port_)
+    {
+        return;
+    }
     detection_ = watcher_.result();
     if(!detection_)
     {
