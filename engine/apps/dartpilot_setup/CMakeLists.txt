@@ -21,6 +21,7 @@ qt_add_qml_module(dartpilot_setup
     BoardIllustration.qml ExtrinsicGuideDialog.qml
   RESOURCES icons/dartpilot.svg
   SOURCES
+    board_refiner.hpp board_refiner.cpp
     calibration_paths.hpp
     camera_finder.hpp camera_finder.cpp
     camera_stream.hpp camera_stream.cpp

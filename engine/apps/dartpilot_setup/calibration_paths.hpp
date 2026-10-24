@@ -27,4 +27,7 @@ inline QString intrinsicsPath (const QString& usb_port) { return calibrationDire
 
 // Board plane (orientation and homography) of the camera on that USB port
 inline QString boardPlanePath (const QString& usb_port) { return calibrationDirectory() + "/board-usb-" + usb_port + ".yml"; }
+
+// Joint refinement of all cameras: poses, refined lenses and the measured board (#13)
+inline QString extrinsicsPath () { return calibrationDirectory() + "/extrinsics.yml"; }
 }  // namespace dartpilot::setup

@@ -237,6 +237,18 @@ Dialog {
 
                 delegate: ChecklistItem {}
             }
+            Label {
+                text: "THEN, ONCE FOR ALL CAMERAS"
+                font.pixelSize: Tokens.captionSize
+                font.weight: Font.DemiBold
+                color: Tokens.textMuted
+                Layout.topMargin: 8
+            }
+            Repeater {
+                model: ["Press \"Refine all cameras\": poses, lenses and the actual board size are fitted to the points of all cameras together.", "Each camera gets its error on wires the fit did not see: green up to 0.5 mm. Refine again after detecting any board again."]
+
+                delegate: ChecklistItem {}
+            }
         }
     }
 
