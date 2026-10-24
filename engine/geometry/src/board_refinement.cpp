@@ -33,6 +33,9 @@ constexpr int kPoseParameters = 6;
 constexpr int kEdgeOffset = kPoseParameters;
 constexpr int kCameraParameters = kPoseParameters + 1;
 constexpr double kEdgeOffsetSigma_mm = 2.0;
+// Range and step of the edge offset a calibration check measures again
+constexpr double kMaxCheckEdgeOffset_mm = 2.0;
+constexpr double kCheckEdgeOffsetStep_mm = 0.02;
 
 double distortionSigma (DistortionModel model, std::size_t coefficient)
 {
@@ -160,6 +163,15 @@ std::vector<Observation> observationsOf (const std::vector<BoardCorrespondence>&
     return observations;
 }
 
+// Where the detection should find a point: on its circle, where the wire edge shifted by the camera's edge offset
+// crosses it
+cv::Vec3d boardPoint (double r_mm, double edge_offset_mm, double wire_height_mm, const Observation& o)
+{
+    const double side_mm = (o.wire % 2 == 0 ? 1.0 : -1.0) * edge_offset_mm;
+    const double angle = o.angle_rad + std::asin(std::clamp(side_mm / r_mm, -1.0, 1.0));
+    return {r_mm * std::cos(angle), r_mm * std::sin(angle), wire_height_mm};
+}
+
 enum class Intrinsic
 {
     FocalScale,
@@ -234,14 +246,9 @@ struct Problem
         return circle == kScaleCircle ? start_radii_mm[circle] : x[radius_offset + circle];
     }
 
-    // Where the detection should find a point: on its circle, where the wire edge shifted by the camera's edge offset
-    // crosses it
     cv::Vec3d modelPoint (const std::vector<double>& x, const CameraBlock& block, const Observation& o) const
     {
-        const double r_mm = radius(x, o.circle);
-        const double side_mm = (o.wire % 2 == 0 ? 1.0 : -1.0) * x[block.offset + kEdgeOffset];
-        const double angle = o.angle_rad + std::asin(std::clamp(side_mm / r_mm, -1.0, 1.0));
-        return {r_mm * std::cos(angle), r_mm * std::sin(angle), wire_height_mm};
+        return boardPoint(radius(x, o.circle), x[block.offset + kEdgeOffset], wire_height_mm, o);
     }
 
     // Data residuals in units of the point deviation, robustified so that their squares sum to the Huber cost, then
@@ -823,6 +830,67 @@ cv::Point2f imageToBoard (const RefinedCamera& camera, const cv::Point2f& image_
 {
     const cv::Point3d p = backProject(cameraOf(camera), cv::Point2d(image_px.x, image_px.y), 0.0);
     return {static_cast<float>(p.x), static_cast<float>(p.y)};
+}
+
+std::optional<CalibrationCheck> checkCalibration (const BoardDetection& detection, const RefinedCamera& camera, const BoardModel& board)
+{
+    if(detection.points.empty())
+    {
+        return std::nullopt;
+    }
+    const Camera model = cameraOf(camera);
+    const auto evaluate = [&] (const std::vector<Observation>& observations, double edge_offset_mm)
+    {
+        CalibrationCheck check;
+        check.points = static_cast<int>(observations.size());
+        check.edge_offset_mm = edge_offset_mm;
+        double sum_sq_px = 0.0, sum_sq_mm = 0.0;
+        cv::Point2d shift_sum(0, 0);
+        for(const auto& o : observations)
+        {
+            const cv::Vec3d point = boardPoint(board.radii_mm[o.circle], edge_offset_mm, board.wire_height_mm, o);
+            const cv::Point2d predicted = project(model, point);
+            const cv::Point2d error = o.image_px - predicted;
+            const double error_px = std::hypot(error.x, error.y);
+            sum_sq_px += error_px * error_px;
+            check.worst_px = std::max(check.worst_px, error_px);
+            shift_sum += error;
+            const cv::Point3d seen = backProject(model, o.image_px, board.wire_height_mm);
+            sum_sq_mm += (seen.x - point[0]) * (seen.x - point[0]) + (seen.y - point[1]) * (seen.y - point[1]);
+            check.predicted_px.emplace_back(static_cast<float>(predicted.x), static_cast<float>(predicted.y));
+        }
+        check.rms_px = std::sqrt(sum_sq_px / check.points);
+        check.rms_mm = std::sqrt(sum_sq_mm / check.points);
+        check.mean_shift_px = cv::Point2f(static_cast<float>(shift_sum.x / check.points), static_cast<float>(shift_sum.y / check.points));
+        return check;
+    };
+
+    // The calibration knows where sector 20 is, so the orientation is the one that fits it best.
+    std::optional<CalibrationCheck> best;
+    std::vector<Observation> best_observations;
+    for(int twenty = 0; twenty < kRadialWireCount; ++twenty)
+    {
+        auto observations = observationsOf(orientBoard(detection, twenty));
+        auto check = evaluate(observations, camera.edge_offset_mm);
+        if(!best || check.rms_px < best->rms_px)
+        {
+            check.twenty_sector = twenty;
+            best = std::move(check);
+            best_observations = std::move(observations);
+        }
+    }
+    // The edge offset depends on the light, not on the camera: it is measured again, so that a change of light does
+    // not look like a moved camera.
+    for(double edge_offset_mm = -kMaxCheckEdgeOffset_mm; edge_offset_mm <= kMaxCheckEdgeOffset_mm; edge_offset_mm += kCheckEdgeOffsetStep_mm)
+    {
+        auto check = evaluate(best_observations, edge_offset_mm);
+        if(check.rms_px < best->rms_px)
+        {
+            check.twenty_sector = best->twenty_sector;
+            best = std::move(check);
+        }
+    }
+    return best;
 }
 
 bool saveExtrinsics (const std::string& path, const StoredExtrinsics& extrinsics)

@@ -113,6 +113,29 @@ std::optional<BoardRefinement> refineBoardCameras (const std::vector<RefinementI
 cv::Point2f boardToImage (const RefinedCamera& camera, const cv::Point3f& board_mm);
 cv::Point2f imageToBoard (const RefinedCamera& camera, const cv::Point2f& image_px);
 
+// How well a camera's stored calibration still explains the board it sees now: every newly detected point is compared
+// with where the calibration puts it. A camera that was moved, knocked or plugged into another port shows a large error.
+struct CalibrationCheck
+{
+    // The image sector of the detection that is sector 20, found from the calibration: no click needed
+    int twenty_sector = 0;
+    int points = 0;
+    // Detected against predicted image points
+    double rms_px = 0.0;
+    double worst_px = 0.0;
+    // Detected points back-projected onto the wire plane, against the board model
+    double rms_mm = 0.0;
+    // The edge offset of the detection under the current light, measured again (see RefinedCamera::edge_offset_mm)
+    double edge_offset_mm = 0.0;
+    // Mean displacement of the detected points from the predicted ones; a camera that moved shifts them all alike
+    cv::Point2f mean_shift_px;
+    // Where the calibration puts each detected point, in the order of detection.points
+    std::vector<cv::Point2f> predicted_px;
+};
+
+// Nothing for a detection without points. The board must be the one the refinement measured.
+std::optional<CalibrationCheck> checkCalibration (const BoardDetection& detection, const RefinedCamera& camera, const BoardModel& board);
+
 struct StoredExtrinsics
 {
     // Set by the caller; the geometry module never reads the clock
