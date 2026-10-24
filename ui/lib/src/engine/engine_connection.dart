@@ -46,6 +46,10 @@ class EngineConnection extends ChangeNotifier {
   /// Latest board check of the engine; null when it has none
   EngineBoardState? boardState;
 
+  /// The real board from the front, shown instead of the drawn one; null where the engine has none (simulator, not
+  /// calibrated)
+  BoardImage? boardImage;
+
   /// Latest state of the setup diagnosis; null before it ran
   EngineDiagnosis? diagnosis;
 
@@ -114,6 +118,7 @@ class EngineConnection extends ChangeNotifier {
     await _closeChannel();
     hello = null;
     boardState = null;
+    boardImage = null;
     diagnosis = null;
     _clearCalibration();
     if (state != EngineConnectionState.disconnected) {
@@ -150,6 +155,8 @@ class EngineConnection extends ChangeNotifier {
     if (event is EngineHello) {
       hello = event;
       boardState = event.boardState;
+      // Taken from the current frames, so only from an empty board
+      if (boardState?.state == 'empty') requestBoardImage();
       diagnosis = null;
       _clearCalibration();
       calibration = event.calibration;
@@ -181,11 +188,18 @@ class EngineConnection extends ChangeNotifier {
         event is RefinementResult) {
       notifyListeners();
     }
+    if (event is BoardImage) {
+      boardImage = event;
+      notifyListeners();
+    }
+    // After a takeout the board is empty: the image follows changes of light without a dart in it.
+    if (event is EngineTakeout) requestBoardImage();
     if (event is EngineDiagnosis) {
       diagnosis = event;
       notifyListeners();
     }
     if (event is EngineBoardState) {
+      if (event.state == 'empty' && boardState?.state != 'empty' && boardImage == null) requestBoardImage();
       boardState = event;
       notifyListeners();
     }
@@ -293,6 +307,9 @@ class EngineConnection extends ChangeNotifier {
   });
 
   Future<String?> refineCameras() => _request({'type': 'refine_cameras'});
+
+  /// Asks for the real board's image; it arrives as [boardImage]. Engines without one answer with an error.
+  void requestBoardImage() => _send({'type': 'get_board_image'});
 
   /// A dart the engine missed, entered by hand
   void addThrow(BoardPoint point) => _send({'type': 'add_throw', 'board_point': _pointJson(point)});

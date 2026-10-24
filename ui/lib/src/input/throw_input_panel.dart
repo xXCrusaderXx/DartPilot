@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../engine/engine_connection.dart';
 import '../board/dart_throw.dart';
 import '../board/dartboard.dart';
 import '../board/scoring.dart';
@@ -52,6 +53,7 @@ class _ThrowInputPanelState extends State<ThrowInputPanel> {
                     key: const ValueKey('dartboard'),
                     geometry: widget.geometry,
                     throws: widget.shownThrows,
+                    image: EngineScope.of(context).boardImage,
                     onTap: (point) => widget.onThrow(DartThrow(point, ThrowInput.board, geometry: widget.geometry)),
                   ),
           ),
