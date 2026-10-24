@@ -14,6 +14,12 @@ constexpr int kGridStep_px = 4;
 // Weight of a camera at a pixel: its pixels per millimetre to this power, so the sharpest camera dominates and the
 // others only take over gradually where they are nearly as sharp
 constexpr double kSharpnessPower = 8.0;
+// The number ring and the surround stand in front of the playing surface, so each camera puts them elsewhere on its
+// plane and blending cameras doubles their edges. Beyond the double ring the power rises until one camera takes each
+// pixel alone, over a few millimetres so that the change does not show as a step.
+constexpr double kPlaneEdge_mm = 171.0;
+constexpr double kSingleCamera_mm = 178.0;
+constexpr double kSingleCameraPower = 80.0;
 // Outside the sharp radius: blur, the width of the transition, and how much darker the surround gets
 constexpr double kSurroundBlur_mm = 4.0;
 constexpr double kTransition_mm = 12.0;
@@ -33,6 +39,17 @@ BoardView renderBoardView (const std::vector<const RefinedCamera*>& cameras, con
                            0.0f);
     };
     std::vector<cv::Mat> warped_images, weights;
+    // The weighting power per pixel, by its distance from the board centre
+    cv::Mat power(size_px, size_px, CV_32F);
+    for(int r = 0; r < size_px; ++r)
+    {
+        for(int k = 0; k < size_px; ++k)
+        {
+            const double distance_mm = std::hypot(-radius_mm + (k + 0.5) * view.mm_per_px, radius_mm - (r + 0.5) * view.mm_per_px);
+            const double t = std::clamp((distance_mm - kPlaneEdge_mm) / (kSingleCamera_mm - kPlaneEdge_mm), 0.0, 1.0);
+            power.at<float>(r, k) = static_cast<float>(kSharpnessPower + t * (kSingleCameraPower - kSharpnessPower));
+        }
+    }
     for(std::size_t c = 0; c < cameras.size() && c < images.size(); ++c)
     {
         if(!cameras[c] || images[c].empty())
@@ -68,10 +85,24 @@ BoardView renderBoardView (const std::vector<const RefinedCamera*>& cameras, con
         warped.convertTo(warped, CV_32FC3);
         cv::Mat in_image = (map_x >= 0) & (map_y >= 0) & (map_x < images[c].cols - 1) & (map_y < images[c].rows - 1);
         cv::Mat weight;
-        cv::pow(scale / static_cast<float>(view.mm_per_px), kSharpnessPower, weight);
-        weight.setTo(0.0f, ~in_image);
+        // Logarithm of the weight; turned into weights relative to the best camera below, which keeps the high powers
+        // within range
+        cv::log(cv::max(scale / static_cast<float>(view.mm_per_px), 1e-6f), weight);
+        weight = weight.mul(power);
+        weight.setTo(-1e30f, ~in_image);
         warped_images.push_back(warped);
         weights.push_back(weight);
+    }
+    cv::Mat best(size_px, size_px, CV_32F, cv::Scalar(-1e30f));
+    for(const auto& log_weight : weights)
+    {
+        best = cv::max(best, log_weight);
+    }
+    for(auto& weight : weights)
+    {
+        const cv::Mat outside = weight < -1e29f;
+        cv::exp(weight - best, weight);
+        weight.setTo(0.0f, outside);
     }
     cv::Mat sum(size_px, size_px, CV_32FC3, cv::Scalar::all(0.0)), total(size_px, size_px, CV_32F, cv::Scalar(0.0f));
     for(std::size_t i = 0; i < warped_images.size(); ++i)
