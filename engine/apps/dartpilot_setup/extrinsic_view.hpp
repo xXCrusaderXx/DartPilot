@@ -65,6 +65,8 @@ class ExtrinsicView : public StreamView
     cv::Mat frame_sum_;
     int frames_summed_ = 0;
     QFutureWatcher<std::optional<geometry::BoardDetection>> watcher_;
+    // The camera the running detection was started on
+    QString detecting_port_;
     std::optional<geometry::BoardDetection> detection_;
     std::optional<int> twenty_sector_;
     std::optional<geometry::StoredBoardPlane> plane_;
