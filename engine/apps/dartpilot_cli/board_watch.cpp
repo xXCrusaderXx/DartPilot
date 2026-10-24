@@ -7,6 +7,8 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 
+#include "dartpilot/tip_candidates/dart_observation.hpp"
+
 namespace dartpilot::cli
 {
 namespace
@@ -149,9 +151,16 @@ bool BoardWatch::sample (Camera& camera, std::size_t index)
     {
         return false;
     }
+    const cv::Mat previous = camera.mean;
     camera.mean = camera.sum / camera.summed;
     camera.sum.release();
     camera.summed = 0;
+    // A knocked camera that sways changes its whole view for a moment; that is no object in the board. The state stays
+    // until a still view without such a change; the calibration check tells whether the camera moved for good.
+    if(!previous.empty() && tip_candidates::viewChange(previous, camera.mean))
+    {
+        return false;
+    }
     camera.check = geometry::checkBoard(camera.mean, camera.reference.empty() ? nullptr : &camera.reference,
                                         camera.calibration ? &*camera.calibration : nullptr, board_);
     return true;
