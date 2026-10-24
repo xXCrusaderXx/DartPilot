@@ -112,6 +112,9 @@ std::optional<BoardRefinement> refineBoardCameras (const std::vector<RefinementI
 // Image point of a board point, and board point on the playing surface (z = 0) seen at an image point
 cv::Point2f boardToImage (const RefinedCamera& camera, const cv::Point3f& board_mm);
 cv::Point2f imageToBoard (const RefinedCamera& camera, const cv::Point2f& image_px);
+// The camera's centre in board coordinates, and the unit direction of the ray through an image point
+cv::Vec3d cameraCentre (const RefinedCamera& camera);
+cv::Vec3d viewRay (const RefinedCamera& camera, const cv::Point2f& image_px);
 
 // How well a camera's stored calibration still explains the board it sees now: every newly detected point is compared
 // with where the calibration puts it. A camera that was moved, knocked or plugged into another port shows a large error.

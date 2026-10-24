@@ -832,6 +832,21 @@ cv::Point2f imageToBoard (const RefinedCamera& camera, const cv::Point2f& image_
     return {static_cast<float>(p.x), static_cast<float>(p.y)};
 }
 
+cv::Vec3d cameraCentre (const RefinedCamera& camera)
+{
+    cv::Matx33d rotation;
+    cv::Rodrigues(camera.rvec, rotation);
+    return -(rotation.t() * camera.tvec_mm);
+}
+
+cv::Vec3d viewRay (const RefinedCamera& camera, const cv::Point2f& image_px)
+{
+    const Camera model = cameraOf(camera);
+    const cv::Point2d n = undistort(model, cv::Point2d(image_px.x, image_px.y));
+    const cv::Vec3d direction = model.rotation.t() * cv::Vec3d(n.x, n.y, 1.0);
+    return direction / cv::norm(direction);
+}
+
 std::optional<CalibrationCheck> checkCalibration (const BoardDetection& detection, const RefinedCamera& camera, const BoardModel& board)
 {
     if(detection.points.empty())
