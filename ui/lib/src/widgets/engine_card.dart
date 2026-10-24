@@ -8,6 +8,7 @@ import '../engine/engine_connection.dart';
 import '../engine/engine_discovery.dart';
 import '../engine/engine_manager.dart';
 import '../screens/cameras_screen.dart';
+import '../screens/diagnosis_screen.dart';
 import 'board_check.dart';
 
 /// The engine the app plays against, on the home screen: its own on this device (where it can run one), or one in
@@ -162,6 +163,13 @@ class _EngineCardState extends State<EngineCard> {
                       icon: const Icon(Icons.videocam),
                       label: Text(l10n.cameras),
                     ),
+                    IconButton(
+                      key: const ValueKey('open-diagnosis'),
+                      onPressed: () =>
+                          Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const DiagnosisScreen())),
+                      tooltip: l10n.diagnosis,
+                      icon: const Icon(Icons.troubleshoot),
+                    ),
                     const SizedBox(width: 8),
                   ],
                   connected
@@ -217,13 +225,22 @@ class _CamerasButton extends StatelessWidget {
   final AppLocalizations l10n;
 
   @override
-  Widget build(BuildContext context) => Align(
-    alignment: Alignment.centerRight,
-    child: OutlinedButton.icon(
-      onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const CamerasScreen())),
-      icon: const Icon(Icons.videocam),
-      label: Text(l10n.cameras),
-    ),
+  Widget build(BuildContext context) => Wrap(
+    alignment: WrapAlignment.end,
+    spacing: 8,
+    children: [
+      OutlinedButton.icon(
+        onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const CamerasScreen())),
+        icon: const Icon(Icons.videocam),
+        label: Text(l10n.cameras),
+      ),
+      OutlinedButton.icon(
+        key: const ValueKey('open-diagnosis'),
+        onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const DiagnosisScreen())),
+        icon: const Icon(Icons.troubleshoot),
+        label: Text(l10n.diagnosis),
+      ),
+    ],
   );
 }
 

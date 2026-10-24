@@ -159,7 +159,13 @@
   "noEnginesFound": "No engine found. Guest Wi-Fi, client isolation or separate networks block the search; type the address instead.",
   "foundEngines": "Engines in the network",
   "engineIncompatible": "incompatible ({protocol})",
-  "@engineIncompatible": {"placeholders": {"protocol": {"type": "String"}}},
+  "@engineIncompatible": {
+    "placeholders": {
+      "protocol": {
+        "type": "String"
+      }
+    }
+  },
   "boardIsEmpty": "The board is empty",
   "boardIsEmptyTitle": "Store the empty board again?",
   "boardIsEmptyText": "Only if no dart or other object is in the board. The current camera images become the new empty board, and the check compares with them from now on.",
@@ -182,5 +188,262 @@
   "engineProgramHint": "Leave empty to find it automatically",
   "engineLogEmpty": "No output yet.",
   "close": "Close",
-  "@localEngineRunning": {"placeholders": {"url": {"type": "String"}}}
+  "@localEngineRunning": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "diagnosis": "Setup diagnosis",
+  "startDiagnosis": "Start",
+  "restartDiagnosis": "Start again",
+  "stopDiagnosis": "Stop",
+  "diagnosisIntro": "The diagnosis watches the cameras while you follow the steps: an empty board, then one dart at a time at 8 to 10 places. It lists what is wrong with the setup and what to do about it. Start the cameras about 30 s before, so their exposure has settled.",
+  "diagnosisNeedsEngine": "Connect to an engine first.",
+  "diagnosisNotAvailable": "This engine cannot run the diagnosis; it needs the cameras (start it with the cameras).",
+  "diagnosisFailed": "The diagnosis could not start ({code}).",
+  "@diagnosisFailed": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "stepEmptyBoard": "Leave the board empty and take your hand out of view.",
+  "stepRemoveDarts": "Pull all darts out of the board.",
+  "stepInsertDart": "Put one dart into the board and take your hand away.",
+  "stepInsertDartHint": "Repeat at 8 to 10 places, also the bull and near the double ring.",
+  "stepRemoveDart": "Pull the dart out again.",
+  "diagnosisMoving": "The image moves – hold still",
+  "diagnosisSettling": "Still – waiting a moment",
+  "diagnosisMeasuring": "Measuring…",
+  "diagnosisMeasured": "Measured",
+  "diagnosisStopped": "Stopped",
+  "diagnosisSummary": "{time} · {empty} empty boards · {darts} darts",
+  "@diagnosisSummary": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "empty": {
+        "type": "int"
+      },
+      "darts": {
+        "type": "int"
+      }
+    }
+  },
+  "diagnosisFindings": "Findings",
+  "diagnosisNoFindings": "Nothing found so far.",
+  "cameraNumber": "Camera {number}",
+  "@cameraNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "diagnosisPeriods": "Measured moments ({count})",
+  "@diagnosisPeriods": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "periodEmpty": "empty board",
+  "periodDartNotLocated": "dart, not located",
+  "periodDartLocated": "dart at {x}, {y} mm, {cameras} cameras agree within {plane} mm",
+  "@periodDartLocated": {
+    "placeholders": {
+      "x": {
+        "type": "String"
+      },
+      "y": {
+        "type": "String"
+      },
+      "cameras": {
+        "type": "int"
+      },
+      "plane": {
+        "type": "String"
+      }
+    }
+  },
+  "dartSeen": "dart seen",
+  "dartCut": "dart cut at the border",
+  "dartNotSeen": "dart not seen",
+  "periodCalibration": "{mm} mm off calibration",
+  "@periodCalibration": {
+    "placeholders": {
+      "mm": {
+        "type": "String"
+      }
+    }
+  },
+  "periodBrightness": "brightness {value}",
+  "@periodBrightness": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "findingLostFrames": "Lost {percent} % of its frames.",
+  "@findingLostFrames": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "hintLostFrames": "Plug the camera into another USB port or a powered hub, and close other programs that use the cameras.",
+  "findingFewStillMoments": "Only {count} still moments in {seconds} s.",
+  "@findingFewStillMoments": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "hintFewStillMoments": "Hold each state still for a few seconds with the hand out of view; if the image never settles, check for vibrations.",
+  "findingNotEmptyAtStart": "The board was not empty at the start: its wires are partly hidden.",
+  "hintNotEmptyAtStart": "Start with an empty board; everything after it is compared with this first image.",
+  "findingNoRefinement": "No refinement for this camera: calibration and darts were not checked.",
+  "hintNoRefinement": "Calibrate it on the extrinsic page and refine all cameras (step 5).",
+  "findingBoardNotFound": "The board was not found on any empty board.",
+  "hintBoardNotFound": "Check the camera's view and focus, and the light on the board.",
+  "findingCalibrationOff": "The board is {mm} mm off this camera's calibration.",
+  "@findingCalibrationOff": {
+    "placeholders": {
+      "mm": {
+        "type": "String"
+      }
+    }
+  },
+  "hintCalibrationOff": "If the camera or the board moved, calibrate the camera again and refine all cameras (extrinsic page, step 5).",
+  "findingDrift": "The image moved by {px} px within {minutes} min.",
+  "@findingDrift": {
+    "placeholders": {
+      "px": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "hintDrift": "Let the cameras run for about 10 minutes before calibrating and playing, so they are warm; if it keeps moving, tighten the camera's mount.",
+  "findingLightChanged": "The empty board's brightness changed by {percent} % ({low} at {lowS} s, {high} at {highS} s).",
+  "@findingLightChanged": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      },
+      "low": {
+        "type": "String"
+      },
+      "lowS": {
+        "type": "String"
+      },
+      "high": {
+        "type": "String"
+      },
+      "highS": {
+        "type": "String"
+      }
+    }
+  },
+  "hintExposureSettling": "After the cameras start, their automatic exposure needs a moment: begin about 30 s after starting them, and keep the ring light on.",
+  "hintLightChanged": "Use the ring light and keep daylight and room light constant during the test.",
+  "findingBoardChanged": "The empty board changed {count} times between darts.",
+  "@findingBoardChanged": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hintBoardChanged": "Usually fibres pushed out by darts or a slight change of focus; harmless, as the reference is refreshed after every takeout.",
+  "findingNoDarts": "No dart was found in the test.",
+  "hintNoDarts": "Put darts into the board one at a time and take the hand away each time.",
+  "findingDartsLocated": "{located} of {darts} darts located, {abstained} without a result.",
+  "@findingDartsLocated": {
+    "placeholders": {
+      "located": {
+        "type": "int"
+      },
+      "darts": {
+        "type": "int"
+      },
+      "abstained": {
+        "type": "int"
+      }
+    }
+  },
+  "hintDartsLocated": "The findings per camera show why darts were not located.",
+  "findingDartsCutLost": "Cut {cut} of {darts} darts at the image border and could not help locate {lost} of them.",
+  "@findingDartsCutLost": {
+    "placeholders": {
+      "cut": {
+        "type": "int"
+      },
+      "darts": {
+        "type": "int"
+      },
+      "lost": {
+        "type": "int"
+      }
+    }
+  },
+  "hintDartsCutLost": "Tilt or move the camera so that the board and about 15 cm above it are in view, then calibrate it again.",
+  "findingDartsCut": "Cut {cut} of {darts} darts at the image border.",
+  "@findingDartsCut": {
+    "placeholders": {
+      "cut": {
+        "type": "int"
+      },
+      "darts": {
+        "type": "int"
+      }
+    }
+  },
+  "hintDartsCut": "Harmless while the darts are still located; more of the space above the board in view would make it more robust.",
+  "findingDartsNotSeen": "Did not see {missed} of {darts} darts.",
+  "@findingDartsNotSeen": {
+    "placeholders": {
+      "missed": {
+        "type": "int"
+      },
+      "darts": {
+        "type": "int"
+      }
+    }
+  },
+  "hintDartsNotSeen": "Check that the camera sees the whole board; dark darts on dark sectors need good light.",
+  "findingCameraDisagrees": "Disagreed with the other cameras on {disagreed} of {darts} darts.",
+  "@findingCameraDisagrees": {
+    "placeholders": {
+      "disagreed": {
+        "type": "int"
+      },
+      "darts": {
+        "type": "int"
+      }
+    }
+  },
+  "hintCameraDisagrees": "Run the calibration check; if it is off, calibrate this camera again and refine all cameras.",
+  "findingPlanesAgree": "Where three cameras saw a dart, they agreed within {mm} mm (median).",
+  "@findingPlanesAgree": {
+    "placeholders": {
+      "mm": {
+        "type": "String"
+      }
+    }
+  },
+  "hintPlanesAgree": "Refine all cameras again; if one camera stands out, calibrate it first."
 }

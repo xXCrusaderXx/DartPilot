@@ -17,6 +17,7 @@ sealed class EngineEvent {
     'takeout' => EngineTakeout(json['darts_removed'] as int? ?? 0),
     'camera_status' => EngineCameraStatus.fromJson(json),
     'board_state' => EngineBoardState.fromJson(json),
+    'diagnosis' => EngineDiagnosis.fromJson(json),
     'engine_status' => EngineStatus(json['detection'] as String, json['message'] as String? ?? ''),
     _ => null,
   };
@@ -233,6 +234,149 @@ class CameraBoardState {
       reason: json['reason'] as String? ?? '',
     );
   }
+}
+
+double? _number(Object? json) => (json as num?)?.toDouble();
+
+List<double>? _numbers(Object? json) => json is List ? [for (final v in json) (v as num).toDouble()] : null;
+
+/// The live setup diagnosis (docs/engine-api.md, "diagnosis", #137): what the player should do next, and what is
+/// wrong with the setup so far
+class EngineDiagnosis extends EngineEvent {
+  const EngineDiagnosis({
+    required this.running,
+    required this.step,
+    required this.state,
+    required this.elapsedS,
+    this.cameras = const [],
+    this.findings = const [],
+    this.periods = const [],
+  });
+
+  final bool running;
+
+  /// empty_board, remove_darts, insert_dart or remove_dart
+  final String step;
+
+  /// moving, settling, measuring, measured or stopped
+  final String state;
+  final double elapsedS;
+  final List<String> cameras;
+
+  /// Most severe first
+  final List<DiagnosisFinding> findings;
+  final List<DiagnosisPeriod> periods;
+
+  factory EngineDiagnosis.fromJson(Map<String, dynamic> json) => EngineDiagnosis(
+    running: json['running'] as bool? ?? false,
+    step: json['step'] as String? ?? '',
+    state: json['state'] as String? ?? '',
+    elapsedS: _number(json['elapsed_s']) ?? 0,
+    cameras: [for (final c in json['cameras'] as List<dynamic>? ?? const []) c as String],
+    findings: [
+      for (final f in json['findings'] as List<dynamic>? ?? const [])
+        DiagnosisFinding.fromJson(f as Map<String, dynamic>),
+    ],
+    periods: [
+      for (final p in json['periods'] as List<dynamic>? ?? const [])
+        DiagnosisPeriod.fromJson(p as Map<String, dynamic>),
+    ],
+  );
+}
+
+class DiagnosisFinding {
+  const DiagnosisFinding({
+    required this.severity,
+    required this.check,
+    required this.code,
+    this.camera,
+    this.values = const {},
+    this.message = '',
+    this.hint = '',
+  });
+
+  /// problem, warning or info
+  final String severity;
+  final String check;
+  final String code;
+
+  /// null for findings about the whole setup
+  final String? camera;
+  final Map<String, double> values;
+
+  /// English text from the engine, for codes the app does not know
+  final String message;
+  final String hint;
+
+  factory DiagnosisFinding.fromJson(Map<String, dynamic> json) => DiagnosisFinding(
+    severity: json['severity'] as String? ?? 'info',
+    check: json['check'] as String? ?? '',
+    code: json['code'] as String? ?? '',
+    camera: (json['camera'] as String?)?.isEmpty ?? true ? null : json['camera'] as String,
+    values: {
+      for (final e in (json['values'] as Map<String, dynamic>? ?? const {}).entries) e.key: (e.value as num).toDouble(),
+    },
+    message: json['message'] as String? ?? '',
+    hint: json['hint'] as String? ?? '',
+  );
+}
+
+/// A still moment the diagnosis measured: an empty board, or a board with one dart
+class DiagnosisPeriod {
+  const DiagnosisPeriod({
+    required this.startS,
+    required this.endS,
+    required this.empty,
+    this.cameras = const [],
+    this.boardMm,
+    this.agreeingCameras = const [],
+    this.worstPlaneMm,
+  });
+
+  final double startS;
+  final double endS;
+  final bool empty;
+
+  /// In the order of [EngineDiagnosis.cameras]
+  final List<DiagnosisPeriodCamera> cameras;
+
+  /// Where the dart was located, if it was
+  final List<double>? boardMm;
+  final List<String> agreeingCameras;
+  final double? worstPlaneMm;
+
+  factory DiagnosisPeriod.fromJson(Map<String, dynamic> json) => DiagnosisPeriod(
+    startS: _number(json['start_s']) ?? 0,
+    endS: _number(json['end_s']) ?? 0,
+    empty: json['empty'] as bool? ?? false,
+    cameras: [
+      for (final c in json['cameras'] as List<dynamic>? ?? const [])
+        DiagnosisPeriodCamera.fromJson(c as Map<String, dynamic>),
+    ],
+    boardMm: _numbers(json['board_mm']),
+    agreeingCameras: [for (final c in json['agreeing_cameras'] as List<dynamic>? ?? const []) c as String],
+    worstPlaneMm: _number(json['worst_plane_mm']),
+  );
+}
+
+class DiagnosisPeriodCamera {
+  const DiagnosisPeriodCamera({this.brightness, this.calibrationMm, this.shiftPx, this.dart, this.axisLengthPx});
+
+  final double? brightness;
+  final double? calibrationMm;
+  final List<double>? shiftPx;
+
+  /// none, cut or seen; null on an empty board
+  final String? dart;
+  final double? axisLengthPx;
+
+  factory DiagnosisPeriodCamera.fromJson(Map<String, dynamic> json) => DiagnosisPeriodCamera(
+    brightness: _number(json['brightness']),
+    calibrationMm: _number(json['calibration_mm']),
+    shiftPx: _numbers(json['shift_px']),
+    dart: json['dart'] as String?,
+    axisLengthPx: _number(json['axis_length_px']),
+  );
 }
 
 class EngineStatus extends EngineEvent {

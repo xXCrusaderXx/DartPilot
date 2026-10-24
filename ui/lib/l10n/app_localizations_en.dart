@@ -402,4 +402,246 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get close => 'Close';
+
+  @override
+  String get diagnosis => 'Setup diagnosis';
+
+  @override
+  String get startDiagnosis => 'Start';
+
+  @override
+  String get restartDiagnosis => 'Start again';
+
+  @override
+  String get stopDiagnosis => 'Stop';
+
+  @override
+  String get diagnosisIntro =>
+      'The diagnosis watches the cameras while you follow the steps: an empty board, then one dart at a time at 8 to 10 places. It lists what is wrong with the setup and what to do about it. Start the cameras about 30 s before, so their exposure has settled.';
+
+  @override
+  String get diagnosisNeedsEngine => 'Connect to an engine first.';
+
+  @override
+  String get diagnosisNotAvailable =>
+      'This engine cannot run the diagnosis; it needs the cameras (start it with the cameras).';
+
+  @override
+  String diagnosisFailed(String code) {
+    return 'The diagnosis could not start ($code).';
+  }
+
+  @override
+  String get stepEmptyBoard => 'Leave the board empty and take your hand out of view.';
+
+  @override
+  String get stepRemoveDarts => 'Pull all darts out of the board.';
+
+  @override
+  String get stepInsertDart => 'Put one dart into the board and take your hand away.';
+
+  @override
+  String get stepInsertDartHint => 'Repeat at 8 to 10 places, also the bull and near the double ring.';
+
+  @override
+  String get stepRemoveDart => 'Pull the dart out again.';
+
+  @override
+  String get diagnosisMoving => 'The image moves – hold still';
+
+  @override
+  String get diagnosisSettling => 'Still – waiting a moment';
+
+  @override
+  String get diagnosisMeasuring => 'Measuring…';
+
+  @override
+  String get diagnosisMeasured => 'Measured';
+
+  @override
+  String get diagnosisStopped => 'Stopped';
+
+  @override
+  String diagnosisSummary(String time, int empty, int darts) {
+    return '$time · $empty empty boards · $darts darts';
+  }
+
+  @override
+  String get diagnosisFindings => 'Findings';
+
+  @override
+  String get diagnosisNoFindings => 'Nothing found so far.';
+
+  @override
+  String cameraNumber(int number) {
+    return 'Camera $number';
+  }
+
+  @override
+  String diagnosisPeriods(int count) {
+    return 'Measured moments ($count)';
+  }
+
+  @override
+  String get periodEmpty => 'empty board';
+
+  @override
+  String get periodDartNotLocated => 'dart, not located';
+
+  @override
+  String periodDartLocated(String x, String y, int cameras, String plane) {
+    return 'dart at $x, $y mm, $cameras cameras agree within $plane mm';
+  }
+
+  @override
+  String get dartSeen => 'dart seen';
+
+  @override
+  String get dartCut => 'dart cut at the border';
+
+  @override
+  String get dartNotSeen => 'dart not seen';
+
+  @override
+  String periodCalibration(String mm) {
+    return '$mm mm off calibration';
+  }
+
+  @override
+  String periodBrightness(int value) {
+    return 'brightness $value';
+  }
+
+  @override
+  String findingLostFrames(String percent) {
+    return 'Lost $percent % of its frames.';
+  }
+
+  @override
+  String get hintLostFrames =>
+      'Plug the camera into another USB port or a powered hub, and close other programs that use the cameras.';
+
+  @override
+  String findingFewStillMoments(int count, String seconds) {
+    return 'Only $count still moments in $seconds s.';
+  }
+
+  @override
+  String get hintFewStillMoments =>
+      'Hold each state still for a few seconds with the hand out of view; if the image never settles, check for vibrations.';
+
+  @override
+  String get findingNotEmptyAtStart => 'The board was not empty at the start: its wires are partly hidden.';
+
+  @override
+  String get hintNotEmptyAtStart => 'Start with an empty board; everything after it is compared with this first image.';
+
+  @override
+  String get findingNoRefinement => 'No refinement for this camera: calibration and darts were not checked.';
+
+  @override
+  String get hintNoRefinement => 'Calibrate it on the extrinsic page and refine all cameras (step 5).';
+
+  @override
+  String get findingBoardNotFound => 'The board was not found on any empty board.';
+
+  @override
+  String get hintBoardNotFound => 'Check the camera\'s view and focus, and the light on the board.';
+
+  @override
+  String findingCalibrationOff(String mm) {
+    return 'The board is $mm mm off this camera\'s calibration.';
+  }
+
+  @override
+  String get hintCalibrationOff =>
+      'If the camera or the board moved, calibrate the camera again and refine all cameras (extrinsic page, step 5).';
+
+  @override
+  String findingDrift(String px, String minutes) {
+    return 'The image moved by $px px within $minutes min.';
+  }
+
+  @override
+  String get hintDrift =>
+      'Let the cameras run for about 10 minutes before calibrating and playing, so they are warm; if it keeps moving, tighten the camera\'s mount.';
+
+  @override
+  String findingLightChanged(String percent, String low, String lowS, String high, String highS) {
+    return 'The empty board\'s brightness changed by $percent % ($low at $lowS s, $high at $highS s).';
+  }
+
+  @override
+  String get hintExposureSettling =>
+      'After the cameras start, their automatic exposure needs a moment: begin about 30 s after starting them, and keep the ring light on.';
+
+  @override
+  String get hintLightChanged => 'Use the ring light and keep daylight and room light constant during the test.';
+
+  @override
+  String findingBoardChanged(int count) {
+    return 'The empty board changed $count times between darts.';
+  }
+
+  @override
+  String get hintBoardChanged =>
+      'Usually fibres pushed out by darts or a slight change of focus; harmless, as the reference is refreshed after every takeout.';
+
+  @override
+  String get findingNoDarts => 'No dart was found in the test.';
+
+  @override
+  String get hintNoDarts => 'Put darts into the board one at a time and take the hand away each time.';
+
+  @override
+  String findingDartsLocated(int located, int darts, int abstained) {
+    return '$located of $darts darts located, $abstained without a result.';
+  }
+
+  @override
+  String get hintDartsLocated => 'The findings per camera show why darts were not located.';
+
+  @override
+  String findingDartsCutLost(int cut, int darts, int lost) {
+    return 'Cut $cut of $darts darts at the image border and could not help locate $lost of them.';
+  }
+
+  @override
+  String get hintDartsCutLost =>
+      'Tilt or move the camera so that the board and about 15 cm above it are in view, then calibrate it again.';
+
+  @override
+  String findingDartsCut(int cut, int darts) {
+    return 'Cut $cut of $darts darts at the image border.';
+  }
+
+  @override
+  String get hintDartsCut =>
+      'Harmless while the darts are still located; more of the space above the board in view would make it more robust.';
+
+  @override
+  String findingDartsNotSeen(int missed, int darts) {
+    return 'Did not see $missed of $darts darts.';
+  }
+
+  @override
+  String get hintDartsNotSeen =>
+      'Check that the camera sees the whole board; dark darts on dark sectors need good light.';
+
+  @override
+  String findingCameraDisagrees(int disagreed, int darts) {
+    return 'Disagreed with the other cameras on $disagreed of $darts darts.';
+  }
+
+  @override
+  String get hintCameraDisagrees =>
+      'Run the calibration check; if it is off, calibrate this camera again and refine all cameras.';
+
+  @override
+  String findingPlanesAgree(String mm) {
+    return 'Where three cameras saw a dart, they agreed within $mm mm (median).';
+  }
+
+  @override
+  String get hintPlanesAgree => 'Refine all cameras again; if one camera stands out, calibrate it first.';
 }

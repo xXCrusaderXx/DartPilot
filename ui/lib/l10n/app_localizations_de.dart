@@ -400,4 +400,247 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get close => 'Schließen';
+
+  @override
+  String get diagnosis => 'Einrichtungsdiagnose';
+
+  @override
+  String get startDiagnosis => 'Starten';
+
+  @override
+  String get restartDiagnosis => 'Neu starten';
+
+  @override
+  String get stopDiagnosis => 'Stoppen';
+
+  @override
+  String get diagnosisIntro =>
+      'Die Diagnose beobachtet die Kameras, während du den Schritten folgst: erst eine leere Scheibe, dann einzeln Darts an 8 bis 10 Stellen. Sie zeigt, was an der Einrichtung nicht stimmt und was zu tun ist. Starte die Kameras etwa 30 s vorher, damit sich ihre Belichtung eingestellt hat.';
+
+  @override
+  String get diagnosisNeedsEngine => 'Verbinde dich zuerst mit einer Engine.';
+
+  @override
+  String get diagnosisNotAvailable =>
+      'Diese Engine kann die Diagnose nicht ausführen; sie braucht die Kameras (mit Kameras starten).';
+
+  @override
+  String diagnosisFailed(String code) {
+    return 'Die Diagnose konnte nicht starten ($code).';
+  }
+
+  @override
+  String get stepEmptyBoard => 'Lass die Scheibe leer und nimm die Hand aus dem Bild.';
+
+  @override
+  String get stepRemoveDarts => 'Zieh alle Darts aus der Scheibe.';
+
+  @override
+  String get stepInsertDart => 'Steck einen Dart in die Scheibe und nimm die Hand weg.';
+
+  @override
+  String get stepInsertDartHint => 'Wiederhole das an 8 bis 10 Stellen, auch im Bull und nahe am Doppelring.';
+
+  @override
+  String get stepRemoveDart => 'Zieh den Dart wieder heraus.';
+
+  @override
+  String get diagnosisMoving => 'Bild bewegt sich – ruhig halten';
+
+  @override
+  String get diagnosisSettling => 'Ruhig – kurz warten';
+
+  @override
+  String get diagnosisMeasuring => 'Misst…';
+
+  @override
+  String get diagnosisMeasured => 'Gemessen';
+
+  @override
+  String get diagnosisStopped => 'Gestoppt';
+
+  @override
+  String diagnosisSummary(String time, int empty, int darts) {
+    return '$time · $empty leere Scheiben · $darts Darts';
+  }
+
+  @override
+  String get diagnosisFindings => 'Befunde';
+
+  @override
+  String get diagnosisNoFindings => 'Bisher nichts gefunden.';
+
+  @override
+  String cameraNumber(int number) {
+    return 'Kamera $number';
+  }
+
+  @override
+  String diagnosisPeriods(int count) {
+    return 'Gemessene Momente ($count)';
+  }
+
+  @override
+  String get periodEmpty => 'leere Scheibe';
+
+  @override
+  String get periodDartNotLocated => 'Dart, nicht geortet';
+
+  @override
+  String periodDartLocated(String x, String y, int cameras, String plane) {
+    return 'Dart bei $x, $y mm, $cameras Kameras einig auf $plane mm';
+  }
+
+  @override
+  String get dartSeen => 'Dart gesehen';
+
+  @override
+  String get dartCut => 'Dart am Rand abgeschnitten';
+
+  @override
+  String get dartNotSeen => 'Dart nicht gesehen';
+
+  @override
+  String periodCalibration(String mm) {
+    return '$mm mm neben der Kalibrierung';
+  }
+
+  @override
+  String periodBrightness(int value) {
+    return 'Helligkeit $value';
+  }
+
+  @override
+  String findingLostFrames(String percent) {
+    return 'Hat $percent % der Bilder verloren.';
+  }
+
+  @override
+  String get hintLostFrames =>
+      'Steck die Kamera an einen anderen USB-Port oder einen aktiven Hub und schließ andere Programme, die die Kameras nutzen.';
+
+  @override
+  String findingFewStillMoments(int count, String seconds) {
+    return 'Nur $count ruhige Momente in $seconds s.';
+  }
+
+  @override
+  String get hintFewStillMoments =>
+      'Halte jeden Zustand ein paar Sekunden ruhig, die Hand aus dem Bild; kommt das Bild nie zur Ruhe, prüf auf Vibrationen.';
+
+  @override
+  String get findingNotEmptyAtStart => 'Die Scheibe war zu Beginn nicht leer: Ihre Drähte sind teilweise verdeckt.';
+
+  @override
+  String get hintNotEmptyAtStart => 'Beginne mit leerer Scheibe; alles Weitere wird mit diesem ersten Bild verglichen.';
+
+  @override
+  String get findingNoRefinement =>
+      'Für diese Kamera gibt es keine Verfeinerung: Kalibrierung und Darts wurden nicht geprüft.';
+
+  @override
+  String get hintNoRefinement => 'Kalibriere sie auf der Extrinsik-Seite und verfeinere alle Kameras (Schritt 5).';
+
+  @override
+  String get findingBoardNotFound => 'Die Scheibe wurde auf keinem Bild der leeren Scheibe gefunden.';
+
+  @override
+  String get hintBoardNotFound => 'Prüf Blickwinkel und Schärfe der Kamera und das Licht auf der Scheibe.';
+
+  @override
+  String findingCalibrationOff(String mm) {
+    return 'Die Scheibe liegt $mm mm neben der Kalibrierung dieser Kamera.';
+  }
+
+  @override
+  String get hintCalibrationOff =>
+      'Wenn Kamera oder Scheibe bewegt wurden, kalibriere die Kamera neu und verfeinere alle Kameras (Extrinsik-Seite, Schritt 5).';
+
+  @override
+  String findingDrift(String px, String minutes) {
+    return 'Das Bild hat sich um $px px in $minutes min bewegt.';
+  }
+
+  @override
+  String get hintDrift =>
+      'Lass die Kameras vor dem Kalibrieren und Spielen etwa 10 Minuten laufen, damit sie warm sind; bewegt es sich weiter, zieh die Halterung der Kamera fest.';
+
+  @override
+  String findingLightChanged(String percent, String low, String lowS, String high, String highS) {
+    return 'Die Helligkeit der leeren Scheibe hat sich um $percent % geändert ($low bei $lowS s, $high bei $highS s).';
+  }
+
+  @override
+  String get hintExposureSettling =>
+      'Nach dem Start braucht die automatische Belichtung einen Moment: Beginne etwa 30 s nach dem Start der Kameras und lass das Ringlicht an.';
+
+  @override
+  String get hintLightChanged => 'Nutze das Ringlicht und halte Tages- und Raumlicht während des Tests gleich.';
+
+  @override
+  String findingBoardChanged(int count) {
+    return 'Die leere Scheibe hat sich zwischen den Darts $count-mal verändert.';
+  }
+
+  @override
+  String get hintBoardChanged =>
+      'Meist von Darts herausgedrückte Fasern oder eine leicht veränderte Schärfe; harmlos, da das Vergleichsbild nach jedem Ziehen erneuert wird.';
+
+  @override
+  String get findingNoDarts => 'Im Test wurde kein Dart gefunden.';
+
+  @override
+  String get hintNoDarts => 'Steck die Darts einzeln in die Scheibe und nimm jedes Mal die Hand weg.';
+
+  @override
+  String findingDartsLocated(int located, int darts, int abstained) {
+    return '$located von $darts Darts geortet, $abstained ohne Ergebnis.';
+  }
+
+  @override
+  String get hintDartsLocated => 'Warum Darts nicht geortet wurden, zeigen die Befunde pro Kamera.';
+
+  @override
+  String findingDartsCutLost(int cut, int darts, int lost) {
+    return 'Hat $cut von $darts Darts am Bildrand abgeschnitten und konnte $lost davon nicht mit orten.';
+  }
+
+  @override
+  String get hintDartsCutLost =>
+      'Neig oder versetz die Kamera so, dass die Scheibe und etwa 15 cm darüber im Bild sind, und kalibriere sie dann neu.';
+
+  @override
+  String findingDartsCut(int cut, int darts) {
+    return 'Hat $cut von $darts Darts am Bildrand abgeschnitten.';
+  }
+
+  @override
+  String get hintDartsCut =>
+      'Harmlos, solange die Darts trotzdem geortet werden; mehr Raum über der Scheibe im Bild macht es robuster.';
+
+  @override
+  String findingDartsNotSeen(int missed, int darts) {
+    return 'Hat $missed von $darts Darts nicht gesehen.';
+  }
+
+  @override
+  String get hintDartsNotSeen =>
+      'Prüf, ob die Kamera die ganze Scheibe sieht; dunkle Darts auf dunklen Feldern brauchen gutes Licht.';
+
+  @override
+  String findingCameraDisagrees(int disagreed, int darts) {
+    return 'Lag bei $disagreed von $darts Darts anders als die übrigen Kameras.';
+  }
+
+  @override
+  String get hintCameraDisagrees =>
+      'Mach den Kalibriertest; liegt er daneben, kalibriere diese Kamera neu und verfeinere alle Kameras.';
+
+  @override
+  String findingPlanesAgree(String mm) {
+    return 'Wo drei Kameras einen Dart sahen, stimmten sie auf $mm mm überein (Median).';
+  }
+
+  @override
+  String get hintPlanesAgree => 'Verfeinere alle Kameras erneut; fällt eine Kamera heraus, kalibriere sie zuerst.';
 }
