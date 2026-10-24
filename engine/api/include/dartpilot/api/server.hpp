@@ -61,6 +61,11 @@ class Server
     // store_empty_reference: returns an error code (e.g. board_not_empty) or nothing on success
     void onStoreEmptyReference (std::function<std::optional<std::string>(bool force)> handler);
 
+    // Live setup diagnosis (#137): start_diagnosis and stop_diagnosis reach the handler; the source sends its state
+    // with publishDiagnosis(), to every client and, the latest one, to clients that connect later.
+    void onDiagnosis (std::function<void(bool running)> handler);
+    void publishDiagnosis (const nlohmann::json& message);
+
     // Board points of the darts since the last takeout, e.g. for a simulated camera image
     std::vector<BoardPoint> visitPoints () const;
 
@@ -101,5 +106,7 @@ class Server
     std::function<void()> check_board_handler_;
     std::function<std::optional<std::string>(bool)> store_reference_handler_;
     std::vector<BoardPoint> visit_points_;
+    std::function<void(bool)> diagnosis_handler_;
+    nlohmann::json last_diagnosis_;
 };
 }  // namespace dartpilot::api

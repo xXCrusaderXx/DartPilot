@@ -29,6 +29,8 @@ class CameraPreviews
 
     // Newest JPEG of a camera (in the order start() returned) and its frame sequence; false before the first frame
     bool latest (std::size_t camera, std::vector<std::uint8_t>& jpeg, std::uint32_t& sequence) const;
+    // Frame counters of a camera since it started
+    capture::CaptureStats stats (std::size_t camera) const;
 
    private:
     void run ();

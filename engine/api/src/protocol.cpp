@@ -290,6 +290,10 @@ std::variant<Request, ParseError> parseRequest (const std::string& text)
         {
             request.body = CheckBoard{};
         }
+        else if(type == "start_diagnosis" || type == "stop_diagnosis")
+        {
+            request.body = SetDiagnosis{type == "start_diagnosis"};
+        }
         else if(type == "store_empty_reference")
         {
             request.body = StoreEmptyReference{message.value("force", false)};

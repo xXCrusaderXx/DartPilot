@@ -24,6 +24,8 @@ struct SimulatorSettings
     bool camera_status = true;
     // Simulated board check (#121): occupied while darts are in the board; off with real cameras
     bool board_state = true;
+    // Example setup diagnosis (#137) on start_diagnosis; off with real cameras, which run the real one
+    bool diagnosis = true;
     // Darts are already in the board at start; they are pulled out after takeout_delay
     bool occupied_at_start = false;
 };
@@ -46,6 +48,8 @@ class Simulator
     static std::array<double, 2> target (int index);
     // Board state of the simulated cameras
     static BoardStateInfo boardState (bool occupied);
+    // A fixed diagnosis message with typical findings, for clients to show without cameras
+    static nlohmann::json exampleDiagnosis (bool running);
 
    private:
     void run ();

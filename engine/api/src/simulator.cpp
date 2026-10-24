@@ -47,6 +47,10 @@ Simulator::~Simulator ()
         server_.onCheckBoard({});
         server_.onStoreEmptyReference({});
     }
+    if(settings_.diagnosis)
+    {
+        server_.onDiagnosis({});
+    }
 }
 
 BoardStateInfo Simulator::boardState (bool occupied)
@@ -69,6 +73,62 @@ BoardStateInfo Simulator::boardState (bool occupied)
     board.state = combineBoardState(board.cameras);
     board.reference_stored = true;
     return board;
+}
+
+nlohmann::json Simulator::exampleDiagnosis (bool running)
+{
+    using json = nlohmann::json;
+    const auto finding =
+        [] (const char* severity, const char* check, json camera, const char* code, json values, const char* message, const char* hint)
+    {
+        return json{{"severity", severity}, {"check", check},     {"camera", camera}, {"code", code},
+                    {"values", values},     {"message", message}, {"hint", hint}};
+    };
+    json periods = json::array();
+    periods.push_back({{"start_s", 40.0}, {"end_s", 42.5}, {"empty", true}, {"cameras", json::array()}});
+    periods.push_back({{"start_s", 47.1},
+                       {"end_s", 49.6},
+                       {"empty", false},
+                       {"cameras", json::array()},
+                       {"board_mm", {0.0, 103.0}},
+                       {"agreeing_cameras", {"sim-1", "sim-2", "sim-3"}},
+                       {"worst_plane_mm", 0.4}});
+    periods.push_back({{"start_s", 53.0}, {"end_s", 55.5}, {"empty", true}, {"cameras", json::array()}});
+    for(auto& period : periods)
+    {
+        for(int c = 0; c < 3; ++c)
+        {
+            json camera{{"brightness", 112.0}};
+            if(period["empty"])
+            {
+                camera["calibration_mm"] = c == 1 ? 1.4 : 0.5;
+                camera["shift_px"] = {c == 1 && period["start_s"] == 53.0 ? 0.6 : 0.0, 0.0};
+            }
+            else
+            {
+                camera["dart"] = c == 2 ? "cut" : "seen";
+                camera["axis_length_px"] = 240.0;
+            }
+            period["cameras"].push_back(camera);
+        }
+    }
+    return {{"type", "diagnosis"},
+            {"running", running},
+            {"step", "insert_dart"},
+            {"state", "measured"},
+            {"elapsed_s", 20.0},
+            {"session_id", ""},
+            {"duration_s", 20.0},
+            {"cameras", {"sim-1", "sim-2", "sim-3"}},
+            {"findings",
+             {finding("warning", "drift", "sim-2", "drift", {{"px", 0.6}, {"minutes", 0.2}}, "The image moved by 0.60 px within 0.2 min.",
+                      "Let the cameras run for about 10 minutes before calibrating and playing, so they are warm; if it keeps moving, tighten the "
+                      "camera's mount."),
+              finding("warning", "calibration", "sim-2", "calibration_off", {{"mm", 1.4}}, "The board is 1.40 mm off this camera's calibration.",
+                      "If the camera or the board moved, calibrate the camera again and refine all cameras (extrinsic page, step 5)."),
+              finding("info", "darts", nullptr, "darts_located", {{"located", 1}, {"darts", 1}, {"abstained", 0}},
+                      "1 of 1 darts located, 0 abstained.", "")}},
+            {"periods", periods}};
 }
 
 void Simulator::publishBoard (bool occupied)
@@ -131,6 +191,10 @@ void Simulator::start ()
                 publishBoard(false);
                 return std::nullopt;
             });
+    }
+    if(settings_.diagnosis)
+    {
+        server_.onDiagnosis([this] (bool running) { server_.publishDiagnosis(exampleDiagnosis(running)); });
     }
     publishBoard(settings_.occupied_at_start);
     thread_ = std::thread([this] { run(); });

@@ -12,6 +12,7 @@
 #include "board_watch.hpp"
 #include "dartpilot/api/server.hpp"
 #include "dartpilot/api/simulator.hpp"
+#include "live_diagnosis.hpp"
 #include "paths.hpp"
 #include "preview_sources.hpp"
 
@@ -94,9 +95,11 @@ int runServe (int argc, char* argv[])
     std::vector<std::string> simulated = {"sim-1", "sim-2", "sim-3"};
     SimulatedPreviews simulated_previews(server, simulated);
     std::unique_ptr<BoardWatch> board_watch;
+    std::unique_ptr<LiveDiagnosis> live_diagnosis;
     if(cameras)
     {
         std::vector<api::CameraInfo> infos;
+        const auto cameras_started = std::chrono::steady_clock::now();
         const auto devices = camera_previews.start();
         for(const auto& device : devices)
         {
@@ -110,7 +113,9 @@ int runServe (int argc, char* argv[])
         server.setCameras(infos);
         settings.camera_status = false;
         settings.board_state = false;
+        settings.diagnosis = false;
         board_watch = std::make_unique<BoardWatch>(server, camera_previews, devices, dataHome() / "calibration");
+        live_diagnosis = std::make_unique<LiveDiagnosis>(server, camera_previews, devices, dataHome() / "calibration", cameras_started);
     }
     else
     {
@@ -140,6 +145,7 @@ int runServe (int argc, char* argv[])
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     simulator.stop();
+    live_diagnosis.reset();
     board_watch.reset();
     simulated_previews.stop();
     camera_previews.stop();

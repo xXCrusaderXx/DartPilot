@@ -167,6 +167,338 @@ std::string_view toString (Severity severity)
     return "info";
 }
 
+DiagnosisBuilder::DiagnosisBuilder (std::vector<Camera> cameras, std::optional<geometry::BoardModel> board, bool wait_for_empty_board)
+    : cameras_(std::move(cameras))
+    , board_(std::move(board))
+    , wait_for_empty_board_(wait_for_empty_board)
+    , reference_(cameras_.size())
+    , board_changes_(cameras_.size(), 0)
+    , capture_(cameras_.size(), {0, 0})
+{
+}
+
+bool DiagnosisBuilder::hasReference () const
+{
+    return std::any_of(reference_.begin(), reference_.end(), [] (const cv::Mat& image) { return !image.empty(); });
+}
+
+void DiagnosisBuilder::setCapture (std::size_t camera, std::uint64_t frames, std::uint64_t lost_frames)
+{
+    capture_.at(camera) = {frames, lost_frames};
+}
+
+void DiagnosisBuilder::addFinding (Finding finding) { findings_.push_back(std::move(finding)); }
+
+bool DiagnosisBuilder::addPeriod (double start_s, double end_s, const std::vector<cv::Mat>& means)
+{
+    const std::size_t camera_count = cameras_.size();
+    const bool first = !hasReference();
+    if(first && board_)
+    {
+        for(std::size_t c = 0; c < camera_count; ++c)
+        {
+            if(!means[c].empty() && geometry::checkBoard(means[c], nullptr, cameras_[c].calibration, *board_).state == geometry::BoardState::Occupied)
+            {
+                if(wait_for_empty_board_)
+                {
+                    return false;
+                }
+                findings_.push_back({Severity::Problem,
+                                     "board",
+                                     cameras_[c].id,
+                                     "not_empty_at_start",
+                                     {},
+                                     "The board was not empty at the start: its wires are partly hidden.",
+                                     "Start the test with an empty board; everything after it is compared with this first image."});
+            }
+        }
+    }
+    Period period;
+    period.start_s = start_s;
+    period.end_s = end_s;
+    period.cameras.resize(camera_count);
+    std::vector<std::optional<tip_candidates::DartObservation>> observations(camera_count);
+    for(std::size_t c = 0; c < camera_count; ++c)
+    {
+        if(!means[c].empty())
+        {
+            period.cameras[c].brightness = cv::mean(means[c])[0];
+            if(!reference_[c].empty())
+            {
+                observations[c] = tip_candidates::observeDart(means[c], reference_[c]);
+            }
+        }
+    }
+    period.empty = std::none_of(observations.begin(), observations.end(), [] (const auto& o) { return o.has_value(); });
+    if(period.empty)
+    {
+        for(std::size_t c = 0; c < camera_count; ++c)
+        {
+            if(means[c].empty())
+            {
+                continue;
+            }
+            if(cameras_[c].calibration && board_)
+            {
+                cv::Mat image;
+                means[c].convertTo(image, CV_8UC3);
+                if(const auto detection = geometry::detectBoard(image))
+                {
+                    if(const auto check = geometry::checkCalibration(*detection, *cameras_[c].calibration, *board_))
+                    {
+                        period.cameras[c].calibration_mm = check->rms_mm;
+                        period.cameras[c].shift_px = cv::Point2d(check->mean_shift_px.x, check->mean_shift_px.y);
+                    }
+                }
+            }
+            if(!reference_[c].empty() && boardChange(reference_[c], means[c]) > kBoardChangeShare)
+            {
+                ++board_changes_[c];
+            }
+            reference_[c] = means[c];
+        }
+    }
+    else
+    {
+        std::vector<geometry::DartView> views;
+        std::vector<int> view_camera;
+        for(std::size_t c = 0; c < camera_count; ++c)
+        {
+            auto& pc = period.cameras[c];
+            if(!observations[c])
+            {
+                pc.dart = "none";
+                continue;
+            }
+            pc.dart = observations[c]->cut ? "cut" : "seen";
+            pc.axis_length_px = observations[c]->axis_length_px;
+            if(cameras_[c].calibration)
+            {
+                views.push_back({cameras_[c].calibration, *observations[c]});
+                view_camera.push_back(static_cast<int>(c));
+            }
+        }
+        if(const auto location = views.size() >= 2 ? geometry::locateDart(views) : std::nullopt)
+        {
+            period.board_mm = cv::Point2d(location->board_mm.x, location->board_mm.y);
+            for(std::size_t i = 0; i < location->views.size(); ++i)
+            {
+                period.agreeing_cameras.push_back(view_camera[location->views[i]]);
+                period.worst_plane_mm = std::max(period.worst_plane_mm, std::abs(location->plane_distance_mm[i]));
+            }
+        }
+    }
+    periods_.push_back(std::move(period));
+    return true;
+}
+
+Diagnosis DiagnosisBuilder::diagnosis () const
+{
+    Diagnosis diagnosis;
+    diagnosis.periods = periods_;
+    diagnosis.findings = findings_;
+    const std::size_t camera_count = cameras_.size();
+    for(const auto& camera : cameras_)
+    {
+        diagnosis.cameras.push_back(camera.id);
+    }
+    const auto add = [&] (Severity severity, std::string check, std::string camera, std::string code, std::map<std::string, double> values,
+                          std::string message, std::string hint)
+    {
+        diagnosis.findings.push_back(
+            {severity, std::move(check), std::move(camera), std::move(code), std::move(values), std::move(message), std::move(hint)});
+    };
+
+    for(std::size_t c = 0; c < camera_count; ++c)
+    {
+        const auto [frames, lost] = capture_[c];
+        const double share = frames + lost > 0 ? static_cast<double>(lost) / static_cast<double>(frames + lost) : 0.0;
+        if(share > kLostWarning)
+        {
+            add(share > kLostProblem ? Severity::Problem : Severity::Warning, "capture", cameras_[c].id, "lost_frames", {{"percent", 100.0 * share}},
+                "Lost " + number(100.0 * share, 1) + " % of its frames.",
+                "Plug the camera into another USB port or a powered hub, and close other programs that use the cameras.");
+        }
+    }
+
+    // Findings per camera from the empty periods: drift, calibration, light, changes of the board
+    for(std::size_t c = 0; c < camera_count; ++c)
+    {
+        const std::string& id = cameras_[c].id;
+        std::vector<double> calibration_mm, brightness, brightness_s;
+        std::optional<cv::Point2d> first_shift;
+        double first_s = 0.0, drift_px = 0.0, drift_span_s = 0.0;
+        int empty_periods = 0, board_missing = 0;
+        for(const auto& period : diagnosis.periods)
+        {
+            if(!period.empty)
+            {
+                continue;
+            }
+            ++empty_periods;
+            const auto& pc = period.cameras[c];
+            brightness.push_back(pc.brightness);
+            brightness_s.push_back(period.start_s);
+            if(!pc.calibration_mm)
+            {
+                ++board_missing;
+                continue;
+            }
+            calibration_mm.push_back(*pc.calibration_mm);
+            if(!first_shift)
+            {
+                first_shift = pc.shift_px;
+                first_s = period.start_s;
+            }
+            else
+            {
+                const double moved = cv::norm(*pc.shift_px - *first_shift);
+                if(moved > drift_px)
+                {
+                    drift_px = moved;
+                    drift_span_s = period.start_s - first_s;
+                }
+            }
+        }
+        if(!cameras_[c].calibration)
+        {
+            add(Severity::Warning, "calibration", id, "no_refinement", {}, "No refinement for this camera: calibration and darts were not checked.",
+                "Calibrate it on the extrinsic page and refine all cameras (step 5).");
+            continue;
+        }
+        if(empty_periods > 0 && board_missing == empty_periods)
+        {
+            add(Severity::Problem, "calibration", id, "board_not_found", {}, "The board was not found on any empty board.",
+                "Check the camera's view and focus, and the light on the board.");
+        }
+        if(!calibration_mm.empty())
+        {
+            const double level_mm = median(calibration_mm);
+            if(level_mm > kCalibrationWarning_mm)
+            {
+                add(level_mm > kCalibrationProblem_mm ? Severity::Problem : Severity::Warning, "calibration", id, "calibration_off",
+                    {{"mm", level_mm}}, "The board is " + number(level_mm) + " mm off this camera's calibration.",
+                    "If the camera or the board moved, calibrate the camera again and refine all cameras (extrinsic page, step 5).");
+            }
+        }
+        if(drift_px > kDriftWarning_px)
+        {
+            add(drift_px > kDriftProblem_px ? Severity::Problem : Severity::Warning, "drift", id, "drift",
+                {{"px", drift_px}, {"minutes", drift_span_s / 60.0}},
+                "The image moved by " + number(drift_px) + " px within " + number(drift_span_s / 60.0, 1) + " min.",
+                "Let the cameras run for about 10 minutes before calibrating and playing, so they are warm; if it keeps moving, "
+                "tighten the camera's mount.");
+        }
+        if(brightness.size() >= 2)
+        {
+            const auto [low, high] = std::minmax_element(brightness.begin(), brightness.end());
+            if(*high - *low > kLightChange * std::max(1.0, *low))
+            {
+                const double low_s = brightness_s[low - brightness.begin()], high_s = brightness_s[high - brightness.begin()];
+                const bool settling = std::min(low_s, high_s) < kExposureSettle_s;
+                const double percent = 100.0 * (*high - *low) / std::max(1.0, *low);
+                add(Severity::Warning, "light", id, settling ? "exposure_settling" : "light_changed",
+                    {{"percent", percent}, {"low", *low}, {"low_s", low_s}, {"high", *high}, {"high_s", high_s}},
+                    "The empty board's brightness changed by " + number(percent, 0) + " % (" + number(*low, 0) + " at " + number(low_s, 0) + " s, " +
+                        number(*high, 0) + " at " + number(high_s, 0) + " s).",
+                    settling ? "After the cameras start, their automatic exposure needs a moment: begin the test about 30 s after starting them, and "
+                               "keep the ring light on."
+                             : "Use the ring light and keep daylight and room light constant during the test.");
+            }
+        }
+        if(board_changes_[c] > 0)
+        {
+            add(Severity::Info, "board", id, "board_changed", {{"count", board_changes_[c]}},
+                "The empty board changed " + std::to_string(board_changes_[c]) + " times between darts.",
+                "Usually fibres pushed out by darts or a slight change of focus; harmless, as the reference is refreshed after every takeout.");
+        }
+    }
+
+    // Darts
+    int darts = 0, located = 0;
+    std::vector<int> cut(camera_count, 0), cut_lost(camera_count, 0), none(camera_count, 0), disagreed(camera_count, 0);
+    std::vector<double> planes;
+    for(const auto& period : diagnosis.periods)
+    {
+        if(period.empty)
+        {
+            continue;
+        }
+        ++darts;
+        if(period.board_mm)
+        {
+            ++located;
+            if(period.agreeing_cameras.size() >= 3)
+            {
+                planes.push_back(period.worst_plane_mm);
+            }
+        }
+        for(std::size_t c = 0; c < camera_count; ++c)
+        {
+            const auto& pc = period.cameras[c];
+            const bool agreed =
+                std::find(period.agreeing_cameras.begin(), period.agreeing_cameras.end(), static_cast<int>(c)) != period.agreeing_cameras.end();
+            cut[c] += pc.dart == "cut" ? 1 : 0;
+            cut_lost[c] += pc.dart == "cut" && !agreed ? 1 : 0;
+            none[c] += pc.dart == "none" ? 1 : 0;
+            disagreed[c] += pc.dart == "seen" && period.board_mm && !agreed ? 1 : 0;
+        }
+    }
+    if(darts == 0)
+    {
+        add(Severity::Warning, "darts", "", "no_darts", {}, "No dart was found in the test.",
+            "Put darts into the board one at a time and take the hand away each time.");
+    }
+    else
+    {
+        add(located * 3 < darts * 2 ? Severity::Warning : Severity::Info, "darts", "", "darts_located",
+            {{"located", located}, {"darts", darts}, {"abstained", darts - located}},
+            std::to_string(located) + " of " + std::to_string(darts) + " darts located, " + std::to_string(darts - located) + " abstained.",
+            located * 3 < darts * 2 ? "See the findings per camera for why darts were not located." : "");
+        for(std::size_t c = 0; c < camera_count; ++c)
+        {
+            const std::string& id = cameras_[c].id;
+            // A dart whose flight leaves the image is still located from its point and barrel; only cuts that cost the camera
+            // its part in the location are worth moving the camera for.
+            if(cut_lost[c] > kDartTroubleShare * darts)
+            {
+                add(Severity::Warning, "darts", id, "darts_cut_lost", {{"cut", cut[c]}, {"darts", darts}, {"lost", cut_lost[c]}},
+                    "Cut " + std::to_string(cut[c]) + " of " + std::to_string(darts) + " darts at the image border, and could not help locate " +
+                        std::to_string(cut_lost[c]) + " of them.",
+                    "Tilt or move the camera so that the board and about 15 cm above it are in view, then calibrate it again.");
+            }
+            else if(cut[c] > kDartTroubleShare * darts)
+            {
+                add(Severity::Info, "darts", id, "darts_cut", {{"cut", cut[c]}, {"darts", darts}},
+                    "Cut " + std::to_string(cut[c]) + " of " + std::to_string(darts) + " darts at the image border.",
+                    "Harmless while the darts are still located; more of the space above the board in view would make it more robust.");
+            }
+            if(none[c] > kDartTroubleShare * darts)
+            {
+                add(Severity::Warning, "darts", id, "darts_not_seen", {{"missed", none[c]}, {"darts", darts}},
+                    "Did not see " + std::to_string(none[c]) + " of " + std::to_string(darts) + " darts.",
+                    "Check that the camera sees the whole board; dark darts on dark sectors need good light.");
+            }
+            if(disagreed[c] > kDartTroubleShare * darts)
+            {
+                add(Severity::Warning, "consistency", id, "camera_disagrees", {{"disagreed", disagreed[c]}, {"darts", darts}},
+                    "Disagreed with the other cameras on " + std::to_string(disagreed[c]) + " of " + std::to_string(darts) + " darts.",
+                    "Run the calibration check; if it is off, calibrate this camera again and refine all cameras.");
+            }
+        }
+    }
+    if(!planes.empty())
+    {
+        const double level_mm = median(planes);
+        add(level_mm > kPlaneWarning_mm ? Severity::Warning : Severity::Info, "consistency", "", "planes_agree", {{"mm", level_mm}},
+            "Where three cameras saw a dart, they agreed within " + number(level_mm) + " mm (median).",
+            level_mm > kPlaneWarning_mm ? "Refine all cameras again; if one camera stands out, calibrate it first." : "");
+    }
+    std::stable_sort(diagnosis.findings.begin(), diagnosis.findings.end(),
+                     [] (const Finding& a, const Finding& b) { return static_cast<int>(a.severity) > static_cast<int>(b.severity); });
+    return diagnosis;
+}
+
 std::optional<Diagnosis> diagnoseSession (const session::RecordedSession& session, const geometry::StoredExtrinsics* extrinsics, std::string& error)
 {
     if(session.cameras.empty() || session.cameras[0].frames.empty())
@@ -174,43 +506,33 @@ std::optional<Diagnosis> diagnoseSession (const session::RecordedSession& sessio
         error = "The session has no frames.";
         return std::nullopt;
     }
-    Diagnosis diagnosis;
-    diagnosis.session_id = session.session_id;
     const std::size_t camera_count = session.cameras.size();
-    std::vector<const geometry::RefinedCamera*> calibrations(camera_count, nullptr);
-    for(std::size_t c = 0; c < camera_count; ++c)
+    std::vector<DiagnosisBuilder::Camera> cameras;
+    for(const auto& recorded : session.cameras)
     {
-        diagnosis.cameras.push_back(session.cameras[c].id);
+        DiagnosisBuilder::Camera camera{recorded.id, nullptr};
         if(extrinsics)
         {
             for(const auto& refined : extrinsics->refinement.cameras)
             {
-                if(refined.usb_port == session.cameras[c].usb_port)
+                if(refined.usb_port == recorded.usb_port)
                 {
-                    calibrations[c] = &refined;
+                    camera.calibration = &refined;
                 }
             }
         }
+        cameras.push_back(camera);
     }
-    const auto add = [&] (Severity severity, std::string check, std::string camera, std::string message, std::string hint)
-    { diagnosis.findings.push_back({severity, std::move(check), std::move(camera), std::move(message), std::move(hint)}); };
+    DiagnosisBuilder builder(cameras, extrinsics ? std::optional(extrinsics->refinement.board) : std::nullopt, false);
 
-    // Capture
     std::vector<CameraTrack> tracks;
     for(std::size_t c = 0; c < camera_count; ++c)
     {
         tracks.push_back(track(session, c));
-        const auto& t = tracks.back();
-        const double share = static_cast<double>(t.lost) / static_cast<double>(t.lost + t.exposure_ns.size());
-        if(share > kLostWarning)
-        {
-            add(share > kLostProblem ? Severity::Problem : Severity::Warning, "capture", session.cameras[c].id,
-                "Lost " + number(100.0 * share, 1) + " % of its frames.",
-                "Plug the camera into another USB port or a powered hub, and close other programs that use the cameras.");
-        }
+        builder.setCapture(c, tracks.back().exposure_ns.size(), tracks.back().lost);
     }
     const std::int64_t start_ns = tracks[0].exposure_ns.front();
-    diagnosis.duration_s = static_cast<double>(tracks[0].exposure_ns.back() - start_ns) * 1e-9;
+    const double duration_s = static_cast<double>(tracks[0].exposure_ns.back() - start_ns) * 1e-9;
 
     // Still periods on the clock of the first camera; every camera must be still
     std::vector<std::size_t> cursor(camera_count, 0);
@@ -248,280 +570,26 @@ std::optional<Diagnosis> diagnoseSession (const session::RecordedSession& sessio
     }
     if(stills.size() < 2)
     {
-        add(Severity::Problem, "still", "", "Only " + std::to_string(stills.size()) + " still moments in " + number(diagnosis.duration_s, 0) + " s.",
-            "Hold each state still for a few seconds with the hand out of view; if the image never settles, check for vibrations.");
+        builder.addFinding({Severity::Problem,
+                            "still",
+                            "",
+                            "few_still_moments",
+                            {{"count", static_cast<double>(stills.size())}, {"seconds", duration_s}},
+                            "Only " + std::to_string(stills.size()) + " still moments in " + number(duration_s, 0) + " s.",
+                            "Hold each state still for a few seconds with the hand out of view; if the image never settles, check for vibrations."});
     }
-
-    // Periods: the first one is the empty board; every later one without an object becomes the new reference, as after
-    // a takeout, so that changes of the board and a drifting camera do not add up.
-    std::vector<cv::Mat> reference(camera_count), last_empty(camera_count);
-    std::vector<int> board_changes(camera_count, 0);
-    for(std::size_t k = 0; k < stills.size(); ++k)
+    for(const auto& [first_ns, last_ns] : stills)
     {
-        Period period;
-        period.start_s = static_cast<double>(stills[k].first - start_ns) * 1e-9;
-        period.end_s = static_cast<double>(stills[k].second - start_ns) * 1e-9;
-        period.cameras.resize(camera_count);
         std::vector<cv::Mat> means(camera_count);
-        std::vector<std::optional<tip_candidates::DartObservation>> observations(camera_count);
         for(std::size_t c = 0; c < camera_count; ++c)
         {
-            means[c] = averaged(session, c, stills[k].first, stills[k].second);
-            if(!means[c].empty())
-            {
-                period.cameras[c].brightness = cv::mean(means[c])[0];
-                if(k > 0 && !reference[c].empty())
-                {
-                    observations[c] = tip_candidates::observeDart(means[c], reference[c]);
-                }
-            }
+            means[c] = averaged(session, c, first_ns, last_ns);
         }
-        if(k == 0 && extrinsics)
-        {
-            for(std::size_t c = 0; c < camera_count; ++c)
-            {
-                if(!means[c].empty() &&
-                   geometry::checkBoard(means[c], nullptr, calibrations[c], extrinsics->refinement.board).state == geometry::BoardState::Occupied)
-                {
-                    add(Severity::Problem, "board", session.cameras[c].id, "The board was not empty at the start: its wires are partly hidden.",
-                        "Start the test with an empty board; everything after it is compared with this first image.");
-                }
-            }
-        }
-        period.empty = std::none_of(observations.begin(), observations.end(), [] (const auto& o) { return o.has_value(); });
-        if(period.empty)
-        {
-            for(std::size_t c = 0; c < camera_count; ++c)
-            {
-                if(means[c].empty())
-                {
-                    continue;
-                }
-                if(calibrations[c])
-                {
-                    cv::Mat image;
-                    means[c].convertTo(image, CV_8UC3);
-                    if(const auto detection = geometry::detectBoard(image))
-                    {
-                        if(const auto check = geometry::checkCalibration(*detection, *calibrations[c], extrinsics->refinement.board))
-                        {
-                            period.cameras[c].calibration_mm = check->rms_mm;
-                            period.cameras[c].shift_px = cv::Point2d(check->mean_shift_px.x, check->mean_shift_px.y);
-                        }
-                    }
-                }
-                if(!last_empty[c].empty() && boardChange(last_empty[c], means[c]) > kBoardChangeShare)
-                {
-                    ++board_changes[c];
-                }
-                last_empty[c] = means[c];
-                reference[c] = means[c];
-            }
-        }
-        else
-        {
-            std::vector<geometry::DartView> views;
-            std::vector<int> view_camera;
-            for(std::size_t c = 0; c < camera_count; ++c)
-            {
-                auto& pc = period.cameras[c];
-                if(!observations[c])
-                {
-                    pc.dart = "none";
-                    continue;
-                }
-                pc.dart = observations[c]->cut ? "cut" : "seen";
-                pc.axis_length_px = observations[c]->axis_length_px;
-                if(calibrations[c])
-                {
-                    views.push_back({calibrations[c], *observations[c]});
-                    view_camera.push_back(static_cast<int>(c));
-                }
-            }
-            if(const auto location = views.size() >= 2 ? geometry::locateDart(views) : std::nullopt)
-            {
-                period.board_mm = cv::Point2d(location->board_mm.x, location->board_mm.y);
-                for(std::size_t i = 0; i < location->views.size(); ++i)
-                {
-                    period.agreeing_cameras.push_back(view_camera[location->views[i]]);
-                    period.worst_plane_mm = std::max(period.worst_plane_mm, std::abs(location->plane_distance_mm[i]));
-                }
-            }
-        }
-        diagnosis.periods.push_back(std::move(period));
+        builder.addPeriod(static_cast<double>(first_ns - start_ns) * 1e-9, static_cast<double>(last_ns - start_ns) * 1e-9, means);
     }
-
-    // Findings per camera from the empty periods: drift, calibration, light, changes of the board
-    for(std::size_t c = 0; c < camera_count; ++c)
-    {
-        const std::string& id = session.cameras[c].id;
-        std::vector<double> calibration_mm, brightness, brightness_s;
-        std::optional<cv::Point2d> first_shift;
-        double first_s = 0.0, drift_px = 0.0, drift_span_s = 0.0;
-        int empty_periods = 0, board_missing = 0;
-        for(const auto& period : diagnosis.periods)
-        {
-            if(!period.empty)
-            {
-                continue;
-            }
-            ++empty_periods;
-            const auto& pc = period.cameras[c];
-            brightness.push_back(pc.brightness);
-            brightness_s.push_back(period.start_s);
-            if(!pc.calibration_mm)
-            {
-                ++board_missing;
-                continue;
-            }
-            calibration_mm.push_back(*pc.calibration_mm);
-            if(!first_shift)
-            {
-                first_shift = pc.shift_px;
-                first_s = period.start_s;
-            }
-            else
-            {
-                const double moved = cv::norm(*pc.shift_px - *first_shift);
-                if(moved > drift_px)
-                {
-                    drift_px = moved;
-                    drift_span_s = period.start_s - first_s;
-                }
-            }
-        }
-        if(!calibrations[c])
-        {
-            add(Severity::Warning, "calibration", id, "No refinement for this camera: calibration and darts were not checked.",
-                "Calibrate it on the extrinsic page and refine all cameras (step 5).");
-            continue;
-        }
-        if(empty_periods > 0 && board_missing == empty_periods)
-        {
-            add(Severity::Problem, "calibration", id, "The board was not found on any empty board.",
-                "Check the camera's view and focus, and the light on the board.");
-        }
-        if(!calibration_mm.empty())
-        {
-            const double level_mm = median(calibration_mm);
-            if(level_mm > kCalibrationWarning_mm)
-            {
-                add(level_mm > kCalibrationProblem_mm ? Severity::Problem : Severity::Warning, "calibration", id,
-                    "The board is " + number(level_mm) + " mm off this camera's calibration.",
-                    "If the camera or the board moved, calibrate the camera again and refine all cameras (extrinsic page, step 5).");
-            }
-        }
-        if(drift_px > kDriftWarning_px)
-        {
-            add(drift_px > kDriftProblem_px ? Severity::Problem : Severity::Warning, "drift", id,
-                "The image moved by " + number(drift_px) + " px within " + number(drift_span_s / 60.0, 1) + " min.",
-                "Let the cameras run for about 10 minutes before calibrating and playing, so they are warm; if it keeps moving, "
-                "tighten the camera's mount.");
-        }
-        if(brightness.size() >= 2)
-        {
-            const auto [low, high] = std::minmax_element(brightness.begin(), brightness.end());
-            if(*high - *low > kLightChange * std::max(1.0, *low))
-            {
-                const double low_s = brightness_s[low - brightness.begin()], high_s = brightness_s[high - brightness.begin()];
-                add(Severity::Warning, "light", id,
-                    "The empty board's brightness changed by " + number(100.0 * (*high - *low) / std::max(1.0, *low), 0) + " % (" + number(*low, 0) +
-                        " at " + number(low_s, 0) + " s, " + number(*high, 0) + " at " + number(high_s, 0) + " s).",
-                    std::min(low_s, high_s) < kExposureSettle_s
-                        ? "After the cameras start, their automatic exposure needs a moment: begin the test about 30 s after starting them, and "
-                          "keep the ring light on."
-                        : "Use the ring light and keep daylight and room light constant during the test.");
-            }
-        }
-        if(board_changes[c] > 0)
-        {
-            add(Severity::Info, "board", id, "The empty board changed " + std::to_string(board_changes[c]) + " times between darts.",
-                "Usually fibres pushed out by darts or a slight change of focus; harmless, as the reference is refreshed after every takeout.");
-        }
-    }
-
-    // Darts
-    int darts = 0, located = 0;
-    std::vector<int> cut(camera_count, 0), cut_lost(camera_count, 0), none(camera_count, 0), disagreed(camera_count, 0);
-    std::vector<double> planes;
-    for(const auto& period : diagnosis.periods)
-    {
-        if(period.empty)
-        {
-            continue;
-        }
-        ++darts;
-        if(period.board_mm)
-        {
-            ++located;
-            if(period.agreeing_cameras.size() >= 3)
-            {
-                planes.push_back(period.worst_plane_mm);
-            }
-        }
-        for(std::size_t c = 0; c < camera_count; ++c)
-        {
-            const auto& pc = period.cameras[c];
-            cut[c] += pc.dart == "cut" ? 1 : 0;
-            cut_lost[c] += pc.dart == "cut" && std::find(period.agreeing_cameras.begin(), period.agreeing_cameras.end(), static_cast<int>(c)) ==
-                                                   period.agreeing_cameras.end()
-                               ? 1
-                               : 0;
-            none[c] += pc.dart == "none" ? 1 : 0;
-            const bool agreed =
-                std::find(period.agreeing_cameras.begin(), period.agreeing_cameras.end(), static_cast<int>(c)) != period.agreeing_cameras.end();
-            disagreed[c] += pc.dart == "seen" && period.board_mm && !agreed ? 1 : 0;
-        }
-    }
-    if(darts == 0)
-    {
-        add(Severity::Warning, "darts", "", "No dart was found in the test.",
-            "Put darts into the board one at a time and take the hand away each time.");
-    }
-    else
-    {
-        add(located * 3 < darts * 2 ? Severity::Warning : Severity::Info, "darts", "",
-            std::to_string(located) + " of " + std::to_string(darts) + " darts located, " + std::to_string(darts - located) + " abstained.",
-            located * 3 < darts * 2 ? "See the findings per camera for why darts were not located." : "");
-        for(std::size_t c = 0; c < camera_count; ++c)
-        {
-            const std::string& id = session.cameras[c].id;
-            // A dart whose flight leaves the image is still located from its point and barrel; only cuts that cost the camera
-            // its part in the location are worth moving the camera for.
-            if(cut_lost[c] > kDartTroubleShare * darts)
-            {
-                add(Severity::Warning, "darts", id,
-                    "Cut " + std::to_string(cut[c]) + " of " + std::to_string(darts) + " darts at the image border, and could not help locate " +
-                        std::to_string(cut_lost[c]) + " of them.",
-                    "Tilt or move the camera so that the board and about 15 cm above it are in view, then calibrate it again.");
-            }
-            else if(cut[c] > kDartTroubleShare * darts)
-            {
-                add(Severity::Info, "darts", id, "Cut " + std::to_string(cut[c]) + " of " + std::to_string(darts) + " darts at the image border.",
-                    "Harmless while the darts are still located; more of the space above the board in view would make it more robust.");
-            }
-            if(none[c] > kDartTroubleShare * darts)
-            {
-                add(Severity::Warning, "darts", id, "Did not see " + std::to_string(none[c]) + " of " + std::to_string(darts) + " darts.",
-                    "Check that the camera sees the whole board; dark darts on dark sectors need good light.");
-            }
-            if(disagreed[c] > kDartTroubleShare * darts)
-            {
-                add(Severity::Warning, "consistency", id,
-                    "Disagreed with the other cameras on " + std::to_string(disagreed[c]) + " of " + std::to_string(darts) + " darts.",
-                    "Run the calibration check; if it is off, calibrate this camera again and refine all cameras.");
-            }
-        }
-    }
-    if(!planes.empty())
-    {
-        const double level_mm = median(planes);
-        add(level_mm > kPlaneWarning_mm ? Severity::Warning : Severity::Info, "consistency", "",
-            "Where three cameras saw a dart, they agreed within " + number(level_mm) + " mm (median).",
-            level_mm > kPlaneWarning_mm ? "Refine all cameras again; if one camera stands out, calibrate it first." : "");
-    }
-    std::stable_sort(diagnosis.findings.begin(), diagnosis.findings.end(),
-                     [] (const Finding& a, const Finding& b) { return static_cast<int>(a.severity) > static_cast<int>(b.severity); });
+    Diagnosis diagnosis = builder.diagnosis();
+    diagnosis.session_id = session.session_id;
+    diagnosis.duration_s = duration_s;
     return diagnosis;
 }
 
@@ -540,6 +608,14 @@ std::string toJson (const Diagnosis& diagnosis)
         const auto& f = diagnosis.findings[i];
         json << (i == 0 ? "\n" : ",\n") << "    {\"severity\": " << jsonString(std::string(toString(f.severity)))
              << ", \"check\": " << jsonString(f.check) << ", \"camera\": " << (f.camera.empty() ? "null" : jsonString(f.camera))
+             << ", \"code\": " << jsonString(f.code) << ", \"values\": {";
+        bool first_value = true;
+        for(const auto& [name, value] : f.values)
+        {
+            json << (first_value ? "" : ", ") << jsonString(name) << ": " << (value == std::round(value) ? number(value, 0) : number(value));
+            first_value = false;
+        }
+        json << "}"
              << ", \"message\": " << jsonString(f.message) << ", \"hint\": " << jsonString(f.hint) << "}";
     }
     json << "\n  ],\n  \"periods\": [";

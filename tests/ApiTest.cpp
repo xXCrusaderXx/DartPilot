@@ -374,3 +374,44 @@ TEST(Simulator, BoardStateMarksTheObjectWhenOccupied)
     EXPECT_TRUE(empty.reference_stored);
     EXPECT_FALSE(empty.cameras[2].image_point_px.has_value());
 }
+
+TEST(Server, DiagnosisRequestsReachTheSourceAndItsStateReachesEveryClient)
+{
+    ix::initNetSystem();
+    const int port = 20000 + static_cast<int>(std::random_device{}() % 20000);
+    api::Server server(port, "127.0.0.1", api::Hello{});
+    std::string error;
+    ASSERT_TRUE(server.start(error)) << error;
+
+    const auto parsed = api::parseRequest(R"({"type":"stop_diagnosis","request_id":"1"})");
+    EXPECT_FALSE(std::get<api::SetDiagnosis>(std::get<api::Request>(parsed).body).running);
+
+    TestClient client(port);
+    client.next("hello");
+    client.send({{"type", "start_diagnosis"}, {"request_id", "1"}});
+    EXPECT_EQ(client.next("result")["error"]["code"], "not_available");
+
+    std::vector<bool> requests;
+    server.onDiagnosis([&] (bool running) { requests.push_back(running); });
+    client.send({{"type", "start_diagnosis"}, {"request_id", "2"}});
+    EXPECT_TRUE(client.next("result")["ok"]);
+    client.send({{"type", "stop_diagnosis"}, {"request_id", "3"}});
+    EXPECT_TRUE(client.next("result")["ok"]);
+    EXPECT_EQ(requests, (std::vector<bool>{true, false}));
+
+    server.publishDiagnosis(api::Simulator::exampleDiagnosis(true));
+    const auto diagnosis = client.next("diagnosis");
+    EXPECT_TRUE(diagnosis["running"]);
+    EXPECT_EQ(diagnosis["step"], "insert_dart");
+    ASSERT_FALSE(diagnosis["findings"].empty());
+    for(const auto& finding : diagnosis["findings"])
+    {
+        EXPECT_FALSE(finding["code"].get<std::string>().empty());
+        EXPECT_TRUE(finding["values"].is_object());
+    }
+    // A client that connects later gets the latest state after hello.
+    TestClient late(port);
+    late.next("hello");
+    EXPECT_EQ(late.next("diagnosis")["step"], "insert_dart");
+    server.stop();
+}
