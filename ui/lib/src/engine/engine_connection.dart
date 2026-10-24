@@ -45,6 +45,9 @@ class EngineConnection extends ChangeNotifier {
 
   /// Latest board check of the engine; null when it has none
   EngineBoardState? boardState;
+
+  /// Latest state of the setup diagnosis; null before it ran
+  EngineDiagnosis? diagnosis;
   String? error;
 
   WebSocketChannel? _channel;
@@ -102,6 +105,7 @@ class EngineConnection extends ChangeNotifier {
     await _closeChannel();
     hello = null;
     boardState = null;
+    diagnosis = null;
     if (state != EngineConnectionState.disconnected) {
       state = EngineConnectionState.disconnected;
       notifyListeners();
@@ -136,10 +140,15 @@ class EngineConnection extends ChangeNotifier {
     if (event is EngineHello) {
       hello = event;
       boardState = event.boardState;
+      diagnosis = null;
       cameraStatus
         ..clear()
         ..addAll({for (final c in event.cameras) c: EngineCameraStatus(c, 'ok')});
       state = EngineConnectionState.connected;
+      notifyListeners();
+    }
+    if (event is EngineDiagnosis) {
+      diagnosis = event;
       notifyListeners();
     }
     if (event is EngineBoardState) {
@@ -223,6 +232,11 @@ class EngineConnection extends ChangeNotifier {
   /// [force] stores even while a camera reports an object, after the player confirmed the board is empty.
   Future<String?> storeEmptyReference({bool force = false}) =>
       _request({'type': 'store_empty_reference', if (force) 'force': true});
+
+  /// Starts the setup diagnosis afresh; its state arrives as [diagnosis]. The error code if it cannot run.
+  Future<String?> startDiagnosis() => _request({'type': 'start_diagnosis'});
+
+  Future<String?> stopDiagnosis() => _request({'type': 'stop_diagnosis'});
 
   /// A dart the engine missed, entered by hand
   void addThrow(BoardPoint point) => _send({'type': 'add_throw', 'board_point': _pointJson(point)});

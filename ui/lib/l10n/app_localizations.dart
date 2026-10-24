@@ -823,6 +823,390 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Close'**
   String get close;
+
+  /// No description provided for @diagnosis.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup diagnosis'**
+  String get diagnosis;
+
+  /// No description provided for @startDiagnosis.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get startDiagnosis;
+
+  /// No description provided for @restartDiagnosis.
+  ///
+  /// In en, this message translates to:
+  /// **'Start again'**
+  String get restartDiagnosis;
+
+  /// No description provided for @stopDiagnosis.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get stopDiagnosis;
+
+  /// No description provided for @diagnosisIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'The diagnosis watches the cameras while you follow the steps: an empty board, then one dart at a time at 8 to 10 places. It lists what is wrong with the setup and what to do about it. Start the cameras about 30 s before, so their exposure has settled.'**
+  String get diagnosisIntro;
+
+  /// No description provided for @diagnosisNeedsEngine.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to an engine first.'**
+  String get diagnosisNeedsEngine;
+
+  /// No description provided for @diagnosisNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This engine cannot run the diagnosis; it needs the cameras (start it with the cameras).'**
+  String get diagnosisNotAvailable;
+
+  /// No description provided for @diagnosisFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The diagnosis could not start ({code}).'**
+  String diagnosisFailed(String code);
+
+  /// No description provided for @stepEmptyBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave the board empty and take your hand out of view.'**
+  String get stepEmptyBoard;
+
+  /// No description provided for @stepRemoveDarts.
+  ///
+  /// In en, this message translates to:
+  /// **'Pull all darts out of the board.'**
+  String get stepRemoveDarts;
+
+  /// No description provided for @stepInsertDart.
+  ///
+  /// In en, this message translates to:
+  /// **'Put one dart into the board and take your hand away.'**
+  String get stepInsertDart;
+
+  /// No description provided for @stepInsertDartHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat at 8 to 10 places, also the bull and near the double ring.'**
+  String get stepInsertDartHint;
+
+  /// No description provided for @stepRemoveDart.
+  ///
+  /// In en, this message translates to:
+  /// **'Pull the dart out again.'**
+  String get stepRemoveDart;
+
+  /// No description provided for @diagnosisMoving.
+  ///
+  /// In en, this message translates to:
+  /// **'The image moves – hold still'**
+  String get diagnosisMoving;
+
+  /// No description provided for @diagnosisSettling.
+  ///
+  /// In en, this message translates to:
+  /// **'Still – waiting a moment'**
+  String get diagnosisSettling;
+
+  /// No description provided for @diagnosisMeasuring.
+  ///
+  /// In en, this message translates to:
+  /// **'Measuring…'**
+  String get diagnosisMeasuring;
+
+  /// No description provided for @diagnosisMeasured.
+  ///
+  /// In en, this message translates to:
+  /// **'Measured'**
+  String get diagnosisMeasured;
+
+  /// No description provided for @diagnosisStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped'**
+  String get diagnosisStopped;
+
+  /// No description provided for @diagnosisSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{time} · {empty} empty boards · {darts} darts'**
+  String diagnosisSummary(String time, int empty, int darts);
+
+  /// No description provided for @diagnosisFindings.
+  ///
+  /// In en, this message translates to:
+  /// **'Findings'**
+  String get diagnosisFindings;
+
+  /// No description provided for @diagnosisNoFindings.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing found so far.'**
+  String get diagnosisNoFindings;
+
+  /// No description provided for @cameraNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera {number}'**
+  String cameraNumber(int number);
+
+  /// No description provided for @diagnosisPeriods.
+  ///
+  /// In en, this message translates to:
+  /// **'Measured moments ({count})'**
+  String diagnosisPeriods(int count);
+
+  /// No description provided for @periodEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'empty board'**
+  String get periodEmpty;
+
+  /// No description provided for @periodDartNotLocated.
+  ///
+  /// In en, this message translates to:
+  /// **'dart, not located'**
+  String get periodDartNotLocated;
+
+  /// No description provided for @periodDartLocated.
+  ///
+  /// In en, this message translates to:
+  /// **'dart at {x}, {y} mm, {cameras} cameras agree within {plane} mm'**
+  String periodDartLocated(String x, String y, int cameras, String plane);
+
+  /// No description provided for @dartSeen.
+  ///
+  /// In en, this message translates to:
+  /// **'dart seen'**
+  String get dartSeen;
+
+  /// No description provided for @dartCut.
+  ///
+  /// In en, this message translates to:
+  /// **'dart cut at the border'**
+  String get dartCut;
+
+  /// No description provided for @dartNotSeen.
+  ///
+  /// In en, this message translates to:
+  /// **'dart not seen'**
+  String get dartNotSeen;
+
+  /// No description provided for @periodCalibration.
+  ///
+  /// In en, this message translates to:
+  /// **'{mm} mm off calibration'**
+  String periodCalibration(String mm);
+
+  /// No description provided for @periodBrightness.
+  ///
+  /// In en, this message translates to:
+  /// **'brightness {value}'**
+  String periodBrightness(int value);
+
+  /// No description provided for @findingLostFrames.
+  ///
+  /// In en, this message translates to:
+  /// **'Lost {percent} % of its frames.'**
+  String findingLostFrames(String percent);
+
+  /// No description provided for @hintLostFrames.
+  ///
+  /// In en, this message translates to:
+  /// **'Plug the camera into another USB port or a powered hub, and close other programs that use the cameras.'**
+  String get hintLostFrames;
+
+  /// No description provided for @findingFewStillMoments.
+  ///
+  /// In en, this message translates to:
+  /// **'Only {count} still moments in {seconds} s.'**
+  String findingFewStillMoments(int count, String seconds);
+
+  /// No description provided for @hintFewStillMoments.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold each state still for a few seconds with the hand out of view; if the image never settles, check for vibrations.'**
+  String get hintFewStillMoments;
+
+  /// No description provided for @findingNotEmptyAtStart.
+  ///
+  /// In en, this message translates to:
+  /// **'The board was not empty at the start: its wires are partly hidden.'**
+  String get findingNotEmptyAtStart;
+
+  /// No description provided for @hintNotEmptyAtStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start with an empty board; everything after it is compared with this first image.'**
+  String get hintNotEmptyAtStart;
+
+  /// No description provided for @findingNoRefinement.
+  ///
+  /// In en, this message translates to:
+  /// **'No refinement for this camera: calibration and darts were not checked.'**
+  String get findingNoRefinement;
+
+  /// No description provided for @hintNoRefinement.
+  ///
+  /// In en, this message translates to:
+  /// **'Calibrate it on the extrinsic page and refine all cameras (step 5).'**
+  String get hintNoRefinement;
+
+  /// No description provided for @findingBoardNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'The board was not found on any empty board.'**
+  String get findingBoardNotFound;
+
+  /// No description provided for @hintBoardNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the camera\'s view and focus, and the light on the board.'**
+  String get hintBoardNotFound;
+
+  /// No description provided for @findingCalibrationOff.
+  ///
+  /// In en, this message translates to:
+  /// **'The board is {mm} mm off this camera\'s calibration.'**
+  String findingCalibrationOff(String mm);
+
+  /// No description provided for @hintCalibrationOff.
+  ///
+  /// In en, this message translates to:
+  /// **'If the camera or the board moved, calibrate the camera again and refine all cameras (extrinsic page, step 5).'**
+  String get hintCalibrationOff;
+
+  /// No description provided for @findingDrift.
+  ///
+  /// In en, this message translates to:
+  /// **'The image moved by {px} px within {minutes} min.'**
+  String findingDrift(String px, String minutes);
+
+  /// No description provided for @hintDrift.
+  ///
+  /// In en, this message translates to:
+  /// **'Let the cameras run for about 10 minutes before calibrating and playing, so they are warm; if it keeps moving, tighten the camera\'s mount.'**
+  String get hintDrift;
+
+  /// No description provided for @findingLightChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The empty board\'s brightness changed by {percent} % ({low} at {lowS} s, {high} at {highS} s).'**
+  String findingLightChanged(String percent, String low, String lowS, String high, String highS);
+
+  /// No description provided for @hintExposureSettling.
+  ///
+  /// In en, this message translates to:
+  /// **'After the cameras start, their automatic exposure needs a moment: begin about 30 s after starting them, and keep the ring light on.'**
+  String get hintExposureSettling;
+
+  /// No description provided for @hintLightChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the ring light and keep daylight and room light constant during the test.'**
+  String get hintLightChanged;
+
+  /// No description provided for @findingBoardChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The empty board changed {count} times between darts.'**
+  String findingBoardChanged(int count);
+
+  /// No description provided for @hintBoardChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Usually fibres pushed out by darts or a slight change of focus; harmless, as the reference is refreshed after every takeout.'**
+  String get hintBoardChanged;
+
+  /// No description provided for @findingNoDarts.
+  ///
+  /// In en, this message translates to:
+  /// **'No dart was found in the test.'**
+  String get findingNoDarts;
+
+  /// No description provided for @hintNoDarts.
+  ///
+  /// In en, this message translates to:
+  /// **'Put darts into the board one at a time and take the hand away each time.'**
+  String get hintNoDarts;
+
+  /// No description provided for @findingDartsLocated.
+  ///
+  /// In en, this message translates to:
+  /// **'{located} of {darts} darts located, {abstained} without a result.'**
+  String findingDartsLocated(int located, int darts, int abstained);
+
+  /// No description provided for @hintDartsLocated.
+  ///
+  /// In en, this message translates to:
+  /// **'The findings per camera show why darts were not located.'**
+  String get hintDartsLocated;
+
+  /// No description provided for @findingDartsCutLost.
+  ///
+  /// In en, this message translates to:
+  /// **'Cut {cut} of {darts} darts at the image border and could not help locate {lost} of them.'**
+  String findingDartsCutLost(int cut, int darts, int lost);
+
+  /// No description provided for @hintDartsCutLost.
+  ///
+  /// In en, this message translates to:
+  /// **'Tilt or move the camera so that the board and about 15 cm above it are in view, then calibrate it again.'**
+  String get hintDartsCutLost;
+
+  /// No description provided for @findingDartsCut.
+  ///
+  /// In en, this message translates to:
+  /// **'Cut {cut} of {darts} darts at the image border.'**
+  String findingDartsCut(int cut, int darts);
+
+  /// No description provided for @hintDartsCut.
+  ///
+  /// In en, this message translates to:
+  /// **'Harmless while the darts are still located; more of the space above the board in view would make it more robust.'**
+  String get hintDartsCut;
+
+  /// No description provided for @findingDartsNotSeen.
+  ///
+  /// In en, this message translates to:
+  /// **'Did not see {missed} of {darts} darts.'**
+  String findingDartsNotSeen(int missed, int darts);
+
+  /// No description provided for @hintDartsNotSeen.
+  ///
+  /// In en, this message translates to:
+  /// **'Check that the camera sees the whole board; dark darts on dark sectors need good light.'**
+  String get hintDartsNotSeen;
+
+  /// No description provided for @findingCameraDisagrees.
+  ///
+  /// In en, this message translates to:
+  /// **'Disagreed with the other cameras on {disagreed} of {darts} darts.'**
+  String findingCameraDisagrees(int disagreed, int darts);
+
+  /// No description provided for @hintCameraDisagrees.
+  ///
+  /// In en, this message translates to:
+  /// **'Run the calibration check; if it is off, calibrate this camera again and refine all cameras.'**
+  String get hintCameraDisagrees;
+
+  /// No description provided for @findingPlanesAgree.
+  ///
+  /// In en, this message translates to:
+  /// **'Where three cameras saw a dart, they agreed within {mm} mm (median).'**
+  String findingPlanesAgree(String mm);
+
+  /// No description provided for @hintPlanesAgree.
+  ///
+  /// In en, this message translates to:
+  /// **'Refine all cameras again; if one camera stands out, calibrate it first.'**
+  String get hintPlanesAgree;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
