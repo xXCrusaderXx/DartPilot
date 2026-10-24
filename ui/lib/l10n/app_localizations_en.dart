@@ -1281,4 +1281,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get referenceNotGoodHint =>
       'Run the setup diagnosis to see where the error comes from, then calibrate the cameras it names again.';
+
+  @override
+  String get referenceCamerasDisagree => 'The cameras disagree about where it is';
+
+  @override
+  String get referenceSeenByOneCamera => 'Only one camera saw it';
 }

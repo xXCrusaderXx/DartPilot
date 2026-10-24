@@ -91,9 +91,13 @@ class _ReferenceRunScreenState extends State<ReferenceRunScreen> {
 String _mm(AppLocalizations l10n, double value) =>
     NumberFormat.decimalPatternDigits(locale: l10n.localeName, decimalDigits: 1).format(value);
 
-Color _errorColor(BuildContext context, double? errorMm) {
+/// The error as it is shown, to one decimal, so a dart shown as 1.0 mm is not coloured as more than 1 mm
+double _shown(double errorMm) => (errorMm * 10).round() / 10;
+
+Color _errorColor(BuildContext context, double? error) {
   final status = StatusColors.of(context);
-  if (errorMm == null) return status.warning;
+  if (error == null) return status.warning;
+  final errorMm = _shown(error);
   return errorMm <= goodMm
       ? status.good
       : errorMm <= fairMm
@@ -281,11 +285,12 @@ class _MarksPainter extends CustomPainter {
     for (final result in run.results) {
       final expected = at(result.boardMm);
       final located = result.locatedMm;
-      final colour = result.errorMm == null
+      final error = result.errorMm == null ? null : _shown(result.errorMm!);
+      final colour = error == null
           ? warning
-          : result.errorMm! <= goodMm
+          : error <= goodMm
           ? good
-          : result.errorMm! <= fairMm
+          : error <= fairMm
           ? warning
           : bad;
       canvas.drawCircle(expected, r, Paint()..color = Colors.white.withValues(alpha: 0.7));
@@ -337,7 +342,15 @@ class _ResultTile extends StatelessWidget {
         child: Text('${result.index + 1}', style: const TextStyle(color: AppColors.background, fontSize: 12)),
       ),
       title: Text(error == null ? l10n.referenceAbstained : l10n.referenceError(_mm(l10n, error))),
-      subtitle: Text(error == null ? (result.reason ?? '') : l10n.referenceCamerasUsed(result.camerasUsed)),
+      subtitle: Text(
+        error == null
+            ? switch (result.reason) {
+                'cameras_disagree' => l10n.referenceCamerasDisagree,
+                'seen_by_one_camera' => l10n.referenceSeenByOneCamera,
+                _ => result.reason ?? '',
+              }
+            : l10n.referenceCamerasUsed(result.camerasUsed),
+      ),
     );
   }
 }

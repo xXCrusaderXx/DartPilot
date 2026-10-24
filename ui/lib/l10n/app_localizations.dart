@@ -2305,6 +2305,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Run the setup diagnosis to see where the error comes from, then calibrate the cameras it names again.'**
   String get referenceNotGoodHint;
+
+  /// No description provided for @referenceCamerasDisagree.
+  ///
+  /// In en, this message translates to:
+  /// **'The cameras disagree about where it is'**
+  String get referenceCamerasDisagree;
+
+  /// No description provided for @referenceSeenByOneCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Only one camera saw it'**
+  String get referenceSeenByOneCamera;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

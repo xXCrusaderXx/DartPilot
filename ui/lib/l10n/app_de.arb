@@ -368,5 +368,7 @@
   "referenceMax": "Schlechtester",
   "referenceGood": "Die Erkennung ist genau.",
   "referenceNotGood": "Die Erkennung ist noch nicht genau genug.",
-  "referenceNotGoodHint": "Lass die Einrichtungsdiagnose laufen, um zu sehen, woher der Fehler kommt, und kalibriere die genannten Kameras neu."
+  "referenceNotGoodHint": "Lass die Einrichtungsdiagnose laufen, um zu sehen, woher der Fehler kommt, und kalibriere die genannten Kameras neu.",
+  "referenceCamerasDisagree": "Die Kameras sind sich nicht einig, wo er steckt",
+  "referenceSeenByOneCamera": "Nur eine Kamera hat ihn gesehen"
 }

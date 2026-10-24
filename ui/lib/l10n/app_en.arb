@@ -865,5 +865,7 @@
   "referenceMax": "Worst",
   "referenceGood": "The detection is accurate.",
   "referenceNotGood": "The detection is not accurate enough yet.",
-  "referenceNotGoodHint": "Run the setup diagnosis to see where the error comes from, then calibrate the cameras it names again."
+  "referenceNotGoodHint": "Run the setup diagnosis to see where the error comes from, then calibrate the cameras it names again.",
+  "referenceCamerasDisagree": "The cameras disagree about where it is",
+  "referenceSeenByOneCamera": "Only one camera saw it"
 }
