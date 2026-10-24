@@ -42,8 +42,13 @@ Server::Server (int port, std::string host, Hello hello)
                     // hello first, then the client is registered for events, so it never sees an event before hello.
                     std::unique_lock lock(mutex_);
                     const Hello hello = hello_;
+                    const nlohmann::json diagnosis = last_diagnosis_;
                     lock.unlock();
                     socket.sendText(helloMessage(hello).dump());
+                    if(!diagnosis.is_null())
+                    {
+                        socket.sendText(diagnosis.dump());
+                    }
                     lock.lock();
                     clients_[connection] = Client{&socket, {}, false};
                     break;
@@ -166,6 +171,21 @@ void Server::onStoreEmptyReference (std::function<std::optional<std::string>(boo
 {
     std::lock_guard lock(mutex_);
     store_reference_handler_ = std::move(handler);
+}
+
+void Server::onDiagnosis (std::function<void(bool)> handler)
+{
+    std::lock_guard lock(mutex_);
+    diagnosis_handler_ = std::move(handler);
+}
+
+void Server::publishDiagnosis (const nlohmann::json& message)
+{
+    {
+        std::lock_guard lock(mutex_);
+        last_diagnosis_ = message;
+    }
+    broadcast(message);
 }
 
 std::vector<BoardPoint> Server::visitPoints () const
@@ -379,6 +399,20 @@ nlohmann::json Server::handle (const std::string& connection, const Request& req
                     return resultMessage(request.request_id, false, "not_available", "No board check in this mode");
                 }
                 handler();
+                return resultMessage(request.request_id, true);
+            },
+            [&] (const SetDiagnosis& diagnosis)
+            {
+                std::function<void(bool)> handler;
+                {
+                    std::lock_guard lock(mutex_);
+                    handler = diagnosis_handler_;
+                }
+                if(!handler)
+                {
+                    return resultMessage(request.request_id, false, "not_available", "No setup diagnosis in this mode");
+                }
+                handler(diagnosis.running);
                 return resultMessage(request.request_id, true);
             },
             [&] (const StoreEmptyReference& store)

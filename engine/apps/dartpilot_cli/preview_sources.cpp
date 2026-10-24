@@ -88,6 +88,11 @@ bool CameraPreviews::latest (std::size_t camera, std::vector<std::uint8_t>& jpeg
     return true;
 }
 
+capture::CaptureStats CameraPreviews::stats (std::size_t camera) const
+{
+    return camera < captures_.size() ? captures_[camera]->stats() : capture::CaptureStats{};
+}
+
 void CameraPreviews::run ()
 {
     auto next_status = std::chrono::steady_clock::now();

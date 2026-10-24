@@ -191,3 +191,43 @@ TEST(Diagnosis, WithoutCalibrationItSaysWhatWasNotChecked)
     EXPECT_TRUE(has(*diagnosis, "calibration", "usb-1.2", replay::Severity::Warning));
     EXPECT_FALSE(diagnosis->periods[0].cameras[0].calibration_mm);
 }
+
+TEST(Diagnosis, LiveItWaitsForAnEmptyBoardAndFollowsTheDarts)
+{
+    const auto stored = extrinsics();
+    std::vector<replay::DiagnosisBuilder::Camera> cameras;
+    for(std::size_t c = 0; c < kViews.size(); ++c)
+    {
+        cameras.push_back({c == 0 ? "usb-1.2" : "usb-1.3", &stored.refinement.cameras[c]});
+    }
+    replay::DiagnosisBuilder builder(cameras, stored.refinement.board, true);
+    std::vector<cv::Mat> empty, covered, dart;
+    for(std::size_t c = 0; c < kViews.size(); ++c)
+    {
+        const cv::Mat board = synthetic_board::renderCameraImage(kViews[c], 1.0, 90);
+        empty.push_back(board);
+        cv::Mat hidden = board.clone();
+        cv::rectangle(hidden, cv::Rect(board.cols / 3, board.rows / 3, board.cols / 3, board.rows / 3), cv::Scalar(60, 60, 60), cv::FILLED);
+        covered.push_back(hidden);
+        cv::Mat object = board.clone();
+        const cv::Point2f tip = synthetic_board::project(kViews[c], 40.0, 70.0);
+        cv::line(object, tip, tip + cv::Point2f(30, -170), cv::Scalar(50, 50, 50), 7, cv::LINE_AA);
+        dart.push_back(object);
+    }
+    // Darts left in the board at the start are not taken as the empty board.
+    EXPECT_FALSE(builder.addPeriod(1.0, 2.0, covered));
+    EXPECT_FALSE(builder.hasReference());
+    EXPECT_TRUE(builder.addPeriod(3.0, 4.0, empty));
+    EXPECT_TRUE(builder.hasReference());
+    EXPECT_TRUE(builder.addPeriod(5.0, 6.0, dart));
+    ASSERT_EQ(builder.periods().size(), 2u);
+    EXPECT_FALSE(builder.periods()[1].empty);
+
+    const auto diagnosis = builder.diagnosis();
+    EXPECT_FALSE(has(diagnosis, "board", "usb-1.2", replay::Severity::Problem));
+    for(const auto& f : diagnosis.findings)
+    {
+        EXPECT_FALSE(f.code.empty()) << f.message;
+    }
+    EXPECT_NE(replay::toJson(diagnosis).find("\"code\": \"darts_located\""), std::string::npos);
+}

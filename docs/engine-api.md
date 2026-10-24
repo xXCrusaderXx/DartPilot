@@ -144,6 +144,27 @@ Sent to every client when the board state changes (#121). The engine compares ea
 
 A client warns the player to pull out the darts when the board is occupied before a game starts, not during a visit, where darts in the board are normal.
 
+### diagnosis
+
+The state of the live setup diagnosis (#137), sent to every client after `start_diagnosis`, whenever the step or state changes or a still moment was measured, and once more after `stop_diagnosis`. A client that connects later gets the latest one after `hello`. The app shows it as a tool next to the calibration tools: the user follows `step`, and the findings tell what to fix.
+
+```json
+{
+  "type": "diagnosis", "running": true, "step": "insert_dart", "state": "measured", "elapsed_s": 74.2,
+  "cameras": [ "usb-2.4.3.1.2", "usb-2.4.3.1.3", "usb-2.4.3.1.4" ],
+  "findings": [
+    { "severity": "warning", "check": "drift", "camera": "usb-2.4.3.1.3", "code": "drift", "values": { "px": 0.62, "minutes": 1.6 },
+      "message": "The image moved by 0.62 px within 1.6 min.", "hint": "Let the cameras run for about 10 minutes ..." }
+  ],
+  "periods": [ { "start_s": 41.3, "end_s": 42.4, "empty": true, "cameras": [ { "brightness": 112.4, "calibration_mm": 0.48, "shift_px": [ 0.02, -0.11 ] } ] } ]
+}
+```
+
+- `step`, what the user should do next: `empty_board` (leave the board empty, hand out of view), `remove_darts` (the board was not empty at the start), `insert_dart` (put one dart in and take the hand away), `remove_dart` (pull it).
+- `state`: `moving` (a camera's image moves), `settling` (still, waiting 1.5 s), `measuring` (averaging about a second), `measured` (done until something moves; an empty board that stays still is measured again every 20 s, so drift and light show over time), `stopped`.
+- `findings`: most severe first, as in [setup-diagnosis.md](setup-diagnosis.md). `code` and `values` name the finding and its numbers, so a client can word it in its own language; `message` and `hint` are the English text. Codes: `lost_frames`, `few_still_moments`, `not_empty_at_start`, `no_refinement`, `board_not_found`, `calibration_off`, `drift`, `exposure_settling`, `light_changed`, `board_changed`, `no_darts`, `darts_located`, `darts_cut_lost`, `darts_cut`, `darts_not_seen`, `camera_disagrees`, `planes_agree`.
+- `periods`: the measured still moments, per camera in the order of `cameras`; a dart period has `dart` (`none`, `cut`, `seen`) per camera and, if located, `board_mm`, `agreeing_cameras` and `worst_plane_mm`.
+
 ### engine_status
 
 ```json
@@ -174,6 +195,7 @@ Every request carries a `request_id` chosen by the client and is answered with `
 | `subscribe_status` / `unsubscribe_status` | – | Periodic `camera_status` |
 | `check_board` | – | Checks the board now; the answer comes as `board_state` |
 | `store_empty_reference` | `force` (optional) | Stores the current images as the empty board; fails with `board_not_empty` while a camera sees an object, unless `force` is `true` (the user confirmed that the board is empty, e.g. when an outdated reference makes the check see an object) |
+| `start_diagnosis` / `stop_diagnosis` | – | Starts the live setup diagnosis afresh, or stops it; its state comes as `diagnosis` |
 | `subscribe_preview` | `camera`, `max_fps`, `max_width` | Starts preview frames of a camera |
 | `unsubscribe_preview` | `camera` | Stops them |
 
@@ -205,7 +227,7 @@ The engine sends the camera's own JPEG when it fits `max_width`, otherwise a sca
 
 ## Implementation status
 
-`dartpilot serve --simulate` implements the protocol with simulated darts, takeouts and camera states (`engine/api`), and the player app connects to it (`ui/lib/src/engine/`). Previews work for simulated cameras (drawn board with the darts of the visit) and, with `--simulate --cameras`, for the real cameras, which then also report their status. The simulator reports an empty board, occupied while darts are in it (`--occupied`: darts in the board at start, pulled out after the takeout delay); with `--cameras` the real cameras check the board: each camera's frames are averaged once its image has been still for a second and compared with its empty-board reference (`empty-usb-<port>.png` in the calibration directory). Not implemented yet: live detection (needs the detection pipeline), `--replay`, and storing corrections in a recorded session.
+`dartpilot serve --simulate` implements the protocol with simulated darts, takeouts and camera states (`engine/api`), and the player app connects to it (`ui/lib/src/engine/`). Previews work for simulated cameras (drawn board with the darts of the visit) and, with `--simulate --cameras`, for the real cameras, which then also report their status. The simulator reports an empty board, occupied while darts are in it (`--occupied`: darts in the board at start, pulled out after the takeout delay); with `--cameras` the real cameras check the board: each camera's frames are averaged once its image has been still for a second and compared with its empty-board reference (`empty-usb-<port>.png` in the calibration directory). `start_diagnosis` runs the setup diagnosis on the real cameras with `--cameras`; without, the simulator answers with a fixed example. Not implemented yet: live detection (needs the detection pipeline), `--replay`, and storing corrections in a recorded session.
 
 ## Not in version 1
 

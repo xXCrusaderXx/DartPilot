@@ -144,6 +144,11 @@ struct SetDetection
 struct CheckBoard
 {
 };
+// start_diagnosis and stop_diagnosis: the live setup diagnosis (#137)
+struct SetDiagnosis
+{
+    bool running = true;
+};
 struct StoreEmptyReference
 {
     // Store even while a camera sees an object, after the user confirmed that the board is empty
@@ -158,7 +163,8 @@ struct Subscription
     double max_fps = 0.0;
     int max_width = 0;
 };
-using RequestBody = std::variant<ClientHello, CorrectThrow, RejectThrow, AddThrow, SetDetection, Subscription, CheckBoard, StoreEmptyReference>;
+using RequestBody =
+    std::variant<ClientHello, CorrectThrow, RejectThrow, AddThrow, SetDetection, Subscription, CheckBoard, StoreEmptyReference, SetDiagnosis>;
 
 struct Request
 {
