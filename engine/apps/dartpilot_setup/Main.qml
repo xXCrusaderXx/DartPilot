@@ -144,6 +144,7 @@ ApplicationWindow {
             ExtrinsicPage {
                 active: window.page === 2
                 cameras: finder.cameras
+                onSaved: finder.refresh()
             }
         }
     }
