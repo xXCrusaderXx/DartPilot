@@ -69,9 +69,10 @@ The tests need no cameras and no internet connection (apart from the first Googl
 ```sh
 ./build/engine/apps/dartpilot_cli/dartpilot capture-check 30     # frame rate, losses and timestamp quality
 ./build/engine/apps/dartpilot_cli/dartpilot record --seconds 60  # session in ~/.local/share/dartpilot/sessions
+python -m dartpilot_tools.capture_report ~/.local/share/dartpilot/sessions/<session>   # capture health of a recording
 ```
 
-A recording of three cameras takes about 350 MB per minute; the format is described in [docs/replay-format.md](docs/replay-format.md). Recordings stay on your computer and are never committed (see [LEGAL.md](LEGAL.md)).
+A recording of three cameras takes about 200–360 MB per minute, depending on the scene; the format is described in [docs/replay-format.md](docs/replay-format.md). Recordings stay on your computer and are never committed (see [LEGAL.md](LEGAL.md)).
 
 ### Python tools
 

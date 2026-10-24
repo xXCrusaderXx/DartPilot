@@ -197,7 +197,7 @@ Ground truth lives in `annotations/<annotation set>.jsonl`, one line per throw, 
 
 ## Size
 
-Measured with `dartpilot record` on the reference setup (#6): a frame is about **66 KB**, so three cameras at 30 fps write about **6 MB/s, 350 MB per minute or 21 GB per hour**. The index and clock files add about 0.1 %. Check the free disk space before long recordings.
+Measured with `dartpilot record` on the reference setup (#6, #7): a frame is about **35–66 KB** depending on the scene and light, so three cameras at 30 fps write about **3–6 MB/s, 200–360 MB per minute or 12–21 GB per hour**. The index and clock files add about 0.1 %. Check the free disk space before long recordings.
 
 ## Versioning
 
