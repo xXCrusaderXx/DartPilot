@@ -53,10 +53,10 @@ void main() {
       ),
     );
     final picture = tester.getRect(find.byKey(const ValueKey('board-image')));
-    // 400 px for 2 × 200 mm: 1 px per mm, so the image of radius 250 mm is 500 px wide, centred.
-    expect(picture.size, const Size(500, 500));
+    // The whole image is shown: 400 px for 2 × 250 mm, 0.8 px per mm.
+    expect(picture.size, const Size(400, 400));
     expect(picture.center, tester.getCenter(find.byType(Dartboard)));
-    await tester.tapAt(tester.getCenter(find.byType(Dartboard)) + const Offset(0, -103));
+    await tester.tapAt(tester.getCenter(find.byType(Dartboard)) + const Offset(0, -103 * 0.8));
     expect(taps.single.yMm, closeTo(103, 0.01));
   });
 
