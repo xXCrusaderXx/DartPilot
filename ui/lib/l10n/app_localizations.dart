@@ -2317,6 +2317,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Only one camera saw it'**
   String get referenceSeenByOneCamera;
+
+  /// No description provided for @cameraMovedNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera {camera} was moved – its calibration is being checked.'**
+  String cameraMovedNotice(String camera);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

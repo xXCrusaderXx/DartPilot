@@ -26,6 +26,7 @@ sealed class EngineEvent {
     'board_plane' => BoardPlaneResult.fromJson(json),
     'refinement' => RefinementResult.fromJson(json),
     'calibration_check' => CalibrationCheck.fromJson(json),
+    'camera_moved' => CameraMoved(json['camera'] as String),
     'engine_status' => EngineStatus(json['detection'] as String, json['message'] as String? ?? ''),
     _ => null,
   };
@@ -821,4 +822,11 @@ class ReferenceSummary {
   final double? medianErrorMm;
   final double? p90ErrorMm;
   final double? maxErrorMm;
+}
+
+/// A camera's whole image shifted, e.g. it was knocked; the engine checks its calibration next and sends no throw.
+class CameraMoved extends EngineEvent {
+  const CameraMoved(this.camera);
+
+  final String camera;
 }
