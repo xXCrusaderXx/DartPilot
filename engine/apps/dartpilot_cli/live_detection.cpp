@@ -178,6 +178,7 @@ void LiveDetection::run ()
                 }
                 const auto started = std::chrono::steady_clock::now();
                 const auto update = tracker_->addStill(means);
+            }
                 if(std::getenv("DARTPILOT_TRACE"))
                 {
                     std::fprintf(stderr, "still: ready %d darts %d dart %s takeout %d\n", tracker_->ready(), tracker_->dartsInBoard(),
