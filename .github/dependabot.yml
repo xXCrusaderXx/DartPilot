@@ -17,3 +17,12 @@ updates:
     groups:
       python:
         patterns: ["*"]
+
+  - package-ecosystem: pub
+    directory: /ui
+    target-branch: dev
+    schedule:
+      interval: weekly
+    groups:
+      dart:
+        patterns: ["*"]
