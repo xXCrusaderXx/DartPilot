@@ -6,6 +6,8 @@
 #include <opencv2/calib3d.hpp>
 #include <opencv2/imgproc.hpp>
 
+#include "dartpilot/fusion/dart_tracker.hpp"
+#include "dartpilot/fusion/reference_targets.hpp"
 #include "dartpilot/geometry/dart_location.hpp"
 
 namespace
@@ -55,9 +57,8 @@ cv::Mat scene (int seed)
 
 // A dart entering the board at tip_mm (z = 0), leaning by tilt_deg towards lean_deg: a thin point, a thicker
 // barrel and shaft, and a flight across its axis
-cv::Mat withDart (const RefinedCamera& camera, const cv::Point2f& tip_mm, double tilt_deg, double lean_deg, int seed)
+void drawDart (cv::Mat& image, const RefinedCamera& camera, const cv::Point2f& tip_mm, double tilt_deg, double lean_deg)
 {
-    cv::Mat image = scene(seed);
     const double tilt = tilt_deg * CV_PI / 180.0, lean = lean_deg * CV_PI / 180.0;
     const cv::Point3f axis(static_cast<float>(std::sin(tilt) * std::cos(lean)), static_cast<float>(std::sin(tilt) * std::sin(lean)),
                            static_cast<float>(std::cos(tilt)));
@@ -89,6 +90,12 @@ cv::Mat withDart (const RefinedCamera& camera, const cv::Point2f& tip_mm, double
         polygon.emplace_back(cvRound(p.x), cvRound(p.y));
     }
     cv::fillConvexPoly(image, polygon, cv::Scalar(200, 60, 60), cv::LINE_AA);
+}
+
+cv::Mat withDart (const RefinedCamera& camera, const cv::Point2f& tip_mm, double tilt_deg, double lean_deg, int seed)
+{
+    cv::Mat image = scene(seed);
+    drawDart(image, camera, tip_mm, tilt_deg, lean_deg);
     return image;
 }
 
@@ -170,4 +177,67 @@ TEST(LocateDart, AbstainsWithoutTwoAgreeingCameras)
     EXPECT_FALSE(dartpilot::geometry::locateDart(seen));
     seen.resize(1);
     EXPECT_FALSE(dartpilot::geometry::locateDart(seen));
+}
+
+TEST(DartTracker, ThrowsForEachDartAndATakeoutWhenTheBoardIsEmptyAgain)
+{
+    std::vector<dartpilot::fusion::TrackerCamera> cameras;
+    for(std::size_t c = 0; c < kCameras.size(); ++c)
+    {
+        cameras.push_back({"cam" + std::to_string(c), &kCameras[c], scene(100 + static_cast<int>(c))});
+    }
+    dartpilot::fusion::DartTracker tracker(cameras, {});
+    const auto still = [&] (int seed, const std::vector<std::pair<cv::Point2f, double>>& darts)
+    {
+        std::vector<cv::Mat> images;
+        for(std::size_t c = 0; c < kCameras.size(); ++c)
+        {
+            cv::Mat image = scene(seed + static_cast<int>(c));
+            for(const auto& [tip_mm, lean_deg] : darts)
+            {
+                drawDart(image, kCameras[c], tip_mm, 15.0, lean_deg);
+            }
+            images.push_back(image);
+        }
+        return tracker.addStill(images);
+    };
+    const cv::Point2f first(40.0f, 70.0f), second(-60.0f, -20.0f);
+
+    EXPECT_TRUE(still(200, {}).became_ready);
+    const auto one = still(210, {{first, 30.0}});
+    ASSERT_TRUE(one.dart);
+    ASSERT_TRUE(one.dart->location);
+    EXPECT_LT(cv::norm(one.dart->location->board_mm - first), 2.0);
+    // The same board again: nothing new
+    EXPECT_FALSE(still(220, {{first, 30.0}}).dart);
+    const auto two = still(230, {{first, 30.0}, {second, 200.0}});
+    ASSERT_TRUE(two.dart);
+    ASSERT_TRUE(two.dart->location);
+    EXPECT_LT(cv::norm(two.dart->location->board_mm - second), 2.0);
+    EXPECT_EQ(tracker.dartsInBoard(), 2);
+    const auto pulled = still(240, {});
+    EXPECT_FALSE(pulled.dart);
+    ASSERT_TRUE(pulled.takeout);
+    EXPECT_EQ(*pulled.takeout, 2);
+}
+
+TEST(ReferenceTargets, CornersLieBesideBothWiresInsideTheirField)
+{
+    const auto targets = dartpilot::fusion::referenceTargets({});
+    ASSERT_EQ(targets.size(), 10u);
+    EXPECT_EQ(targets[0].kind, "bull_centre");
+    EXPECT_LT(cv::norm(targets[0].board_mm), 1e-9);
+    // D20 at the 20/1 wire: just inside the outer double wire (170 mm), just on the 20 side of the wire at 9 degrees
+    const auto& d20 = targets[1];
+    EXPECT_EQ(d20.field, "D20");
+    EXPECT_EQ(d20.wires, (std::vector<int>{20, 1}));
+    EXPECT_NEAR(cv::norm(d20.board_mm), 170.0 - dartpilot::fusion::kCornerOffset_mm, 1e-6);
+    const double wire_x_mm = cv::norm(d20.board_mm) * std::sin(9.0 * CV_PI / 180.0);
+    EXPECT_NEAR(wire_x_mm - d20.board_mm.x, dartpilot::fusion::kCornerOffset_mm, 0.05);
+    // S6 inside the treble, at the 13/6 wire on the 6 side, to the right of the bull
+    EXPECT_EQ(targets[6].field, "S6");
+    EXPECT_GT(targets[6].board_mm.x, 90.0);
+    EXPECT_NEAR(cv::norm(targets[6].board_mm), 99.0 - dartpilot::fusion::kCornerOffset_mm, 1e-6);
+    // The last corner lies outside the outer bull
+    EXPECT_NEAR(cv::norm(targets[9].board_mm), 15.9 + dartpilot::fusion::kCornerOffset_mm, 1e-6);
 }

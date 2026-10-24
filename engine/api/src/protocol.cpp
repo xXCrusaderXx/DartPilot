@@ -141,6 +141,7 @@ json helloMessage (const Hello& hello)
             {"board_geometry", toJson(hello.board_geometry, hello.board_geometry_source)},
             {"cameras", cameras},
             {"detection", hello.detection},
+            {"detection_reason", hello.detection_reason.empty() ? json(nullptr) : json(hello.detection_reason)},
             {"board_state", toJson(hello.board_state)},
             {"calibration_status", hello.calibration_status}};
 }
@@ -298,7 +299,8 @@ std::variant<Request, ParseError> parseRequest (const std::string& text)
         {
             request.body = CheckBoard{};
         }
-        else if(type == "detect_board" || type == "set_sector_20" || type == "refine_cameras" || type == "tune_white_balance")
+        else if(type == "detect_board" || type == "set_sector_20" || type == "refine_cameras" || type == "tune_white_balance" ||
+                type == "get_board_image" || type == "start_reference_run" || type == "stop_reference_run")
         {
             request.body = CalibrationRequest{type, message};
         }

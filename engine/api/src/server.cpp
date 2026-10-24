@@ -42,12 +42,12 @@ Server::Server (int port, std::string host, Hello hello)
                     // hello first, then the client is registered for events, so it never sees an event before hello.
                     std::unique_lock lock(mutex_);
                     const Hello hello = hello_;
-                    const nlohmann::json diagnosis = last_diagnosis_;
+                    const auto states = last_states_;
                     lock.unlock();
                     socket.sendText(helloMessage(hello).dump());
-                    if(!diagnosis.is_null())
+                    for(const auto& [type, state] : states)
                     {
-                        socket.sendText(diagnosis.dump());
+                        socket.sendText(state.dump());
                     }
                     lock.lock();
                     clients_[connection] = Client{&socket, {}, false};
@@ -200,13 +200,28 @@ void Server::setCalibrationStatus (const nlohmann::json& status)
 
 void Server::publishEvent (const nlohmann::json& message) { broadcast(message); }
 
-void Server::publishDiagnosis (const nlohmann::json& message)
+void Server::publishDiagnosis (const nlohmann::json& message) { publishState(message); }
+
+void Server::publishState (const nlohmann::json& message)
 {
     {
         std::lock_guard lock(mutex_);
-        last_diagnosis_ = message;
+        last_states_[message.value("type", std::string())] = message;
     }
     broadcast(message);
+}
+
+void Server::onCalibrationRequest (const std::string& type, std::function<std::optional<CalibrationError>(const CalibrationRequest&)> handler)
+{
+    std::lock_guard lock(mutex_);
+    if(handler)
+    {
+        calibration_handlers_[type] = std::move(handler);
+    }
+    else
+    {
+        calibration_handlers_.erase(type);
+    }
 }
 
 std::vector<BoardPoint> Server::visitPoints () const
@@ -304,6 +319,7 @@ void Server::publishEngineStatus (const std::string& detection, const std::strin
     {
         std::lock_guard lock(mutex_);
         hello_.detection = detection;
+        hello_.detection_reason = detection == "unavailable" ? message : std::string();
     }
     broadcast(engineStatusMessage(detection, message));
 }
@@ -427,7 +443,8 @@ nlohmann::json Server::handle (const std::string& connection, const Request& req
                 std::function<std::optional<CalibrationError>(const CalibrationRequest&)> handler;
                 {
                     std::lock_guard lock(mutex_);
-                    handler = calibration_handler_;
+                    const auto specific = calibration_handlers_.find(calibration.type);
+                    handler = specific != calibration_handlers_.end() ? specific->second : calibration_handler_;
                 }
                 if(!handler)
                 {
