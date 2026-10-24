@@ -162,7 +162,7 @@ void Server::onCheckBoard (std::function<void()> handler)
     check_board_handler_ = std::move(handler);
 }
 
-void Server::onStoreEmptyReference (std::function<std::optional<std::string>()> handler)
+void Server::onStoreEmptyReference (std::function<std::optional<std::string>(bool)> handler)
 {
     std::lock_guard lock(mutex_);
     store_reference_handler_ = std::move(handler);
@@ -381,9 +381,9 @@ nlohmann::json Server::handle (const std::string& connection, const Request& req
                 handler();
                 return resultMessage(request.request_id, true);
             },
-            [&] (const StoreEmptyReference&)
+            [&] (const StoreEmptyReference& store)
             {
-                std::function<std::optional<std::string>()> handler;
+                std::function<std::optional<std::string>(bool)> handler;
                 {
                     std::lock_guard lock(mutex_);
                     handler = store_reference_handler_;
@@ -392,7 +392,7 @@ nlohmann::json Server::handle (const std::string& connection, const Request& req
                 {
                     return resultMessage(request.request_id, false, "not_available", "No board check in this mode");
                 }
-                if(const auto error = handler())
+                if(const auto error = handler(store.force))
                 {
                     return resultMessage(request.request_id, false, *error,
                                          *error == "board_not_empty" ? "Remove the darts first" : "Cannot store the empty board");

@@ -25,6 +25,19 @@ constexpr double kMinWeak = 6.0;
 constexpr float kBin_px = 2.0f;
 // The largest shift between image and empty board that is taken for a drifting camera and compensated
 constexpr double kMaxDrift_px = 5.0;
+// The alignment measures the shift in a grid of tiles and fits an affine motion to them, as a camera warming up after
+// its start zooms a little (about 0.15 %, a pixel at the image border) besides shifting. Tiles that disagree with the
+// fit by more than kTileOutlier_px (a dart) are dropped, and plain tiles, whose shift is undetermined, are not measured; with fewer than kMinTiles
+// left, or a zoom or rotation beyond kMaxLinear, only the shift of the whole image is compensated. So is a zoom or rotation that moves no image
+// corner by more than kMinLinear_px, which would only fit the noise of the tiles.
+constexpr int kTilesX = 8;
+constexpr int kTilesY = 5;
+constexpr int kMinTiles = 12;
+constexpr double kMinTileResponse = 0.1;
+constexpr double kMinTileContrast = 5.0;
+constexpr double kTileOutlier_px = 0.4;
+constexpr double kMaxLinear = 0.01;
+constexpr double kMinLinear_px = 0.3;
 // A level counts for the tone curve with this many pixels; the curve needs the middle 96 % of the pixels to span this
 // many levels (a scene of one colour with a small dart does not, so the dart cannot bend the curve onto the
 // background), and drops levels further than kToneOutlier from it.
@@ -44,6 +57,109 @@ constexpr float kBand_px = 2.0f;
 constexpr float kMaxReach_px = 120.0f;
 constexpr std::size_t kMinAxisPoints = 8;
 constexpr int kBorder_px = 5;
+
+// cv::phaseCorrelate multiplies its inputs by the window in place, so it gets copies.
+cv::Point2d shiftBetween (const cv::Mat& from, const cv::Mat& to, const cv::Mat& window, double* response = nullptr)
+{
+    return cv::phaseCorrelate(from.clone(), to.clone(), window, response);
+}
+
+// The motion of the empty board onto the image: for a point of the board, where it is in the image
+cv::Matx23d alignment (const cv::Mat& board_gray, const cv::Mat& image_gray)
+{
+    cv::Mat window;
+    cv::createHanningWindow(window, image_gray.size(), CV_32F);
+    const cv::Point2d whole = shiftBetween(board_gray, image_gray, window);
+    cv::Matx23d motion(1, 0, whole.x, 0, 1, whole.y);
+    if(std::hypot(whole.x, whole.y) > kMaxDrift_px)
+    {
+        return cv::Matx23d(1, 0, 0, 0, 1, 0);
+    }
+    const int tile_w = image_gray.cols / kTilesX, tile_h = image_gray.rows / kTilesY;
+    cv::Mat tile_window;
+    cv::createHanningWindow(tile_window, cv::Size(tile_w, tile_h), CV_32F);
+    std::vector<cv::Point2d> centres, shifts;
+    for(int ty = 0; ty < kTilesY; ++ty)
+    {
+        for(int tx = 0; tx < kTilesX; ++tx)
+        {
+            const cv::Rect tile(tx * tile_w, ty * tile_h, tile_w, tile_h);
+            cv::Scalar mean, deviation;
+            cv::meanStdDev(board_gray(tile), mean, deviation);
+            if(deviation[0] < kMinTileContrast)
+            {
+                continue;
+            }
+            double response = 0.0;
+            const cv::Point2d shift = shiftBetween(board_gray(tile), image_gray(tile), tile_window, &response);
+            if(response >= kMinTileResponse && std::hypot(shift.x - whole.x, shift.y - whole.y) <= kMaxDrift_px)
+            {
+                centres.emplace_back(tile.x + 0.5 * tile_w, tile.y + 0.5 * tile_h);
+                shifts.push_back(shift);
+            }
+        }
+    }
+    // Shift = offset + linear part times the centre, fitted by least squares; the worst tile off the fit is dropped
+    // until all agree.
+    std::vector<bool> used(centres.size(), true);
+    while(true)
+    {
+        const auto count = static_cast<int>(std::count(used.begin(), used.end(), true));
+        if(count < kMinTiles)
+        {
+            return motion;
+        }
+        cv::Mat a(count, 3, CV_64F), bx(count, 1, CV_64F), by(count, 1, CV_64F);
+        for(std::size_t i = 0, row = 0; i < centres.size(); ++i)
+        {
+            if(used[i])
+            {
+                a.at<double>(row, 0) = 1.0;
+                a.at<double>(row, 1) = centres[i].x;
+                a.at<double>(row, 2) = centres[i].y;
+                bx.at<double>(row) = shifts[i].x;
+                by.at<double>(row) = shifts[i].y;
+                ++row;
+            }
+        }
+        cv::Mat px, py;
+        if(!cv::solve(a, bx, px, cv::DECOMP_SVD) || !cv::solve(a, by, py, cv::DECOMP_SVD))
+        {
+            return motion;
+        }
+        double worst = 0.0;
+        std::size_t worst_index = 0;
+        for(std::size_t i = 0; i < centres.size(); ++i)
+        {
+            if(!used[i])
+            {
+                continue;
+            }
+            const double fx = px.at<double>(0) + px.at<double>(1) * centres[i].x + px.at<double>(2) * centres[i].y;
+            const double fy = py.at<double>(0) + py.at<double>(1) * centres[i].x + py.at<double>(2) * centres[i].y;
+            const double off = std::hypot(shifts[i].x - fx, shifts[i].y - fy);
+            if(off > worst)
+            {
+                worst = off;
+                worst_index = i;
+            }
+        }
+        if(worst > kTileOutlier_px)
+        {
+            used[worst_index] = false;
+            continue;
+        }
+        const cv::Matx22d linear(px.at<double>(1), px.at<double>(2), py.at<double>(1), py.at<double>(2));
+        const cv::Vec2d half(0.5 * image_gray.cols, 0.5 * image_gray.rows);
+        const double corner_px = std::max(cv::norm(linear * half), cv::norm(linear * cv::Vec2d(half[0], -half[1])));
+        if(std::max({std::abs(linear(0, 0)), std::abs(linear(0, 1)), std::abs(linear(1, 0)), std::abs(linear(1, 1))}) > kMaxLinear ||
+           corner_px <= kMinLinear_px)
+        {
+            return motion;
+        }
+        return cv::Matx23d(1.0 + px.at<double>(1), px.at<double>(2), px.at<double>(0), py.at<double>(1), 1.0 + py.at<double>(2), py.at<double>(0));
+    }
+}
 
 float median (const cv::Mat& channel)
 {
@@ -257,20 +373,13 @@ std::optional<DartObservation> observeDart (const cv::Mat& image, const cv::Mat&
     cv::Mat a, b, diff;
     image.convertTo(a, CV_32FC3);
     empty_board.convertTo(b, CV_32FC3);
-    // A camera that warms up after starting or whose mount gives a little shifts its image by a fraction of a pixel to
-    // a pixel; against an older reference every edge of the board would then stand out. The reference is moved onto the
-    // image by the shift that phase correlation measures between the two, if it is small enough to be such a drift.
+    // A camera that warms up after starting or whose mount gives a little shifts and zooms its image by a fraction of a
+    // pixel to a pixel; against an older reference every edge of the board would then stand out. The reference is moved
+    // onto the image by the motion measured between the two, if it is small enough to be such a drift.
     cv::Mat a_gray, b_gray;
     cv::cvtColor(a, a_gray, cv::COLOR_BGR2GRAY);
     cv::cvtColor(b, b_gray, cv::COLOR_BGR2GRAY);
-    cv::Mat window;
-    cv::createHanningWindow(window, a_gray.size(), CV_32F);
-    const cv::Point2d shift = cv::phaseCorrelate(b_gray, a_gray, window);
-    if(std::hypot(shift.x, shift.y) <= kMaxDrift_px)
-    {
-        const cv::Matx23d move(1, 0, shift.x, 0, 1, shift.y);
-        cv::warpAffine(b, b, move, b.size(), cv::INTER_LINEAR, cv::BORDER_REPLICATE);
-    }
+    cv::warpAffine(b, b, alignment(b_gray, a_gray), b.size(), cv::INTER_LINEAR, cv::BORDER_REPLICATE);
     // The automatic exposure may still settle after a hand has left the view. It does not scale the image evenly: light
     // and dark sectors change by different amounts. Each channel is therefore mapped onto the empty board by a tone
     // curve: for every level of the image, the median level the same pixels have on the empty board. A dart covers too

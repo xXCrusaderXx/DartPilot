@@ -59,7 +59,7 @@ class Server
     // check_board: re-check now; the source answers with setBoardState()
     void onCheckBoard (std::function<void()> handler);
     // store_empty_reference: returns an error code (e.g. board_not_empty) or nothing on success
-    void onStoreEmptyReference (std::function<std::optional<std::string>()> handler);
+    void onStoreEmptyReference (std::function<std::optional<std::string>(bool force)> handler);
 
     // Board points of the darts since the last takeout, e.g. for a simulated camera image
     std::vector<BoardPoint> visitPoints () const;
@@ -99,7 +99,7 @@ class Server
     std::function<void(bool)> detection_handler_;
     PreviewScaler preview_scaler_;
     std::function<void()> check_board_handler_;
-    std::function<std::optional<std::string>()> store_reference_handler_;
+    std::function<std::optional<std::string>(bool)> store_reference_handler_;
     std::vector<BoardPoint> visit_points_;
 };
 }  // namespace dartpilot::api

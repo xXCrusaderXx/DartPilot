@@ -124,7 +124,7 @@ Sent when a camera's state changes and once per second while a client watches st
 
 ### board_state
 
-Sent to every client when the board state changes (#121). The engine compares each camera's image of the still board with the stored image of the empty board.
+Sent to every client when the board state changes (#121). The engine compares each camera's image of the still board with the stored image of the empty board. It first aligns the stored image with the current one, including the slight zoom of a camera that warmed up since, and counts an object only if it still stands out when every pixel may be off by 2 px, so that the traces a warmer, softer image leaves along the wires do not count.
 
 ```json
 {
@@ -173,7 +173,7 @@ Every request carries a `request_id` chosen by the client and is answered with `
 | `pause_detection` / `resume_detection` | – | E.g. while the user calibrates or retrieves a dart that fell out |
 | `subscribe_status` / `unsubscribe_status` | – | Periodic `camera_status` |
 | `check_board` | – | Checks the board now; the answer comes as `board_state` |
-| `store_empty_reference` | – | Stores the current images as the empty board; fails with `board_not_empty` while a camera sees an object |
+| `store_empty_reference` | `force` (optional) | Stores the current images as the empty board; fails with `board_not_empty` while a camera sees an object, unless `force` is `true` (the user confirmed that the board is empty, e.g. when an outdated reference makes the check see an object) |
 | `subscribe_preview` | `camera`, `max_fps`, `max_width` | Starts preview frames of a camera |
 | `unsubscribe_preview` | `camera` | Stops them |
 
