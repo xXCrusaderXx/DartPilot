@@ -110,6 +110,13 @@ ApplicationWindow {
                     selected: window.page === 4
                     onClicked: window.page = 4
                 }
+                NavButton {
+                    text: "Validation"
+                    subtitle: "Guided test with darts"
+                    glyph: "✓"
+                    selected: window.page === 5
+                    onClicked: window.page = 5
+                }
 
                 Item {
                     Layout.fillHeight: true
@@ -166,6 +173,10 @@ ApplicationWindow {
             }
             PinCheckPage {
                 active: window.page === 4
+                cameras: finder.cameras
+            }
+            ValidationPage {
+                active: window.page === 5
                 cameras: finder.cameras
             }
         }

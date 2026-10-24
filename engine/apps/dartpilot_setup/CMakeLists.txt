@@ -19,7 +19,7 @@ qt_add_qml_module(dartpilot_setup
     CamerasPage.qml CameraPane.qml IntrinsicPage.qml ExtrinsicPage.qml
     CaptureGuide.qml GuideDialog.qml PatternWindow.qml
     BoardIllustration.qml ExtrinsicGuideDialog.qml
-    CheckPage.qml PinCheckPage.qml
+    CheckPage.qml PinCheckPage.qml ValidationPage.qml
   RESOURCES icons/dartpilot.svg
   SOURCES
     board_refiner.hpp board_refiner.cpp
@@ -30,10 +30,12 @@ qt_add_qml_module(dartpilot_setup
     check_view.hpp check_view.cpp
     extrinsic_view.hpp extrinsic_view.cpp
     intrinsic_view.hpp intrinsic_view.cpp
+    marker_view.hpp marker_view.cpp
     pattern_image_provider.hpp pattern_image_provider.cpp
     pin_check.hpp pin_check.cpp
     pin_view.hpp pin_view.cpp
     stream_view.hpp stream_view.cpp
+    validation_run.hpp validation_run.cpp
 )
 target_link_libraries(dartpilot_setup PRIVATE Qt6::Quick Qt6::QuickControls2 Qt6::Concurrent dartpilot::capture dartpilot::geometry dartpilot::scoring opencv_objdetect)
 
