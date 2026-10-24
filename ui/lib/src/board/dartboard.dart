@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 
 import '../engine/engine_events.dart';
@@ -20,6 +22,12 @@ class Dartboard extends StatelessWidget {
 
   /// Radius drawn around the scoring area for the number ring, in mm
   static const double numberRingMm = 30.0;
+
+  /// The real board's image stays sharp this far beyond the outer double wire
+  static const double sharpMarginMm = 2.0;
+
+  /// Where the drawn numbers sit over the real board's blurred number ring
+  static const double realNumbersRadiusMm = 196.0;
 
   @override
   Widget build(BuildContext context) {
@@ -56,16 +64,35 @@ class Dartboard extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.hardEdge,
         children: [
+          // The number ring and the surround stand in front of the playing surface, so the cameras put them in different
+          // places and the image doubles them: shown blurred and darkened, with drawn numbers on top.
           Positioned(
             left: size.width / 2 - half,
             top: size.height / 2 - half,
             width: 2 * half,
             height: 2 * half,
-            child: Image.memory(
-              board.jpeg,
-              key: const ValueKey('board-image'),
-              fit: BoxFit.fill,
-              gaplessPlayback: true,
+            child: ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(sigmaX: 6 * scale, sigmaY: 6 * scale),
+              child: ColorFiltered(
+                colorFilter: const ColorFilter.mode(Color(0x99000000), BlendMode.srcATop),
+                child: Image.memory(board.jpeg, fit: BoxFit.fill, gaplessPlayback: true),
+              ),
+            ),
+          ),
+          // The playing surface itself is in the projection plane: sharp up to the outer double wire.
+          Positioned(
+            left: size.width / 2 - half,
+            top: size.height / 2 - half,
+            width: 2 * half,
+            height: 2 * half,
+            child: ClipOval(
+              clipper: _CircleClipper((geometry.doubleOuterRadiusMm + sharpMarginMm) * scale),
+              child: Image.memory(
+                board.jpeg,
+                key: const ValueKey('board-image'),
+                fit: BoxFit.fill,
+                gaplessPlayback: true,
+              ),
             ),
           ),
           overlay,
@@ -149,6 +176,12 @@ class _DartboardPainter extends CustomPainter {
       }
     }
 
+    if (!drawBoard) {
+      for (final sector in sectorsClockwiseFromTop) {
+        _drawNumber(canvas, centre, scale, sector, radiusMm: Dartboard.realNumbersRadiusMm, sizeMm: 17);
+      }
+    }
+
     for (var i = 0; i < throws.length; ++i) {
       final point = throws[i].point;
       final position = centre + Offset(point.xMm * scale, -point.yMm * scale);
@@ -169,13 +202,18 @@ class _DartboardPainter extends CustomPainter {
     }
   }
 
-  void _drawNumber(Canvas canvas, Offset centre, double scale, int sector) {
+  void _drawNumber(Canvas canvas, Offset centre, double scale, int sector, {double? radiusMm, double sizeMm = 13}) {
     final angle = sectorMiddleDeg(sector, geometry) * math.pi / 180.0;
-    final radius = (geometry.doubleOuterRadiusMm + Dartboard.numberRingMm / 2) * scale;
+    final radius = (radiusMm ?? geometry.doubleOuterRadiusMm + Dartboard.numberRingMm / 2) * scale;
     final painter = TextPainter(
       text: TextSpan(
         text: '$sector',
-        style: TextStyle(color: Colors.white, fontSize: 13 * scale, fontWeight: FontWeight.w600),
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: sizeMm * scale,
+          fontWeight: FontWeight.w600,
+          shadows: const [Shadow(blurRadius: 3)],
+        ),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
@@ -186,4 +224,16 @@ class _DartboardPainter extends CustomPainter {
   @override
   bool shouldRepaint(_DartboardPainter old) =>
       old.throws != throws || old.geometry != geometry || old.colors != colors || old.image != image;
+}
+
+class _CircleClipper extends CustomClipper<Rect> {
+  _CircleClipper(this.radius);
+
+  final double radius;
+
+  @override
+  Rect getClip(Size size) => Rect.fromCircle(center: size.center(Offset.zero), radius: radius);
+
+  @override
+  bool shouldReclip(_CircleClipper old) => old.radius != radius;
 }
