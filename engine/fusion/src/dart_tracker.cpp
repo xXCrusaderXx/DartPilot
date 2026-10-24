@@ -1,6 +1,8 @@
 #include "dartpilot/fusion/dart_tracker.hpp"
 
 #include <algorithm>
+#include <cmath>
+#include <optional>
 
 #include <opencv2/imgproc.hpp>
 
@@ -17,6 +19,39 @@ constexpr int kPatch_px = 2;
 constexpr int kMaxChanges = 3;
 // How far around the axis of a pulled dart the board is taken as it is now, so that its flight is covered as well
 constexpr int kPulledReach_px = 45;
+
+// A knocked camera shifts its whole image: the shift is beyond this, and moving the earlier image by it explains most
+// of the difference (a dart only pulls the phase correlation a little and is not explained by any shift).
+constexpr double kMovedCamera_px = 3.0;
+constexpr double kExplainedShare = 0.5;
+
+// The shift of the whole image from one still moment to the next if it is one, at half resolution
+std::optional<cv::Point2d> imageShift (const cv::Mat& before, const cv::Mat& after)
+{
+    cv::Mat a, b;
+    cv::cvtColor(before, a, cv::COLOR_BGR2GRAY);
+    cv::cvtColor(after, b, cv::COLOR_BGR2GRAY);
+    cv::resize(a, a, cv::Size(), 0.5, 0.5, cv::INTER_AREA);
+    cv::resize(b, b, cv::Size(), 0.5, 0.5, cv::INTER_AREA);
+    a.convertTo(a, CV_32F);
+    b.convertTo(b, CV_32F);
+    cv::Mat window;
+    cv::createHanningWindow(window, a.size(), CV_32F);
+    // phaseCorrelate multiplies its inputs by the window in place.
+    const cv::Point2d half = cv::phaseCorrelate(a.clone(), b.clone(), window);
+    if(std::hypot(half.x, half.y) * 2.0 <= kMovedCamera_px)
+    {
+        return std::nullopt;
+    }
+    cv::Mat moved;
+    cv::warpAffine(a, moved, cv::Matx23d(1, 0, half.x, 0, 1, half.y), a.size(), cv::INTER_LINEAR, cv::BORDER_REPLICATE);
+    const double unexplained = cv::mean(cv::abs(b - moved))[0], difference = cv::mean(cv::abs(b - a))[0];
+    if(unexplained > kExplainedShare * difference)
+    {
+        return std::nullopt;
+    }
+    return half * 2.0;
+}
 
 // Mean absolute grey difference of two images around the axis points of an observation
 double differenceAlong (const tip_candidates::DartObservation& observation, const cv::Mat& a, const cv::Mat& b)
@@ -48,8 +83,14 @@ DartTracker::DartTracker (std::vector<TrackerCamera> cameras, geometry::BoardMod
 {
 }
 
-TrackerUpdate DartTracker::addStill (const std::vector<cv::Mat>& means)
+TrackerUpdate DartTracker::addStill (const std::vector<cv::Mat>& images)
 {
+    // Kept as the state of the board, so they must not share memory with the caller's images.
+    std::vector<cv::Mat> means;
+    for(const auto& image : images)
+    {
+        means.push_back(image.clone());
+    }
     TrackerUpdate update;
     const std::size_t count = cameras_.size();
     if(means.size() != count || std::any_of(means.begin(), means.end(), [] (const cv::Mat& m) { return m.empty(); }))
@@ -71,6 +112,26 @@ TrackerUpdate DartTracker::addStill (const std::vector<cv::Mat>& means)
         reference_ = means;
         last_ = means;
         update.became_ready = true;
+        return update;
+    }
+
+    // A camera whose whole image shifted was knocked: everything in it differs from before, which is no dart.
+    for(std::size_t c = 0; c < count; ++c)
+    {
+        if(const auto shift = imageShift(last_[c], means[c]))
+        {
+            update.moved_cameras.emplace_back(static_cast<int>(c), *shift);
+            last_[c] = means[c];
+            // The empty board as this camera sees it now; with darts in the board it is refreshed at the takeout, which
+            // tolerates one camera that still sees something.
+            if(darts_in_board_ == 0)
+            {
+                reference_[c] = means[c];
+            }
+        }
+    }
+    if(!update.moved_cameras.empty())
+    {
         return update;
     }
 

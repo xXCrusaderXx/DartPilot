@@ -217,7 +217,7 @@ The steps, in the order of the wizard:
 
    `state`: `running`, `done`, `failed` (`code`: `no_board_planes`, `pose_failed`, `save_failed`). `quality` from the error on held-out wires: `good` up to 0.5 mm, `fair` up to 1 mm, else `poor`; `advice` then says what helps: `detect_again` (measure the board again in even light) or `lens_calibration` (the camera has no lens calibration of its own). `lens_from`: `own`, `model` (borrowed from a camera of the same model) or `board`.
 
-**Calibration check** (`subscribe_calibration_check` / `unsubscribe_calibration_check`). Each camera's board is compared with its calibration, as the calibration check of the setup GUI (#92) does: the detected wire points against where the calibration puts them. In the background the engine does this every minute while the board is empty and still, e.g. after a takeout, and puts the verdict into `calibration_status` (`cameras[].check`). While a client is subscribed it checks every 2 s and sends the details per camera:
+**Calibration check** (`subscribe_calibration_check` / `unsubscribe_calibration_check`). Each camera's board is compared with its calibration, as the calibration check of the setup GUI (#92) does: the detected wire points against where the calibration puts them. In the background the engine does this every minute and puts the verdict into `calibration_status` (`cameras[].check`); while darts hide the board, the previous verdict stays. While a client is subscribed it checks every 2 s and sends the details per camera:
 
 ```json
 { "type": "calibration_check", "camera": "usb-2.4.3.1.3", "state": "moved", "mm": 4.2, "shift_px": [ 6.0, -3.0 ], "count": 60,
@@ -328,6 +328,7 @@ The engine sends the camera's own JPEG when it fits `max_width`, otherwise a sca
 
 - A new dart is located from the cameras whose axis planes meet (`locateDart`) and sent as `throw`. If the cameras do not agree it abstains: `accepted: false`, no `board_point`, and `reason` `cameras_disagree` or `seen_by_one_camera`, so the player confirms or corrects it. `cameras[].reason` gives each camera's part: `not_seen`, `cut` (by the image border), `disagrees`.
 - When the board matches the empty board again after darts, it sends `takeout` with the number of darts that were in it, and the empty board, as it is now, becomes the reference for the next visit. A dart pulled and the next one put in without a still board in between are told apart by where the image is the empty board again.
+- A camera whose whole image shifted since the last still moment was knocked or has loosened: its change is no dart. The engine sends `{ "type": "camera_moved", "camera": "usb-2.4.3.1.3", "shift_px": [ 12.0, -7.1 ] }`, takes the view as the new still state, and the next calibration check (within a minute, or at once on the subscribed page) tells whether the camera must be calibrated again.
 - Detection waits for a still, empty board at the start (`detection: unavailable`, `no_empty_reference`), and is unavailable without a refinement (`not_calibrated`).
 
 On the reference recordings, replayed through the tracker, all located darts were right: 9 of 10 type-1 darts located and 1 missed; 6 of 9 type-2 darts located and the others abstained, some of them twice when the hand was still in view. The engine sets no visit logic: the app decides how many darts a turn has.

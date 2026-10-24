@@ -46,6 +46,9 @@ struct TrackerUpdate
     std::optional<int> takeout;
     // The tracker has an empty board to compare with and detects darts from now on
     bool became_ready = false;
+    // Cameras whose whole image moved since the last still moment (knocked or loosened): their change is not a dart,
+    // and their calibration needs checking. Index of the camera and the image shift.
+    std::vector<std::pair<int, cv::Point2d>> moved_cameras;
 };
 
 class DartTracker
@@ -54,7 +57,7 @@ class DartTracker
     DartTracker (std::vector<TrackerCamera> cameras, geometry::BoardModel board);
 
     // The mean images of all cameras at a still moment, in the order of the cameras
-    TrackerUpdate addStill (const std::vector<cv::Mat>& means);
+    TrackerUpdate addStill (const std::vector<cv::Mat>& images);
 
     bool ready () const { return !reference_.empty(); }
     int dartsInBoard () const { return darts_in_board_; }
