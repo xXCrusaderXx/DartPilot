@@ -55,6 +55,7 @@ gtest_discover_tests(BoardRefinementTest)
 
 add_executable(ReplayTest ReplayTest.cpp)
 target_link_libraries(ReplayTest PRIVATE dartpilot::replay opencv_imgcodecs GTest::gtest_main)
+target_compile_definitions(ReplayTest PRIVATE DARTPILOT_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 gtest_discover_tests(ReplayTest)
 
 add_executable(ApiTest ApiTest.cpp)

@@ -1,0 +1,2 @@
+{"camera": "usb-1.2", "exposure_ns": 5000000000, "frames": [1, 2, 3, 5], "board_found": true, "rms_mm": 0.4321, "rms_px": 0.5102, "worst_px": 1.2011, "shift_px": [0.0312, -0.1290], "edge_offset_mm": 0.52, "twenty_sector": 12}
+{"camera": "usb-1.3", "exposure_ns": 5010000000, "frames": [11, 12], "board_found": false}
