@@ -370,5 +370,6 @@
   "referenceNotGood": "Die Erkennung ist noch nicht genau genug.",
   "referenceNotGoodHint": "Lass die Einrichtungsdiagnose laufen, um zu sehen, woher der Fehler kommt, und kalibriere die genannten Kameras neu.",
   "referenceCamerasDisagree": "Die Kameras sind sich nicht einig, wo er steckt",
-  "referenceSeenByOneCamera": "Nur eine Kamera hat ihn gesehen"
+  "referenceSeenByOneCamera": "Nur eine Kamera hat ihn gesehen",
+  "cameraMovedNotice": "Kamera {camera} wurde verschoben – die Kalibrierung wird geprüft."
 }

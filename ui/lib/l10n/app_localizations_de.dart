@@ -1287,4 +1287,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get referenceSeenByOneCamera => 'Nur eine Kamera hat ihn gesehen';
+
+  @override
+  String cameraMovedNotice(String camera) {
+    return 'Kamera $camera wurde verschoben – die Kalibrierung wird geprüft.';
+  }
 }

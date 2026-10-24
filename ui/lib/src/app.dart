@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' show AppExitResponse;
 
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import '../l10n/app_localizations.dart';
 import 'engine/engine_choice.dart';
 import 'engine/engine_connection.dart';
+import 'engine/engine_events.dart';
 import 'engine/engine_manager.dart';
 import 'stats/statistics.dart';
 import 'theme.dart';
@@ -39,10 +41,27 @@ class _DartPilotAppState extends State<DartPilotApp> {
   late EngineSettings _settings = widget.settings ?? EngineSettings();
   late final AppLifecycleListener _lifecycle;
   late final Statistics _statistics = widget.statistics ?? Statistics(MemoryGameStore());
+  final GlobalKey<ScaffoldMessengerState> _messenger = GlobalKey();
+  StreamSubscription<EngineEvent>? _events;
 
   @override
   void initState() {
     super.initState();
+    // Shown on whatever page is open: a knocked camera matters during a game as much as in the settings.
+    _events = _engine.events.listen((event) {
+      if (event is! CameraMoved) return;
+      final context = _messenger.currentContext;
+      if (context == null || !context.mounted) return;
+      final cameras = _engine.hello?.cameras ?? const <String>[];
+      final number = cameras.indexOf(event.camera) + 1;
+      _messenger.currentState?.showSnackBar(
+        SnackBar(
+          key: ValueKey('camera-moved-${event.camera}'),
+          content: Text(AppLocalizations.of(context).cameraMovedNotice(number > 0 ? '$number' : event.camera)),
+          duration: const Duration(seconds: 8),
+        ),
+      );
+    });
     // The engine this app started must not outlive it.
     _lifecycle = AppLifecycleListener(
       onExitRequested: () async {
@@ -68,6 +87,7 @@ class _DartPilotAppState extends State<DartPilotApp> {
   @override
   void dispose() {
     _lifecycle.dispose();
+    _events?.cancel();
     if (widget.manager == null) _manager?.dispose();
     if (widget.engine == null) _engine.dispose();
     super.dispose();
@@ -77,6 +97,7 @@ class _DartPilotAppState extends State<DartPilotApp> {
   Widget build(BuildContext context) {
     final manager = _manager;
     final app = MaterialApp(
+      scaffoldMessengerKey: _messenger,
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       locale: widget.locale,
       localizationsDelegates: const [

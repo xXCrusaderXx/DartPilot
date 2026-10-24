@@ -84,4 +84,22 @@ void main() {
     await tester.pumpAndSettle();
     expect(sent.last, {'type': 'unsubscribe_calibration_check'});
   });
+
+  testWidgets('a knocked camera is announced at once, on any page', (tester) async {
+    final engine = EngineConnection.forTest((_) {});
+    addTearDown(engine.dispose);
+    engine.receiveForTest(jsonEncode(fixtures['hello']));
+    await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
+    await tester.pumpAndSettle();
+    engine.receiveForTest(
+      jsonEncode({
+        'type': 'camera_moved',
+        'camera': 'sim-3',
+        'shift_px': [5.0, 1.0],
+      }),
+    );
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Kamera 3 wurde verschoben – die Kalibrierung wird geprüft.'), findsOneWidget);
+  });
 }

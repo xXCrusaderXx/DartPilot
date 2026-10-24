@@ -867,5 +867,7 @@
   "referenceNotGood": "The detection is not accurate enough yet.",
   "referenceNotGoodHint": "Run the setup diagnosis to see where the error comes from, then calibrate the cameras it names again.",
   "referenceCamerasDisagree": "The cameras disagree about where it is",
-  "referenceSeenByOneCamera": "Only one camera saw it"
+  "referenceSeenByOneCamera": "Only one camera saw it",
+  "cameraMovedNotice": "Camera {camera} was moved – its calibration is being checked.",
+  "@cameraMovedNotice": {"placeholders": {"camera": {"type": "String"}}}
 }
