@@ -18,6 +18,7 @@
 #include "record_command.hpp"
 #include "replay_command.hpp"
 #include "serve_command.hpp"
+#include "white_balance_command.hpp"
 
 int main (int argc, char* argv[])
 {
@@ -57,6 +58,10 @@ int main (int argc, char* argv[])
     {
         return dartpilot::cli::runCaptureCheck(argc - 2, argv + 2);
     }
+    if(arg == "white-balance")
+    {
+        return dartpilot::cli::runWhiteBalance(argc - 2, argv + 2);
+    }
     if(arg == "focus")
     {
         return dartpilot::cli::runFocus(argc - 2, argv + 2);
@@ -78,7 +83,7 @@ int main (int argc, char* argv[])
     }
     std::cerr << "Usage: dartpilot --version | --modules | serve --simulate [--listen ADDRESS] [--port N] | record [--seconds N] "
                  "[--root DIR] [--notes TEXT] | replay <session> [--run-id ID] [--extrinsics FILE] [--check-every SECONDS] "
-                 "[--no-checks] | capture-check [seconds] | focus "
+                 "[--no-checks] | capture-check [seconds] | white-balance | focus "
                  "--camera <device> [--exposure <value>] | pattern "
                  "[--phone] <file.png>\n";
     return arg.empty() || arg == "--help" ? 0 : 2;

@@ -9,6 +9,7 @@
 
 #include "dartpilot/capture/v4l2_frame_source.hpp"
 #include "dartpilot/scoring/score.hpp"
+#include "paths.hpp"
 
 namespace dartpilot::cli
 {
@@ -49,7 +50,7 @@ std::vector<capture::CameraDevice> CameraPreviews::start ()
 {
     for(const auto& device : capture::findCameras())
     {
-        auto capture = std::make_unique<capture::CaptureThread>(std::make_unique<capture::V4l2FrameSource>(device), 4);
+        auto capture = std::make_unique<capture::CaptureThread>(std::make_unique<capture::V4l2FrameSource>(device, streamSettings(device)), 4);
         if(capture->start())
         {
             devices_.push_back(device);

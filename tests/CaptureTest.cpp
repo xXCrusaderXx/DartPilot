@@ -3,6 +3,9 @@
 #include <chrono>
 #include <cstring>
 #include <deque>
+#include <filesystem>
+#include <random>
+#include <string>
 #include <thread>
 #include <vector>
 
@@ -10,6 +13,7 @@
 #include "dartpilot/capture/clock_mapper.hpp"
 #include "dartpilot/capture/ring_buffer.hpp"
 #include "dartpilot/capture/uvc_metadata.hpp"
+#include "dartpilot/capture/white_balance.hpp"
 
 using namespace dartpilot::capture;
 using namespace std::chrono_literals;
@@ -159,4 +163,22 @@ TEST(CaptureThread, RingBufferOverflowIsCounted)
     EXPECT_EQ(thread.frames().tryPop()->sequence, 97u);
     // 2 s of exposure times at 30 fps give the effective rate.
     EXPECT_NEAR(stats.effective_fps, 30.0, 0.01);
+}
+
+TEST(WhiteBalance, ChoosesTheMiddleOfTheLongestRunWithTheBoard)
+{
+    EXPECT_FALSE(chooseWhiteBalance({{2800, false}, {3000, false}}));
+    // Found from 2800 to 3200 K, as with the reference LED ring, and once by chance further up
+    EXPECT_EQ(chooseWhiteBalance({{2800, true}, {3000, true}, {3200, true}, {3400, false}, {4400, true}, {4600, false}}), 3000);
+    // An even run is rounded down to a temperature that was tried
+    EXPECT_EQ(chooseWhiteBalance({{3600, true}, {3800, true}, {4000, true}, {4200, true}}), 3800);
+}
+
+TEST(WhiteBalance, StoresTheChoiceAndFallsBackToTheDefault)
+{
+    const auto path = (std::filesystem::temp_directory_path() / ("dartpilot-wb-" + std::to_string(std::random_device{}()) + ".yml")).string();
+    EXPECT_EQ(storedWhiteBalance(path), kDefaultWhiteBalance_K);
+    ASSERT_TRUE(saveWhiteBalance(path, 4200, {{4000, true}, {4200, true}, {4400, true}}));
+    EXPECT_EQ(storedWhiteBalance(path), 4200);
+    std::filesystem::remove(path);
 }

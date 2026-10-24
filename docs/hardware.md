@@ -58,7 +58,7 @@ The rolling shutter exposes the rows one after another, so a dart in flight appe
 | `brightness`, `contrast`, `saturation`, `hue`, `gamma`, `sharpness` | image processing in the camera | |
 | `power_line_frequency` | disabled, 50 Hz, 60 Hz | 50 Hz |
 
-`exposure_dynamic_framerate` is on after every connect. In room light it lowers the frame rate to about 16.7 fps with intervals of up to 64 ms. Capture must switch it off, and should fix exposure and white balance, so that the frame rate and the image stay constant over a recording.
+`exposure_dynamic_framerate` is on after every connect. In room light it lowers the frame rate to about 16.7 fps with intervals of up to 64 ms. Capture switches it off and fixes the white balance at 3000 K (ADR 0002), so that the frame rate and the colours stay constant over a recording; exposure stays automatic.
 
 ### Focus
 

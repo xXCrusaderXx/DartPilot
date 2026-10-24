@@ -18,7 +18,7 @@ Measurements showed that these cameras have **no usable manual exposure at 30 fp
 | `auto_exposure` | 3 (aperture priority, i.e. automatic) | Only mode with usable brightness at 30 fps; the hidden gain is only applied here |
 | `exposure_time_absolute` | not used in automatic mode | Manual exposure is an option only for setups with about 10× more light on the board than the reference LED ring |
 | `exposure_dynamic_framerate` | 0 | It is on after every connect and lowers the rate to about 16.7 fps in room light; capture switches it off every time it opens a camera |
-| `white_balance_automatic` | 0, `white_balance_temperature` to tune for the LED ring | Stable colours for the segment colour detection |
+| `white_balance_automatic` | 0, `white_balance_temperature` 3000 K | Stable colours for the segment colour detection. Measured 2026-10-24 with the reference LED ring: the board is found on all three cameras from 2800 to 3200 K and on none from 3400 K up; the automatic white balance settles around 3300 K and drifts across that edge, e.g. after the cameras restart |
 | `sharpness` | to tune (lowest value that keeps edges sharp) | In-camera sharpening shifts edges and may hurt sub-pixel accuracy |
 | `power_line_frequency` | 50 Hz | Matches the mains frequency of the reference setup |
 | Camera identity | USB port path (`/dev/v4l/by-path/`), verified against the image content | Serial numbers are identical on all cameras; `/dev/videoN` can change between boots |

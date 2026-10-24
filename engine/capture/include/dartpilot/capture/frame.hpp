@@ -51,6 +51,9 @@ struct StreamSettings
     int fps = 30;
     // Driver buffers; the ring buffer of the capture thread sits behind them
     int buffers = 4;
+    // Fixed white balance, 0 for automatic. With the reference LED ring the board is found between 2800 and 3200 K on
+    // all three cameras, and the automatic white balance drifts out of that range (measured 2026-10-24, ADR 0002).
+    int white_balance_K = 3000;
 };
 
 // Produces frames of one camera. Implemented by the V4L2 source and by test doubles.

@@ -197,13 +197,7 @@ bool V4l2FrameSource::start ()
     error_.clear();
     clock_ = ClockMapper();
 
-    // docs/adr/0002: automatic exposure, but never let it lower the frame rate.
-    {
-        const CameraControls controls(camera_.path);
-        controls.set(V4L2_CID_EXPOSURE_AUTO, V4L2_EXPOSURE_APERTURE_PRIORITY);
-        controls.set(V4L2_CID_EXPOSURE_AUTO_PRIORITY, 0);
-        controls.set(V4L2_CID_POWER_LINE_FREQUENCY, V4L2_CID_POWER_LINE_FREQUENCY_50HZ);
-    }
+    applyReferenceControls(camera_.path, settings_);
 
     image_ = std::make_unique<Node>();
     if(!image_->open(camera_.path, V4L2_BUF_TYPE_VIDEO_CAPTURE))

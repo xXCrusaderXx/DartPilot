@@ -13,6 +13,7 @@
 #include "dartpilot/capture/capture_thread.hpp"
 #include "dartpilot/capture/v4l2_device.hpp"
 #include "dartpilot/capture/v4l2_frame_source.hpp"
+#include "paths.hpp"
 
 namespace dartpilot::cli
 {
@@ -50,7 +51,9 @@ int runCaptureCheck (int argc, char* argv[])
     std::vector<CameraRun> runs;
     for(const auto& device : capture::findCameras())
     {
-        CameraRun run{device, std::make_unique<capture::CaptureThread>(std::make_unique<capture::V4l2FrameSource>(device)), {}, {}, 0, {}};
+        CameraRun run{device, std::make_unique<capture::CaptureThread>(std::make_unique<capture::V4l2FrameSource>(device, streamSettings(device))),
+                      {},     {},
+                      0,      {}};
         if(!run.thread->start())
         {
             std::fprintf(stderr, "%s: %s\n", device.usb_port.c_str(), run.thread->stats().error.c_str());

@@ -139,9 +139,9 @@ int runRecord (int argc, char* argv[])
     info.created_utc = session::utcNow();
     info.notes = notes;
     std::vector<std::unique_ptr<Recorder>> recorders;
-    const capture::StreamSettings stream;
     for(const auto& device : capture::findCameras())
     {
+        const capture::StreamSettings stream = streamSettings(device);
         auto recorder = std::make_unique<Recorder>();
         recorder->device = device;
         recorder->capture =
@@ -156,7 +156,9 @@ int runRecord (int argc, char* argv[])
         const capture::CameraControls controls(device.path);
         for(const auto& [name, id] : {std::pair<const char*, std::uint32_t>{"auto_exposure", V4L2_CID_EXPOSURE_AUTO},
                                       {"exposure_dynamic_framerate", V4L2_CID_EXPOSURE_AUTO_PRIORITY},
-                                      {"power_line_frequency", V4L2_CID_POWER_LINE_FREQUENCY}})
+                                      {"power_line_frequency", V4L2_CID_POWER_LINE_FREQUENCY},
+                                      {"white_balance_automatic", V4L2_CID_AUTO_WHITE_BALANCE},
+                                      {"white_balance_temperature", V4L2_CID_WHITE_BALANCE_TEMPERATURE}})
         {
             if(const auto value = controls.get(id))
             {
