@@ -23,6 +23,8 @@ constexpr double kWeakSigmas = 4.0;
 constexpr double kMinStrong = 12.0;
 constexpr double kMinWeak = 6.0;
 constexpr float kBin_px = 2.0f;
+// The largest shift between image and empty board that is taken for a drifting camera and compensated
+constexpr double kMaxDrift_px = 5.0;
 // A level counts for the tone curve with this many pixels; the curve needs the middle 90 % of the pixels to span this
 // many levels, and drops levels further than kToneOutlier from it.
 constexpr int kMinTonePixels = 50;
@@ -33,6 +35,9 @@ constexpr int kClose_px = 9;
 // Middles within this distance of a line are on the axis; the axis spans at least this length.
 constexpr float kAxisTolerance_px = 1.5f;
 constexpr float kMinAxisSpan_px = 30.0f;
+// Provisional, from the reference setup (cameras about 45 cm from the board): whole darts measured 146 px or more, the
+// changes of the board that looked like objects 90 px or less (#121).
+constexpr double kMinWholeDart_px = 100.0;
 // Half width of the band in which an end is followed, and how far beyond the last axis point
 constexpr float kBand_px = 2.0f;
 constexpr float kMaxReach_px = 120.0f;
@@ -251,6 +256,20 @@ std::optional<DartObservation> observeDart (const cv::Mat& image, const cv::Mat&
     cv::Mat a, b, diff;
     image.convertTo(a, CV_32FC3);
     empty_board.convertTo(b, CV_32FC3);
+    // A camera that warms up after starting or whose mount gives a little shifts its image by a fraction of a pixel to
+    // a pixel; against an older reference every edge of the board would then stand out. The reference is moved onto the
+    // image by the shift that phase correlation measures between the two, if it is small enough to be such a drift.
+    cv::Mat a_gray, b_gray;
+    cv::cvtColor(a, a_gray, cv::COLOR_BGR2GRAY);
+    cv::cvtColor(b, b_gray, cv::COLOR_BGR2GRAY);
+    cv::Mat window;
+    cv::createHanningWindow(window, a_gray.size(), CV_32F);
+    const cv::Point2d shift = cv::phaseCorrelate(b_gray, a_gray, window);
+    if(std::hypot(shift.x, shift.y) <= kMaxDrift_px)
+    {
+        const cv::Matx23d move(1, 0, shift.x, 0, 1, shift.y);
+        cv::warpAffine(b, b, move, b.size(), cv::INTER_LINEAR, cv::BORDER_REPLICATE);
+    }
     // The automatic exposure may still settle after a hand has left the view. It does not scale the image evenly: light
     // and dark sectors change by different amounts. Each channel is therefore mapped onto the empty board by a tone
     // curve: for every level of the image, the median level the same pixels have on the empty board. A dart covers too
@@ -434,7 +453,9 @@ std::optional<DartObservation> observeDart (const cv::Mat& image, const cv::Mat&
     std::sort(best.begin(), best.end(), [&] (const cv::Point2f& a, const cv::Point2f& b) { return (a - base).dot(dir) < (b - base).dot(dir); });
     observation.axis_px = best;
     observation.axis_length_px = cv::norm(best.front() - best.back());
-    if(observation.axis_length_px < kMinAxisSpan_px)
+    // A dart seen whole is long; short changes of the board itself (a fibre pushed out by a dart, a slight change of
+    // focus) are not taken for one. A dart cut off by the image border may show only part of its length.
+    if(observation.axis_length_px < kMinAxisSpan_px || (!observation.cut && observation.axis_length_px < kMinWholeDart_px))
     {
         return std::nullopt;
     }

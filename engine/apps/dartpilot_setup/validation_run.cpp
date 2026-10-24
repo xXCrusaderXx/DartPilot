@@ -414,7 +414,15 @@ void ValidationRun::onMeasured ()
         std::any_of(measurement.observations.begin(), measurement.observations.end(), [] (const auto& o) { return o.has_value(); });
     if(!any_object)
     {
-        // The board is empty again: nothing to record, the next dart can come.
+        // The board is empty again: nothing to record, the next dart can come. Its image becomes the new reference, as
+        // after every takeout in a game, so that fibres pushed out by darts and a slowly drifting camera do not add up.
+        for(std::size_t i = 0; i < streams_.size(); ++i)
+        {
+            if(!measurement.means[i].empty())
+            {
+                streams_[i].empty_board = measurement.means[i];
+            }
+        }
         last_dart_mm_.reset();
         emit resultsChanged();
         setStatus("waiting");
