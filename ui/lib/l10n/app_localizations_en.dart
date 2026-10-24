@@ -866,4 +866,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get statsSolo => 'solo';
+
+  @override
+  String get localEngineNoAnswer =>
+      'The program did not answer as the engine and was stopped. Check the engine program under Log.';
 }

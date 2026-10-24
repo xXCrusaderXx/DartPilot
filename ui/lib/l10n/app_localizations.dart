@@ -1585,6 +1585,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'solo'**
   String get statsSolo;
+
+  /// No description provided for @localEngineNoAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'The program did not answer as the engine and was stopped. Check the engine program under Log.'**
+  String get localEngineNoAnswer;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

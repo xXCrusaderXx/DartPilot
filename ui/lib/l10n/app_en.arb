@@ -516,5 +516,6 @@
   "statsHistory": "Games",
   "statsOpponents": "{count, plural, =1{against 1 player} other{against {count} players}}",
   "@statsOpponents": {"placeholders": {"count": {"type": "int"}}},
-  "statsSolo": "solo"
+  "statsSolo": "solo",
+  "localEngineNoAnswer": "The program did not answer as the engine and was stopped. Check the engine program under Log."
 }

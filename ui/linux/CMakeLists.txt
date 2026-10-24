@@ -4,7 +4,8 @@ project(runner LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "dartpilot")
+# Not "dartpilot": that is the engine program, which may be installed next to the app.
+set(BINARY_NAME "dartpilot-app")
 # The unique GTK application identifier for this application. See:
 # https://wiki.gnome.org/HowDoI/ChooseApplicationID
 set(APPLICATION_ID "io.github.xxcrusaderxx.dartpilot")
