@@ -5,20 +5,29 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import DartPilotSetup
 
-// Scaffold for the extrinsic calibration from the dartboard (#13). The pose solving follows once
-// the board coordinate convention (#11) and the wire detection (#47) exist.
+// Extrinsic calibration from the dartboard (#13, #47): detect the board per camera, click the sector 20, and fit the
+// board plane. The full pose and lens refinement (ADR 0006) follow.
 ColumnLayout {
     id: page
 
     required property bool active
     required property var cameras
+    // Per camera index: true once a board plane is stored
+    property var planes: ({})
+    readonly property bool allPlanes: cameras.length > 0 && cameras.every((c, i) => planes[i] === true)
+
+    function setPlane(index, done) {
+        const next = Object.assign({}, planes);
+        next[index] = done;
+        planes = next;
+    }
 
     spacing: Tokens.spacing
 
     PageHeader {
         Layout.fillWidth: true
         title: "Extrinsic calibration"
-        description: "Each camera's pose relative to the board, computed from the dartboard itself: no extra target, no measuring."
+        description: "Each camera's view of the board, computed from the dartboard itself: no extra target, no measuring. Remove all darts, detect the board, then click the sector 20."
     }
 
     RowLayout {
@@ -71,8 +80,8 @@ ColumnLayout {
                                 dot: true
                             }
                             Chip {
-                                text: "Pose: not yet"
-                                tone: Tokens.textMuted
+                                text: board.hasPlane ? "Board fit " + board.rmsMm.toFixed(2) + " mm" : "Board: not yet"
+                                tone: !board.hasPlane ? Tokens.textMuted : board.rmsMm <= 0.5 ? Tokens.good : board.rmsMm <= 1.0 ? Tokens.warning : Tokens.bad
                                 dot: true
                             }
                         }
@@ -84,10 +93,31 @@ ColumnLayout {
                             wrapMode: Text.WordWrap
                             font.pixelSize: Tokens.captionSize
                         }
-                        CameraView {
+                        ExtrinsicView {
+                            id: board
+
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             devicePath: page.active ? tile.modelData.path : ""
+                            usbPort: tile.modelData.usbPort
+                            onResultChanged: page.setPlane(tile.index, hasPlane)
+                            Component.onCompleted: page.setPlane(tile.index, hasPlane)
+                        }
+                        RowLayout {
+                            Button {
+                                text: board.state === "detecting" ? "Detecting …" : board.hasPlane ? "Detect again" : "Detect board"
+                                highlighted: !board.hasPlane
+                                enabled: board.state !== "detecting" && page.active
+                                onClicked: board.detect()
+                            }
+                            Label {
+                                Layout.fillWidth: true
+                                visible: board.hasPlane
+                                text: "worst " + board.worstMm.toFixed(2) + " mm, " + board.rmsPx.toFixed(2) + " px" + (board.undistorted ? ", lens corrected" : ", without lens correction")
+                                color: Tokens.textMuted
+                                font.pixelSize: Tokens.captionSize
+                                elide: Text.ElideRight
+                            }
                         }
                     }
                 }
@@ -103,34 +133,34 @@ ColumnLayout {
             Repeater {
                 model: [
                     {
-                        title: "Intrinsics",
-                        text: "Calibrate every camera on the previous page.",
+                        title: "Intrinsics (optional)",
+                        text: "With a saved intrinsic calibration the lens distortion is removed before the fit; without one the fit contains it.",
                         ready: page.cameras.length > 0 && page.cameras.every(c => c.hasIntrinsics && c.intrinsicsWarning === "")
                     },
                     {
                         title: "Empty board",
                         text: "Remove all darts; nothing may cover the wires.",
-                        ready: false
+                        ready: page.allPlanes
                     },
                     {
-                        title: "Wire detection",
-                        text: "Radial and ring wires and their intersections in every view (#47).",
-                        ready: false
+                        title: "Board detection",
+                        text: "\"Detect board\" on every camera finds the rings and the 20 radial wires: 60 points per camera (#47).",
+                        ready: page.allPlanes
                     },
                     {
                         title: "Orientation",
-                        text: "Confirm that 20 is at the top.",
-                        ready: false
+                        text: "Click the sector 20 in every camera, then check that the numbers match the board.",
+                        ready: page.allPlanes
                     },
                     {
-                        title: "Camera poses",
-                        text: "Solve each pose and refine all three against the board model (#13).",
+                        title: "Camera poses and lens refinement",
+                        text: "Pose, focal length and distortion per camera from these points (#13, ADR 0006). Next step.",
                         ready: false
                     },
                     {
                         title: "Check",
-                        text: "Uncertainty in board millimetres: green, yellow or red.",
-                        ready: false
+                        text: "Board fit error per camera in millimetres: green up to 0.5 mm, yellow up to 1 mm.",
+                        ready: page.allPlanes
                     }
                 ]
 
@@ -165,7 +195,7 @@ ColumnLayout {
 
                     anchors.fill: parent
                     anchors.margins: 12
-                    text: "Not available yet: this needs the wire detection (#47) and the pose solving (#13). The board coordinates are defined in docs/board-coordinates.md."
+                    text: "The board plane is fitted as a homography per camera. The full camera pose and the lens refinement from the board follow with #13."
                     color: Tokens.warning
                     wrapMode: Text.WordWrap
                 }

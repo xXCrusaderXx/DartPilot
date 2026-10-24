@@ -24,6 +24,7 @@ qt_add_qml_module(dartpilot_setup
     camera_finder.hpp camera_finder.cpp
     camera_stream.hpp camera_stream.cpp
     camera_view.hpp camera_view.cpp
+    extrinsic_view.hpp extrinsic_view.cpp
     intrinsic_view.hpp intrinsic_view.cpp
     pattern_image_provider.hpp pattern_image_provider.cpp
     stream_view.hpp stream_view.cpp

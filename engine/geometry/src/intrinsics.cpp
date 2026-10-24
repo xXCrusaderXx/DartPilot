@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <filesystem>
 #include <limits>
 
 #include <opencv2/calib3d.hpp>
@@ -314,6 +315,11 @@ bool saveIntrinsics (const std::string& path, const IntrinsicCalibration& calibr
 }
 std::optional<StoredIntrinsics> loadIntrinsics (const std::string& path)
 {
+    // A missing file is the normal case before the first calibration; OpenCV would log an error for it.
+    if(!std::filesystem::exists(path))
+    {
+        return std::nullopt;
+    }
     try
     {
         cv::FileStorage file(path, cv::FileStorage::READ);

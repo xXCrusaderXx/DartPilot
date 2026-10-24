@@ -44,3 +44,7 @@ gtest_discover_tests(SessionTest)
 add_executable(BoardDetectionTest BoardDetectionTest.cpp)
 target_link_libraries(BoardDetectionTest PRIVATE dartpilot::geometry opencv_imgcodecs GTest::gtest_main)
 gtest_discover_tests(BoardDetectionTest)
+
+add_executable(BoardPlaneTest BoardPlaneTest.cpp)
+target_link_libraries(BoardPlaneTest PRIVATE dartpilot::geometry opencv_imgcodecs GTest::gtest_main)
+gtest_discover_tests(BoardPlaneTest)

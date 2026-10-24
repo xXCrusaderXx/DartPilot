@@ -12,12 +12,17 @@ namespace
 {
 // Midpoint of each edge pair relative to the outer double edge, from the nominal radii (docs/board-coordinates.md)
 constexpr double kTripleToDouble = 103.0 / 166.0;
-constexpr double kBullLimitToDouble = 0.2;
+// The outer bull edge lies at 15.9/166 of the double ring; perspective moves it, colour fringes further out must not count.
+constexpr double kBullLimitToDouble = 0.14;
 constexpr int kRays = 720;
 constexpr int kTrackSamples = 4000;
 // A coloured run shorter than this along a ray is noise, not a ring
 constexpr double kMinRun_px = 2.0;
 constexpr double kMinSigma_px = 0.3;
+// A run belongs to a ring when its middle lies within this share of the double ring distance of the expected place
+constexpr double kRunTolerance = 0.08;
+constexpr int kRansacIterations = 400;
+constexpr double kRansacInlier_px = 3.0;
 
 struct Masks
 {
@@ -34,11 +39,13 @@ Masks colourMasks (const cv::Mat& bgr)
     Masks masks;
     cv::cvtColor(bgr, masks.hsv, cv::COLOR_BGR2HSV);
     cv::Mat low_red, high_red;
-    // OpenCV hue runs from 0 to 180; red wraps around 0. The green of real boards can be very dark, hence the low value.
-    cv::inRange(masks.hsv, cv::Scalar(0, 90, 50), cv::Scalar(10, 255, 255), low_red);
-    cv::inRange(masks.hsv, cv::Scalar(165, 90, 50), cv::Scalar(180, 255, 255), high_red);
+    // OpenCV hue runs from 0 to 180; red wraps around 0. The thresholds cover the reference board in daylight, where the
+    // red is pale (median saturation about 85), and in dim light, where the green is almost black (median value about
+    // 20). The ring structure found afterwards rejects stray pixels of similar colour.
+    cv::inRange(masks.hsv, cv::Scalar(0, 45, 40), cv::Scalar(10, 255, 255), low_red);
+    cv::inRange(masks.hsv, cv::Scalar(165, 45, 40), cv::Scalar(180, 255, 255), high_red);
     masks.red = low_red | high_red;
-    cv::inRange(masks.hsv, cv::Scalar(45, 80, 14), cv::Scalar(95, 255, 255), masks.green);
+    cv::inRange(masks.hsv, cv::Scalar(45, 45, 14), cv::Scalar(95, 255, 255), masks.green);
     masks.colour = masks.red | masks.green;
     cv::morphologyEx(masks.colour, masks.colour, cv::MORPH_CLOSE, cv::getStructuringElement(cv::MORPH_ELLIPSE, {3, 3}));
     std::vector<cv::Mat> channels;
@@ -141,6 +148,57 @@ double ellipseOffset (const cv::RotatedRect& e, const cv::Point2f& p)
     return std::sqrt(u * u + v * v) - 1.0;
 }
 
+// Ellipse through the largest consistent subset of the points. The random generator has a fixed seed, so the same
+// image always gives the same result.
+std::optional<cv::RotatedRect> ransacEllipse (const std::vector<cv::Point2f>& points)
+{
+    if(points.size() < 20)
+    {
+        return std::nullopt;
+    }
+    cv::RNG rng(0x5eed);
+    std::optional<cv::RotatedRect> best;
+    std::size_t best_inliers = 0;
+    std::vector<cv::Point2f> sample(5);
+    for(int iteration = 0; iteration < kRansacIterations; ++iteration)
+    {
+        for(auto& p : sample)
+        {
+            p = points[rng.uniform(0, static_cast<int>(points.size()))];
+        }
+        const cv::RotatedRect candidate = cv::fitEllipse(sample);
+        if(!(candidate.size.width > 4 && candidate.size.height > 4) || !std::isfinite(candidate.center.x))
+        {
+            continue;
+        }
+        const double semi_axis_px = 0.25 * (candidate.size.width + candidate.size.height);
+        std::size_t inliers = 0;
+        for(const auto& p : points)
+        {
+            inliers += std::abs(ellipseOffset(candidate, p)) * semi_axis_px < kRansacInlier_px ? 1 : 0;
+        }
+        if(inliers > best_inliers)
+        {
+            best_inliers = inliers;
+            best = candidate;
+        }
+    }
+    if(!best || best_inliers < points.size() / 2)
+    {
+        return std::nullopt;
+    }
+    const double semi_axis_px = 0.25 * (best->size.width + best->size.height);
+    std::vector<cv::Point2f> inliers;
+    for(const auto& p : points)
+    {
+        if(std::abs(ellipseOffset(*best, p)) * semi_axis_px < kRansacInlier_px)
+        {
+            inliers.push_back(p);
+        }
+    }
+    return cv::fitEllipse(inliers);
+}
+
 // Fits an ellipse, drops points far from it and refits; returns the RMS distance of the kept points in pixels.
 std::optional<double> robustEllipse (std::vector<cv::Point2f> points, cv::RotatedRect& ellipse)
 {
@@ -198,8 +256,8 @@ cv::RotatedRect blend (const cv::RotatedRect& a, const cv::RotatedRect& b, doubl
         static_cast<float>((1 - w) * a.angle + w * b.angle));
 }
 
-// Points where the colour changes along a closed track: red/green on the ring tracks, bright/dark on the single tracks.
-std::vector<cv::Point2f> transitionsAlong (const cv::RotatedRect& track, bool ring, const Masks& masks, const cv::Mat& gray)
+// Points where the brightness changes between dark and light sectors along a closed track through the singles
+std::vector<cv::Point2f> transitionsAlong (const cv::RotatedRect& track, const cv::Mat& gray)
 {
     std::vector<double> score(kTrackSamples, 0.0);
     for(int k = 0; k < kTrackSamples; ++k)
@@ -210,29 +268,22 @@ std::vector<cv::Point2f> transitionsAlong (const cv::RotatedRect& track, bool ri
         {
             continue;
         }
-        if(ring)
-        {
-            score[k] = masks.red.at<uchar>(y, x) ? 1.0 : masks.green.at<uchar>(y, x) ? -1.0 : 0.0;
-        }
-        else
-        {
-            score[k] = gray.at<uchar>(y, x);
-        }
+        score[k] = gray.at<uchar>(y, x);
     }
-    if(!ring)
+    // Half way between the dark and the bright sectors
+    std::vector<double> sorted = score;
+    std::sort(sorted.begin(), sorted.end());
+    const double middle = 0.5 * (sorted[kTrackSamples / 10] + sorted[kTrackSamples * 9 / 10]);
+    for(auto& value : score)
     {
-        // Half way between the dark and the bright sectors
-        std::vector<double> sorted = score;
-        std::sort(sorted.begin(), sorted.end());
-        const double middle = 0.5 * (sorted[kTrackSamples / 10] + sorted[kTrackSamples * 9 / 10]);
-        for(auto& value : score)
-        {
-            value = value > middle ? 1.0 : -1.0;
-        }
+        value = value > middle ? 1.0 : -1.0;
     }
-    // A transition is where the majority of the eight samples before and after flips.
+    // A transition is where the majority of the eight samples before and after flips. Neighbouring detections of the
+    // same transition are merged by their position along the track, not in pixels: the 20 sectors are spread evenly
+    // around it however strongly perspective squeezes the far side.
     constexpr int kWindow = 8;
-    std::vector<cv::Point2f> found;
+    constexpr int kMinSeparation = kTrackSamples / (kRadialWireCount * 4);
+    std::vector<int> indices;
     for(int k = 0; k < kTrackSamples; ++k)
     {
         double before = 0.0, after = 0.0;
@@ -243,16 +294,20 @@ std::vector<cv::Point2f> transitionsAlong (const cv::RotatedRect& track, bool ri
         }
         if(before * after < 0 && std::abs(before) > kWindow / 2 && std::abs(after) > kWindow / 2)
         {
-            const cv::Point2f p = pointOnEllipse(track, 2 * CV_PI * k / kTrackSamples);
-            if(found.empty() || cv::norm(p - found.back()) > 6.0)
+            if(indices.empty() || k - indices.back() > kMinSeparation)
             {
-                found.push_back(p);
+                indices.push_back(k);
             }
         }
     }
-    if(found.size() > 1 && cv::norm(found.front() - found.back()) < 6.0)
+    if(indices.size() > 1 && indices.front() + kTrackSamples - indices.back() <= kMinSeparation)
     {
-        found.pop_back();
+        indices.pop_back();
+    }
+    std::vector<cv::Point2f> found;
+    for(const int k : indices)
+    {
+        found.push_back(pointOnEllipse(track, 2 * CV_PI * k / kTrackSamples));
     }
     return found;
 }
@@ -296,18 +351,28 @@ std::optional<BoardDetection> detectBoard (const cv::Mat& bgr)
         return std::nullopt;
     }
 
-    // Coloured runs along rays from the bull, assigned to the rings by their radius relative to the outermost run.
-    std::array<std::vector<cv::Point2f>, kBoardCircleCount> circle_points;
+    // Coloured runs along rays from the bull. First pass: the outermost run of most rays is the double ring; a robust
+    // ellipse through their middles ignores rays that end on red plates of the number ring instead.
+    struct Ray
+    {
+        double dx = 0.0;
+        double dy = 0.0;
+        std::vector<std::pair<double, double>> runs;
+    };
+    std::vector<Ray> rays;
+    std::vector<cv::Point2f> outermost;
     for(int r = 0; r < kRays; ++r)
     {
-        const double angle = 2 * CV_PI * r / kRays, dx = std::cos(angle), dy = std::sin(angle);
-        std::vector<std::pair<double, double>> runs;
+        Ray ray;
+        const double angle = 2 * CV_PI * r / kRays;
+        ray.dx = std::cos(angle);
+        ray.dy = std::sin(angle);
         bool inside = false;
         double start = 0.0;
         int gap = 0;
         for(double t = 0; t < 2.0 * std::max(bgr.cols, bgr.rows); t += 0.5)
         {
-            const int x = cvRound(bull->x + dx * t), y = cvRound(bull->y + dy * t);
+            const int x = cvRound(bull->x + ray.dx * t), y = cvRound(bull->y + ray.dy * t);
             if(x < 0 || y < 0 || x >= bgr.cols || y >= bgr.rows)
             {
                 break;
@@ -322,50 +387,82 @@ std::optional<BoardDetection> detectBoard (const cv::Mat& bgr)
             else if(!coloured && inside && ++gap > 3)
             {
                 inside = false;
-                runs.emplace_back(start, t - gap * 0.5);
+                if(t - gap * 0.5 - start >= kMinRun_px)
+                {
+                    ray.runs.emplace_back(start, t - gap * 0.5);
+                }
             }
             else if(coloured)
             {
                 gap = 0;
             }
         }
-        std::vector<std::pair<double, double>> long_runs;
-        for(const auto& run : runs)
+        if(!ray.runs.empty())
         {
-            if(run.second - run.first >= kMinRun_px)
-            {
-                long_runs.push_back(run);
-            }
+            const double middle = 0.5 * (ray.runs.back().first + ray.runs.back().second);
+            outermost.emplace_back(static_cast<float>(bull->x + ray.dx * middle), static_cast<float>(bull->y + ray.dy * middle));
         }
-        if(long_runs.size() < 3 || long_runs.front().first > 3.0)
+        rays.push_back(std::move(ray));
+    }
+    const auto rough_double = ransacEllipse(outermost);
+    if(!rough_double)
+    {
+        return std::nullopt;
+    }
+
+    // Second pass: on each ray, the runs closest to the double ring, to the triple ring at 103/166 of it and the first
+    // run near the centre (the bull) are taken. Plates further out and colour fringes in between do not match.
+    std::array<std::vector<cv::Point2f>, kBoardCircleCount> circle_points;
+    for(const auto& ray : rays)
+    {
+        const auto hit = lineEllipseIntersection(*bull, cv::Point2f(static_cast<float>(ray.dx), static_cast<float>(ray.dy)), *rough_double);
+        if(!hit || ray.runs.empty())
         {
             continue;
         }
-        const auto& double_run = long_runs.back();
-        const double double_middle = 0.5 * (double_run.first + double_run.second);
-        const std::pair<double, double>* triple_run = nullptr;
-        double bull_end = -1.0;
-        for(const auto& run : long_runs)
+        const double t_double = cv::norm(*hit - *bull);
+        const auto closest = [&] (double expected) -> const std::pair<double, double>*
         {
-            if(&run != &double_run && std::abs(0.5 * (run.first + run.second) / double_middle - kTripleToDouble) < 0.15)
+            const std::pair<double, double>* best = nullptr;
+            double best_distance = kRunTolerance * t_double;
+            for(const auto& run : ray.runs)
             {
-                triple_run = &run;
+                const double distance = std::abs(0.5 * (run.first + run.second) - expected);
+                if(distance < best_distance)
+                {
+                    best_distance = distance;
+                    best = &run;
+                }
             }
-            if(run.second / double_middle < kBullLimitToDouble)
+            return best;
+        };
+        const auto* double_run = closest(t_double);
+        const auto* triple_run = closest(kTripleToDouble * t_double);
+        // The bull and the outer bull can be one run or two; the outer bull edge is the furthest end close to the centre.
+        double bull_end = -1.0;
+        for(const auto& run : ray.runs)
+        {
+            if(run.second < kBullLimitToDouble * t_double)
             {
                 bull_end = run.second;
             }
         }
-        if(!triple_run || bull_end < 0)
+        const bool bull_ok = bull_end > 0;
+        const auto at = [&] (double t) { return cv::Point2f(static_cast<float>(bull->x + ray.dx * t), static_cast<float>(bull->y + ray.dy * t)); };
+        const auto refined = [&] (double t, bool inward_is_ring) { return refineEdge(masks.chroma, *bull, ray.dx, ray.dy, t, inward_is_ring); };
+        if(bull_ok)
         {
-            continue;
+            circle_points[0].push_back(at(refined(bull_end, true)));
         }
-        const auto at = [&] (double t) { return cv::Point2f(static_cast<float>(bull->x + dx * t), static_cast<float>(bull->y + dy * t)); };
-        const auto refined = [&] (double t, bool inward_is_ring) { return refineEdge(masks.chroma, *bull, dx, dy, t, inward_is_ring); };
-        circle_points[0].push_back(at(refined(bull_end, true)));
         // The midpoint of both edges cancels the widening by blur
-        circle_points[1].push_back(at(0.5 * (refined(triple_run->first, false) + refined(triple_run->second, true))));
-        circle_points[2].push_back(at(0.5 * (refined(double_run.first, false) + refined(double_run.second, true))));
+        if(triple_run && triple_run != double_run)
+        {
+            circle_points[1].push_back(at(0.5 * (refined(triple_run->first, false) + refined(triple_run->second, true))));
+        }
+        if(double_run)
+        {
+            circle_points[2].push_back(at(0.5 * (refined(double_run->first, false) + refined(double_run->second, true))));
+        }
     }
 
     BoardDetection detection;
@@ -381,42 +478,40 @@ std::optional<BoardDetection> detectBoard (const cv::Mat& bgr)
         circle_rms_px[k] = *rms_px;
     }
 
-    // Radial wires from the colour changes on four tracks: the inner and outer singles and the two rings. The outer single
-    // track finds all 20 most reliably and serves as reference. Every radial wire also runs through the board centre,
-    // which the bull marks.
+    // Radial wires from the bright/dark changes on two tracks through the inner and the outer singles; the red/green
+    // changes on the rings are left out, because the hue of dark pixels is unreliable. Every radial wire also runs through
+    // the board centre, which the bull marks. Whichever track shows exactly 20 changes serves as reference.
     cv::Mat gray;
     cv::cvtColor(bgr, gray, cv::COLOR_BGR2GRAY);
     cv::GaussianBlur(gray, gray, cv::Size(), 1.0);
     const auto& c = detection.circles;
-    const std::array<std::vector<cv::Point2f>, 4> transitions = {
-        transitionsAlong(blend(c[0], c[1], 0.5), false, masks, gray), transitionsAlong(c[1], true, masks, gray),
-        transitionsAlong(blend(c[1], c[2], 0.5), false, masks, gray), transitionsAlong(c[2], true, masks, gray)};
-    if(transitions[2].size() != kRadialWireCount)
+    const std::array<std::vector<cv::Point2f>, 2> transitions = {transitionsAlong(blend(c[1], c[2], 0.5), gray),
+                                                                 transitionsAlong(blend(c[0], c[1], 0.5), gray)};
+    const int reference = transitions[0].size() == kRadialWireCount ? 0 : transitions[1].size() == kRadialWireCount ? 1 : -1;
+    if(reference < 0)
     {
         return std::nullopt;
     }
+    const int other = 1 - reference;
     std::vector<std::vector<cv::Point2f>> wire_points;
-    for(const auto& reference : transitions[2])
+    for(const auto& reference_point : transitions[reference])
     {
-        std::vector<cv::Point2f> points{reference};
-        const double reference_angle = imageAngle(*bull, reference);
-        for(const int track : {0, 1, 3})
+        std::vector<cv::Point2f> points{reference_point};
+        const double reference_angle = imageAngle(*bull, reference_point);
+        double best = 0.08;
+        std::optional<cv::Point2f> match;
+        for(const auto& q : transitions[other])
         {
-            double best = 0.08;
-            std::optional<cv::Point2f> match;
-            for(const auto& q : transitions[track])
+            const double d = std::abs(std::remainder(imageAngle(*bull, q) - reference_angle, 2 * CV_PI));
+            if(d < best)
             {
-                const double d = std::abs(std::remainder(imageAngle(*bull, q) - reference_angle, 2 * CV_PI));
-                if(d < best)
-                {
-                    best = d;
-                    match = q;
-                }
+                best = d;
+                match = q;
             }
-            if(match)
-            {
-                points.push_back(*match);
-            }
+        }
+        if(match)
+        {
+            points.push_back(*match);
         }
         points.push_back(*bull);
         wire_points.push_back(points);

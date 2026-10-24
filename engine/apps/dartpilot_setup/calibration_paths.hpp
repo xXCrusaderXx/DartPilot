@@ -24,4 +24,7 @@ inline QString patternDownloadUrl (const geometry::CharucoTarget& target)
 
 // A calibration belongs to the USB port, because all reference cameras report the same serial number.
 inline QString intrinsicsPath (const QString& usb_port) { return calibrationDirectory() + "/intrinsics-usb-" + usb_port + ".yml"; }
+
+// Board plane (orientation and homography) of the camera on that USB port
+inline QString boardPlanePath (const QString& usb_port) { return calibrationDirectory() + "/board-usb-" + usb_port + ".yml"; }
 }  // namespace dartpilot::setup
