@@ -187,12 +187,13 @@ TEST(DartTracker, ThrowsForEachDartAndATakeoutWhenTheBoardIsEmptyAgain)
         cameras.push_back({"cam" + std::to_string(c), &kCameras[c], scene(100 + static_cast<int>(c))});
     }
     dartpilot::fusion::DartTracker tracker(cameras, {});
-    const auto still = [&] (int seed, const std::vector<std::pair<cv::Point2f, double>>& darts)
+    const auto still = [&] (const std::vector<std::pair<cv::Point2f, double>>& darts)
     {
         std::vector<cv::Mat> images;
         for(std::size_t c = 0; c < kCameras.size(); ++c)
         {
-            cv::Mat image = scene(seed + static_cast<int>(c));
+            // The same scene every time, as a still camera sees it; only the darts change
+            cv::Mat image = scene(200 + static_cast<int>(c));
             for(const auto& [tip_mm, lean_deg] : darts)
             {
                 drawDart(image, kCameras[c], tip_mm, 15.0, lean_deg);
@@ -203,19 +204,19 @@ TEST(DartTracker, ThrowsForEachDartAndATakeoutWhenTheBoardIsEmptyAgain)
     };
     const cv::Point2f first(40.0f, 70.0f), second(-60.0f, -20.0f);
 
-    EXPECT_TRUE(still(200, {}).became_ready);
-    const auto one = still(210, {{first, 30.0}});
+    EXPECT_TRUE(still({}).became_ready);
+    const auto one = still({{first, 30.0}});
     ASSERT_TRUE(one.dart);
     ASSERT_TRUE(one.dart->location);
     EXPECT_LT(cv::norm(one.dart->location->board_mm - first), 2.0);
     // The same board again: nothing new
-    EXPECT_FALSE(still(220, {{first, 30.0}}).dart);
-    const auto two = still(230, {{first, 30.0}, {second, 200.0}});
+    EXPECT_FALSE(still({{first, 30.0}}).dart);
+    const auto two = still({{first, 30.0}, {second, 200.0}});
     ASSERT_TRUE(two.dart);
     ASSERT_TRUE(two.dart->location);
     EXPECT_LT(cv::norm(two.dart->location->board_mm - second), 2.0);
     EXPECT_EQ(tracker.dartsInBoard(), 2);
-    const auto pulled = still(240, {});
+    const auto pulled = still({});
     EXPECT_FALSE(pulled.dart);
     ASSERT_TRUE(pulled.takeout);
     EXPECT_EQ(*pulled.takeout, 2);
@@ -240,4 +241,31 @@ TEST(ReferenceTargets, CornersLieBesideBothWiresInsideTheirField)
     EXPECT_NEAR(cv::norm(targets[6].board_mm), 99.0 - dartpilot::fusion::kCornerOffset_mm, 1e-6);
     // The last corner lies outside the outer bull
     EXPECT_NEAR(cv::norm(targets[9].board_mm), 15.9 + dartpilot::fusion::kCornerOffset_mm, 1e-6);
+}
+
+TEST(DartTracker, AKnockedCameraIsNoDart)
+{
+    std::vector<dartpilot::fusion::TrackerCamera> cameras;
+    for(std::size_t c = 0; c < kCameras.size(); ++c)
+    {
+        cameras.push_back({"cam" + std::to_string(c), &kCameras[c], scene(100 + static_cast<int>(c))});
+    }
+    dartpilot::fusion::DartTracker tracker(cameras, {});
+    std::vector<cv::Mat> images;
+    for(std::size_t c = 0; c < kCameras.size(); ++c)
+    {
+        cv::Mat image = scene(200 + static_cast<int>(c));
+        // Some structure for the phase correlation to follow, as the board gives a real camera
+        cv::rectangle(image, cv::Rect(400, 200, 300, 200), cv::Scalar(30, 30, 30), cv::FILLED);
+        images.push_back(image);
+    }
+    ASSERT_TRUE(tracker.addStill(images).became_ready);
+    cv::warpAffine(images[1], images[1], cv::Matx23d(1, 0, 12, 0, 1, -7), images[1].size(), cv::INTER_LINEAR, cv::BORDER_REPLICATE);
+    const auto knocked = tracker.addStill(images);
+    EXPECT_FALSE(knocked.dart);
+    ASSERT_EQ(knocked.moved_cameras.size(), 1u);
+    EXPECT_EQ(knocked.moved_cameras[0].first, 1);
+    EXPECT_NEAR(knocked.moved_cameras[0].second.x, 12.0, 1.0);
+    // Afterwards the knocked view is the new still state: nothing more happens.
+    EXPECT_FALSE(tracker.addStill(images).dart);
 }

@@ -226,6 +226,10 @@ void LiveDetection::publish (const fusion::TrackerUpdate& update, std::int64_t e
     {
         server_.publishTakeout(event_ns, *update.takeout);
     }
+    for(const auto& [camera, shift] : update.moved_cameras)
+    {
+        server_.publishEvent({{"type", "camera_moved"}, {"camera", cameras_[static_cast<std::size_t>(camera)].id}, {"shift_px", {shift.x, shift.y}}});
+    }
     if(!update.dart)
     {
         return;

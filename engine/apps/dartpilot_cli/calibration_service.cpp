@@ -524,9 +524,9 @@ void CalibrationService::runChecks ()
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
         const auto now = std::chrono::steady_clock::now();
         const bool detailed = subscribers_ > 0;
-        // In the background only on a board that the board check sees empty and still, e.g. after a takeout
-        const bool due =
-            detailed ? now - last >= kDetailedCheckInterval : now - last >= kBackgroundCheckInterval && server_.boardState().state == "empty";
+        // In the background also while the board check sees something: a knocked camera makes it see the whole board as
+        // changed, and that is exactly when the check must run. Darts that hide the board keep the previous verdict.
+        const bool due = now - last >= (detailed ? kDetailedCheckInterval : kBackgroundCheckInterval);
         if(!due || busy_)
         {
             continue;
@@ -539,7 +539,10 @@ void CalibrationService::runChecks ()
             const json event = checkCamera(c, extrinsics ? &*extrinsics : nullptr, summary);
             {
                 std::lock_guard lock(checks_mutex_);
-                checks_[c] = summary;
+                if(summary.state != "no_board" || checks_[c].state.empty() || detailed)
+                {
+                    checks_[c] = summary;
+                }
             }
             if(subscribers_ > 0)
             {
