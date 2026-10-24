@@ -110,6 +110,37 @@ void main() {
     expect(find.byKey(const ValueKey('fullscreen-usb-1')), findsOneWidget);
   });
 
+  testWidgets('narrow panels ask for small previews and pause under the full screen view', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final sent = <Map<String, dynamic>>[];
+    final engine = EngineConnection.forTest(sent.add);
+    addTearDown(engine.dispose);
+    engine.receiveForTest(jsonEncode(hello));
+    await tester.pumpWidget(DartPilotApp(locale: const Locale('en'), engine: engine));
+    await tester.tap(find.text('Cameras'));
+    await tester.pumpAndSettle();
+    // One column of 368 px: the next step of 160 px is 480.
+    expect(sent.where((r) => r['type'] == 'subscribe_preview').map((r) => r['max_width']).toSet(), {480});
+
+    engine.receiveForTest(previewMessage('usb-1', 1, tinyJpeg));
+    await tester.pump();
+    await tester.pump();
+    sent.clear();
+    await tester.tap(find.byKey(const ValueKey('preview-usb-1')));
+    await tester.pumpAndSettle();
+    expect(sent.any((r) => r['type'] == 'unsubscribe_preview' && r['camera'] == 'usb-2'), isTrue);
+    expect(sent.any((r) => r['camera'] == 'usb-1' && r['max_width'] == 1280), isTrue);
+
+    sent.clear();
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    // The panels subscribe again before the full screen view releases its own; the last request per camera counts.
+    final last = {for (final r in sent.where((r) => r['type'] == 'subscribe_preview')) r['camera']: r['max_width']};
+    expect(last, {'usb-1': 480, 'usb-2': 480});
+  });
+
   test('preview handles combine their limits and unsubscribe with the last one', () {
     final sent = <Map<String, dynamic>>[];
     final engine = EngineConnection.forTest(sent.add);

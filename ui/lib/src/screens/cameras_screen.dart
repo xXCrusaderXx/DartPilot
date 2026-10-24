@@ -19,6 +19,15 @@ class _CamerasScreenState extends State<CamerasScreen> {
   EngineConnection? _engine;
   final Set<String> _collapsed = {};
 
+  /// While a camera is shown full screen, the panels underneath stop their previews.
+  bool _fullscreen = false;
+
+  Future<void> _openFullscreen(String camera) async {
+    setState(() => _fullscreen = true);
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => CameraFullscreen(camera: camera)));
+    if (mounted) setState(() => _fullscreen = false);
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -57,6 +66,10 @@ class _CamerasScreenState extends State<CamerasScreen> {
               builder: (context, constraints) {
                 final columns = constraints.maxWidth > 1300 ? 3 : (constraints.maxWidth > 800 ? 2 : 1);
                 final width = (constraints.maxWidth - 32 - 12 * (columns - 1)) / columns;
+                // The engine scales the preview to the panel's pixels, in steps so that resizing does not
+                // resubscribe at every pixel; never above the 640 px a panel needs on a desktop.
+                final pixels = width * MediaQuery.devicePixelRatioOf(context);
+                final previewWidth = ((pixels / 160).ceil() * 160).clamp(160, 640);
                 return SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
                   child: Wrap(
@@ -69,6 +82,9 @@ class _CamerasScreenState extends State<CamerasScreen> {
                           child: CameraPanel(
                             camera: camera,
                             expanded: !_collapsed.contains(camera),
+                            active: !_fullscreen,
+                            previewWidth: previewWidth,
+                            onOpen: () => _openFullscreen(camera),
                             onToggle: () => setState(
                               () => _collapsed.contains(camera) ? _collapsed.remove(camera) : _collapsed.add(camera),
                             ),
@@ -134,10 +150,25 @@ mixin _PreviewWatcher<T extends StatefulWidget> on State<T> {
 }
 
 class CameraPanel extends StatefulWidget {
-  const CameraPanel({super.key, required this.camera, required this.expanded, required this.onToggle});
+  const CameraPanel({
+    super.key,
+    required this.camera,
+    required this.expanded,
+    required this.onToggle,
+    this.active = true,
+    this.previewWidth = 640,
+    this.onOpen,
+  });
 
   final String camera;
   final bool expanded;
+
+  /// false while the panel is covered; it keeps its last image but stops the preview
+  final bool active;
+  final int previewWidth;
+
+  /// Opens the camera full screen; the panel pushes the page itself without it
+  final VoidCallback? onOpen;
   final VoidCallback onToggle;
 
   @override
@@ -150,19 +181,22 @@ class _CameraPanelState extends State<CameraPanel> with _PreviewWatcher<CameraPa
   @override
   double get previewFps => 10;
   @override
-  int get previewWidth => 640;
+  int get previewWidth => widget.previewWidth;
+
+  bool _watching(CameraPanel panel) => panel.expanded && panel.active;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (widget.expanded) startWatching();
+    if (_watching(widget)) startWatching();
   }
 
   @override
   void didUpdateWidget(CameraPanel old) {
     super.didUpdateWidget(old);
-    if (widget.expanded && !old.expanded) startWatching();
-    if (!widget.expanded && old.expanded) setState(stopWatching);
+    final watching = _watching(widget);
+    if (_watching(old) && (!watching || widget.previewWidth != old.previewWidth)) setState(stopWatching);
+    if (watching && (!_watching(old) || widget.previewWidth != old.previewWidth)) startWatching();
   }
 
   @override
@@ -207,14 +241,22 @@ class _CameraPanelState extends State<CameraPanel> with _PreviewWatcher<CameraPa
                   : Tooltip(
                       message: l10n.tapToEnlarge,
                       child: GestureDetector(
-                        onTap: () =>
-                            Navigator.of(context)
+                        onTap:
+                            widget.onOpen ??
+                            () => Navigator.of(context)
                                 .push(MaterialPageRoute<void>(builder: (_) => CameraFullscreen(camera: widget.camera))),
-                        child: Image.memory(
-                          current.jpeg,
-                          key: ValueKey('preview-${widget.camera}'),
-                          fit: BoxFit.contain,
-                          gaplessPlayback: true,
+                        child: LayoutBuilder(
+                          // Decoded at the size it is shown, not at the size it was sent
+                          builder: (context, constraints) => Image.memory(
+                            current.jpeg,
+                            key: ValueKey('preview-${widget.camera}'),
+                            fit: BoxFit.contain,
+                            gaplessPlayback: true,
+                            cacheWidth: _decodeWidth(
+                              constraints.maxWidth * MediaQuery.devicePixelRatioOf(context),
+                              current.width,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -223,6 +265,13 @@ class _CameraPanelState extends State<CameraPanel> with _PreviewWatcher<CameraPa
       ),
     );
   }
+}
+
+/// Pixels to decode a frame of [frameWidth] into for a box [boxPixels] wide; null keeps the frame's size.
+int? _decodeWidth(double boxPixels, int frameWidth) {
+  if (!boxPixels.isFinite) return null;
+  final pixels = boxPixels.ceil();
+  return pixels < frameWidth ? pixels : null;
 }
 
 /// One camera full screen, at a higher resolution, with pinch and wheel zoom.
