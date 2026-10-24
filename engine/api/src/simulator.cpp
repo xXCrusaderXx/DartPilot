@@ -1,5 +1,6 @@
 #include "dartpilot/api/simulator.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <ctime>
@@ -50,6 +51,7 @@ Simulator::~Simulator ()
     if(settings_.diagnosis)
     {
         server_.onDiagnosis({});
+        server_.onCalibration({});
     }
 }
 
@@ -131,6 +133,139 @@ nlohmann::json Simulator::exampleDiagnosis (bool running)
             {"periods", periods}};
 }
 
+nlohmann::json Simulator::exampleCalibrationStatus ()
+{
+    using json = nlohmann::json;
+    json cameras = json::array();
+    for(std::size_t c = 0; c < kCameras.size(); ++c)
+    {
+        cameras.push_back({{"camera", kCameras[c]},
+                           {"intrinsics", c == 2 ? "none" : "valid"},
+                           {"board_plane_mm", c == 1 ? 0.62 : 0.41},
+                           {"refined", true},
+                           {"white_balance_kelvin", 3000}});
+    }
+    return {{"cameras", cameras}, {"refinement_stale", false}, {"extrinsics_created", "2026-10-24T17:41:00Z"}};
+}
+
+std::vector<nlohmann::json> Simulator::exampleCalibrationEvents (const CalibrationRequest& request)
+{
+    using json = nlohmann::json;
+    constexpr double kPi = 3.14159265358979323846;
+    const std::string camera = request.body.value("camera", std::string());
+    const auto index = static_cast<std::size_t>(std::find(kCameras.begin(), kCameras.end(), camera) - kCameras.begin());
+    // The projection of the simulated previews: 640x360, each camera turned by 120 degrees and squeezed vertically
+    const double view = static_cast<double>(index % kCameras.size()) * 2.0 * kPi / 3.0;
+    const auto project = [&] (double x_mm, double y_mm)
+    {
+        const double xr = x_mm * std::cos(view) - y_mm * std::sin(view);
+        const double yr = x_mm * std::sin(view) + y_mm * std::cos(view);
+        return json{320.0 + 0.9 * xr, 180.0 - 0.55 * 0.9 * yr};
+    };
+    const scoring::BoardGeometry geometry;
+    std::vector<json> events;
+    if(request.type == "detect_board")
+    {
+        json ellipses = json::array(), wires = json::array(), points = json::array();
+        const double outer_bull = geometry.outer_bull_radius_mm;
+        const double treble = 0.5 * (geometry.triple_inner_radius_mm + geometry.triple_outer_radius_mm);
+        const double double_centre = 0.5 * (geometry.double_inner_radius_mm + geometry.double_outer_radius_mm);
+        for(const double radius : {outer_bull, treble, double_centre})
+        {
+            ellipses.push_back({{"center_px", {320.0, 180.0}}, {"axes_px", {0.9 * radius, 0.495 * radius}}, {"angle_deg", 0.0}});
+        }
+        for(int k = 0; k < 20; ++k)
+        {
+            const double phi = (9.0 + 18.0 * k) * kPi / 180.0;
+            const json from = project(outer_bull * std::cos(phi), outer_bull * std::sin(phi));
+            const json to = project(1.2 * double_centre * std::cos(phi), 1.2 * double_centre * std::sin(phi));
+            wires.push_back({from[0], from[1], to[0], to[1]});
+            for(const double radius : {outer_bull, treble, double_centre})
+            {
+                points.push_back(project(radius * std::cos(phi), radius * std::sin(phi)));
+            }
+        }
+        events.push_back({{"type", "board_detection"},
+                          {"camera", camera},
+                          {"ok", true},
+                          {"code", "found"},
+                          {"image_size_px", {640, 360}},
+                          {"ellipses", ellipses},
+                          {"wires_px", wires},
+                          {"points_px", points}});
+    }
+    else if(request.type == "set_sector_20")
+    {
+        // Sectors clockwise from the top of the board
+        constexpr std::array<int, 20> kClockwise = {20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5};
+        json sectors = json::array();
+        for(std::size_t i = 0; i < kClockwise.size(); ++i)
+        {
+            const double phi = (90.0 - 18.0 * static_cast<double>(i)) * kPi / 180.0;
+            sectors.push_back({{"sector", kClockwise[i]}, {"label_px", project(134.0 * std::cos(phi), 134.0 * std::sin(phi))}});
+        }
+        events.push_back({{"type", "board_plane"},
+                          {"camera", camera},
+                          {"fit_mm", 0.41},
+                          {"worst_mm", 0.93},
+                          {"rms_px", 0.38},
+                          {"lens_corrected", index != 2},
+                          {"sectors", sectors}});
+    }
+    else if(request.type == "refine_cameras")
+    {
+        events.push_back({{"type", "refinement"}, {"state", "running"}});
+        json cameras = json::array();
+        for(std::size_t c = 0; c < kCameras.size(); ++c)
+        {
+            const double held_out_mm = c == 2 ? 0.71 : 0.42 + 0.1 * static_cast<double>(c);
+            cameras.push_back({{"camera", kCameras[c]},
+                               {"held_out_mm", held_out_mm},
+                               {"quality", held_out_mm <= 0.5 ? "good" : "fair"},
+                               {"uncertainty_mm", 0.3},
+                               {"focal_px", 1012.0},
+                               {"lens_from", c == 2 ? "model" : "own"},
+                               {"advice", held_out_mm <= 0.5 ? json(nullptr) : json(c == 2 ? "lens_calibration" : "detect_again")}});
+        }
+        events.push_back(
+            {{"type", "refinement"}, {"state", "done"}, {"cameras", cameras}, {"board", {{"outer_bull_mm", 15.9}, {"treble_centre_mm", 103.0}}}});
+    }
+    else if(request.type == "tune_white_balance")
+    {
+        const auto found = [] (int kelvin) { return kelvin <= 3400; };
+        const auto message = [&] (const std::string& state, int up_to_kelvin, std::optional<int> kelvin_now, bool chosen)
+        {
+            json cameras = json::array();
+            for(const char* id : kCameras)
+            {
+                json found_at = json::array();
+                for(int kelvin = 2800; kelvin <= up_to_kelvin; kelvin += 200)
+                {
+                    found_at.push_back({{"kelvin", kelvin}, {"found", found(kelvin)}});
+                }
+                cameras.push_back({{"camera", id}, {"found_at", found_at}, {"chosen_kelvin", chosen ? json(3000) : json(nullptr)}});
+            }
+            json event = {{"type", "white_balance"}, {"state", state}, {"cameras", cameras}};
+            if(kelvin_now)
+            {
+                event["kelvin_now"] = *kelvin_now;
+            }
+            if(state == "settling")
+            {
+                event["settle_s"] = 0.0;
+            }
+            return event;
+        };
+        events.push_back(message("settling", 0, std::nullopt, false));
+        for(int kelvin = 2800; kelvin <= 6400; kelvin += 200)
+        {
+            events.push_back(message("sweeping", kelvin, kelvin, false));
+        }
+        events.push_back(message("done", 6400, std::nullopt, true));
+    }
+    return events;
+}
+
 void Simulator::publishBoard (bool occupied)
 {
     occupied_ = occupied;
@@ -195,6 +330,22 @@ void Simulator::start ()
     if(settings_.diagnosis)
     {
         server_.onDiagnosis([this] (bool running) { server_.publishDiagnosis(exampleDiagnosis(running)); });
+        server_.setCalibrationStatus(exampleCalibrationStatus());
+        server_.onCalibration(
+            [this] (const CalibrationRequest& request) -> std::optional<Server::CalibrationError>
+            {
+                const std::string camera = request.body.value("camera", std::string());
+                const bool needs_camera = request.type == "detect_board" || request.type == "set_sector_20";
+                if(needs_camera && std::find(kCameras.begin(), kCameras.end(), camera) == kCameras.end())
+                {
+                    return Server::CalibrationError{"unknown_camera", "No camera " + camera};
+                }
+                for(const auto& event : exampleCalibrationEvents(request))
+                {
+                    server_.publishEvent(event);
+                }
+                return std::nullopt;
+            });
     }
     publishBoard(settings_.occupied_at_start);
     thread_ = std::thread([this] { run(); });

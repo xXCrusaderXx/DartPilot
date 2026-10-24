@@ -415,3 +415,48 @@ TEST(Server, DiagnosisRequestsReachTheSourceAndItsStateReachesEveryClient)
     EXPECT_EQ(late.next("diagnosis")["step"], "insert_dart");
     server.stop();
 }
+
+TEST(Server, CalibrationRequestsReachTheSourceAndTheStatusIsPartOfHello)
+{
+    ix::initNetSystem();
+    const int port = 20000 + static_cast<int>(std::random_device{}() % 20000);
+    api::Server server(port, "127.0.0.1", api::Hello{});
+    std::string error;
+    ASSERT_TRUE(server.start(error)) << error;
+
+    const auto parsed = api::parseRequest(R"({"type":"set_sector_20","request_id":"1","camera":"sim-1","point_px":[320,100]})");
+    const auto& request = std::get<api::CalibrationRequest>(std::get<api::Request>(parsed).body);
+    EXPECT_EQ(request.type, "set_sector_20");
+    EXPECT_EQ(request.body["point_px"][0], 320);
+
+    TestClient client(port);
+    EXPECT_TRUE(client.next("hello")["calibration_status"].is_null());
+    client.send({{"type", "detect_board"}, {"request_id", "1"}, {"camera", "sim-1"}});
+    EXPECT_EQ(client.next("result")["error"]["code"], "not_available");
+
+    // The simulator's answers: an event per request, and the status in hello and when it changes
+    api::Simulator simulator(server);
+    simulator.start();
+    EXPECT_EQ(client.next("calibration_status")["cameras"].size(), 3u);
+    client.send({{"type", "detect_board"}, {"request_id", "2"}, {"camera", "sim-2"}});
+    const auto detection = client.next("board_detection");
+    EXPECT_TRUE(detection["ok"]);
+    EXPECT_EQ(detection["ellipses"].size(), 3u);
+    EXPECT_EQ(detection["wires_px"].size(), 20u);
+    EXPECT_TRUE(client.next("result")["ok"]);
+    client.send({{"type", "set_sector_20"}, {"request_id", "3"}, {"camera", "nope"}, {"point_px", {1, 2}}});
+    EXPECT_EQ(client.next("result")["error"]["code"], "unknown_camera");
+    client.send({{"type", "tune_white_balance"}, {"request_id", "4"}});
+    nlohmann::json balance;
+    do
+    {
+        balance = client.next("white_balance");
+    } while(!balance.is_null() && balance["state"] != "done");
+    ASSERT_FALSE(balance.is_null());
+    EXPECT_EQ(balance["cameras"][0]["chosen_kelvin"], 3000);
+
+    TestClient late(port);
+    EXPECT_EQ(late.next("hello")["calibration_status"]["cameras"][0]["white_balance_kelvin"], 3000);
+    simulator.stop();
+    server.stop();
+}

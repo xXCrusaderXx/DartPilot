@@ -141,7 +141,15 @@ json helloMessage (const Hello& hello)
             {"board_geometry", toJson(hello.board_geometry, hello.board_geometry_source)},
             {"cameras", cameras},
             {"detection", hello.detection},
-            {"board_state", toJson(hello.board_state)}};
+            {"board_state", toJson(hello.board_state)},
+            {"calibration_status", hello.calibration_status}};
+}
+
+json calibrationStatusMessage (const json& status)
+{
+    json message = status;
+    message["type"] = "calibration_status";
+    return message;
 }
 
 json throwMessage (const Throw& dart, const scoring::BoardGeometry& geometry)
@@ -289,6 +297,10 @@ std::variant<Request, ParseError> parseRequest (const std::string& text)
         else if(type == "check_board")
         {
             request.body = CheckBoard{};
+        }
+        else if(type == "detect_board" || type == "set_sector_20" || type == "refine_cameras" || type == "tune_white_balance")
+        {
+            request.body = CalibrationRequest{type, message};
         }
         else if(type == "start_diagnosis" || type == "stop_diagnosis")
         {

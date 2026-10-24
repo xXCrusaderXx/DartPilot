@@ -67,6 +67,8 @@ struct Hello
     std::vector<CameraInfo> cameras;
     std::string detection = "running";
     BoardStateInfo board_state;
+    // What is calibrated per camera (calibration_status), for the calibration wizard; null without real cameras
+    nlohmann::json calibration_status;
 };
 
 struct CameraContribution
@@ -116,6 +118,8 @@ nlohmann::json throwCorrectedMessage (const std::string& throw_id, const std::st
 nlohmann::json takeoutMessage (std::int64_t event_ns, int darts_removed);
 nlohmann::json cameraStatusMessage (const CameraStatus& status);
 nlohmann::json engineStatusMessage (const std::string& detection, const std::string& message);
+// calibration_status with the status's fields
+nlohmann::json calibrationStatusMessage (const nlohmann::json& status);
 nlohmann::json resultMessage (const std::string& request_id, bool ok, const std::string& error_code = {}, const std::string& error_message = {});
 
 // Requests from clients
@@ -144,6 +148,13 @@ struct SetDetection
 struct CheckBoard
 {
 };
+// Requests of the calibration wizard (detect_board, set_sector_20, refine_cameras, tune_white_balance): passed on with
+// their fields to the source behind Server::onCalibration
+struct CalibrationRequest
+{
+    std::string type;
+    nlohmann::json body;
+};
 // start_diagnosis and stop_diagnosis: the live setup diagnosis (#137)
 struct SetDiagnosis
 {
@@ -163,8 +174,8 @@ struct Subscription
     double max_fps = 0.0;
     int max_width = 0;
 };
-using RequestBody =
-    std::variant<ClientHello, CorrectThrow, RejectThrow, AddThrow, SetDetection, Subscription, CheckBoard, StoreEmptyReference, SetDiagnosis>;
+using RequestBody = std::variant<ClientHello, CorrectThrow, RejectThrow, AddThrow, SetDetection, Subscription, CheckBoard, StoreEmptyReference,
+                                 SetDiagnosis, CalibrationRequest>;
 
 struct Request
 {

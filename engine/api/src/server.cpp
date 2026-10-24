@@ -179,6 +179,27 @@ void Server::onDiagnosis (std::function<void(bool)> handler)
     diagnosis_handler_ = std::move(handler);
 }
 
+void Server::onCalibration (std::function<std::optional<CalibrationError>(const CalibrationRequest&)> handler)
+{
+    std::lock_guard lock(mutex_);
+    calibration_handler_ = std::move(handler);
+}
+
+void Server::setCalibrationStatus (const nlohmann::json& status)
+{
+    {
+        std::lock_guard lock(mutex_);
+        if(hello_.calibration_status == status)
+        {
+            return;
+        }
+        hello_.calibration_status = status;
+    }
+    broadcast(calibrationStatusMessage(status));
+}
+
+void Server::publishEvent (const nlohmann::json& message) { broadcast(message); }
+
 void Server::publishDiagnosis (const nlohmann::json& message)
 {
     {
@@ -399,6 +420,23 @@ nlohmann::json Server::handle (const std::string& connection, const Request& req
                     return resultMessage(request.request_id, false, "not_available", "No board check in this mode");
                 }
                 handler();
+                return resultMessage(request.request_id, true);
+            },
+            [&] (const CalibrationRequest& calibration)
+            {
+                std::function<std::optional<CalibrationError>(const CalibrationRequest&)> handler;
+                {
+                    std::lock_guard lock(mutex_);
+                    handler = calibration_handler_;
+                }
+                if(!handler)
+                {
+                    return resultMessage(request.request_id, false, "not_available", "No calibration in this mode");
+                }
+                if(const auto error = handler(calibration))
+                {
+                    return resultMessage(request.request_id, false, error->code, error->message);
+                }
                 return resultMessage(request.request_id, true);
             },
             [&] (const SetDiagnosis& diagnosis)

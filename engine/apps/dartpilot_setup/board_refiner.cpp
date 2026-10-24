@@ -7,6 +7,7 @@
 #include <QtConcurrent/QtConcurrentRun>
 
 #include "calibration_paths.hpp"
+#include "dartpilot/geometry/calibration_store.hpp"
 
 namespace dartpilot::setup
 {
@@ -15,12 +16,6 @@ namespace
 // Provisional quality gate in board millimetres on held-out wires, like the board fit; #48 sets the error budget.
 constexpr double kGoodHeldOut_mm = 0.5;
 constexpr double kFairHeldOut_mm = 1.0;
-
-// A stored intrinsic calibration that was made in the reference capture mode
-bool inReferenceMode (const geometry::StoredIntrinsics& stored)
-{
-    return stored.calibration.image_size_px == cv::Size(kReferenceWidth_px, kReferenceHeight_px) && stored.info.pixel_format == kReferencePixelFormat;
-}
 
 QString sourceText (geometry::IntrinsicsSource source)
 {
@@ -65,65 +60,18 @@ int BoardRefiner::refinableCount () const
 
 std::vector<geometry::RefinementInput> BoardRefiner::currentInputs () const
 {
-    // Intrinsics of all connected cameras, in the order of the list, so the model prior is chosen deterministically
-    std::vector<std::pair<std::string, geometry::StoredIntrinsics>> intrinsics;
-    for(const auto& camera : cameras_)
-    {
-        const QString usb_port = camera.toMap().value("usbPort").toString();
-        if(auto stored = geometry::loadIntrinsics(intrinsicsPath(usb_port).toStdString()); stored && inReferenceMode(*stored))
-        {
-            intrinsics.emplace_back(usb_port.toStdString(), std::move(*stored));
-        }
-    }
-
-    std::vector<geometry::RefinementInput> inputs;
+    std::vector<geometry::SetupCamera> cameras;
     for(const auto& camera : cameras_)
     {
         const QVariantMap map = camera.toMap();
-        const QString usb_port = map.value("usbPort").toString();
-        const auto plane = geometry::loadBoardPlane(boardPlanePath(usb_port).toStdString());
-        if(!plane)
-        {
-            continue;
-        }
-        geometry::RefinementInput input;
-        input.usb_port = usb_port.toStdString();
-        input.correspondences = plane->correspondences;
-        input.board_plane_created = plane->created;
-        input.prior = geometry::boardOnlyPrior(cv::Size(kReferenceWidth_px, kReferenceHeight_px));
-        const auto own = std::find_if(intrinsics.begin(), intrinsics.end(), [&] (const auto& entry) { return entry.first == input.usb_port; });
-        const auto same_model = std::find_if(intrinsics.begin(), intrinsics.end(), [&] (const auto& entry)
-                                             { return entry.second.info.camera_name == map.value("name").toString().toStdString(); });
-        if(own != intrinsics.end())
-        {
-            input.prior = geometry::priorFromCalibration(own->second.calibration, geometry::IntrinsicsSource::OwnCalibration);
-            input.intrinsics_created = own->second.info.created;
-        }
-        else if(same_model != intrinsics.end())
-        {
-            input.prior = geometry::priorFromCalibration(same_model->second.calibration, geometry::IntrinsicsSource::ModelPrior);
-            input.intrinsics_created = same_model->second.info.created;
-        }
-        inputs.push_back(std::move(input));
+        cameras.push_back({map.value("usbPort").toString().toStdString(), map.value("name").toString().toStdString()});
     }
-    return inputs;
+    return geometry::refinementInputs(calibrationDirectory().toStdString(), cameras, referenceMode());
 }
 
 void BoardRefiner::updateStale ()
 {
-    bool stale = false;
-    if(stored_)
-    {
-        const auto inputs = currentInputs();
-        stale = inputs.size() != stored_->inputs.size();
-        for(std::size_t i = 0; !stale && i < inputs.size(); ++i)
-        {
-            const auto& now = inputs[i];
-            const auto& then = stored_->inputs[i];
-            stale = now.usb_port != then.usb_port || now.board_plane_created != then.board_plane_created ||
-                    now.intrinsics_created != then.intrinsics_created || now.prior.source != then.prior.source;
-        }
-    }
+    const bool stale = stored_ && geometry::refinementStale(*stored_, currentInputs());
     if(stale != stale_)
     {
         stale_ = stale;

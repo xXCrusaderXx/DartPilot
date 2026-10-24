@@ -2,6 +2,7 @@
 
 #include <linux/videodev2.h>
 
+#include <atomic>
 #include <chrono>
 #include <cstdio>
 #include <filesystem>
@@ -16,18 +17,15 @@
 #include "dartpilot/capture/v4l2_device.hpp"
 #include "dartpilot/capture/v4l2_frame_source.hpp"
 #include "dartpilot/capture/white_balance.hpp"
-#include "dartpilot/geometry/board_detection.hpp"
 #include "paths.hpp"
+#include "white_balance_sweep.hpp"
 
 namespace dartpilot::cli
 {
 namespace
 {
-// The automatic exposure settles in about 25 s after the cameras start; a new white balance in about half a second.
+// The automatic exposure settles in about 25 s after the cameras start.
 constexpr auto kExposureSettle = std::chrono::seconds(25);
-constexpr auto kWhiteBalanceSettle = std::chrono::milliseconds(1500);
-// Frames averaged per temperature, so that image noise does not decide whether the board is found
-constexpr int kFramesToAverage = 10;
 
 struct Camera
 {
@@ -55,7 +53,7 @@ cv::Mat averaged (Camera& camera)
 {
     cv::Mat sum;
     int count = 0;
-    while(count < kFramesToAverage)
+    while(count < kWhiteBalanceFrames)
     {
         auto frame = camera.thread->frames().tryPop();
         if(!frame)
@@ -119,22 +117,28 @@ int runWhiteBalance (int argc, char*[])
         std::printf(" %12s", camera.device.usb_port.c_str());
     }
     std::printf("\n");
-    for(int kelvin = capture::kMinWhiteBalance_K; kelvin <= capture::kMaxWhiteBalance_K; kelvin += capture::kWhiteBalanceStep_K)
+    std::vector<SweepCamera> sweep;
+    for(const auto& camera : cameras)
     {
-        for(const auto& camera : cameras)
+        sweep.push_back({camera.device.path, {}});
+    }
+    const std::atomic<bool> never{false};
+    sweepWhiteBalance(
+        sweep, [&] (std::chrono::steady_clock::duration duration) { drain(cameras, duration); }, [&] (std::size_t c) { return averaged(cameras[c]); },
+        [&] (int kelvin)
         {
-            capture::CameraControls(camera.device.path).set(V4L2_CID_WHITE_BALANCE_TEMPERATURE, kelvin);
-        }
-        drain(cameras, kWhiteBalanceSettle);
-        std::printf("%-8d", kelvin);
-        for(auto& camera : cameras)
-        {
-            const bool found = geometry::detectBoard(averaged(camera)).has_value();
-            camera.found_at_K.emplace_back(kelvin, found);
-            std::printf(" %12s", found ? "board" : "-");
-        }
-        std::printf("\n");
-        std::fflush(stdout);
+            std::printf("%-8d", kelvin);
+            for(const auto& camera : sweep)
+            {
+                std::printf(" %12s", camera.found_at_K.back().second ? "board" : "-");
+            }
+            std::printf("\n");
+            std::fflush(stdout);
+        },
+        never);
+    for(std::size_t c = 0; c < cameras.size(); ++c)
+    {
+        cameras[c].found_at_K = sweep[c].found_at_K;
     }
 
     int exit_code = 0;

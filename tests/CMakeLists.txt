@@ -53,6 +53,10 @@ add_executable(BoardRefinementTest BoardRefinementTest.cpp)
 target_link_libraries(BoardRefinementTest PRIVATE dartpilot::geometry GTest::gtest_main)
 gtest_discover_tests(BoardRefinementTest)
 
+add_executable(CalibrationStoreTest CalibrationStoreTest.cpp)
+target_link_libraries(CalibrationStoreTest PRIVATE dartpilot::geometry opencv_imgcodecs GTest::gtest_main)
+gtest_discover_tests(CalibrationStoreTest)
+
 add_executable(ReplayTest ReplayTest.cpp)
 target_link_libraries(ReplayTest PRIVATE dartpilot::replay opencv_imgcodecs GTest::gtest_main)
 target_compile_definitions(ReplayTest PRIVATE DARTPILOT_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
