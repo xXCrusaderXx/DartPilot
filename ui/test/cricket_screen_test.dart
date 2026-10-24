@@ -2,12 +2,15 @@ import 'package:dartpilot/src/app.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'navigation.dart';
+
 void main() {
   Future<void> start(WidgetTester tester, String mode) async {
     tester.view.physicalSize = const Size(1400, 1000);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(const DartPilotApp(locale: Locale('de')));
+    await playOffline(tester);
     await tester.tap(find.text(mode));
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Spieler entfernen').last);
@@ -44,6 +47,7 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(const DartPilotApp(locale: Locale('de')));
+    await playOffline(tester);
     await tester.tap(find.text('Around the Clock'));
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Spieler entfernen').last);

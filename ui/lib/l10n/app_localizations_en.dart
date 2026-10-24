@@ -13,7 +13,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'DartPilot';
 
   @override
-  String get chooseGame => 'Choose a game';
+  String get chooseGame => 'Play locally or solo';
 
   @override
   String get modeX01 => 'X01';
@@ -644,4 +644,116 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get hintPlanesAgree => 'Refine all cameras again; if one camera stands out, calibrate it first.';
+
+  @override
+  String get connectTitle => 'Connect an engine';
+
+  @override
+  String get connectIntro =>
+      'The engine runs the cameras and detects the darts. It runs on this device or on another one in your network.';
+
+  @override
+  String get playWithoutEngine => 'Play without an engine (enter darts by hand)';
+
+  @override
+  String get navHome => 'Home';
+
+  @override
+  String get navSettings => 'Settings';
+
+  @override
+  String get settingsConnection => 'Connection';
+
+  @override
+  String get connectedThisDevice => 'Connected to the engine on this device';
+
+  @override
+  String get connectedNetwork => 'Connected to an engine in the network';
+
+  @override
+  String get playingWithoutEngine => 'Without an engine – darts are entered by hand';
+
+  @override
+  String get playingWithoutEngineHint => 'Connect an engine to detect darts and use the cameras.';
+
+  @override
+  String get settingsCamerasBoard => 'Cameras and board';
+
+  @override
+  String get settingsCamerasHint => 'Live images and the state of each camera';
+
+  @override
+  String get settingsDiagnosisHint => 'Find out what is wrong with the setup, step by step';
+
+  @override
+  String get settingsEmptyBoardHint => 'Store the cameras\' images of the empty board for the board check';
+
+  @override
+  String get settingsCalibration => 'Calibration';
+
+  @override
+  String get calibration => 'Calibrate the cameras';
+
+  @override
+  String get calibrationInSetupTool => 'For now in the setup program dartpilot_setup on Linux';
+
+  @override
+  String get playTogether => 'Play together';
+
+  @override
+  String get lobby => 'Lobby';
+
+  @override
+  String get lobbyComingSoon => 'Play with friends on other devices – coming with #124';
+
+  @override
+  String diagnosisProgress(int done, int target) {
+    return 'Darts: $done of $target';
+  }
+
+  @override
+  String get stepRemoveLastDart => 'Pull the last dart out – then you are done.';
+
+  @override
+  String get diagnosisEnough => 'Enough darts measured – the diagnosis is complete.';
+
+  @override
+  String get finishDiagnosis => 'Finish the diagnosis';
+
+  @override
+  String get diagnosisMoreDartsOptional => 'More darts are possible, but not needed.';
+
+  @override
+  String get diagnosisFinished => 'Diagnosis finished';
+
+  @override
+  String resultProblems(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count problems found',
+      one: '1 problem found',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String resultWarnings(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count warnings', one: '1 warning');
+    return '$_temp0';
+  }
+
+  @override
+  String get resultFixHint => 'The findings below say what to do. Run the diagnosis again afterwards.';
+
+  @override
+  String get resultAllGood => 'All good';
+
+  @override
+  String get resultAllGoodHint => 'The setup is ready to play.';
+
+  @override
+  String resultFewDarts(int done, int target) {
+    return 'Only $done of $target darts measured; the findings on darts are less certain.';
+  }
 }

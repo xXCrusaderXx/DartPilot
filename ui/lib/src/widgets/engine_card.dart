@@ -7,11 +7,8 @@ import '../engine/engine_choice.dart';
 import '../engine/engine_connection.dart';
 import '../engine/engine_discovery.dart';
 import '../engine/engine_manager.dart';
-import '../screens/cameras_screen.dart';
-import '../screens/diagnosis_screen.dart';
-import 'board_check.dart';
 
-/// The engine the app plays against, on the home screen: its own on this device (where it can run one), or one in
+/// The engine the app plays against, on the connection page: its own on this device (where it can run one), or one in
 /// the network by address or search, with the connection state.
 class EngineCard extends StatefulWidget {
   const EngineCard({super.key});
@@ -135,7 +132,6 @@ class _EngineCardState extends State<EngineCard> {
             if (onThisDevice) ...[
               const SizedBox(height: 8),
               _LocalEngineSection(local: local!),
-              if (connected) _CamerasButton(l10n: l10n),
             ] else ...[
               const SizedBox(height: 8),
               _AddressRow(
@@ -156,22 +152,6 @@ class _EngineCardState extends State<EngineCard> {
                     ),
                     const SizedBox(width: 8),
                   ],
-                  if (connected) ...[
-                    OutlinedButton.icon(
-                      onPressed: () =>
-                          Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const CamerasScreen())),
-                      icon: const Icon(Icons.videocam),
-                      label: Text(l10n.cameras),
-                    ),
-                    IconButton(
-                      key: const ValueKey('open-diagnosis'),
-                      onPressed: () =>
-                          Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const DiagnosisScreen())),
-                      tooltip: l10n.diagnosis,
-                      icon: const Icon(Icons.troubleshoot),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
                   connected
                       ? OutlinedButton(onPressed: engine.disconnect, child: Text(l10n.disconnect))
                       : FilledButton(onPressed: _connect, child: Text(l10n.connect)),
@@ -179,7 +159,6 @@ class _EngineCardState extends State<EngineCard> {
               ),
               if (!connected && _found != null) ..._foundList(l10n, theme),
             ],
-            if (connected) const BoardStateRow(),
           ],
         ),
       ),
@@ -217,31 +196,6 @@ class _EngineCardState extends State<EngineCard> {
         ),
     ];
   }
-}
-
-class _CamerasButton extends StatelessWidget {
-  const _CamerasButton({required this.l10n});
-
-  final AppLocalizations l10n;
-
-  @override
-  Widget build(BuildContext context) => Wrap(
-    alignment: WrapAlignment.end,
-    spacing: 8,
-    children: [
-      OutlinedButton.icon(
-        onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const CamerasScreen())),
-        icon: const Icon(Icons.videocam),
-        label: Text(l10n.cameras),
-      ),
-      OutlinedButton.icon(
-        key: const ValueKey('open-diagnosis'),
-        onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const DiagnosisScreen())),
-        icon: const Icon(Icons.troubleshoot),
-        label: Text(l10n.diagnosis),
-      ),
-    ],
-  );
 }
 
 /// The engine this app runs: its state, whether it uses the cameras, start and stop, and its log.

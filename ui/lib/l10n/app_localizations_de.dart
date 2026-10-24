@@ -13,7 +13,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get appTitle => 'DartPilot';
 
   @override
-  String get chooseGame => 'Spiel wählen';
+  String get chooseGame => 'Lokal oder solo spielen';
 
   @override
   String get modeX01 => 'X01';
@@ -643,4 +643,116 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get hintPlanesAgree => 'Verfeinere alle Kameras erneut; fällt eine Kamera heraus, kalibriere sie zuerst.';
+
+  @override
+  String get connectTitle => 'Engine verbinden';
+
+  @override
+  String get connectIntro =>
+      'Die Engine steuert die Kameras und erkennt die Darts. Sie läuft auf diesem Gerät oder auf einem anderen in deinem Netzwerk.';
+
+  @override
+  String get playWithoutEngine => 'Ohne Engine spielen (Darts von Hand eingeben)';
+
+  @override
+  String get navHome => 'Home';
+
+  @override
+  String get navSettings => 'Einstellungen';
+
+  @override
+  String get settingsConnection => 'Verbindung';
+
+  @override
+  String get connectedThisDevice => 'Verbunden mit der Engine auf diesem Gerät';
+
+  @override
+  String get connectedNetwork => 'Verbunden mit einer Engine im Netzwerk';
+
+  @override
+  String get playingWithoutEngine => 'Ohne Engine – Darts werden von Hand eingegeben';
+
+  @override
+  String get playingWithoutEngineHint => 'Verbinde eine Engine, um Darts zu erkennen und die Kameras zu nutzen.';
+
+  @override
+  String get settingsCamerasBoard => 'Kameras und Scheibe';
+
+  @override
+  String get settingsCamerasHint => 'Livebilder und der Zustand jeder Kamera';
+
+  @override
+  String get settingsDiagnosisHint => 'Schritt für Schritt herausfinden, was an der Einrichtung nicht stimmt';
+
+  @override
+  String get settingsEmptyBoardHint => 'Die Bilder der leeren Scheibe für die Scheibenprüfung speichern';
+
+  @override
+  String get settingsCalibration => 'Kalibrierung';
+
+  @override
+  String get calibration => 'Kameras kalibrieren';
+
+  @override
+  String get calibrationInSetupTool => 'Vorerst im Einrichtungsprogramm dartpilot_setup unter Linux';
+
+  @override
+  String get playTogether => 'Zusammen spielen';
+
+  @override
+  String get lobby => 'Lobby';
+
+  @override
+  String get lobbyComingSoon => 'Mit Freunden auf anderen Geräten spielen – kommt mit #124';
+
+  @override
+  String diagnosisProgress(int done, int target) {
+    return 'Darts: $done von $target';
+  }
+
+  @override
+  String get stepRemoveLastDart => 'Zieh den letzten Dart heraus – dann bist du fertig.';
+
+  @override
+  String get diagnosisEnough => 'Genug Darts gemessen – die Diagnose ist fertig.';
+
+  @override
+  String get finishDiagnosis => 'Diagnose beenden';
+
+  @override
+  String get diagnosisMoreDartsOptional => 'Weitere Darts sind möglich, aber nicht nötig.';
+
+  @override
+  String get diagnosisFinished => 'Diagnose abgeschlossen';
+
+  @override
+  String resultProblems(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Probleme gefunden',
+      one: '1 Problem gefunden',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String resultWarnings(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Warnungen', one: '1 Warnung');
+    return '$_temp0';
+  }
+
+  @override
+  String get resultFixHint => 'Die Befunde unten sagen, was zu tun ist. Danach die Diagnose noch einmal laufen lassen.';
+
+  @override
+  String get resultAllGood => 'Alles in Ordnung';
+
+  @override
+  String get resultAllGoodHint => 'Die Einrichtung ist bereit zum Spielen.';
+
+  @override
+  String resultFewDarts(int done, int target) {
+    return 'Nur $done von $target Darts gemessen; die Befunde zu Darts sind weniger sicher.';
+  }
 }

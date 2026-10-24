@@ -2,6 +2,8 @@ import 'package:dartpilot/src/app.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'navigation.dart';
+
 void main() {
   testWidgets('a whole 301 game with the keypad', (tester) async {
     tester.view.physicalSize = const Size(1400, 1000);
@@ -9,6 +11,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(const DartPilotApp(locale: Locale('de')));
+    await playOffline(tester);
     await tester.tap(find.text('X01'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const ValueKey('player-name-0')), 'Anna');

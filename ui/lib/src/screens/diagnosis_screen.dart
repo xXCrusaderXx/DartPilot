@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -70,7 +72,10 @@ class _DiagnosisScreenState extends State<DiagnosisScreen> {
                 ),
               if (diagnosis == null && engine.isConnected && _error == null) Text(l10n.diagnosisIntro),
               if (diagnosis != null) ...[
-                _StepCard(diagnosis: diagnosis),
+                if (diagnosis.running)
+                  _StepCard(diagnosis: diagnosis, onFinish: _stop)
+                else if (diagnosis.periods.isNotEmpty)
+                  _ResultCard(diagnosis: diagnosis),
                 const SizedBox(height: 16),
                 Text(l10n.diagnosisFindings, style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
@@ -86,16 +91,69 @@ class _DiagnosisScreenState extends State<DiagnosisScreen> {
   }
 }
 
+/// After the diagnosis: one clear verdict, with the findings below it
+class _ResultCard extends StatelessWidget {
+  const _ResultCard({required this.diagnosis});
+
+  final EngineDiagnosis diagnosis;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final problems = diagnosis.findings.where((f) => f.severity == 'problem').length;
+    final warnings = diagnosis.findings.where((f) => f.severity == 'warning').length;
+    final darts = diagnosis.periods.where((p) => !p.empty).length;
+    final (icon, color, title, text) = problems > 0
+        ? (Icons.error, theme.colorScheme.error, l10n.resultProblems(problems), l10n.resultFixHint)
+        : warnings > 0
+        ? (Icons.warning_amber, Colors.amber, l10n.resultWarnings(warnings), l10n.resultFixHint)
+        : (Icons.check_circle, Colors.greenAccent, l10n.resultAllGood, l10n.resultAllGoodHint);
+    return Card(
+      key: const ValueKey('diagnosis-result'),
+      color: color.withValues(alpha: 0.2),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(icon, size: 48, color: color),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l10n.diagnosisFinished, style: theme.textTheme.labelLarge),
+                  Text(title, style: theme.textTheme.titleLarge),
+                  const SizedBox(height: 4),
+                  Text(text),
+                  if (darts < diagnosisDarts) ...[
+                    const SizedBox(height: 4),
+                    Text(l10n.resultFewDarts(darts, diagnosisDarts), style: theme.textTheme.bodySmall),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// "Camera 2" for the second camera of the diagnosis; the id where it is not one of them
 String cameraName(AppLocalizations l10n, List<String> cameras, String id) {
   final index = cameras.indexOf(id);
   return index < 0 ? id : l10n.cameraNumber(index + 1);
 }
 
+/// Darts the diagnosis needs for findings that hold (docs/setup-diagnosis.md: 8 to 10 places)
+const int diagnosisDarts = 8;
+
 class _StepCard extends StatelessWidget {
-  const _StepCard({required this.diagnosis});
+  const _StepCard({required this.diagnosis, required this.onFinish});
 
   final EngineDiagnosis diagnosis;
+  final VoidCallback onFinish;
 
   @override
   Widget build(BuildContext context) {
@@ -117,25 +175,61 @@ class _StepCard extends StatelessWidget {
       _ => (diagnosis.state, theme.disabledColor),
     };
     final measuring = diagnosis.state == 'settling' || diagnosis.state == 'measuring';
+    final darts = diagnosis.periods.where((p) => !p.empty).length;
+    final enough = darts >= diagnosisDarts;
+    // Done once enough darts are measured and the last one is out, so the board ends empty as it started.
+    final done = enough && diagnosis.step != 'remove_dart';
+    final (shownIcon, shownText) = done
+        ? (Icons.check_circle, l10n.diagnosisEnough)
+        : enough
+        ? (Icons.back_hand, l10n.stepRemoveLastDart)
+        : (icon, instruction);
     return Card(
+      color: done ? Colors.green.withValues(alpha: 0.25) : null,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (diagnosis.running)
-              Row(
-                children: [
-                  Icon(icon, size: 40, color: theme.colorScheme.primary),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Text(instruction, key: const ValueKey('diagnosis-step'), style: theme.textTheme.titleLarge),
-                  ),
-                ],
-              ),
-            if (diagnosis.running && diagnosis.step == 'insert_dart') ...[
+            Row(
+              children: [
+                Icon(shownIcon, size: 40, color: done ? Colors.greenAccent : theme.colorScheme.primary),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(shownText, key: const ValueKey('diagnosis-step'), style: theme.textTheme.titleLarge),
+                ),
+              ],
+            ),
+            if (!enough && diagnosis.step == 'insert_dart') ...[
               const SizedBox(height: 4),
               Text(l10n.stepInsertDartHint, style: theme.textTheme.bodySmall),
+            ],
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: LinearProgressIndicator(
+                    key: const ValueKey('diagnosis-progress'),
+                    value: math.min(1.0, darts / diagnosisDarts),
+                    color: enough ? Colors.greenAccent : null,
+                    minHeight: 8,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(l10n.diagnosisProgress(darts, diagnosisDarts)),
+              ],
+            ),
+            if (done) ...[
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                key: const ValueKey('diagnosis-finish'),
+                onPressed: onFinish,
+                icon: const Icon(Icons.done_all),
+                label: Text(l10n.finishDiagnosis),
+              ),
+              const SizedBox(height: 4),
+              Text(l10n.diagnosisMoreDartsOptional, style: theme.textTheme.bodySmall, textAlign: TextAlign.center),
             ],
             const SizedBox(height: 12),
             Wrap(
