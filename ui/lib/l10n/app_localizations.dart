@@ -2323,6 +2323,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Camera {camera} was moved – its calibration is being checked.'**
   String cameraMovedNotice(String camera);
+
+  /// No description provided for @rigKnockedNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'The rig was knocked – the calibration is being checked.'**
+  String get rigKnockedNotice;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

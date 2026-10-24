@@ -869,5 +869,6 @@
   "referenceCamerasDisagree": "The cameras disagree about where it is",
   "referenceSeenByOneCamera": "Only one camera saw it",
   "cameraMovedNotice": "Camera {camera} was moved – its calibration is being checked.",
-  "@cameraMovedNotice": {"placeholders": {"camera": {"type": "String"}}}
+  "@cameraMovedNotice": {"placeholders": {"camera": {"type": "String"}}},
+  "rigKnockedNotice": "The rig was knocked – the calibration is being checked."
 }

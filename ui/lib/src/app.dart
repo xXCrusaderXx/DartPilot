@@ -43,6 +43,34 @@ class _DartPilotAppState extends State<DartPilotApp> {
   late final Statistics _statistics = widget.statistics ?? Statistics(MemoryGameStore());
   final GlobalKey<ScaffoldMessengerState> _messenger = GlobalKey();
   StreamSubscription<EngineEvent>? _events;
+  final Set<String> _movedCameras = {};
+  Timer? _movedTimer;
+  Timer? _movedQuiet;
+
+  /// Cameras reported within this time are one knock; another notice comes only after [movedQuiet].
+  static const Duration movedGather = Duration(seconds: 1);
+  static const Duration movedQuiet = Duration(seconds: 15);
+
+  void _showMovedNotice() {
+    _movedTimer = null;
+    final moved = Set.of(_movedCameras);
+    _movedCameras.clear();
+    final context = _messenger.currentContext;
+    if (moved.isEmpty || context == null || !context.mounted) return;
+    _movedQuiet = Timer(movedQuiet, () => _movedQuiet = null);
+    final l10n = AppLocalizations.of(context);
+    final cameras = _engine.hello?.cameras ?? const <String>[];
+    final number = cameras.indexOf(moved.first) + 1;
+    _messenger.currentState?.showSnackBar(
+      SnackBar(
+        key: const ValueKey('camera-moved'),
+        content: Text(
+          moved.length > 1 ? l10n.rigKnockedNotice : l10n.cameraMovedNotice(number > 0 ? '$number' : moved.first),
+        ),
+        duration: const Duration(seconds: 8),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -50,17 +78,10 @@ class _DartPilotAppState extends State<DartPilotApp> {
     // Shown on whatever page is open: a knocked camera matters during a game as much as in the settings.
     _events = _engine.events.listen((event) {
       if (event is! CameraMoved) return;
-      final context = _messenger.currentContext;
-      if (context == null || !context.mounted) return;
-      final cameras = _engine.hello?.cameras ?? const <String>[];
-      final number = cameras.indexOf(event.camera) + 1;
-      _messenger.currentState?.showSnackBar(
-        SnackBar(
-          key: ValueKey('camera-moved-${event.camera}'),
-          content: Text(AppLocalizations.of(context).cameraMovedNotice(number > 0 ? '$number' : event.camera)),
-          duration: const Duration(seconds: 8),
-        ),
-      );
+      // A knock moves several cameras at once and they sway back a few seconds later: one notice for all of it.
+      if (_movedQuiet != null) return;
+      _movedCameras.add(event.camera);
+      _movedTimer ??= Timer(movedGather, _showMovedNotice);
     });
     // The engine this app started must not outlive it.
     _lifecycle = AppLifecycleListener(
@@ -88,6 +109,8 @@ class _DartPilotAppState extends State<DartPilotApp> {
   void dispose() {
     _lifecycle.dispose();
     _events?.cancel();
+    _movedTimer?.cancel();
+    _movedQuiet?.cancel();
     if (widget.manager == null) _manager?.dispose();
     if (widget.engine == null) _engine.dispose();
     super.dispose();
