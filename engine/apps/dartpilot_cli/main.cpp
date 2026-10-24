@@ -15,6 +15,7 @@
 #include "dartpilot/version.hpp"
 #include "focus_command.hpp"
 #include "record_command.hpp"
+#include "replay_command.hpp"
 
 int main (int argc, char* argv[])
 {
@@ -37,6 +38,10 @@ int main (int argc, char* argv[])
     if(arg == "record")
     {
         return dartpilot::cli::runRecord(argc - 2, argv + 2);
+    }
+    if(arg == "replay")
+    {
+        return dartpilot::cli::runReplay(argc - 2, argv + 2);
     }
     if(arg == "capture-check")
     {
@@ -61,7 +66,8 @@ int main (int argc, char* argv[])
         }
         return 0;
     }
-    std::cerr << "Usage: dartpilot --version | --modules | record [--seconds N] [--root DIR] [--notes TEXT] | capture-check [seconds] | focus "
+    std::cerr << "Usage: dartpilot --version | --modules | record [--seconds N] [--root DIR] [--notes TEXT] | replay <session> [--run-id ID] "
+                 "[--extrinsics FILE] [--check-every SECONDS] [--no-checks] | capture-check [seconds] | focus "
                  "--camera <device> [--exposure <value>] | pattern "
                  "[--phone] <file.png>\n";
     return arg.empty() || arg == "--help" ? 0 : 2;

@@ -22,7 +22,8 @@ Sessions are never committed to the repository; see [LEGAL.md](../LEGAL.md#recor
 ├── results/
 │   └── <run id>/
 │       ├── run.json         # software version and configuration of this detection run
-│       └── throws.jsonl     # one result record per throw
+│       ├── throws.jsonl     # one result record per throw
+│       └── calibration_checks.jsonl   # calibration checks of the cameras (#49)
 └── annotations/
     └── <annotation set>.jsonl   # ground truth (#14, #15)
 ```
@@ -52,7 +53,7 @@ Sessions are never committed to the repository; see [LEGAL.md](../LEGAL.md#recor
       "metadata": true,
       "calibration": {
         "intrinsics": { "file": "intrinsics-usb-2.4.3.1.2.yml", "sha256": "…" },
-        "extrinsics": null
+        "extrinsics": { "file": "extrinsics.yml", "sha256": "…" }
       }
     }
   ],
@@ -61,7 +62,7 @@ Sessions are never committed to the repository; see [LEGAL.md](../LEGAL.md#recor
 ```
 
 - `controls` are the values read back from the camera after they were applied, not the requested ones.
-- `calibration` references files in the calibration directory by name and SHA-256, so a later recalibration does not silently change an old session. A replay can be given another calibration explicitly.
+- `calibration` references files in the calibration directory by name and SHA-256, so a later recalibration does not silently change an old session. A replay can be given another calibration explicitly. `extrinsics` is the joint refinement of all cameras (#13); it is referenced only for cameras it covers, and is `null` otherwise.
 - Fields are added only in a backwards-compatible way within a version (see [Versioning](#versioning)).
 
 ## Frames
@@ -179,6 +180,19 @@ Every detection run over a session gets its own directory `results/<run id>/`, s
 - A rejected throw has `"accepted": false`, keeps its measurements and diagnostics, and may leave `board_point` and `score` as `null`.
 - `processing_latency_ms` is measured live; in a replay it is the processing time of the replay and is not compared between runs.
 
+## Calibration checks
+
+While replaying, every camera with a board refinement is checked against it (#49), at the start and then at a fixed interval of recorded time: ten frames are averaged, the board is detected and compared with where the refinement puts it, as on the setup GUI's calibration check page. `calibration_checks.jsonl` holds one line per check:
+
+```json
+{"camera": "usb-2.4.3.1.2", "exposure_ns": 182056465845123, "frames": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "board_found": true, "rms_mm": 0.4321, "rms_px": 0.5102, "worst_px": 1.2011, "shift_px": [0.0312, -0.1290], "edge_offset_mm": 0.52, "twenty_sector": 12}
+```
+
+- `exposure_ns` is the exposure time of the first frame of the check, `frames` the `sequence` numbers it averaged.
+- `board_found` is `false` while darts or a hand cover the board; the measurements are then missing.
+- `rms_mm` is the distance between the detected points and the refinement's points on the wire plane, `rms_px` and `worst_px` the same in the image, `shift_px` their mean displacement: a camera that moved shifts them all alike.
+- `edge_offset_mm` is the light-dependent edge offset of the wire detection, measured again for this check; `twenty_sector` the image sector found to be the 20.
+
 ## Annotations
 
 Ground truth lives in `annotations/<annotation set>.jsonl`, one line per throw, keyed by `throw_id`. It carries the board point (`x_mm`, `y_mm`, `covariance_mm2`, `source`, `frames`, see [board-coordinates.md](board-coordinates.md)) and **never a score**: benchmarks score the result and the ground truth with the same scorer and geometry. Its other fields (tip pixel per camera, annotator, uncertainty, flags such as "near wire" or "occluded") are defined with the ground-truth method (#14) and the annotation tool (#15).
@@ -188,6 +202,7 @@ Ground truth lives in `annotations/<annotation set>.jsonl`, one line per throw, 
 - A replay reads the frames of all cameras merged in the order of `exposure_ns`; frames with equal `exposure_ns` are ordered by camera id. It does not depend on the order in which frames arrived.
 - The same session, configuration and software version give byte-identical `throws.jsonl` files, apart from `processing_latency_ms` (#9 checks this in CI).
 - The replay uses only the times stored in the session; it never reads the wall clock.
+- `dartpilot replay <session> [--run-id ID] [--extrinsics FILE] [--check-every SECONDS] [--no-checks]` writes `results/<run id>/` (`replay` by default) and never overwrites an existing run. The board refinement is the one the manifest references, provided the file in the calibration directory still has the recorded SHA-256; `--extrinsics` names another one. Throw detection does not exist yet (#18), so `throws.jsonl` stays empty for now.
 
 ## Writing rules
 

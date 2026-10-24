@@ -7,47 +7,13 @@
 #include <random>
 #include <sstream>
 
+#include "dartpilot/session/json.hpp"
 #include "dartpilot/version.hpp"
 
 namespace dartpilot::session
 {
 namespace
 {
-std::string jsonString (const std::string& value)
-{
-    std::string out = "\"";
-    for(const char c : value)
-    {
-        switch(c)
-        {
-            case '"':
-                out += "\\\"";
-                break;
-            case '\\':
-                out += "\\\\";
-                break;
-            case '\n':
-                out += "\\n";
-                break;
-            case '\t':
-                out += "\\t";
-                break;
-            default:
-                if(static_cast<unsigned char>(c) < 0x20)
-                {
-                    std::array<char, 8> escaped{};
-                    std::snprintf(escaped.data(), escaped.size(), "\\u%04x", c);
-                    out += escaped.data();
-                }
-                else
-                {
-                    out += c;
-                }
-        }
-    }
-    return out + "\"";
-}
-
 std::string utcTime (const char* format)
 {
     const std::time_t now = std::time(nullptr);
@@ -214,7 +180,16 @@ bool SessionWriter::writeManifest (const std::string& ended_utc, const std::vect
         {
             json << "null";
         }
-        json << ", \"extrinsics\": null }";
+        json << ", \"extrinsics\": ";
+        if(camera.extrinsics)
+        {
+            json << "{ \"file\": " << jsonString(camera.extrinsics->file) << ", \"sha256\": " << jsonString(camera.extrinsics->sha256) << " }";
+        }
+        else
+        {
+            json << "null";
+        }
+        json << " }";
         if(stats && i < stats->size())
         {
             const capture::CaptureStats& s = (*stats)[i];
