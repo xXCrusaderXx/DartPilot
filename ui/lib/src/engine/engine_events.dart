@@ -14,7 +14,7 @@ sealed class EngineEvent {
     'throw' => EngineThrow.fromJson(json),
     'throw_corrected' => EngineThrowCorrected.fromJson(json),
     'takeout' => EngineTakeout(json['darts_removed'] as int? ?? 0),
-    'camera_status' => EngineCameraStatus(json['camera'] as String, json['state'] as String),
+    'camera_status' => EngineCameraStatus.fromJson(json),
     'engine_status' => EngineStatus(json['detection'] as String, json['message'] as String? ?? ''),
     _ => null,
   };
@@ -104,10 +104,39 @@ class EngineTakeout extends EngineEvent {
 }
 
 class EngineCameraStatus extends EngineEvent {
-  const EngineCameraStatus(this.camera, this.state);
+  const EngineCameraStatus(
+    this.camera,
+    this.state, {
+    this.effectiveFps,
+    this.lostFrames,
+    this.overflowDrops,
+    this.brightness,
+    this.latencyMs,
+  });
 
   final String camera;
+
+  /// ok, degraded or lost
   final String state;
+  final double? effectiveFps;
+  final int? lostFrames;
+  final int? overflowDrops;
+
+  /// Mean image brightness 0–255, if the engine measures it
+  final double? brightness;
+
+  /// Arrival minus exposure of the latest frame
+  final double? latencyMs;
+
+  factory EngineCameraStatus.fromJson(Map<String, dynamic> json) => EngineCameraStatus(
+    json['camera'] as String,
+    json['state'] as String,
+    effectiveFps: (json['effective_fps'] as num?)?.toDouble(),
+    lostFrames: json['lost_frames'] as int?,
+    overflowDrops: json['overflow_drops'] as int?,
+    brightness: (json['brightness'] as num?)?.toDouble(),
+    latencyMs: (json['latency_ms'] as num?)?.toDouble(),
+  );
 }
 
 /// A camera image from the engine (docs/engine-api.md, "Previews")

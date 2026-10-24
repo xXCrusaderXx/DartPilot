@@ -6,104 +6,333 @@ import '../../l10n/app_localizations.dart';
 import '../engine/engine_connection.dart';
 import '../engine/engine_events.dart';
 
-/// Live images of the engine's cameras with their state.
-class CamerasScreen extends StatelessWidget {
+/// Live images of the engine's cameras with their status. Each camera is a panel that can be collapsed, which also
+/// stops its preview; tapping an image opens it full screen.
+class CamerasScreen extends StatefulWidget {
   const CamerasScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final engine = EngineScope.of(context);
-    final cameras = engine.hello?.cameras ?? const <String>[];
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.cameras)),
-      body: cameras.isEmpty
-          ? Center(child: Text(l10n.noCameras))
-          : LayoutBuilder(
-              builder: (context, constraints) => GridView.count(
-                padding: const EdgeInsets.all(16),
-                crossAxisCount: constraints.maxWidth > 1100 ? 3 : (constraints.maxWidth > 700 ? 2 : 1),
-                childAspectRatio: 16 / 10,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                children: [for (final camera in cameras) CameraTile(camera: camera)],
-              ),
-            ),
-    );
-  }
+  State<CamerasScreen> createState() => _CamerasScreenState();
 }
 
-/// One camera: subscribes to its preview while visible and shows the newest image.
-class CameraTile extends StatefulWidget {
-  const CameraTile({super.key, required this.camera});
-
-  final String camera;
-
-  @override
-  State<CameraTile> createState() => _CameraTileState();
-}
-
-class _CameraTileState extends State<CameraTile> {
+class _CamerasScreenState extends State<CamerasScreen> {
   EngineConnection? _engine;
-  StreamSubscription<PreviewFrame>? _subscription;
-  PreviewFrame? _frame;
+  final Set<String> _collapsed = {};
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final engine = EngineScope.of(context);
     if (identical(engine, _engine)) return;
-    _stop();
-    _engine = engine;
-    _subscription = engine.previews.where((f) => f.camera == widget.camera).listen((f) => setState(() => _frame = f));
-    engine.subscribePreview(widget.camera);
-  }
-
-  void _stop() {
-    _subscription?.cancel();
-    _engine?.unsubscribePreview(widget.camera);
+    _engine?.unwatchStatus();
+    _engine = engine..watchStatus();
   }
 
   @override
   void dispose() {
-    _stop();
+    _engine?.unwatchStatus();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final cameras = EngineScope.of(context).hello?.cameras ?? const <String>[];
+    final allCollapsed = cameras.isNotEmpty && cameras.every(_collapsed.contains);
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(l10n.cameras),
+        actions: [
+          if (cameras.isNotEmpty)
+            TextButton.icon(
+              onPressed: () => setState(() => allCollapsed ? _collapsed.clear() : _collapsed.addAll(cameras)),
+              icon: Icon(allCollapsed ? Icons.unfold_more : Icons.unfold_less),
+              label: Text(allCollapsed ? l10n.expandAll : l10n.collapseAll),
+            ),
+        ],
+      ),
+      body: cameras.isEmpty
+          ? Center(child: Text(l10n.noCameras))
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                final columns = constraints.maxWidth > 1300 ? 3 : (constraints.maxWidth > 800 ? 2 : 1);
+                final width = (constraints.maxWidth - 32 - 12 * (columns - 1)) / columns;
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      for (final camera in cameras)
+                        SizedBox(
+                          width: width,
+                          child: CameraPanel(
+                            camera: camera,
+                            expanded: !_collapsed.contains(camera),
+                            onToggle: () => setState(
+                              () => _collapsed.contains(camera) ? _collapsed.remove(camera) : _collapsed.add(camera),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
+    );
+  }
+}
+
+/// Keeps the newest preview frame of a camera and measures the preview rate while it is watched.
+mixin _PreviewWatcher<T extends StatefulWidget> on State<T> {
+  EngineConnection? _engine;
+  PreviewHandle? _handle;
+  StreamSubscription<PreviewFrame>? _frames;
+  PreviewFrame? frame;
+  final List<DateTime> _arrivals = [];
+
+  String get watchedCamera;
+  double get previewFps;
+  int get previewWidth;
+
+  /// Frames per second over the last two seconds
+  double get previewRate {
+    final now = DateTime.now();
+    _arrivals.removeWhere((t) => now.difference(t) > const Duration(seconds: 2));
+    return _arrivals.length / 2.0;
+  }
+
+  void startWatching() {
+    final engine = EngineScope.of(context);
+    if (identical(engine, _engine) && _handle != null) return;
+    stopWatching();
+    _engine = engine;
+    _handle = engine.watchPreview(watchedCamera, maxFps: previewFps, maxWidth: previewWidth);
+    _frames = engine.previews
+        .where((f) => f.camera == watchedCamera)
+        .listen(
+          (f) => setState(() {
+            frame = f;
+            _arrivals.add(DateTime.now());
+          }),
+        );
+  }
+
+  void stopWatching() {
+    _frames?.cancel();
+    _handle?.release();
+    _frames = null;
+    _handle = null;
+    _arrivals.clear();
+  }
+
+  @override
+  void dispose() {
+    stopWatching();
+    super.dispose();
+  }
+}
+
+class CameraPanel extends StatefulWidget {
+  const CameraPanel({super.key, required this.camera, required this.expanded, required this.onToggle});
+
+  final String camera;
+  final bool expanded;
+  final VoidCallback onToggle;
+
+  @override
+  State<CameraPanel> createState() => _CameraPanelState();
+}
+
+class _CameraPanelState extends State<CameraPanel> with _PreviewWatcher<CameraPanel> {
+  @override
+  String get watchedCamera => widget.camera;
+  @override
+  double get previewFps => 10;
+  @override
+  int get previewWidth => 640;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (widget.expanded) startWatching();
+  }
+
+  @override
+  void didUpdateWidget(CameraPanel old) {
+    super.didUpdateWidget(old);
+    if (widget.expanded && !old.expanded) startWatching();
+    if (!widget.expanded && old.expanded) setState(stopWatching);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final state = EngineScope.of(context).cameraStates[widget.camera] ?? 'ok';
-    final (label, color) = switch (state) {
-      'lost' => (l10n.cameraLost, theme.colorScheme.error),
-      'degraded' => (l10n.cameraDegraded, Colors.orange),
-      _ => (l10n.cameraOk, Colors.green),
-    };
-    final frame = _frame;
+    final status = EngineScope.of(context).cameraStatus[widget.camera];
+    final current = frame;
     return Card(
       clipBehavior: Clip.antiAlias,
-      child: Stack(
-        fit: StackFit.expand,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          frame == null
-              ? Center(child: Text(l10n.waitingForImage))
-              : Image.memory(
-                  frame.jpeg,
-                  key: ValueKey('preview-${widget.camera}'),
-                  fit: BoxFit.contain,
-                  gaplessPlayback: true,
-                ),
-          Positioned(
-            left: 8,
-            top: 8,
-            child: Chip(
-              avatar: Icon(Icons.circle, size: 12, color: color),
-              label: Text('${widget.camera} · $label'),
+          InkWell(
+            key: ValueKey('camera-header-${widget.camera}'),
+            onTap: widget.onToggle,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+              child: Row(
+                children: [
+                  _StateDot(status?.state ?? 'ok'),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(widget.camera, style: theme.textTheme.titleSmall)),
+                  Icon(widget.expanded ? Icons.expand_less : Icons.expand_more),
+                ],
+              ),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+            child: _StatusLine(
+              status: status,
+              previewRate: widget.expanded ? previewRate : null,
+              frameSize: current == null ? null : '${current.width}×${current.height}',
+            ),
+          ),
+          if (widget.expanded)
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: current == null
+                  ? Center(child: Text(l10n.waitingForImage))
+                  : Tooltip(
+                      message: l10n.tapToEnlarge,
+                      child: GestureDetector(
+                        onTap: () =>
+                            Navigator.of(context)
+                                .push(MaterialPageRoute<void>(builder: (_) => CameraFullscreen(camera: widget.camera))),
+                        child: Image.memory(
+                          current.jpeg,
+                          key: ValueKey('preview-${widget.camera}'),
+                          fit: BoxFit.contain,
+                          gaplessPlayback: true,
+                        ),
+                      ),
+                    ),
+            ),
         ],
       ),
     );
+  }
+}
+
+/// One camera full screen, at a higher resolution, with pinch and wheel zoom.
+class CameraFullscreen extends StatefulWidget {
+  const CameraFullscreen({super.key, required this.camera});
+
+  final String camera;
+
+  @override
+  State<CameraFullscreen> createState() => _CameraFullscreenState();
+}
+
+class _CameraFullscreenState extends State<CameraFullscreen> with _PreviewWatcher<CameraFullscreen> {
+  @override
+  String get watchedCamera => widget.camera;
+  @override
+  double get previewFps => 15;
+  @override
+  int get previewWidth => 1280;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    startWatching();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final status = EngineScope.of(context).cameraStatus[widget.camera];
+    final current = frame;
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        title: Row(children: [_StateDot(status?.state ?? 'ok'), const SizedBox(width: 8), Text(widget.camera)]),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(28),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: _StatusLine(
+              status: status,
+              previewRate: previewRate,
+              frameSize: current == null ? null : '${current.width}×${current.height}',
+            ),
+          ),
+        ),
+      ),
+      body: current == null
+          ? Center(child: Text(l10n.waitingForImage))
+          : InteractiveViewer(
+              maxScale: 6,
+              child: Center(
+                child: Image.memory(
+                  current.jpeg,
+                  key: ValueKey('fullscreen-${widget.camera}'),
+                  fit: BoxFit.contain,
+                  gaplessPlayback: true,
+                ),
+              ),
+            ),
+    );
+  }
+}
+
+class _StateDot extends StatelessWidget {
+  const _StateDot(this.state);
+
+  final String state;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final (label, color) = switch (state) {
+      'lost' => (l10n.cameraLost, Theme.of(context).colorScheme.error),
+      'degraded' => (l10n.cameraDegraded, Colors.orange),
+      _ => (l10n.cameraOk, Colors.green),
+    };
+    return Tooltip(
+      message: label,
+      child: Chip(
+        visualDensity: VisualDensity.compact,
+        avatar: Icon(Icons.circle, size: 12, color: color),
+        label: Text(label),
+      ),
+    );
+  }
+}
+
+/// Engine status of a camera and the preview's own rate and size
+class _StatusLine extends StatelessWidget {
+  const _StatusLine({required this.status, required this.previewRate, required this.frameSize});
+
+  final EngineCameraStatus? status;
+  final double? previewRate;
+  final String? frameSize;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final style = Theme.of(context).textTheme.bodySmall;
+    final s = status;
+    final parts = [
+      if (s?.effectiveFps != null) l10n.fps(s!.effectiveFps!.toStringAsFixed(1)),
+      if (s?.lostFrames != null) '${l10n.lostFrames} ${s!.lostFrames}',
+      if (s?.overflowDrops != null) '${l10n.droppedFrames} ${s!.overflowDrops}',
+      if (s?.brightness != null) '${l10n.brightness} ${s!.brightness!.toStringAsFixed(0)}',
+      if (s?.latencyMs != null) '${l10n.latency} ${s!.latencyMs!.toStringAsFixed(1)} ms',
+      if (previewRate != null) '${l10n.preview} ${l10n.fps(previewRate!.toStringAsFixed(1))}',
+      ?frameSize,
+    ];
+    return Text(parts.join('  ·  '), key: const ValueKey('camera-status-line'), style: style);
   }
 }

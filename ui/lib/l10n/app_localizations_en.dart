@@ -253,4 +253,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noCameras => 'The engine has no cameras';
+
+  @override
+  String fps(String value) {
+    return '$value fps';
+  }
+
+  @override
+  String get lostFrames => 'Lost';
+
+  @override
+  String get droppedFrames => 'Dropped';
+
+  @override
+  String get brightness => 'Brightness';
+
+  @override
+  String get preview => 'Preview';
+
+  @override
+  String get expandAll => 'Expand all';
+
+  @override
+  String get collapseAll => 'Collapse all';
+
+  @override
+  String get tapToEnlarge => 'Tap the image to enlarge it';
+
+  @override
+  String get latency => 'Latency';
 }

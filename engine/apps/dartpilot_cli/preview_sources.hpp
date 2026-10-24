@@ -32,6 +32,8 @@ class CameraPreviews
     api::Server& server_;
     std::vector<capture::CameraDevice> devices_;
     std::vector<std::unique_ptr<capture::CaptureThread>> captures_;
+    // Newest JPEG per camera, for the brightness in the status
+    std::vector<std::vector<std::uint8_t>> latest_;
     std::thread thread_;
     std::atomic<bool> stop_{false};
 };

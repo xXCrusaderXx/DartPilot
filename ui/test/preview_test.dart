@@ -51,7 +51,7 @@ void main() {
     expect(PreviewFrame.parse(Uint8List(2)), isNull);
   });
 
-  testWidgets('the camera page shows each camera with its image and state', (tester) async {
+  testWidgets('camera panels show status, collapse, and open full screen', (tester) async {
     tester.view.physicalSize = const Size(1400, 1000);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -65,15 +65,69 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Warte auf das erste Bild…'), findsNWidgets(2));
 
-    engine.receiveForTest(previewMessage('usb-2', 1, tinyJpeg));
+    engine.receiveForTest(
+      jsonEncode({
+        'type': 'camera_status',
+        'camera': 'usb-1',
+        'state': 'degraded',
+        'effective_fps': 29.9,
+        'lost_frames': 3,
+        'overflow_drops': 0,
+        'brightness': 112.4,
+        'latency_ms': 31.25,
+      }),
+    );
+    engine.receiveForTest(previewMessage('usb-1', 1, tinyJpeg));
     // Stream events arrive in a microtask; the second pump builds with the frame.
     await tester.pump();
     await tester.pump();
-    expect(find.byKey(const ValueKey('preview-usb-2')), findsOneWidget);
-    expect(find.text('Warte auf das erste Bild…'), findsOneWidget);
+    expect(find.text('Gestört'), findsOneWidget);
+    expect(
+      find.textContaining('29.9 fps  ·  Verloren 3  ·  Verworfen 0  ·  Helligkeit 112  ·  Latenz 31.3 ms'),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('preview-usb-1')), findsOneWidget);
 
-    engine.receiveForTest(jsonEncode({'type': 'camera_status', 'camera': 'usb-1', 'state': 'lost'}));
+    // Collapsing hides the image; collapse all hides every image.
+    await tester.tap(find.byKey(const ValueKey('camera-header-usb-1')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('preview-usb-1')), findsNothing);
+    await tester.tap(find.text('Alle zuklappen'));
+    await tester.pumpAndSettle();
+    expect(find.text('Warte auf das erste Bild…'), findsNothing);
+    await tester.tap(find.text('Alle aufklappen'));
+    await tester.pumpAndSettle();
+
+    // Tapping an image opens the camera full screen.
+    engine.receiveForTest(previewMessage('usb-1', 2, tinyJpeg));
     await tester.pump();
-    expect(find.text('usb-1 · Verloren'), findsOneWidget);
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('preview-usb-1')));
+    await tester.pumpAndSettle();
+    engine.receiveForTest(previewMessage('usb-1', 3, tinyJpeg));
+    await tester.pump();
+    await tester.pump();
+    expect(find.byKey(const ValueKey('fullscreen-usb-1')), findsOneWidget);
+  });
+
+  test('preview handles combine their limits and unsubscribe with the last one', () {
+    final sent = <Map<String, dynamic>>[];
+    final engine = EngineConnection.forTest(sent.add);
+    final small = engine.watchPreview('usb-1', maxFps: 10, maxWidth: 640);
+    final big = engine.watchPreview('usb-1', maxFps: 15, maxWidth: 1280);
+    expect(sent.last, containsPair('max_width', 1280));
+    big.release();
+    expect(sent.last, containsPair('max_width', 640));
+    expect(sent.last, containsPair('max_fps', 10));
+    small.release();
+    expect(sent.last['type'], 'unsubscribe_preview');
+    engine.watchStatus();
+    engine.watchStatus();
+    engine.unwatchStatus();
+    expect(sent.where((m) => m['type'] == 'subscribe_status').length, 1);
+    expect(sent.last['type'], 'subscribe_status');
+    engine.unwatchStatus();
+    expect(sent.last['type'], 'unsubscribe_status');
+    engine.dispose();
   });
 }

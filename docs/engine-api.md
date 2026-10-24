@@ -113,11 +113,12 @@ Sent when a camera's state changes and once per second while a client watches st
   "effective_fps": 30.0,
   "lost_frames": 0,
   "overflow_drops": 0,
-  "brightness": 112.5
+  "brightness": 112.5,
+  "latency_ms": 31.3
 }
 ```
 
-`state` is `ok`, `degraded` (frames lost or the calibration check found a moved camera) or `lost` (no frames).
+`brightness` (mean image brightness 0–255) and `latency_ms` (arrival minus exposure of the latest frame) are `null` when unknown. `state` is `ok`, `degraded` (frames lost or the calibration check found a moved camera) or `lost` (no frames).
 
 ### engine_status
 

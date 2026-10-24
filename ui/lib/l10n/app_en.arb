@@ -126,5 +126,21 @@
   "cameraOk": "OK",
   "cameraDegraded": "Degraded",
   "cameraLost": "Lost",
-  "noCameras": "The engine has no cameras"
+  "noCameras": "The engine has no cameras",
+  "fps": "{value} fps",
+  "@fps": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "lostFrames": "Lost",
+  "droppedFrames": "Dropped",
+  "brightness": "Brightness",
+  "preview": "Preview",
+  "expandAll": "Expand all",
+  "collapseAll": "Collapse all",
+  "tapToEnlarge": "Tap the image to enlarge it",
+  "latency": "Latency"
 }

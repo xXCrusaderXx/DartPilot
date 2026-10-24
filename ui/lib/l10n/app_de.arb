@@ -74,5 +74,14 @@
   "cameraOk": "OK",
   "cameraDegraded": "Gestört",
   "cameraLost": "Verloren",
-  "noCameras": "Die Engine hat keine Kameras"
+  "noCameras": "Die Engine hat keine Kameras",
+  "fps": "{value} fps",
+  "lostFrames": "Verloren",
+  "droppedFrames": "Verworfen",
+  "brightness": "Helligkeit",
+  "preview": "Vorschau",
+  "expandAll": "Alle aufklappen",
+  "collapseAll": "Alle zuklappen",
+  "tapToEnlarge": "Tippe auf das Bild, um es zu vergrößern",
+  "latency": "Latenz"
 }

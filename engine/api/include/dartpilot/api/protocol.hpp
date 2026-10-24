@@ -69,6 +69,8 @@ struct CameraStatus
     std::uint64_t lost_frames = 0;
     std::uint64_t overflow_drops = 0;
     double brightness = -1.0;
+    // Arrival minus exposure of the latest frame; negative if unknown
+    double latency_ms = -1.0;
 };
 
 nlohmann::json toJson (const BoardPoint& point);
