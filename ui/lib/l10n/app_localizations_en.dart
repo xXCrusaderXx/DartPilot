@@ -346,4 +346,60 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get boardNotStill => 'The image is not still yet; wait a moment and try again.';
+
+  @override
+  String get engineThisDevice => 'On this device';
+
+  @override
+  String get engineNetwork => 'In the network';
+
+  @override
+  String get localEngineStopped => 'The engine on this device is stopped.';
+
+  @override
+  String get localEngineStarting => 'Starting the engine…';
+
+  @override
+  String localEngineRunning(String url) {
+    return 'The engine runs on this device ($url).';
+  }
+
+  @override
+  String get localEngineNotFound => 'The engine program was not found. Enter its path under Log.';
+
+  @override
+  String get localEngineNoCameras => 'No camera could be started: are they plugged in, or used by another program?';
+
+  @override
+  String get localEnginePortInUse => 'The engine\'s port is in use; another engine may be running.';
+
+  @override
+  String get localEngineCrashed => 'The engine stopped unexpectedly; the log shows why.';
+
+  @override
+  String get useCameras => 'Use the cameras';
+
+  @override
+  String get useCamerasHint => 'Live images and the board check; darts are still simulated until detection is ready.';
+
+  @override
+  String get engineLog => 'Log';
+
+  @override
+  String get startEngine => 'Start';
+
+  @override
+  String get stopEngine => 'Stop';
+
+  @override
+  String get engineProgram => 'Engine program';
+
+  @override
+  String get engineProgramHint => 'Leave empty to find it automatically';
+
+  @override
+  String get engineLogEmpty => 'No output yet.';
+
+  @override
+  String get close => 'Close';
 }
