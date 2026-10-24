@@ -35,7 +35,7 @@ The core metrics are the radial position error in mm (median, P95), segment and 
 | [`tests/`](tests) | C++ tests (GoogleTest, run with `ctest`) |
 | [`ui/`](ui) | Flutter player app (Linux, Windows, web, Android), see [ADR 0004](docs/adr/0004-user-interface.md) |
 | [`tools/`](tools) | Python tools for benchmark evaluation and annotation |
-| [`docs/`](docs) | [Technical plan](docs/technical_plan.md), [reference hardware](docs/hardware.md), [session format](docs/replay-format.md) and [architecture decisions](docs/adr) |
+| [`docs/`](docs) | [Technical plan](docs/technical_plan.md), [reference hardware](docs/hardware.md), [session format](docs/replay-format.md), [engine API](docs/engine-api.md) and [architecture decisions](docs/adr) |
 | `data/` | Local recordings and datasets; never committed |
 
 ## Building from source
