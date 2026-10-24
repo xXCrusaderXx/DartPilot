@@ -108,6 +108,25 @@ Three darts (treble 20, next to the bull, double 11 next to a wire), automatic e
 - The darts stand out of the board towards the cameras, so their barrels and flights cover large image areas. In one view, the flight of a dart in the near half of the board covered the bull area; a later dart landing there would be hidden in that camera. The three viewing directions provide the redundancy for this, and fusion (#32) has to expect occluded tips.
 - The barrels are only a few pixels wide, consistent with the 1–2 px/mm resolution above.
 
+## Capture health
+
+Measured 2026-10-24 with `dartpilot record` and `python -m dartpilot_tools.capture_report` (issue #7), three cameras at once:
+
+| Session | Camera | Frames | Lost | Overflow drops | PTS frames | Latency P50 / P95 | Interval | Jitter | Max queued |
+| ------- | ------ | ------ | ---- | -------------- | ---------- | ----------------- | -------- | ------ | ---------- |
+| 10 min, idle system | 2.4.3.1.2 | 18 003 | 0 | 0 | 99.8 % | 31.29 / 33.09 ms | 33.329 ms | 1.5 µs | 1 |
+| | 2.4.3.1.3 | 18 002 | 0 | 0 | 99.8 % | 31.30 / 33.11 ms | 33.329 ms | 1.5 µs | 0 |
+| | 2.4.3.1.4 | 18 000 | 0 | 0 | 99.8 % | 31.31 / 33.11 ms | 33.329 ms | 1.5 µs | 1 |
+| 5 min, all 16 cores busy (load 19.8) | 2.4.3.1.2 | 9 003 | 0 | 0 | 99.7 % | 31.24 / 33.15 ms | 33.327 ms | 5.8 µs | 0 |
+| | 2.4.3.1.3 | 9 002 | 0 | 0 | 99.7 % | 31.26 / 33.16 ms | 33.327 ms | 5.8 µs | 0 |
+| | 2.4.3.1.4 | 9 001 | 0 | 0 | 99.7 % | 31.29 / 33.17 ms | 33.327 ms | 5.8 µs | 0 |
+
+- No frame was lost by the driver or dropped by the recorder, also under full CPU load. The ring buffer never held more than one frame.
+- Latency (exposure start to arrival in user space) is about one frame period and does not change under load.
+- Interval jitter of the mapped PTS stays in the microsecond range; under load the SCR samples are noisier, which raises it from 1.5 to 5.8 µs.
+- Earlier runs: 30 minutes of `dartpilot capture-check` (54 000 frames per camera, no losses, no memory growth, issue #4) and a 10-minute recording (issue #6) gave the same picture.
+- The recorded data rate depends on the scene: 196 MB/min in daylight here, 357 MB/min in the evening test of #6.
+
 ## Open
 
 - Measured field of view and lens distortion, from the intrinsic calibration
