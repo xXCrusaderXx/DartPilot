@@ -7,8 +7,11 @@ Games: X01, Cricket, Around the Clock and free throwing. Darts come from the eng
 To play against the simulated engine, start it and press **Connect** on the home screen:
 
 ```sh
-../build/engine/apps/dartpilot_cli/dartpilot serve --simulate
+../build/engine/apps/dartpilot_cli/dartpilot serve --simulate             # drawn camera images
+../build/engine/apps/dartpilot_cli/dartpilot serve --simulate --cameras   # live images of the real cameras
 ```
+
+**Cameras** on the home screen shows the camera images once connected.
 
 ```sh
 flutter run -d linux     # run on the desktop

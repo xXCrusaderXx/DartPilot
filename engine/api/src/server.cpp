@@ -78,6 +78,12 @@ Server::Server (int port, std::string host, Hello hello)
 
 Server::~Server () { stop(); }
 
+void Server::setCameras (std::vector<CameraInfo> cameras)
+{
+    std::lock_guard lock(mutex_);
+    hello_.cameras = std::move(cameras);
+}
+
 bool Server::start (std::string& error)
 {
     if(!server_->listenAndStart())
@@ -113,11 +119,101 @@ void Server::broadcast (const nlohmann::json& message, bool status_only)
 Throw Server::publishThrow (Throw dart)
 {
     Throw recorded = log_.record(std::move(dart));
+    if(recorded.board_point)
+    {
+        std::lock_guard lock(mutex_);
+        visit_points_.push_back(*recorded.board_point);
+    }
     broadcast(throwMessage(recorded, hello_.board_geometry));
     return recorded;
 }
 
-void Server::publishTakeout (std::int64_t event_ns, int darts_removed) { broadcast(takeoutMessage(event_ns, darts_removed)); }
+void Server::publishTakeout (std::int64_t event_ns, int darts_removed)
+{
+    {
+        std::lock_guard lock(mutex_);
+        visit_points_.clear();
+    }
+    broadcast(takeoutMessage(event_ns, darts_removed));
+}
+
+std::vector<BoardPoint> Server::visitPoints () const
+{
+    std::lock_guard lock(mutex_);
+    return visit_points_;
+}
+
+bool Server::wantsPreview (const std::string& camera) const
+{
+    std::lock_guard lock(mutex_);
+    for(const auto& [id, client] : clients_)
+    {
+        if(client.previews.count(camera) != 0)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+void Server::setPreviewScaler (PreviewScaler scaler)
+{
+    std::lock_guard lock(mutex_);
+    preview_scaler_ = std::move(scaler);
+}
+
+void Server::publishPreview (const PreviewHeader& header, const std::vector<std::uint8_t>& jpeg)
+{
+    const std::int64_t now_ns = monotonicNowNs();
+    // Which clients are due for a frame, and at which width; scaling happens outside the lock.
+    std::map<int, std::vector<std::string>> due_by_width;
+    PreviewScaler scaler;
+    {
+        std::lock_guard lock(mutex_);
+        scaler = preview_scaler_;
+        for(auto& [id, client] : clients_)
+        {
+            const auto it = client.previews.find(header.camera);
+            if(it == client.previews.end())
+            {
+                continue;
+            }
+            const auto interval_ns = static_cast<std::int64_t>(1e9 / it->second.max_fps);
+            // A slow client simply gets fewer frames; nothing is queued for it.
+            if(now_ns - it->second.last_sent_ns < interval_ns)
+            {
+                continue;
+            }
+            const int width = it->second.max_width > 0 && it->second.max_width < header.width && scaler ? it->second.max_width : 0;
+            due_by_width[width].push_back(id);
+        }
+    }
+    for(const auto& [width, ids] : due_by_width)
+    {
+        PreviewHeader sized = header;
+        std::vector<std::uint8_t> scaled;
+        if(width > 0)
+        {
+            scaled = scaler(jpeg, width, sized.width, sized.height);
+            if(scaled.empty())
+            {
+                continue;
+            }
+        }
+        const std::string message = previewMessage(sized, width > 0 ? scaled : jpeg);
+        std::lock_guard lock(mutex_);
+        for(const auto& id : ids)
+        {
+            const auto client = clients_.find(id);
+            if(client == clients_.end() || !client->second.socket || client->second.previews.count(header.camera) == 0)
+            {
+                continue;
+            }
+            client->second.previews[header.camera].last_sent_ns = now_ns;
+            client->second.socket->sendBinary(message);
+        }
+    }
+}
 
 void Server::publishCameraStatus (const CameraStatus& status)
 {
@@ -212,7 +308,29 @@ nlohmann::json Server::handle (const std::string& connection, const Request& req
             {
                 if(subscription.topic == "preview")
                 {
-                    return resultMessage(request.request_id, false, "not_available", "Previews are not available yet");
+                    std::lock_guard lock(mutex_);
+                    bool known = false;
+                    for(const auto& camera : hello_.cameras)
+                    {
+                        known = known || camera.id == subscription.camera;
+                    }
+                    if(!known)
+                    {
+                        return resultMessage(request.request_id, false, "unknown_camera", "No camera " + subscription.camera);
+                    }
+                    auto& previews = clients_[connection].previews;
+                    if(subscription.subscribe)
+                    {
+                        Client::Preview preview;
+                        preview.max_fps = subscription.max_fps > 0 ? subscription.max_fps : 10.0;
+                        preview.max_width = subscription.max_width;
+                        previews[subscription.camera] = preview;
+                    }
+                    else
+                    {
+                        previews.erase(subscription.camera);
+                    }
+                    return resultMessage(request.request_id, true);
                 }
                 std::lock_guard lock(mutex_);
                 clients_[connection].status = subscription.subscribe;

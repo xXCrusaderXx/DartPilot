@@ -114,6 +114,9 @@ struct Subscription
     std::string topic;  // status or preview
     bool subscribe = true;
     std::string camera;
+    // Preview limits; 0 means the engine's default
+    double max_fps = 0.0;
+    int max_width = 0;
 };
 using RequestBody = std::variant<ClientHello, CorrectThrow, RejectThrow, AddThrow, SetDetection, Subscription>;
 
@@ -131,4 +134,17 @@ struct ParseError
     std::string message;
 };
 std::variant<Request, ParseError> parseRequest (const std::string& text);
+
+// Header of a preview frame (docs/engine-api.md, "Previews")
+struct PreviewHeader
+{
+    std::string camera;
+    std::uint32_t sequence = 0;
+    std::int64_t exposure_ns = 0;
+    int width = 0;
+    int height = 0;
+};
+
+// Binary preview message: header length as u32 little-endian, the header as JSON, then the JPEG
+std::string previewMessage (const PreviewHeader& header, const std::vector<std::uint8_t>& jpeg);
 }  // namespace dartpilot::api

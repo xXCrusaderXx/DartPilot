@@ -120,5 +120,11 @@
     }
   },
   "countAsMiss": "Count as miss",
-  "enterManually": "Enter them"
+  "enterManually": "Enter them",
+  "cameras": "Cameras",
+  "waitingForImage": "Waiting for the first image…",
+  "cameraOk": "OK",
+  "cameraDegraded": "Degraded",
+  "cameraLost": "Lost",
+  "noCameras": "The engine has no cameras"
 }

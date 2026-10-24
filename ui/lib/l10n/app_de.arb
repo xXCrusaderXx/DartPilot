@@ -68,5 +68,11 @@
   "cancel": "Abbrechen",
   "missingDarts": "{count, plural, =1{1 Dart fehlt} other{{count} Darts fehlen}}",
   "countAsMiss": "Als Daneben zählen",
-  "enterManually": "Selbst eingeben"
+  "enterManually": "Selbst eingeben",
+  "cameras": "Kameras",
+  "waitingForImage": "Warte auf das erste Bild…",
+  "cameraOk": "OK",
+  "cameraDegraded": "Gestört",
+  "cameraLost": "Verloren",
+  "noCameras": "Die Engine hat keine Kameras"
 }

@@ -6,6 +6,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <vector>
 
 #include <nlohmann/json.hpp>
 
@@ -30,6 +31,9 @@ class Server
     Server (const Server&) = delete;
     Server& operator=(const Server&) = delete;
 
+    // The cameras announced in hello; set before start()
+    void setCameras (std::vector<CameraInfo> cameras);
+
     bool start (std::string& error);
     void stop ();
 
@@ -39,6 +43,17 @@ class Server
     // Sent to clients that subscribed to status; a changed state goes to every client
     void publishCameraStatus (const CameraStatus& status);
     void publishEngineStatus (const std::string& detection, const std::string& message);
+
+    // Whether any client watches this camera, so sources can skip preview work otherwise
+    bool wantsPreview (const std::string& camera) const;
+    // Sends a camera frame to the clients watching it, within each client's frame rate and width
+    void publishPreview (const PreviewHeader& header, const std::vector<std::uint8_t>& jpeg);
+    // Makes a JPEG of at most max_width pixels and reports its size; the server itself does no image processing.
+    using PreviewScaler = std::function<std::vector<std::uint8_t>(const std::vector<std::uint8_t>& jpeg, int max_width, int& width, int& height)>;
+    void setPreviewScaler (PreviewScaler scaler);
+
+    // Board points of the darts since the last takeout, e.g. for a simulated camera image
+    std::vector<BoardPoint> visitPoints () const;
 
     // Called when a client pauses or resumes detection
     void onDetectionChanged (std::function<void(bool running)> handler);
@@ -54,6 +69,13 @@ class Server
         ix::WebSocket* socket = nullptr;
         std::string name;
         bool status = false;
+        struct Preview
+        {
+            double max_fps = 10.0;
+            int max_width = 0;
+            std::int64_t last_sent_ns = 0;
+        };
+        std::map<std::string, Preview> previews;
     };
 
     void broadcast (const nlohmann::json& message, bool status_only = false);
@@ -66,5 +88,7 @@ class Server
     std::map<std::string, Client> clients_;
     std::map<std::string, std::string> camera_states_;
     std::function<void(bool)> detection_handler_;
+    PreviewScaler preview_scaler_;
+    std::vector<BoardPoint> visit_points_;
 };
 }  // namespace dartpilot::api

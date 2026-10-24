@@ -176,6 +176,26 @@ json resultMessage (const std::string& request_id, bool ok, const std::string& e
     return out;
 }
 
+std::string previewMessage (const PreviewHeader& header, const std::vector<std::uint8_t>& jpeg)
+{
+    const std::string json_header = json{
+        {"camera", header.camera},
+        {"sequence", header.sequence},
+        {"exposure_ns", header.exposure_ns},
+        {"width", header.width},
+        {"height", header.height}}.dump();
+    std::string message;
+    message.reserve(4 + json_header.size() + jpeg.size());
+    const auto length = static_cast<std::uint32_t>(json_header.size());
+    for(int i = 0; i < 4; ++i)
+    {
+        message.push_back(static_cast<char>((length >> (8 * i)) & 0xff));
+    }
+    message += json_header;
+    message.append(reinterpret_cast<const char*>(jpeg.data()), jpeg.size());
+    return message;
+}
+
 std::variant<Request, ParseError> parseRequest (const std::string& text)
 {
     json message;
@@ -226,7 +246,8 @@ std::variant<Request, ParseError> parseRequest (const std::string& text)
         }
         else if(type == "subscribe_preview" || type == "unsubscribe_preview")
         {
-            request.body = Subscription{"preview", type == "subscribe_preview", message.at("camera").get<std::string>()};
+            request.body = Subscription{"preview", type == "subscribe_preview", message.at("camera").get<std::string>(),
+                                        message.value("max_fps", 0.0), message.value("max_width", 0)};
         }
         else
         {

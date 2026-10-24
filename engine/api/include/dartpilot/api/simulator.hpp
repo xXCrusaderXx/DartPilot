@@ -20,6 +20,8 @@ struct SimulatorSettings
     double scatter_mm = 12.0;
     // Share of darts the engine abstains on
     double abstain_rate = 0.1;
+    // Off when real cameras report their own status (`serve --simulate --cameras`)
+    bool camera_status = true;
 };
 
 // Plays darts into the server without cameras (`dartpilot serve --simulate`): three darts aimed at a target per

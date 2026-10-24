@@ -10,6 +10,7 @@
 
 #include "dartpilot/api/server.hpp"
 #include "dartpilot/api/simulator.hpp"
+#include "preview_sources.hpp"
 
 namespace dartpilot::cli
 {
@@ -22,8 +23,9 @@ void onInterrupt (int) { interrupted = true; }
 int usage ()
 {
     std::fprintf(stderr,
-                 "Usage: dartpilot serve --simulate [--listen ADDRESS] [--port N] [--seed N] [--interval MS]\n"
+                 "Usage: dartpilot serve --simulate [--cameras] [--listen ADDRESS] [--port N] [--seed N] [--interval MS]\n"
                  "  --simulate     darts, takeouts and camera states without cameras\n"
+                 "  --cameras      previews and status from the real cameras; darts stay simulated\n"
                  "  --listen       address to listen on (default 127.0.0.1; 0.0.0.0 for the whole network)\n"
                  "  --port         default 8484\n");
     return 2;
@@ -33,6 +35,7 @@ int usage ()
 int runServe (int argc, char* argv[])
 {
     bool simulate = false;
+    bool cameras = false;
     std::string host = "127.0.0.1";
     int port = 8484;
     api::SimulatorSettings settings;
@@ -42,6 +45,10 @@ int runServe (int argc, char* argv[])
         if(arg == "--simulate")
         {
             simulate = true;
+        }
+        else if(arg == "--cameras")
+        {
+            cameras = true;
         }
         else if(arg == "--listen" && i + 1 < argc)
         {
@@ -73,8 +80,31 @@ int runServe (int argc, char* argv[])
 
     api::Hello hello;
     hello.mode = "simulate";
-    hello.cameras = {{"sim-1", "Simulated camera 1", "ok"}, {"sim-2", "Simulated camera 2", "ok"}, {"sim-3", "Simulated camera 3", "ok"}};
     api::Server server(port, host, hello);
+    server.setPreviewScaler(scaleJpeg);
+    CameraPreviews camera_previews(server);
+    std::vector<std::string> simulated = {"sim-1", "sim-2", "sim-3"};
+    SimulatedPreviews simulated_previews(server, simulated);
+    if(cameras)
+    {
+        std::vector<api::CameraInfo> infos;
+        for(const auto& device : camera_previews.start())
+        {
+            infos.push_back({"usb-" + device.usb_port, device.name, "ok"});
+        }
+        if(infos.empty())
+        {
+            std::fprintf(stderr, "No camera could be started.\n");
+            return 1;
+        }
+        server.setCameras(infos);
+        settings.camera_status = false;
+    }
+    else
+    {
+        server.setCameras({{"sim-1", "Simulated camera 1", "ok"}, {"sim-2", "Simulated camera 2", "ok"}, {"sim-3", "Simulated camera 3", "ok"}});
+        simulated_previews.start();
+    }
     std::string error;
     if(!server.start(error))
     {
@@ -84,7 +114,7 @@ int runServe (int argc, char* argv[])
     api::Simulator simulator(server, settings);
     server.onDetectionChanged([&simulator] (bool running) { simulator.setRunning(running); });
     simulator.start();
-    std::printf("Engine API (simulated) on ws://%s:%d/ - Ctrl+C to stop\n", host.c_str(), port);
+    std::printf("Engine API (simulated darts%s) on ws://%s:%d/ - Ctrl+C to stop\n", cameras ? ", real cameras" : "", host.c_str(), port);
     std::fflush(stdout);
 
     std::signal(SIGINT, onInterrupt);
@@ -94,6 +124,8 @@ int runServe (int argc, char* argv[])
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     simulator.stop();
+    simulated_previews.stop();
+    camera_previews.stop();
     server.stop();
     std::printf("%zu throws\n", server.throws().size());
     return 0;

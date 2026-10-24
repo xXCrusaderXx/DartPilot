@@ -235,4 +235,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get enterManually => 'Enter them';
+
+  @override
+  String get cameras => 'Cameras';
+
+  @override
+  String get waitingForImage => 'Waiting for the first image…';
+
+  @override
+  String get cameraOk => 'OK';
+
+  @override
+  String get cameraDegraded => 'Degraded';
+
+  @override
+  String get cameraLost => 'Lost';
+
+  @override
+  String get noCameras => 'The engine has no cameras';
 }
