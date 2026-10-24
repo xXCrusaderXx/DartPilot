@@ -33,6 +33,7 @@ The core metrics are the radial position error in mm (median, P95), segment and 
 | ---- | ------- |
 | [`engine/`](engine) | C++20 engine: one library per module, plus `apps/dartpilot_cli` and the developer GUI `apps/dartpilot_setup` (Qt 6, optional) |
 | [`tests/`](tests) | C++ tests (GoogleTest, run with `ctest`) |
+| [`ui/`](ui) | Flutter player app (Linux, Windows, web, Android), see [ADR 0004](docs/adr/0004-user-interface.md) |
 | [`tools/`](tools) | Python tools for benchmark evaluation and annotation |
 | [`docs/`](docs) | [Technical plan](docs/technical_plan.md), [reference hardware](docs/hardware.md), [session format](docs/replay-format.md) and [architecture decisions](docs/adr) |
 | `data/` | Local recordings and datasets; never committed |
@@ -81,6 +82,16 @@ cd tools
 python -m venv .venv && . .venv/bin/activate
 pip install -e '.[dev]'
 pytest
+```
+
+### Player app
+
+The Flutter app in [`ui/`](ui) needs the [Flutter SDK](https://docs.flutter.dev/get-started/install) (3.47 or newer). Until the engine API exists, darts are entered on the screen.
+
+```sh
+cd ui
+flutter run -d linux
+flutter test
 ```
 
 ## Contributing

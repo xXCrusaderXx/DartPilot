@@ -33,6 +33,7 @@ The design is in [docs/technical_plan.md](docs/technical_plan.md); decisions are
   - `replay`: offline evaluation of recorded throws.
 - `engine/apps/dartpilot_cli/`: command-line entry point.
 - `tests/`: GoogleTest tests, registered with ctest.
+- `ui/`: the Flutter player app (ADR 0004). It talks to the engine only through the engine API (#37); until that exists it takes manual input. Its scorer (`ui/lib/src/board/scoring.dart`) is a port of `engine/scoring` and must give the same result for every point: change both together, with the same test cases.
 - `tools/`: Python package `dartpilot_tools` (benchmark, annotation). It reads engine output files and is never part of the detection path.
 - [ROADMAP.md](ROADMAP.md): phases and milestones. Each closed milestone becomes a release. Work on a roadmap item references its issue, and a change to a phase updates ROADMAP.md in the same PR.
 
@@ -48,6 +49,7 @@ Principles that every change keeps:
 
 - C++20, `.clang-format` style (Allman braces, 4-space indent, 150 columns). Format only the lines you change: `git clang-format origin/dev`.
 - Python 3.11+, `ruff` for linting and formatting.
+- Dart in `ui/`: `dart format` (120 columns, set in `analysis_options.yaml`), `flutter analyze` clean, user-visible strings in `lib/l10n/*.arb` (English and German), game rules as plain Dart without widgets so they can be tested.
 - QML in `engine/apps/dartpilot_setup`: 4-space indent, `dartpilot_setup_qmllint` target clean, colours and sizes from `Tokens.qml`, logic in C++ (ADR 0003).
 - Comments and log messages are written in English. A comment states intent the code cannot show; do not narrate history or the change you just made.
 - Units are part of names (`_mm`, `_px`, `_ms`, `_ns`).
@@ -61,6 +63,7 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 git clang-format --diff origin/dev
 (cd tools && ruff check . && ruff format --check . && pytest)
+(cd ui && dart format --output=none --set-exit-if-changed lib/main.dart lib/src test && flutter analyze && flutter test)
 ```
 
 A change is done only when it builds and the tests pass. Say so in the PR if you could not test a code path with real cameras.
