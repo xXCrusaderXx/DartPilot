@@ -27,9 +27,9 @@ constexpr float kBin_px = 2.0f;
 constexpr double kMaxDrift_px = 5.0;
 // The alignment measures the shift in a grid of tiles and fits an affine motion to them, as a camera warming up after
 // its start zooms a little (about 0.15 %, a pixel at the image border) besides shifting. Tiles that disagree with the
-// fit by more than kTileOutlier_px (a dart) are dropped, and plain tiles, whose shift is undetermined, are not measured; with fewer than kMinTiles left, or a zoom or
-// rotation beyond kMaxLinear, only the shift of the whole image is compensated. So is a zoom or rotation that moves no
-// image corner by more than kMinLinear_px, which would only fit the noise of the tiles.
+// fit by more than kTileOutlier_px (a dart) are dropped, and plain tiles, whose shift is undetermined, are not measured; with fewer than kMinTiles
+// left, or a zoom or rotation beyond kMaxLinear, only the shift of the whole image is compensated. So is a zoom or rotation that moves no image
+// corner by more than kMinLinear_px, which would only fit the noise of the tiles.
 constexpr int kTilesX = 8;
 constexpr int kTilesY = 5;
 constexpr int kMinTiles = 12;
