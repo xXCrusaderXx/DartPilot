@@ -248,4 +248,33 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get noCameras => 'Die Engine hat keine Kameras';
+
+  @override
+  String fps(String value) {
+    return '$value fps';
+  }
+
+  @override
+  String get lostFrames => 'Verloren';
+
+  @override
+  String get droppedFrames => 'Verworfen';
+
+  @override
+  String get brightness => 'Helligkeit';
+
+  @override
+  String get preview => 'Vorschau';
+
+  @override
+  String get expandAll => 'Alle aufklappen';
+
+  @override
+  String get collapseAll => 'Alle zuklappen';
+
+  @override
+  String get tapToEnlarge => 'Tippe auf das Bild, um es zu vergrößern';
+
+  @override
+  String get latency => 'Latenz';
 }

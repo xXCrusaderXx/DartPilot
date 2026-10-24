@@ -54,6 +54,7 @@ std::vector<capture::CameraDevice> CameraPreviews::start ()
         {
             devices_.push_back(device);
             captures_.push_back(std::move(capture));
+            latest_.emplace_back();
         }
     }
     stop_ = false;
@@ -87,6 +88,7 @@ void CameraPreviews::run ()
             while(auto frame = captures_[i]->frames().tryPop())
             {
                 any = true;
+                latest_[i] = frame->data;
                 if(!server_.wantsPreview(id))
                 {
                     continue;
@@ -102,8 +104,15 @@ void CameraPreviews::run ()
             {
                 const auto stats = captures_[i]->stats();
                 const std::string state = !stats.running ? "lost" : stats.lost_frames > 0 || stats.overflow_drops > 0 ? "degraded" : "ok";
-                server_.publishCameraStatus(
-                    {"usb-" + devices_[i].usb_port, state, stats.effective_fps, stats.lost_frames, stats.overflow_drops, -1.0});
+                // Mean brightness of the newest frame at an eighth of its size, once per status (ADR 0002)
+                double brightness = -1.0;
+                if(!latest_[i].empty())
+                {
+                    const cv::Mat gray = cv::imdecode(latest_[i], cv::IMREAD_REDUCED_GRAYSCALE_8);
+                    brightness = gray.empty() ? -1.0 : cv::mean(gray)[0];
+                }
+                server_.publishCameraStatus({"usb-" + devices_[i].usb_port, state, stats.effective_fps, stats.lost_frames, stats.overflow_drops,
+                                             brightness, stats.latency_ms});
             }
             next_status += kStatusInterval;
         }

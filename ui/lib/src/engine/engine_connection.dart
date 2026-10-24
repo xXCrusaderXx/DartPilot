@@ -18,7 +18,15 @@ class EngineConnection extends ChangeNotifier {
     : _connector = connector ?? WebSocketChannel.connect,
       clientName = 'dartpilot-app-${math.Random().nextInt(0x7fffffff).toRadixString(16)}';
 
+  /// For tests: requests go to `onSend` instead of a socket
+  @visibleForTesting
+  EngineConnection.forTest(void Function(Map<String, dynamic>) onSend)
+    : _connector = WebSocketChannel.connect,
+      clientName = 'test',
+      _testSink = onSend;
+
   final WebSocketChannel Function(Uri uri) _connector;
+  void Function(Map<String, dynamic>)? _testSink;
 
   /// Sent in hello, so the app recognises its own corrections in throw_corrected
   final String clientName;
@@ -35,8 +43,14 @@ class EngineConnection extends ChangeNotifier {
   final StreamController<EngineEvent> _events = StreamController.broadcast();
   final StreamController<PreviewFrame> _previews = StreamController.broadcast();
 
-  /// Latest state per camera from camera_status
-  final Map<String, String> cameraStates = {};
+  /// Latest camera_status per camera
+  final Map<String, EngineCameraStatus> cameraStatus = {};
+
+  /// Latest state per camera: ok, degraded or lost
+  Map<String, String> get cameraStates => {for (final e in cameraStatus.entries) e.key: e.value.state};
+
+  final Map<String, List<PreviewHandle>> _previewHandles = {};
+  int _statusSubscribers = 0;
   int _nextRequest = 1;
 
   Stream<EngineEvent> get events => _events.stream;
@@ -101,20 +115,25 @@ class EngineConnection extends ChangeNotifier {
     final event = EngineEvent.fromJson(json);
     if (event is EngineHello) {
       hello = event;
-      cameraStates
+      cameraStatus
         ..clear()
-        ..addAll({for (final c in event.cameras) c: 'ok'});
+        ..addAll({for (final c in event.cameras) c: EngineCameraStatus(c, 'ok')});
       state = EngineConnectionState.connected;
       notifyListeners();
     }
-    if (event is EngineCameraStatus && cameraStates[event.camera] != event.state) {
-      cameraStates[event.camera] = event.state;
+    if (event is EngineCameraStatus) {
+      cameraStatus[event.camera] = event;
       notifyListeners();
     }
     if (event != null) _events.add(event);
   }
 
   void _send(Map<String, dynamic> request) {
+    final testSink = _testSink;
+    if (testSink != null) {
+      testSink(request);
+      return;
+    }
     _channel?.sink.add(jsonEncode({'request_id': '${_nextRequest++}', ...request}));
   }
 
@@ -126,10 +145,41 @@ class EngineConnection extends ChangeNotifier {
   void rejectThrow(String throwId, String reason) =>
       _send({'type': 'reject_throw', 'throw_id': throwId, 'reason': reason});
 
-  void subscribePreview(String camera, {double maxFps = 10, int maxWidth = 640}) =>
-      _send({'type': 'subscribe_preview', 'camera': camera, 'max_fps': maxFps, 'max_width': maxWidth});
+  /// Starts or changes the preview of a camera. Several widgets may watch the same camera; the engine gets the
+  /// highest rate and width any of them asked for, and the preview stops when the last handle is released.
+  PreviewHandle watchPreview(String camera, {double maxFps = 10, int maxWidth = 640}) {
+    final handle = PreviewHandle._(this, camera, maxFps, maxWidth);
+    _previewHandles.putIfAbsent(camera, () => []).add(handle);
+    _updatePreview(camera);
+    return handle;
+  }
 
-  void unsubscribePreview(String camera) => _send({'type': 'unsubscribe_preview', 'camera': camera});
+  void _releasePreview(PreviewHandle handle) {
+    final handles = _previewHandles[handle.camera];
+    if (handles == null || !handles.remove(handle)) return;
+    _updatePreview(handle.camera);
+  }
+
+  void _updatePreview(String camera) {
+    final handles = _previewHandles[camera] ?? const [];
+    if (handles.isEmpty) {
+      _previewHandles.remove(camera);
+      _send({'type': 'unsubscribe_preview', 'camera': camera});
+      return;
+    }
+    final fps = handles.map((h) => h.maxFps).reduce(math.max);
+    final width = handles.map((h) => h.maxWidth).reduce(math.max);
+    _send({'type': 'subscribe_preview', 'camera': camera, 'max_fps': fps, 'max_width': width});
+  }
+
+  /// Periodic camera_status while at least one caller watches; call [unwatchStatus] once for each call.
+  void watchStatus() {
+    if (_statusSubscribers++ == 0) _send({'type': 'subscribe_status'});
+  }
+
+  void unwatchStatus() {
+    if (_statusSubscribers > 0 && --_statusSubscribers == 0) _send({'type': 'unsubscribe_status'});
+  }
 
   /// A dart the engine missed, entered by hand
   void addThrow(BoardPoint point) => _send({'type': 'add_throw', 'board_point': _pointJson(point)});
@@ -164,4 +214,16 @@ class EngineScope extends InheritedNotifier<EngineConnection> {
 
   static EngineConnection of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<EngineScope>()!.notifier!;
+}
+
+/// A widget's interest in a camera preview; release it when the widget goes away.
+class PreviewHandle {
+  PreviewHandle._(this._connection, this.camera, this.maxFps, this.maxWidth);
+
+  final EngineConnection _connection;
+  final String camera;
+  final double maxFps;
+  final int maxWidth;
+
+  void release() => _connection._releasePreview(this);
 }

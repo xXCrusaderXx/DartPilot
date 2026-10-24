@@ -158,7 +158,8 @@ json cameraStatusMessage (const CameraStatus& status)
             {"effective_fps", status.effective_fps},
             {"lost_frames", status.lost_frames},
             {"overflow_drops", status.overflow_drops},
-            {"brightness", status.brightness >= 0 ? json(status.brightness) : json(nullptr)}};
+            {"brightness", status.brightness >= 0 ? json(status.brightness) : json(nullptr)},
+            {"latency_ms", status.latency_ms >= 0 ? json(status.latency_ms) : json(nullptr)}};
 }
 
 json engineStatusMessage (const std::string& detection, const std::string& message)

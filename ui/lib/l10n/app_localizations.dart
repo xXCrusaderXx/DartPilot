@@ -541,6 +541,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The engine has no cameras'**
   String get noCameras;
+
+  /// No description provided for @fps.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} fps'**
+  String fps(String value);
+
+  /// No description provided for @lostFrames.
+  ///
+  /// In en, this message translates to:
+  /// **'Lost'**
+  String get lostFrames;
+
+  /// No description provided for @droppedFrames.
+  ///
+  /// In en, this message translates to:
+  /// **'Dropped'**
+  String get droppedFrames;
+
+  /// No description provided for @brightness.
+  ///
+  /// In en, this message translates to:
+  /// **'Brightness'**
+  String get brightness;
+
+  /// No description provided for @preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get preview;
+
+  /// No description provided for @expandAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand all'**
+  String get expandAll;
+
+  /// No description provided for @collapseAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse all'**
+  String get collapseAll;
+
+  /// No description provided for @tapToEnlarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the image to enlarge it'**
+  String get tapToEnlarge;
+
+  /// No description provided for @latency.
+  ///
+  /// In en, this message translates to:
+  /// **'Latency'**
+  String get latency;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

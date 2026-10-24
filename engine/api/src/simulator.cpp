@@ -102,7 +102,7 @@ void Simulator::run ()
         {
             for(const char* camera : kCameras)
             {
-                server_.publishCameraStatus({camera, "ok", 30.0, 0, 0, 110.0});
+                server_.publishCameraStatus({camera, "ok", 30.0, 0, 0, 110.0, 32.0});
             }
             next_status += std::chrono::seconds(1);
         }
