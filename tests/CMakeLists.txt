@@ -67,7 +67,7 @@ target_link_libraries(ApiTest PRIVATE dartpilot::api GTest::gtest_main)
 gtest_discover_tests(ApiTest)
 
 add_executable(DartLocationTest DartLocationTest.cpp)
-target_link_libraries(DartLocationTest PRIVATE dartpilot::geometry GTest::gtest_main)
+target_link_libraries(DartLocationTest PRIVATE dartpilot::fusion dartpilot::geometry GTest::gtest_main)
 gtest_discover_tests(DartLocationTest)
 
 add_executable(BoardStateTest BoardStateTest.cpp)
