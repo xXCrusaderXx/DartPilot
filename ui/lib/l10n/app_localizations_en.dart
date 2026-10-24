@@ -40,9 +40,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get modeTrainingDescription => 'Every dart is shown and counted';
 
   @override
-  String get comingSoon => 'Coming soon';
-
-  @override
   String get inputBoard => 'Board';
 
   @override
@@ -145,4 +142,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get removePlayer => 'Remove player';
+
+  @override
+  String get cricketSetup => 'New Cricket game';
+
+  @override
+  String get aroundTheClockSetup => 'New Around the Clock game';
+
+  @override
+  String get endWithBull => 'Finish with the bull';
+
+  @override
+  String get target => 'Target';
+
+  @override
+  String get marksPerRound => 'Marks per round';
+
+  @override
+  String get hitRate => 'Hit rate';
+
+  @override
+  String get bull => 'Bull';
 }

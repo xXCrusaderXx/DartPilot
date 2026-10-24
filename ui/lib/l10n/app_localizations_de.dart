@@ -40,9 +40,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get modeTrainingDescription => 'Jeder Dart wird angezeigt und gezählt';
 
   @override
-  String get comingSoon => 'Bald verfügbar';
-
-  @override
   String get inputBoard => 'Scheibe';
 
   @override
@@ -145,4 +142,25 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get removePlayer => 'Spieler entfernen';
+
+  @override
+  String get cricketSetup => 'Neues Cricket-Spiel';
+
+  @override
+  String get aroundTheClockSetup => 'Neues Around-the-Clock-Spiel';
+
+  @override
+  String get endWithBull => 'Mit Bull beenden';
+
+  @override
+  String get target => 'Ziel';
+
+  @override
+  String get marksPerRound => 'Marks pro Runde';
+
+  @override
+  String get hitRate => 'Trefferquote';
+
+  @override
+  String get bull => 'Bull';
 }

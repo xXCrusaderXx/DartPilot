@@ -10,7 +10,6 @@
   "modeAroundTheClockDescription": "Hit 1 to 20 in order",
   "modeTraining": "Free throwing",
   "modeTrainingDescription": "Every dart is shown and counted",
-  "comingSoon": "Coming soon",
   "inputBoard": "Board",
   "inputKeypad": "Keypad",
   "single": "Single",
@@ -70,5 +69,12 @@
   },
   "newGame": "New game",
   "backToMenu": "Menu",
-  "removePlayer": "Remove player"
+  "removePlayer": "Remove player",
+  "cricketSetup": "New Cricket game",
+  "aroundTheClockSetup": "New Around the Clock game",
+  "endWithBull": "Finish with the bull",
+  "target": "Target",
+  "marksPerRound": "Marks per round",
+  "hitRate": "Hit rate",
+  "bull": "Bull"
 }

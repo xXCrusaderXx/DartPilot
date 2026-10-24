@@ -152,12 +152,6 @@ abstract class AppLocalizations {
   /// **'Every dart is shown and counted'**
   String get modeTrainingDescription;
 
-  /// No description provided for @comingSoon.
-  ///
-  /// In en, this message translates to:
-  /// **'Coming soon'**
-  String get comingSoon;
-
   /// No description provided for @inputBoard.
   ///
   /// In en, this message translates to:
@@ -349,6 +343,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove player'**
   String get removePlayer;
+
+  /// No description provided for @cricketSetup.
+  ///
+  /// In en, this message translates to:
+  /// **'New Cricket game'**
+  String get cricketSetup;
+
+  /// No description provided for @aroundTheClockSetup.
+  ///
+  /// In en, this message translates to:
+  /// **'New Around the Clock game'**
+  String get aroundTheClockSetup;
+
+  /// No description provided for @endWithBull.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish with the bull'**
+  String get endWithBull;
+
+  /// No description provided for @target.
+  ///
+  /// In en, this message translates to:
+  /// **'Target'**
+  String get target;
+
+  /// No description provided for @marksPerRound.
+  ///
+  /// In en, this message translates to:
+  /// **'Marks per round'**
+  String get marksPerRound;
+
+  /// No description provided for @hitRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Hit rate'**
+  String get hitRate;
+
+  /// No description provided for @bull.
+  ///
+  /// In en, this message translates to:
+  /// **'Bull'**
+  String get bull;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

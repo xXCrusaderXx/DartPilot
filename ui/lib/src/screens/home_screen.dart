@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import 'around_the_clock_screen.dart';
+import 'cricket_screen.dart';
 import 'training_screen.dart';
 import 'x01_setup_screen.dart';
 
@@ -10,7 +12,6 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    void comingSoon() => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.comingSoon)));
     final modes = [
       (
         Icons.flag,
@@ -18,8 +19,18 @@ class HomeScreen extends StatelessWidget {
         l10n.modeX01Description,
         () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const X01SetupScreen())),
       ),
-      (Icons.grid_on, l10n.modeCricket, l10n.modeCricketDescription, comingSoon),
-      (Icons.schedule, l10n.modeAroundTheClock, l10n.modeAroundTheClockDescription, comingSoon),
+      (
+        Icons.grid_on,
+        l10n.modeCricket,
+        l10n.modeCricketDescription,
+        () => Navigator.of(context).push(MaterialPageRoute<void>(builder: CricketScreen.setup)),
+      ),
+      (
+        Icons.schedule,
+        l10n.modeAroundTheClock,
+        l10n.modeAroundTheClockDescription,
+        () => Navigator.of(context).push(MaterialPageRoute<void>(builder: AroundTheClockScreen.setup)),
+      ),
       (
         Icons.adjust,
         l10n.modeTraining,

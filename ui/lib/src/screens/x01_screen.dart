@@ -4,6 +4,7 @@ import '../../l10n/app_localizations.dart';
 import '../board/dart_throw.dart';
 import '../games/x01.dart';
 import '../input/throw_input_panel.dart';
+import '../widgets/winner_dialog.dart';
 import 'x01_setup_screen.dart';
 
 class X01Screen extends StatefulWidget {
@@ -31,46 +32,17 @@ class _X01ScreenState extends State<X01Screen> {
     }
   }
 
-  Future<void> _showWinner() async {
+  Future<void> _showWinner() {
     final l10n = AppLocalizations.of(context);
-    final winner = _game.players[_game.winner!];
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.matchWonBy(winner.name)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (final p in _game.players)
-              Text('${p.name}: ${l10n.legs} ${p.legsWon}, ${l10n.average} ${p.threeDartAverage.toStringAsFixed(1)}'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              setState(_game.undo);
-            },
-            child: Text(l10n.undo),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              Navigator.of(context).pushReplacement(MaterialPageRoute<void>(builder: (_) => const X01SetupScreen()));
-            },
-            child: Text(l10n.newGame),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              Navigator.of(context).pop();
-            },
-            child: Text(l10n.backToMenu),
-          ),
-        ],
-      ),
+    return showWinnerDialog(
+      context,
+      winner: _game.players[_game.winner!].name,
+      lines: [
+        for (final p in _game.players)
+          '${p.name}: ${l10n.legs} ${p.legsWon}, ${l10n.average} ${p.threeDartAverage.toStringAsFixed(1)}',
+      ],
+      onUndo: () => setState(_game.undo),
+      newGame: (_) => const X01SetupScreen(),
     );
   }
 
