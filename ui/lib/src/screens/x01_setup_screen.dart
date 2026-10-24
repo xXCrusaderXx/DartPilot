@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../games/x01.dart';
+import '../widgets/player_names.dart';
 import 'x01_screen.dart';
 
 class X01SetupScreen extends StatefulWidget {
@@ -12,7 +13,7 @@ class X01SetupScreen extends StatefulWidget {
 }
 
 class _X01SetupScreenState extends State<X01SetupScreen> {
-  final List<TextEditingController> _names = [TextEditingController(), TextEditingController()];
+  final PlayerNamesController _players = PlayerNamesController();
   int _startScore = 501;
   bool _doubleIn = false;
   bool _doubleOut = true;
@@ -20,19 +21,14 @@ class _X01SetupScreenState extends State<X01SetupScreen> {
 
   @override
   void dispose() {
-    for (final c in _names) {
-      c.dispose();
-    }
+    _players.dispose();
     super.dispose();
   }
 
   void _start() {
     final l10n = AppLocalizations.of(context);
     final settings = X01Settings(
-      players: [
-        for (var i = 0; i < _names.length; ++i)
-          _names[i].text.trim().isEmpty ? l10n.playerName(i + 1) : _names[i].text.trim(),
-      ],
+      players: _players.names(l10n),
       startScore: _startScore,
       doubleIn: _doubleIn,
       doubleOut: _doubleOut,
@@ -53,35 +49,7 @@ class _X01SetupScreenState extends State<X01SetupScreen> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Text(l10n.players, style: theme.textTheme.titleMedium),
-              for (var i = 0; i < _names.length; ++i)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: TextField(
-                    key: ValueKey('player-name-$i'),
-                    controller: _names[i],
-                    decoration: InputDecoration(
-                      hintText: l10n.playerName(i + 1),
-                      prefixIcon: const Icon(Icons.person),
-                      suffixIcon: _names.length > 1
-                          ? IconButton(
-                              tooltip: l10n.removePlayer,
-                              icon: const Icon(Icons.close),
-                              onPressed: () => setState(() => _names.removeAt(i).dispose()),
-                            )
-                          : null,
-                    ),
-                  ),
-                ),
-              if (_names.length < 8)
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton.icon(
-                    onPressed: () => setState(() => _names.add(TextEditingController())),
-                    icon: const Icon(Icons.person_add),
-                    label: Text(l10n.addPlayer),
-                  ),
-                ),
+              PlayerNamesEditor(controller: _players),
               const SizedBox(height: 16),
               Text(l10n.startScore, style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),

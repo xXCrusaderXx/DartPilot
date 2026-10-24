@@ -10,7 +10,6 @@
   "modeAroundTheClockDescription": "1 bis 20 der Reihe nach treffen",
   "modeTraining": "Freies Werfen",
   "modeTrainingDescription": "Jeder Dart wird angezeigt und gezählt",
-  "comingSoon": "Bald verfügbar",
   "inputBoard": "Scheibe",
   "inputKeypad": "Tastenfeld",
   "single": "Single",
@@ -42,5 +41,12 @@
   "matchWonBy": "{name} gewinnt!",
   "newGame": "Neues Spiel",
   "backToMenu": "Menü",
-  "removePlayer": "Spieler entfernen"
+  "removePlayer": "Spieler entfernen",
+  "cricketSetup": "Neues Cricket-Spiel",
+  "aroundTheClockSetup": "Neues Around-the-Clock-Spiel",
+  "endWithBull": "Mit Bull beenden",
+  "target": "Ziel",
+  "marksPerRound": "Marks pro Runde",
+  "hitRate": "Trefferquote",
+  "bull": "Bull"
 }
