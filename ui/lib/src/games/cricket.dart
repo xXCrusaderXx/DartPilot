@@ -1,5 +1,6 @@
 import '../board/dart_throw.dart';
 import '../board/scoring.dart';
+import 'dart_game.dart';
 
 /// Numbers to close, the bull as 25
 const List<int> cricketTargets = [20, 19, 18, 17, 16, 15, 25];
@@ -32,7 +33,7 @@ class CricketDart {
 }
 
 /// Standard Cricket, replayed from all darts so undo is exact.
-class CricketGame {
+class CricketGame implements DartGame {
   CricketGame(List<String> names) : names = List.unmodifiable(names) {
     if (names.isEmpty) throw ArgumentError('at least one player');
     _replay();
@@ -46,15 +47,30 @@ class CricketGame {
   late List<CricketDart> currentVisit;
   int? winner;
 
+  @override
   bool get isFinished => winner != null;
   bool get canUndo => _throws.isNotEmpty;
 
+  @override
+  List<DartThrow> get throws => List.unmodifiable(_throws);
+
+  @override
+  int get dartsInVisit => currentVisit.length % 3;
+
+  @override
+  void replace(int index, DartThrow dart) {
+    _throws[index] = dart;
+    _replay();
+  }
+
+  @override
   void add(DartThrow dart) {
     if (isFinished) return;
     _throws.add(dart);
     _apply(dart);
   }
 
+  @override
   void undo() {
     if (_throws.isEmpty) return;
     _throws.removeLast();

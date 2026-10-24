@@ -28,12 +28,23 @@ enum ThrowInput { board, keypad, engine }
 /// One dart. The score is always derived from the board point (docs/board-coordinates.md), also for keypad input,
 /// which places the point in the middle of the chosen field.
 class DartThrow {
-  DartThrow(this.point, this.input, {BoardGeometry geometry = const BoardGeometry()})
-    : score = scoring.score(point.xMm, point.yMm, geometry);
+  DartThrow(
+    this.point,
+    this.input, {
+    BoardGeometry geometry = const BoardGeometry(),
+    this.engineThrowId,
+    this.confidence,
+  }) : score = scoring.score(point.xMm, point.yMm, geometry);
 
   final BoardPoint point;
   final ThrowInput input;
   final Score score;
+
+  /// Throw ID of the engine for darts it detected or recorded, so corrections can refer to them
+  final String? engineThrowId;
+
+  /// Engine confidence, 0 to 1, for detected darts
+  final double? confidence;
 }
 
 /// Middle of a field, for keypad input: the bull centre, the middle of a ring band in the middle of a sector, or a

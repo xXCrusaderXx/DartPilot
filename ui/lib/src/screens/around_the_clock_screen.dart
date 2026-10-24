@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../board/dart_throw.dart';
 import '../games/around_the_clock.dart';
-import '../input/throw_input_panel.dart';
+import '../input/game_input.dart';
 import '../widgets/winner_dialog.dart';
 import 'game_layout.dart';
 import 'players_setup_screen.dart';
@@ -83,7 +83,12 @@ class _AroundTheClockScreenState extends State<AroundTheClockScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(l10n.modeAroundTheClock)),
       body: GameLayout(
-        input: ThrowInputPanel(shownThrows: [for (final (dart, _) in _game.currentVisit) dart], onThrow: _add),
+        input: GameInput(
+          game: _game,
+          shownThrows: [for (final (dart, _) in _game.currentVisit) dart],
+          onDart: _add,
+          onChanged: () => setState(() {}),
+        ),
         panel: panel,
       ),
     );

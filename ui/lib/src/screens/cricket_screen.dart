@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../board/dart_throw.dart';
 import '../games/cricket.dart';
-import '../input/throw_input_panel.dart';
+import '../input/game_input.dart';
 import '../widgets/winner_dialog.dart';
 import 'game_layout.dart';
 import 'players_setup_screen.dart';
@@ -97,7 +97,12 @@ class _CricketScreenState extends State<CricketScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(l10n.modeCricket)),
       body: GameLayout(
-        input: ThrowInputPanel(shownThrows: [for (final d in _game.currentVisit) d.dart], onThrow: _add),
+        input: GameInput(
+          game: _game,
+          shownThrows: [for (final d in _game.currentVisit) d.dart],
+          onDart: _add,
+          onChanged: () => setState(() {}),
+        ),
         panel: panel,
         panelWidth: 120.0 + 90.0 * players.length.clamp(2, 4),
       ),

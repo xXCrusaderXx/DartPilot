@@ -163,4 +163,71 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get bull => 'Bull';
+
+  @override
+  String get engine => 'Engine';
+
+  @override
+  String get engineAddress => 'Engine-Adresse';
+
+  @override
+  String get connect => 'Verbinden';
+
+  @override
+  String get disconnect => 'Trennen';
+
+  @override
+  String get engineConnected => 'Verbunden';
+
+  @override
+  String get engineConnecting => 'Verbinde…';
+
+  @override
+  String get engineDisconnected => 'Nicht verbunden';
+
+  @override
+  String get engineFailed => 'Verbindung fehlgeschlagen';
+
+  @override
+  String get engineSimulated => 'simuliert';
+
+  @override
+  String uncertainDart(String label, int percent) {
+    return 'Unsicher: $label ($percent %)';
+  }
+
+  @override
+  String get uncertainNoPoint => 'Ein Dart wurde erkannt, aber nicht wo';
+
+  @override
+  String get confirm => 'Bestätigen';
+
+  @override
+  String get discard => 'Verwerfen';
+
+  @override
+  String get tapToCorrect => 'Tippe auf die Stelle, an der der Dart steckt';
+
+  @override
+  String get recentDarts => 'Letzte Darts';
+
+  @override
+  String correctingDart(String label) {
+    return '$label korrigieren – tippe auf die Scheibe';
+  }
+
+  @override
+  String get cancel => 'Abbrechen';
+
+  @override
+  String missingDarts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Darts fehlen', one: '1 Dart fehlt');
+    return '$_temp0';
+  }
+
+  @override
+  String get countAsMiss => 'Als Daneben zählen';
+
+  @override
+  String get enterManually => 'Selbst eingeben';
 }

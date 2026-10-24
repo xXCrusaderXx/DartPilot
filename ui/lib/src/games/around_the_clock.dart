@@ -1,5 +1,6 @@
 import '../board/dart_throw.dart';
 import '../board/scoring.dart';
+import 'dart_game.dart';
 
 class AroundTheClockPlayerState {
   AroundTheClockPlayerState(this.name);
@@ -15,7 +16,7 @@ class AroundTheClockPlayerState {
 }
 
 /// Hit 1 to 20 in order, optionally the bull at the end. Any ring of the target counts.
-class AroundTheClockGame {
+class AroundTheClockGame implements DartGame {
   AroundTheClockGame(List<String> names, {this.endWithBull = true}) : names = List.unmodifiable(names) {
     if (names.isEmpty) throw ArgumentError('at least one player');
     _replay();
@@ -31,18 +32,33 @@ class AroundTheClockGame {
   int? winner;
 
   int get targetCount => endWithBull ? 21 : 20;
+  @override
   bool get isFinished => winner != null;
   bool get canUndo => _throws.isNotEmpty;
+
+  @override
+  List<DartThrow> get throws => List.unmodifiable(_throws);
+
+  @override
+  int get dartsInVisit => currentVisit.length % 3;
+
+  @override
+  void replace(int index, DartThrow dart) {
+    _throws[index] = dart;
+    _replay();
+  }
 
   /// "1" … "20", or "Bull"
   String targetLabel(int position) => position < 20 ? '${position + 1}' : 'Bull';
 
+  @override
   void add(DartThrow dart) {
     if (isFinished) return;
     _throws.add(dart);
     _apply(dart);
   }
 
+  @override
   void undo() {
     if (_throws.isEmpty) return;
     _throws.removeLast();

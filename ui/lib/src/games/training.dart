@@ -1,10 +1,21 @@
 import '../board/dart_throw.dart';
+import 'dart_game.dart';
 
 /// Free throwing: every dart is counted, three darts make a visit. Pure logic, no UI.
-class Training {
+class Training implements DartGame {
   final List<DartThrow> _throws = [];
 
+  @override
   List<DartThrow> get throws => List.unmodifiable(_throws);
+
+  @override
+  int get dartsInVisit => _throws.length % 3;
+
+  @override
+  bool get isFinished => false;
+
+  @override
+  void replace(int index, DartThrow dart) => _throws[index] = dart;
 
   int get dartCount => _throws.length;
 
@@ -22,8 +33,10 @@ class Training {
 
   int get visitNumber => _throws.isEmpty ? 1 : (_throws.length - 1) ~/ 3 + 1;
 
+  @override
   void add(DartThrow dart) => _throws.add(dart);
 
+  @override
   void undo() {
     if (_throws.isNotEmpty) _throws.removeLast();
   }

@@ -163,4 +163,76 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bull => 'Bull';
+
+  @override
+  String get engine => 'Engine';
+
+  @override
+  String get engineAddress => 'Engine address';
+
+  @override
+  String get connect => 'Connect';
+
+  @override
+  String get disconnect => 'Disconnect';
+
+  @override
+  String get engineConnected => 'Connected';
+
+  @override
+  String get engineConnecting => 'Connecting…';
+
+  @override
+  String get engineDisconnected => 'Not connected';
+
+  @override
+  String get engineFailed => 'Connection failed';
+
+  @override
+  String get engineSimulated => 'simulated';
+
+  @override
+  String uncertainDart(String label, int percent) {
+    return 'Uncertain: $label ($percent %)';
+  }
+
+  @override
+  String get uncertainNoPoint => 'A dart was detected, but not where';
+
+  @override
+  String get confirm => 'Confirm';
+
+  @override
+  String get discard => 'Discard';
+
+  @override
+  String get tapToCorrect => 'Tap the board where the dart is';
+
+  @override
+  String get recentDarts => 'Last darts';
+
+  @override
+  String correctingDart(String label) {
+    return 'Correcting $label – tap the board';
+  }
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String missingDarts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count darts are missing',
+      one: '1 dart is missing',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get countAsMiss => 'Count as miss';
+
+  @override
+  String get enterManually => 'Enter them';
 }
