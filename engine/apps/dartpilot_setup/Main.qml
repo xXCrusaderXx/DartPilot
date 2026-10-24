@@ -103,6 +103,13 @@ ApplicationWindow {
                     selected: window.page === 3
                     onClicked: window.page = 3
                 }
+                NavButton {
+                    text: "Pin check"
+                    subtitle: "Do the cameras agree?"
+                    glyph: "⊕"
+                    selected: window.page === 4
+                    onClicked: window.page = 4
+                }
 
                 Item {
                     Layout.fillHeight: true
@@ -155,6 +162,10 @@ ApplicationWindow {
             }
             CheckPage {
                 active: window.page === 3
+                cameras: finder.cameras
+            }
+            PinCheckPage {
+                active: window.page === 4
                 cameras: finder.cameras
             }
         }

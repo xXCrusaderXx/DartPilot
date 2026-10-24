@@ -19,7 +19,7 @@ qt_add_qml_module(dartpilot_setup
     CamerasPage.qml CameraPane.qml IntrinsicPage.qml ExtrinsicPage.qml
     CaptureGuide.qml GuideDialog.qml PatternWindow.qml
     BoardIllustration.qml ExtrinsicGuideDialog.qml
-    CheckPage.qml
+    CheckPage.qml PinCheckPage.qml
   RESOURCES icons/dartpilot.svg
   SOURCES
     board_refiner.hpp board_refiner.cpp
@@ -31,9 +31,11 @@ qt_add_qml_module(dartpilot_setup
     extrinsic_view.hpp extrinsic_view.cpp
     intrinsic_view.hpp intrinsic_view.cpp
     pattern_image_provider.hpp pattern_image_provider.cpp
+    pin_check.hpp pin_check.cpp
+    pin_view.hpp pin_view.cpp
     stream_view.hpp stream_view.cpp
 )
-target_link_libraries(dartpilot_setup PRIVATE Qt6::Quick Qt6::QuickControls2 Qt6::Concurrent dartpilot::capture dartpilot::geometry opencv_objdetect)
+target_link_libraries(dartpilot_setup PRIVATE Qt6::Quick Qt6::QuickControls2 Qt6::Concurrent dartpilot::capture dartpilot::geometry dartpilot::scoring opencv_objdetect)
 
 # The desktop file lets the taskbar show the icon; the window is matched to it through QGuiApplication::setDesktopFileName.
 install(TARGETS dartpilot_setup RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

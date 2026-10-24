@@ -86,3 +86,13 @@ The page "Calibration check" watches every camera: every few seconds each camera
 | Wrong port | The image fits the calibration of another camera much better: the cameras were plugged into other USB ports. |
 
 On the stills of the reference cameras, a fresh detection matched its own refinement within 0.4 to 1.0 mm in the light it was made in and within 1.1 to 1.6 mm under evening light, while the calibration of another camera was off by 27 to 61 mm. The thresholds are provisional until #48 sets the error budget. Darts in the board pause the check ("No board").
+
+## Pin check
+
+The calibration check compares each camera with itself; the page "Pin check" compares the cameras with each other (#13, #48), with nothing but a pin. Put a pin or a dart into the board and click, in every camera, exactly where it enters the board; a magnifier follows the pointer. Each camera's calibration maps its click onto the playing surface, and the page shows the board point of every camera, the score it would give, and the **spread**, the largest distance between two cameras. A dart's tip will be located with the same calibrations, so the spread is the calibration error as a dart sees it, plus the click error.
+
+- Click the tip where it enters the board, not the shaft: the click is mapped onto the playing surface (z = 0). A point 1 mm higher looks up to about 2 mm shifted to a camera at a grazing angle.
+- With the option "Pin exactly in the bull centre" each camera's distance from the true point (0, 0) is shown as well.
+- "Save" appends the measurement to `pin_checks.jsonl` in the calibration directory, with the image points, the board points and the refinement it was made with. Ten pins spread over the board, also near the double ring, give a first set for the error budget (#48).
+
+The spread is provisionally good up to 1 mm and acceptable up to 2 mm.
