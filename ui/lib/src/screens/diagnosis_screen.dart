@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../theme.dart';
 import '../../l10n/app_localizations.dart';
 import '../engine/engine_connection.dart';
 import '../engine/engine_events.dart';
@@ -107,8 +108,8 @@ class _ResultCard extends StatelessWidget {
     final (icon, color, title, text) = problems > 0
         ? (Icons.error, theme.colorScheme.error, l10n.resultProblems(problems), l10n.resultFixHint)
         : warnings > 0
-        ? (Icons.warning_amber, Colors.amber, l10n.resultWarnings(warnings), l10n.resultFixHint)
-        : (Icons.check_circle, Colors.greenAccent, l10n.resultAllGood, l10n.resultAllGoodHint);
+        ? (Icons.warning_amber, StatusColors.of(context).warning, l10n.resultWarnings(warnings), l10n.resultFixHint)
+        : (Icons.check_circle, StatusColors.of(context).good, l10n.resultAllGood, l10n.resultAllGoodHint);
     return Card(
       key: const ValueKey('diagnosis-result'),
       color: color.withValues(alpha: 0.2),
@@ -170,7 +171,7 @@ class _StepCard extends StatelessWidget {
       'moving' => (l10n.diagnosisMoving, theme.colorScheme.error),
       'settling' => (l10n.diagnosisSettling, theme.colorScheme.tertiary),
       'measuring' => (l10n.diagnosisMeasuring, theme.colorScheme.secondary),
-      'measured' => (l10n.diagnosisMeasured, Colors.greenAccent),
+      'measured' => (l10n.diagnosisMeasured, StatusColors.of(context).good),
       'stopped' => (l10n.diagnosisStopped, theme.disabledColor),
       _ => (diagnosis.state, theme.disabledColor),
     };
@@ -185,7 +186,7 @@ class _StepCard extends StatelessWidget {
         ? (Icons.back_hand, l10n.stepRemoveLastDart)
         : (icon, instruction);
     return Card(
-      color: done ? Colors.green.withValues(alpha: 0.25) : null,
+      color: done ? StatusColors.of(context).good.withValues(alpha: 0.25) : null,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -193,7 +194,7 @@ class _StepCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(shownIcon, size: 40, color: done ? Colors.greenAccent : theme.colorScheme.primary),
+                Icon(shownIcon, size: 40, color: done ? StatusColors.of(context).good : theme.colorScheme.primary),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Text(shownText, key: const ValueKey('diagnosis-step'), style: theme.textTheme.titleLarge),
@@ -211,7 +212,7 @@ class _StepCard extends StatelessWidget {
                   child: LinearProgressIndicator(
                     key: const ValueKey('diagnosis-progress'),
                     value: math.min(1.0, darts / diagnosisDarts),
-                    color: enough ? Colors.greenAccent : null,
+                    color: enough ? StatusColors.of(context).good : null,
                     minHeight: 8,
                     borderRadius: BorderRadius.circular(4),
                   ),
@@ -283,7 +284,7 @@ class _FindingTile extends StatelessWidget {
     final theme = Theme.of(context);
     final (icon, color) = switch (finding.severity) {
       'problem' => (Icons.error, theme.colorScheme.error),
-      'warning' => (Icons.warning_amber, Colors.amber),
+      'warning' => (Icons.warning_amber, StatusColors.of(context).warning),
       _ => (Icons.info_outline, theme.colorScheme.primary),
     };
     final text = findingText(l10n, finding);

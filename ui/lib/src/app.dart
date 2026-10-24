@@ -8,6 +8,7 @@ import 'engine/engine_choice.dart';
 import 'engine/engine_connection.dart';
 import 'engine/engine_manager.dart';
 import 'stats/statistics.dart';
+import 'theme.dart';
 import 'screens/main_shell.dart';
 
 class DartPilotApp extends StatefulWidget {
@@ -85,9 +86,7 @@ class _DartPilotAppState extends State<DartPilotApp> {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1E8F4E), brightness: Brightness.dark),
-      ),
+      theme: dartPilotTheme(),
       home: const RootScreen(),
     );
     return EngineScope(
