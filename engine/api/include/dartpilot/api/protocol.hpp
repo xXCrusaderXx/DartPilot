@@ -150,8 +150,8 @@ struct SetDetection
 struct CheckBoard
 {
 };
-// Requests of the calibration wizard (detect_board, set_sector_20, refine_cameras, tune_white_balance): passed on with
-// their fields to the source behind Server::onCalibration
+// Requests of the calibration wizard (detect_board, set_sector_20, refine_cameras, tune_white_balance) and for the
+// calibrated board's image (get_board_image): passed on with their fields to the source behind Server::onCalibration
 struct CalibrationRequest
 {
     std::string type;

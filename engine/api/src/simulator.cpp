@@ -335,6 +335,10 @@ void Simulator::start ()
             [this] (const CalibrationRequest& request) -> std::optional<Server::CalibrationError>
             {
                 const std::string camera = request.body.value("camera", std::string());
+                if(request.type == "get_board_image")
+                {
+                    return Server::CalibrationError{"not_available", "Simulated cameras have no board image; draw the board"};
+                }
                 const bool needs_camera = request.type == "detect_board" || request.type == "set_sector_20";
                 if(needs_camera && std::find(kCameras.begin(), kCameras.end(), camera) == kCameras.end())
                 {
