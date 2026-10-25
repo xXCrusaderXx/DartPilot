@@ -383,8 +383,8 @@ std::variant<Request, ParseError> parseRequest (const std::string& text)
                 type == "subscribe_calibration_check" || type == "unsubscribe_calibration_check" || type == "get_board_image" ||
                 type == "start_reference_run" || type == "stop_reference_run" || type == "get_detection_params" || type == "set_detection_params" ||
                 type == "list_dart_sets" || type == "start_dart_set" || type == "create_dart_set" || type == "update_dart_set" ||
-                type == "cancel_dart_set" || type == "get_dart_set_image" || type == "rename_dart_set" || type == "delete_dart_set" ||
-                type == "set_active_darts")
+                type == "measure_dart_photo" || type == "cancel_dart_set" || type == "get_dart_set_image" || type == "rename_dart_set" ||
+                type == "delete_dart_set" || type == "set_active_darts")
         {
             request.body = CalibrationRequest{type, message};
         }
