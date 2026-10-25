@@ -227,49 +227,36 @@ class _GameInputState extends State<GameInput> {
     final waiting = _waiting;
     Widget? banner;
     if (waiting && correcting == null) {
-      banner = Card(
+      banner = _Notice(
+        key: const ValueKey('remove-darts'),
         color: theme.colorScheme.primaryContainer,
-        child: ListTile(
-          key: const ValueKey('remove-darts'),
-          leading: const Icon(Icons.back_hand_outlined),
-          title: Text(l10n.removeDarts),
-          subtitle: Text(l10n.removeDartsHint),
-          trailing: TextButton(
-            key: const ValueKey('darts-removed'),
-            onPressed: _dartsRemoved,
-            child: Text(l10n.dartsRemoved),
-          ),
-        ),
+        icon: Icons.back_hand_outlined,
+        title: l10n.removeDarts,
+        subtitle: l10n.removeDartsHint,
+        actions: [
+          TextButton(key: const ValueKey('darts-removed'), onPressed: _dartsRemoved, child: Text(l10n.dartsRemoved)),
+        ],
       );
     } else if (pending != null) {
-      banner = Card(
+      banner = _Notice(
+        key: const ValueKey('uncertain-dart'),
         color: theme.colorScheme.tertiaryContainer,
-        child: ListTile(
-          key: const ValueKey('uncertain-dart'),
-          leading: const Icon(Icons.help_outline),
-          title: Text(
-            pendingDart == null
-                ? l10n.uncertainNoPoint
-                : l10n.uncertainDart(pendingDart.score.label, (100 * pending.confidence).round()),
-          ),
-          subtitle: Text(l10n.tapToCorrect),
-          trailing: Wrap(
-            spacing: 8,
-            children: [
-              TextButton(onPressed: _discardPending, child: Text(l10n.discard)),
-              if (pendingDart != null) FilledButton(onPressed: _confirmPending, child: Text(l10n.confirm)),
-            ],
-          ),
-        ),
+        icon: Icons.help_outline,
+        title: pendingDart == null
+            ? l10n.uncertainNoPoint
+            : l10n.uncertainDart(pendingDart.score.label, (100 * pending.confidence).round()),
+        subtitle: l10n.tapToCorrect,
+        actions: [
+          TextButton(onPressed: _discardPending, child: Text(l10n.discard)),
+          if (pendingDart != null) FilledButton(onPressed: _confirmPending, child: Text(l10n.confirm)),
+        ],
       );
     } else if (correcting != null && correcting < throws.length) {
-      banner = Card(
+      banner = _Notice(
         color: theme.colorScheme.tertiaryContainer,
-        child: ListTile(
-          leading: const Icon(Icons.edit_location_alt),
-          title: Text(l10n.correctingDart(throws[correcting].score.label)),
-          trailing: TextButton(onPressed: () => setState(() => _correcting = null), child: Text(l10n.cancel)),
-        ),
+        icon: Icons.edit_location_alt,
+        title: l10n.correctingDart(throws[correcting].score.label),
+        actions: [TextButton(onPressed: () => setState(() => _correcting = null), child: Text(l10n.cancel))],
       );
     }
 
@@ -303,6 +290,68 @@ class _GameInputState extends State<GameInput> {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// A notice above the board: what happened, what to do, and its buttons. On narrow screens the buttons go below the
+/// text, so the notice stays low enough for the board or keypad underneath.
+class _Notice extends StatelessWidget {
+  const _Notice({
+    super.key,
+    required this.color,
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    required this.actions,
+  });
+
+  final Color color;
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final List<Widget> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final texts = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(title, style: theme.textTheme.titleMedium),
+        if (subtitle != null)
+          Text(subtitle!, maxLines: 2, overflow: TextOverflow.ellipsis, style: theme.textTheme.bodySmall),
+      ],
+    );
+    final buttons = Wrap(spacing: 8, alignment: WrapAlignment.end, children: actions);
+    return Card(
+      color: color,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final narrow = constraints.maxWidth < 480;
+            final top = Row(
+              children: [
+                Icon(icon),
+                const SizedBox(width: 16),
+                Expanded(child: texts),
+                if (!narrow) buttons,
+              ],
+            );
+            return narrow
+                ? Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      top,
+                      Align(alignment: Alignment.centerRight, child: buttons),
+                    ],
+                  )
+                : top;
+          },
+        ),
+      ),
     );
   }
 }
