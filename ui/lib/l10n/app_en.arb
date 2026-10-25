@@ -120,6 +120,9 @@
     }
   },
   "countAsMiss": "Count as miss",
+  "removeDarts": "Remove the darts",
+  "removeDartsHint": "The next visit starts once the darts are out of the board.",
+  "dartsRemoved": "Darts are out",
   "enterManually": "Enter them",
   "cameras": "Cameras",
   "waitingForImage": "Waiting for the first image…",

@@ -6,6 +6,7 @@ import '../games/around_the_clock.dart';
 import '../bots/bot_turns.dart';
 import '../games/dart_game.dart';
 import '../input/game_input.dart';
+import '../input/takeout_gate.dart';
 import '../stats/game_record.dart';
 import '../stats/statistics.dart';
 import '../widgets/winner_dialog.dart';
@@ -57,6 +58,10 @@ class _AroundTheClockScreenState extends State<AroundTheClockScreen> with Record
     AroundTheClockGame(widget.names, endWithBull: widget.endWithBull),
     widget.replay,
   );
+  final TakeoutGate _takeout = TakeoutGate();
+
+  @override
+  bool get waitsForTakeout => _takeout.isClosed(_game);
 
   @override
   GameRecord buildRecord(String id, DateTime started, DateTime ended) => GameRecord(
@@ -101,14 +106,18 @@ class _AroundTheClockScreenState extends State<AroundTheClockScreen> with Record
     });
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    // While its darts are in the board, the visit that ended stays on the scoreboard with its player.
+    final atOche = _takeout.isClosed(_game)
+        ? (_game.current + _game.players.length - 1) % _game.players.length
+        : _game.current;
     final panel = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (var i = 0; i < _game.players.length; ++i)
           Card(
-            color: i == _game.current ? theme.colorScheme.secondaryContainer : null,
+            color: i == atOche ? theme.colorScheme.secondaryContainer : null,
             child: ListTile(
-              leading: i == _game.current ? const Icon(Icons.arrow_right) : null,
+              leading: i == atOche ? const Icon(Icons.arrow_right) : null,
               title: Text(_game.players[i].name),
               subtitle: Text(
                 '${_game.players[i].dartsThrown} ${l10n.darts} · '
@@ -138,6 +147,7 @@ class _AroundTheClockScreenState extends State<AroundTheClockScreen> with Record
             ? WatchedBoard(throws: [for (final (dart, _) in _game.currentVisit) dart])
             : GameInput(
                 game: _game,
+                takeout: _takeout,
                 shownThrows: [for (final (dart, _) in _game.currentVisit) dart],
                 onDart: (dart) {
                   // While a bot is at the oche, its darts are its own.

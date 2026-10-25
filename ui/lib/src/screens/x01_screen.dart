@@ -6,6 +6,7 @@ import '../games/x01.dart';
 import '../bots/bot_turns.dart';
 import '../games/dart_game.dart';
 import '../input/game_input.dart';
+import '../input/takeout_gate.dart';
 import '../stats/game_record.dart';
 import '../stats/statistics.dart';
 import '../widgets/winner_dialog.dart';
@@ -42,6 +43,10 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
   bool get watching => widget.watching;
 
   late final X01Game _game = replayed(X01Game(widget.settings), widget.replay);
+  final TakeoutGate _takeout = TakeoutGate();
+
+  @override
+  bool get waitsForTakeout => _takeout.isClosed(_game);
 
   @override
   GameRecord buildRecord(String id, DateTime started, DateTime ended) => GameRecord(
@@ -97,15 +102,17 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
     });
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final visit = _game.currentVisit;
-    final checkout = _game.checkoutSuggestion;
+    // While its darts are in the board, the visit that ended stays on the scoreboard with its player.
+    final waiting = _takeout.isClosed(_game);
+    final visit = waiting ? _game.visits[_game.visits.length - 2] : _game.currentVisit;
+    final checkout = waiting ? null : _game.checkoutSuggestion;
 
     final scoreboard = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(l10n.leg(_game.legNumber), style: theme.textTheme.titleMedium),
         const SizedBox(height: 8),
-        for (var i = 0; i < _game.players.length; ++i) _PlayerCard(_game.players[i], active: i == _game.current),
+        for (var i = 0; i < _game.players.length; ++i) _PlayerCard(_game.players[i], active: i == visit.player),
         const SizedBox(height: 12),
         Row(
           children: [
@@ -147,6 +154,7 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
         ? WatchedBoard(throws: [for (final d in visit.darts) d.dart])
         : GameInput(
             game: _game,
+            takeout: _takeout,
             shownThrows: [for (final d in visit.darts) d.dart],
             onDart: (dart) {
               // While a bot is at the oche, its darts are its own.

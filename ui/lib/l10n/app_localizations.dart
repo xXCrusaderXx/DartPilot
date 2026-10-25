@@ -500,6 +500,24 @@ abstract class AppLocalizations {
   /// **'Count as miss'**
   String get countAsMiss;
 
+  /// No description provided for @removeDarts.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove the darts'**
+  String get removeDarts;
+
+  /// No description provided for @removeDartsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The next visit starts once the darts are out of the board.'**
+  String get removeDartsHint;
+
+  /// No description provided for @dartsRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Darts are out'**
+  String get dartsRemoved;
+
   /// No description provided for @enterManually.
   ///
   /// In en, this message translates to:
