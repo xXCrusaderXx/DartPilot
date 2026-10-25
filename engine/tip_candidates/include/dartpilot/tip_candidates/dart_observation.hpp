@@ -73,6 +73,11 @@ struct ViewChangeSettings
     double changed_cell_share = 0.002;
     int max_cells_for_a_dart = 16;
     double moved_camera_px = 3.0;
+    // Only the image outside this radius on the board is compared (with a calibrated camera; 0 compares everything):
+    // a camera that moved shifts the surround and the room as well, a board or number ring that moved does not.
+    double ignore_inside_mm = 230.0;
+    // Cells with less of the compared region than this share are left out
+    double min_cell_region_share = 0.2;
     // The shift explains the change when what is left after it is at most this share of the change
     double explained_share = 0.5;
 };
@@ -97,5 +102,8 @@ struct DartObservation
 std::optional<DartObservation> observeDart (const cv::Mat& image, const cv::Mat& empty_board, const ObservationSettings& settings = {});
 // The shift of the whole image if a camera's view changed as a whole from one still image to the next: it was knocked,
 // tilted or sways. A dart changes one place of the image, a knocked camera the edges all over it. Nothing otherwise.
-std::optional<cv::Point2d> viewChange (const cv::Mat& before, const cv::Mat& after, const ViewChangeSettings& settings = {});
+// region (8-bit, optional) limits the comparison to the pixels set in it, e.g. outside the board: a dart hitting the
+// number ring or bouncing off moves the board and the ring a little, which changes their edges as a knock would.
+std::optional<cv::Point2d> viewChange (const cv::Mat& before, const cv::Mat& after, const ViewChangeSettings& settings = {},
+                                       const cv::Mat& region = {});
 }  // namespace dartpilot::tip_candidates

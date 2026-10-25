@@ -92,5 +92,9 @@ class DartTracker
     std::vector<cv::Mat> reference_;
     std::vector<cv::Mat> last_;
     int darts_in_board_ = 0;
+    // Per camera the image outside the board that viewChange compares, for the radius it was made for
+    std::vector<cv::Mat> view_regions_;
+    double view_regions_radius_mm_ = -1.0;
+    const cv::Mat& viewRegion (std::size_t camera, const cv::Size& size);
 };
 }  // namespace dartpilot::fusion

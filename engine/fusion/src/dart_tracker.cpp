@@ -64,6 +64,32 @@ DartTracker::DartTracker (std::vector<TrackerCamera> cameras, geometry::BoardMod
 {
 }
 
+const cv::Mat& DartTracker::viewRegion (std::size_t camera, const cv::Size& size)
+{
+    const double radius_mm = settings_.view_change.ignore_inside_mm;
+    if(view_regions_.size() != cameras_.size() || view_regions_radius_mm_ != radius_mm)
+    {
+        view_regions_.assign(cameras_.size(), cv::Mat());
+        view_regions_radius_mm_ = radius_mm;
+    }
+    cv::Mat& region = view_regions_[camera];
+    if(region.empty() && radius_mm > 0.0 && cameras_[camera].calibration)
+    {
+        region = cv::Mat(size, CV_8U, cv::Scalar(255));
+        std::vector<cv::Point> outline;
+        for(int i = 0; i < 180; ++i)
+        {
+            const double a = 2.0 * CV_PI * i / 180.0;
+            const cv::Point2f p =
+                geometry::boardToImage(*cameras_[camera].calibration,
+                                       cv::Point3f(static_cast<float>(radius_mm * std::cos(a)), static_cast<float>(radius_mm * std::sin(a)), 0.0f));
+            outline.emplace_back(cvRound(p.x), cvRound(p.y));
+        }
+        cv::fillPoly(region, std::vector<std::vector<cv::Point>>{outline}, cv::Scalar(0));
+    }
+    return region;
+}
+
 TrackerUpdate DartTracker::addStill (const std::vector<cv::Mat>& images)
 {
     // Kept as the state of the board, so they must not share memory with the caller's images.
@@ -115,7 +141,12 @@ TrackerUpdate DartTracker::addStill (const std::vector<cv::Mat>& images)
     // A camera whose view changed as a whole was knocked: everything in it differs from before, which is no dart. Checked
     // after the takeout, so that three darts pulled at once are not taken for it.
     std::vector<std::optional<cv::Point2d>> shifts(count);
-    forEachCamera(count, [&] (std::size_t c) { shifts[c] = tip_candidates::viewChange(last_[c], means[c], settings_.view_change); });
+    for(std::size_t c = 0; c < count; ++c)
+    {
+        viewRegion(c, means[c].size());
+    }
+    forEachCamera(count,
+                  [&] (std::size_t c) { shifts[c] = tip_candidates::viewChange(last_[c], means[c], settings_.view_change, view_regions_[c]); });
     for(std::size_t c = 0; c < count; ++c)
     {
         if(const auto& shift = shifts[c])

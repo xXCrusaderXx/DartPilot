@@ -113,6 +113,11 @@ std::vector<DetectionParam> makeParams ()
                         "More changed cells than this are a moved camera (a dart changed at most 10 of 64, a knocked camera 23 to 59)."),
         DETECTION_PARAM("view_moved_camera_px", "tip_candidates", "px", 0.5, 20, 0.5, tracker.view_change.moved_camera_px,
                         "A shift of the whole image beyond this that explains the change is a moved camera."),
+        DETECTION_PARAM("view_ignore_inside_mm", "tip_candidates", "mm", 0, 400, 5, tracker.view_change.ignore_inside_mm,
+                        "Only the image outside this radius on the board tells a moved camera; a dart moving the board or its number ring does not. "
+                        "0 compares the whole image."),
+        DETECTION_PARAM("view_min_cell_region_share", "tip_candidates", "", 0, 1, 0.05, tracker.view_change.min_cell_region_share,
+                        "Cells with less of the compared image than this share are left out."),
         DETECTION_PARAM("view_explained_share", "tip_candidates", "", 0.05, 1, 0.05, tracker.view_change.explained_share,
                         "The shift explains the change when at most this share of it is left after the shift."),
 

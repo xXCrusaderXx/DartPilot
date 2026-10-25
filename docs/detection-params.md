@@ -61,6 +61,8 @@ Regenerate the table with `dartpilot detection-params`; `DetectionParams.Documen
 | `view_changed_cell_share` | tip_candidates | 0.002 | 0.0001–0.05 |  | A cell is changed with this share of changed pixels. |
 | `view_max_cells_for_a_dart` | tip_candidates | 16 | 1–200 |  | More changed cells than this are a moved camera (a dart changed at most 10 of 64, a knocked camera 23 to 59). |
 | `view_moved_camera_px` | tip_candidates | 3 | 0.5–20 | px | A shift of the whole image beyond this that explains the change is a moved camera. |
+| `view_ignore_inside_mm` | tip_candidates | 230 | 0–400 | mm | Only the image outside this radius on the board tells a moved camera; a dart moving the board or its number ring does not. 0 compares the whole image. |
+| `view_min_cell_region_share` | tip_candidates | 0.2 | 0–1 |  | Cells with less of the compared image than this share are left out. |
 | `view_explained_share` | tip_candidates | 0.5 | 0.05–1 |  | The shift explains the change when at most this share of it is left after the shift. |
 | `min_cut_axis_px` | geometry | 120 | 20–400 | px | A dart cut off by the image border must show this much axis to fix its direction. |
 | `max_plane_distance_mm` | geometry | 1.5 | 0.2–10 | mm | The axis planes of agreeing cameras pass within this distance of their common point on the board. |
