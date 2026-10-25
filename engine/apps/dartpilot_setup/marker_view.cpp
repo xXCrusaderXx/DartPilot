@@ -25,7 +25,16 @@ void MarkerView::paintOverlay (QPainter* painter, const QRectF& target, double s
     {
         const QVariantMap marker = item.toMap();
         const QPointF p(target.x() + marker.value("x").toDouble() * scale, target.y() + marker.value("y").toDouble() * scale);
-        if(marker.value("kind").toString() == "dart")
+        const QString kind = marker.value("kind").toString();
+        if(kind == "axis")
+        {
+            const QPointF q(target.x() + marker.value("x2").toDouble() * scale, target.y() + marker.value("y2").toDouble() * scale);
+            const QColor colour(marker.value("colour", QStringLiteral("#60a5fa")).toString());
+            painter->setPen(QPen(colour, 2.5));
+            painter->drawLine(p, q);
+            continue;
+        }
+        if(kind == "dart")
         {
             painter->setPen(QPen(QColor(248, 113, 113), 2.0));
             for(const QPointF& d : {QPointF(1, 0), QPointF(-1, 0), QPointF(0, 1), QPointF(0, -1)})

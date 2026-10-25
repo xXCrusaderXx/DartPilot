@@ -5,6 +5,7 @@ Every value that decides whether and where the engine finds a dart (#195). They 
 ## Changing them
 
 - **While the engine runs:** `get_detection_params` and `set_detection_params` (docs/engine-api.md, "detection_params"). A change applies from the next sample, is sent to every client, and is lost when the engine stops. `{"params": {"name": null}}` sets a value back to its default.
+- **In the setup GUI:** the page "Detection test" of `dartpilot_setup` runs the same detection on the cameras (with `serve` stopped), with every value as a slider grouped by stage, reset, and named profiles in `calibration/detection-profiles/`. Each dart is rated there (right, wrong field, unsure, missed, no dart), counted per dart of the round, and logged with its revision in `detection-tests/<start>.jsonl`, next to the averaged images of every still moment.
 - **Recorded:** `serve --record` writes `results/live/params.jsonl`: one line `{t_ns, revision, params}` at the start and after every change. Every throw names the `params_revision` it was made with (in the `throw` message and under `diagnostics` in `throws.jsonl`).
 - **Replayed:** `dartpilot replay <session> --params <file> [--params-revision N] [--param NAME=VALUE]...`. The file can be a session's `params.jsonl` (the line of revision N, the last one without it), a `detection_params` message, or a plain JSON object of names and values. The run's `run.json` records every value it used under `config.params`.
 

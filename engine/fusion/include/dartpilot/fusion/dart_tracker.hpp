@@ -30,6 +30,8 @@ struct DartView
     // seen, cut (by the image border), not_seen, disagrees (seen, but its axis does not meet the others')
     std::string state;
     bool used = false;
+    // What the camera found, for showing it in its image
+    std::optional<tip_candidates::DartObservation> observation;
 };
 
 struct TrackedDart
