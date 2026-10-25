@@ -1606,4 +1606,85 @@ class AppLocalizationsDe extends AppLocalizations {
   String cameraAssignFailed(String error) {
     return 'Zuordnung nicht gespeichert: $error';
   }
+
+  @override
+  String get addSetMeasure => 'Im Board vermessen';
+
+  @override
+  String get addSetMeasureHint => 'Einen Dart an vier Stellen stecken – die Kameras messen ihn';
+
+  @override
+  String get addSetEnter => 'Maße eintippen';
+
+  @override
+  String get addSetEnterHint => 'Zum Beispiel von der Verpackung';
+
+  @override
+  String get enterDims => 'Maße eingeben';
+
+  @override
+  String get dimsHint => 'Werte z. B. von der Verpackung. Ein leeres Feld lässt den gemessenen Wert gelten.';
+
+  @override
+  String get dimTotal => 'Gesamtlänge';
+
+  @override
+  String get dimPoint => 'Spitze';
+
+  @override
+  String get dimBarrel => 'Barrel';
+
+  @override
+  String get dimBarrelDiameter => 'Barrel-Durchmesser';
+
+  @override
+  String get dimShaft => 'Schaft';
+
+  @override
+  String get dimFlight => 'Flight';
+
+  @override
+  String get dimWeight => 'Gewicht';
+
+  @override
+  String get dimEntered => 'eingegeben';
+
+  @override
+  String get dimPhoto => 'Foto';
+
+  @override
+  String dimMeasuredValue(String value) {
+    return 'gemessen: $value';
+  }
+
+  @override
+  String get dimsSave => 'Speichern';
+
+  @override
+  String get dimsImplausible => 'Ein Wert liegt außerhalb dessen, was ein Dart haben kann.';
+
+  @override
+  String get addSetPhoto => 'Per Foto vermessen';
+
+  @override
+  String get addSetPhotoHint => 'Dart auf das ausgedruckte Messblatt legen und fotografieren';
+
+  @override
+  String get dartPhotoHowTo =>
+      'Das Messblatt (docs/calibration/dart-sheet-A4.png) in 100 % auf A4 drucken und flach hinlegen. Einen Dart des Sets mitten aufs Blatt legen. Von oben fotografieren, so dass alle vier Marker in den Ecken ganz zu sehen sind.';
+
+  @override
+  String get dartPhotoTake => 'Foto aufnehmen';
+
+  @override
+  String get dartPhotoMeasuring => 'Foto wird ausgewertet …';
+
+  @override
+  String get dartPhotoDone => 'Foto ausgewertet – die Maße stehen beim Set.';
+
+  @override
+  String get dartPhotoNoSheet => 'Das Messblatt wurde nicht gefunden. Alle vier Marker müssen ganz im Bild sein.';
+
+  @override
+  String get dartPhotoNoDart => 'Auf dem Blatt wurde kein Dart gefunden. Leg ihn mitten aufs Blatt, ohne Schatten.';
 }

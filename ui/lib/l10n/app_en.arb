@@ -1056,5 +1056,38 @@
         "type": "String"
       }
     }
-  }
+  },
+  "addSetMeasure": "Measure in the board",
+  "addSetMeasureHint": "Put one dart in at four places – the cameras measure it",
+  "addSetEnter": "Type in the dimensions",
+  "addSetEnterHint": "For example from the packaging",
+  "enterDims": "Enter dimensions",
+  "dimsHint": "Values e.g. from the packaging. An empty field keeps the measured value.",
+  "dimTotal": "Total length",
+  "dimPoint": "Point",
+  "dimBarrel": "Barrel",
+  "dimBarrelDiameter": "Barrel diameter",
+  "dimShaft": "Shaft",
+  "dimFlight": "Flight",
+  "dimWeight": "Weight",
+  "dimEntered": "entered",
+  "dimPhoto": "photo",
+  "dimMeasuredValue": "measured: {value}",
+  "dimsSave": "Save",
+  "dimsImplausible": "A value lies outside what a dart can have.",
+  "@dimMeasuredValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "addSetPhoto": "Measure by photo",
+  "addSetPhotoHint": "Lay the dart on the printed sheet and take a photo",
+  "dartPhotoHowTo": "Print the dart sheet (docs/calibration/dart-sheet-A4.png) at 100 % on A4 and lay it flat. Put one dart of the set in the middle of the sheet. Take the photo from above, with all four corner markers fully in view.",
+  "dartPhotoTake": "Take photo",
+  "dartPhotoMeasuring": "Measuring the photo …",
+  "dartPhotoDone": "Photo measured – the dimensions are with the set.",
+  "dartPhotoNoSheet": "The sheet was not found. All four markers must be fully in the picture.",
+  "dartPhotoNoDart": "No dart was found on the sheet. Put it in the middle, without shadow."
 }
