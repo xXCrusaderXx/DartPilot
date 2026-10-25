@@ -58,6 +58,11 @@ struct Camera
     double bytes = 0.0;
     int pts_frames = 0;
     int scr_frames = 0;
+    // Per frame, to check the device clock against the host clock afterwards
+    std::vector<double> host_s;
+    std::vector<uint32_t> pts_ticks;
+    std::vector<uint32_t> scr_ticks;
+    uint32_t clock_frequency_hz = 0;
 };
 
 void onFrame (uvc_frame_t* frame, void* user)
@@ -107,6 +112,9 @@ void onFrame (uvc_frame_t* frame, void* user)
     camera.broken_jpeg += complete ? 0 : 1;
     camera.pts_frames += pts != 0 ? 1 : 0;
     camera.scr_frames += scr != 0 ? 1 : 0;
+    camera.host_s.push_back(now_s);
+    camera.pts_ticks.push_back(pts);
+    camera.scr_ticks.push_back(scr);
 }
 
 double quantile (std::vector<double> values, double q)
@@ -117,6 +125,50 @@ double quantile (std::vector<double> values, double q)
     }
     std::sort(values.begin(), values.end());
     return values[static_cast<size_t>(q * static_cast<double>(values.size() - 1) + 0.5)];
+}
+
+// PTS and SCR are 32-bit counters of the device clock; differences wrap around, so a step back shows as a huge step.
+struct ClockCheck
+{
+    int unchanged = 0;
+    int backwards = 0;
+    std::vector<double> steps;
+    double clock_hz = 0.0;
+};
+
+ClockCheck checkClock (const std::vector<uint32_t>& ticks, const std::vector<double>& host_s)
+{
+    ClockCheck check;
+    double sum_ticks = 0.0;
+    for(size_t i = 1; i < ticks.size(); ++i)
+    {
+        const uint32_t step = ticks[i] - ticks[i - 1];
+        if(step == 0)
+        {
+            ++check.unchanged;
+        }
+        else if(step > 0x80000000u)
+        {
+            ++check.backwards;
+        }
+        else
+        {
+            check.steps.push_back(static_cast<double>(step));
+            sum_ticks += static_cast<double>(step);
+        }
+    }
+    const double span_s = host_s.size() > 1 ? host_s.back() - host_s.front() : 0.0;
+    check.clock_hz = span_s > 0 ? sum_ticks / span_s : 0.0;
+    return check;
+}
+
+std::string clockJson (const char* name, const ClockCheck& check)
+{
+    char text[256];
+    std::snprintf(text, sizeof(text), ",\"%s\":{\"unchanged\":%d,\"backwards\":%d,\"step_ticks\":{\"p50\":%.0f,\"p95\":%.0f,\"min\":%.0f},\"clock_hz\":%.0f}",
+                  name, check.unchanged, check.backwards, quantile(check.steps, 0.5), quantile(check.steps, 0.95),
+                  check.steps.empty() ? 0.0 : *std::min_element(check.steps.begin(), check.steps.end()), check.clock_hz);
+    return text;
 }
 
 std::string escaped (const std::string& text)
@@ -180,6 +232,7 @@ std::string run (const std::vector<int>& fds, int seconds_to_run)
             continue;
         }
         camera->streaming = true;
+        camera->clock_frequency_hz = control.dwClockFrequency;
     }
     std::this_thread::sleep_for(std::chrono::seconds(seconds_to_run));
     for(auto& camera : cameras)
@@ -207,6 +260,9 @@ std::string run (const std::vector<int>& fds, int seconds_to_run)
                       c.intervals_ms.empty() ? 0.0 : *std::max_element(c.intervals_ms.begin(), c.intervals_ms.end()), c.sequence_gaps,
                       c.broken_jpeg, c.frames > 0 ? c.bytes / c.frames : 0.0, c.pts_frames, c.scr_frames);
         json += text;
+        json += ",\"clock_frequency_hz\":" + std::to_string(c.clock_frequency_hz);
+        json += clockJson("pts", checkClock(c.pts_ticks, c.host_s));
+        json += clockJson("scr", checkClock(c.scr_ticks, c.host_s));
         if(!c.error.empty())
         {
             json += ",\"error\":\"" + escaped(c.error) + "\"";
