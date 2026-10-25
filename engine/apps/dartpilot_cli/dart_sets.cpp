@@ -467,7 +467,16 @@ void DartSets::finish ()
     for(std::size_t i = 0; i < capture.shapes.size(); ++i)
     {
         const auto& shape = capture.shapes[i];
-        set.placements.push_back({{"board_mm", {capture.points_mm[i].x, capture.points_mm[i].y}}, {"dims", dimsJson(shape)}});
+        // The width along the axis, mm by mm, so that the split into point, barrel, shaft and flight can be checked
+        std::vector<double> width;
+        for(const double w : shape.width_mm)
+        {
+            width.push_back(std::round(w * 10.0) / 10.0);
+        }
+        set.placements.push_back({{"board_mm", {capture.points_mm[i].x, capture.points_mm[i].y}},
+                                  {"dims", dimsJson(shape)},
+                                  {"point_mm", shape.point_mm},
+                                  {"width_mm", width}});
         if(std::abs(shape.total_mm - total) > kOutlier_mm)
         {
             continue;
