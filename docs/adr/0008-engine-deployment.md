@@ -1,6 +1,6 @@
 # ADR 0008: Engine deployment – in the app and remote
 
-- **Status:** proposed; the Android part depends on the feasibility spike (#104)
+- **Status:** accepted; the Android part was confirmed by the feasibility spike (#104, [android.md](../android.md)): three cameras at 30 fps through libuvc on a phone
 - **Date:** 2026-10-25
 
 ## Context
@@ -58,6 +58,12 @@ Before Android is built, a spike measures on a real phone (#104):
 4. USB permission flow per camera and behaviour on unplugging.
 
 If libuvc does not reach three cameras at 30 fps, the alternatives are fewer cameras, a lower resolution, or Android as a display only.
+
+**Result (2026-10-25, Pixel 10a, Android 17, [android.md](../android.md)):**
+- libuvc reached three cameras at 30.00 fps each behind one hub, with no lost or broken frame.
+- CPU load for the transport was 21.6 %, and the battery drained about 750 mA.
+- The Android engine (#106) is built as decided above.
+- Still to measure: JPEG decoding at the detection rate, re-plugging a camera, and the PTS/SCR timestamps through libuvc (a spike bug hid them in the first runs).
 
 ## Alternatives considered
 
