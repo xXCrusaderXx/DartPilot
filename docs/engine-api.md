@@ -285,7 +285,7 @@ The player's darts (#120). A set is measured by putting one dart of it into the 
               "images": [ { "camera": "usb-2.4.3.1.2" } ] } ] }
 ```
 
-`dims` are medians over the placements, in mm. `barrel_diameter_mm` and the barrel's length come from the dart's outline and are less certain than its total length.
+`dims` holds, per dimension, the value from the first source that has it: entered by the user, from a photo, measured in the board. `dims_source` names the source per dimension, and `measured`, `photo` and `entered` hold each source's values. Dimensions: `total_mm`, `point_mm`, `barrel_mm`, `barrel_diameter_mm`, `shaft_mm`, `flight_mm`, `weight_g`. An entered value must lie in a plausible range (e.g. 50–250 mm total, 3–15 mm barrel diameter), or `bad_request`. Measured values are medians over the placements, in mm. `barrel_diameter_mm` and the barrel's length come from the dart's outline and are less certain than its total length.
 
 `dart_set_capture` follows a running measurement; the latest one is sent after `hello` too:
 
@@ -307,6 +307,8 @@ The player's darts (#120). A set is measured by putting one dart of it into the 
 | Request | Fields | Effect |
 | - | - | - |
 | `list_dart_sets` | – | Sends `dart_sets` |
+| `create_dart_set` | `name`, `dims` | A set from entered dimensions only, without measuring |
+| `update_dart_set` | `id`, `dims` | Enters or corrects dimensions; `null` removes an entered value, so the measured one counts again |
 | `start_dart_set` | `name` | Starts measuring a new set; `not_calibrated`, `busy` (a reference run or another measurement runs) |
 | `cancel_dart_set` | – | Stops it; `dart_set_capture` with `cancelled` |
 | `get_dart_set_image` | `id`, `camera` | Answered with `{type: "dart_set_image", id, camera, jpeg_base64}` |

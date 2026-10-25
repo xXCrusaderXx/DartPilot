@@ -28,6 +28,17 @@ double median (std::vector<double> values)
     return values[values.size() / 2];
 }
 
+// The dimensions of a dart set, with the range an entered value must lie in
+struct Dimension
+{
+    const char* name;
+    double min;
+    double max;
+};
+constexpr Dimension kDimensions[] = {{"total_mm", 50, 250},  {"point_mm", 10, 60},  {"barrel_mm", 10, 80}, {"barrel_diameter_mm", 3, 15},
+                                     {"shaft_mm", 5, 80},    {"flight_mm", 10, 80}, {"weight_g", 10, 50}};
+
+
 json dimsJson (const geometry::DartShape& shape)
 {
     return {{"total_mm", shape.total_mm},
@@ -98,6 +109,12 @@ DartSets::DartSets (api::Server& server, LiveDetection& detection, const std::ve
                                  });
     server_.onCalibrationRequest("start_dart_set",
                                  [this] (const api::CalibrationRequest& request) { return start(request.body.value("name", std::string())); });
+    server_.onCalibrationRequest("create_dart_set",
+                                 [this] (const api::CalibrationRequest& request)
+                                 { return create(request.body.value("name", std::string()), request.body.value("dims", json::object())); });
+    server_.onCalibrationRequest("update_dart_set",
+                                 [this] (const api::CalibrationRequest& request)
+                                 { return update(request.body.value("id", std::string()), request.body.value("dims", json::object())); });
     server_.onCalibrationRequest("cancel_dart_set",
                                  [this] (const api::CalibrationRequest&) -> Error
                                  {
@@ -206,7 +223,7 @@ DartSets::DartSets (api::Server& server, LiveDetection& detection, const std::ve
 DartSets::~DartSets ()
 {
     for(const char* type :
-        {"list_dart_sets", "start_dart_set", "cancel_dart_set", "get_dart_set_image", "rename_dart_set", "delete_dart_set", "set_active_darts"})
+        {"list_dart_sets", "start_dart_set", "create_dart_set", "update_dart_set", "cancel_dart_set", "get_dart_set_image", "rename_dart_set", "delete_dart_set", "set_active_darts"})
     {
         server_.onCalibrationRequest(type, {});
     }
@@ -240,7 +257,9 @@ void DartSets::load ()
         set.id = stored.value("id", std::string());
         set.name = stored.value("name", std::string());
         set.created_utc = stored.value("created_utc", std::string());
-        set.dims = stored.value("dims", json::object());
+        set.measured = stored.value("measured", stored.value("dims", json::object()));
+        set.photo = stored.value("photo", json::object());
+        set.entered = stored.value("entered", json::object());
         set.placements = stored.value("placements", json::array());
         set.cameras = stored.value("cameras", std::vector<std::string>());
         sets_.push_back(std::move(set));
@@ -253,7 +272,13 @@ bool DartSets::save (const Set& set) const
     std::error_code ignored;
     std::filesystem::create_directories(directory(), ignored);
     std::ofstream out(directory() / (set.id + ".json"));
-    out << json{{"id", set.id},          {"name", set.name}, {"created_utc", set.created_utc}, {"dims", set.dims}, {"placements", set.placements},
+    out << json{{"id", set.id},
+                {"name", set.name},
+                {"created_utc", set.created_utc},
+                {"measured", set.measured},
+                {"photo", set.photo},
+                {"entered", set.entered},
+                {"placements", set.placements},
                 {"cameras", set.cameras}}
                .dump(2)
         << "\n";
@@ -267,7 +292,28 @@ json DartSets::setJson (const Set& set) const
     {
         images.push_back({{"camera", camera}});
     }
-    return {{"id", set.id}, {"name", set.name}, {"dims", set.dims}, {"created_utc", set.created_utc}, {"images", images}};
+    json dims = json::object(), sources = json::object();
+    for(const auto& dimension : kDimensions)
+    {
+        for(const auto& [source, values] : {std::pair<const char*, const json*>{"entered", &set.entered}, {"photo", &set.photo}, {"measured", &set.measured}})
+        {
+            if(values->contains(dimension.name) && (*values)[dimension.name].is_number())
+            {
+                dims[dimension.name] = (*values)[dimension.name];
+                sources[dimension.name] = source;
+                break;
+            }
+        }
+    }
+    return {{"id", set.id},
+            {"name", set.name},
+            {"dims", dims},
+            {"dims_source", sources},
+            {"measured", set.measured},
+            {"photo", set.photo},
+            {"entered", set.entered},
+            {"created_utc", set.created_utc},
+            {"images", images}};
 }
 
 void DartSets::publishSets ()
@@ -341,6 +387,91 @@ std::optional<api::Server::CalibrationError> DartSets::start (const std::string&
     }
     detection_.intercept([this] (const fusion::TrackerUpdate& update, const std::vector<cv::Mat>& means) { onUpdate(update, means); });
     publishCapture();
+    return std::nullopt;
+}
+
+namespace
+{
+// Applies entered dimensions: a number in its range sets one, null removes it. Nothing on success.
+std::optional<std::string> applyEntered (json& entered, const json& dims)
+{
+    if(!dims.is_object())
+    {
+        return "dims must be an object";
+    }
+    json result = entered;
+    for(const auto& [name, value] : dims.items())
+    {
+        const auto* dimension =
+            std::find_if(std::begin(kDimensions), std::end(kDimensions), [&] (const Dimension& d) { return name == d.name; });
+        if(dimension == std::end(kDimensions))
+        {
+            return "Unknown dimension " + name;
+        }
+        if(value.is_null())
+        {
+            result.erase(name);
+        }
+        else if(!value.is_number() || value.get<double>() < dimension->min || value.get<double>() > dimension->max)
+        {
+            return name + " must be a number from " + std::to_string(static_cast<int>(dimension->min)) + " to " +
+                   std::to_string(static_cast<int>(dimension->max));
+        }
+        else
+        {
+            result[name] = value;
+        }
+    }
+    entered = result;
+    return std::nullopt;
+}
+}  // namespace
+
+std::optional<api::Server::CalibrationError> DartSets::create (const std::string& name, const json& dims)
+{
+    if(name.empty())
+    {
+        return api::Server::CalibrationError{"bad_request", "A dart set needs a name"};
+    }
+    Set set;
+    if(const auto error = applyEntered(set.entered, dims))
+    {
+        return api::Server::CalibrationError{"bad_request", *error};
+    }
+    set.id = newId();
+    set.name = name;
+    set.created_utc = session::utcNow();
+    {
+        std::lock_guard lock(mutex_);
+        if(!save(set))
+        {
+            return api::Server::CalibrationError{"save_failed", "Cannot write the dart set"};
+        }
+        sets_.push_back(std::move(set));
+    }
+    publishSets();
+    return std::nullopt;
+}
+
+std::optional<api::Server::CalibrationError> DartSets::update (const std::string& id, const json& dims)
+{
+    {
+        std::lock_guard lock(mutex_);
+        const auto it = std::find_if(sets_.begin(), sets_.end(), [&] (const Set& s) { return s.id == id; });
+        if(it == sets_.end())
+        {
+            return api::Server::CalibrationError{"unknown_set", "No dart set " + id};
+        }
+        if(const auto error = applyEntered(it->entered, dims))
+        {
+            return api::Server::CalibrationError{"bad_request", *error};
+        }
+        if(!save(*it))
+        {
+            return api::Server::CalibrationError{"save_failed", "Cannot write the dart set"};
+        }
+    }
+    publishSets();
     return std::nullopt;
 }
 
@@ -492,7 +623,7 @@ void DartSets::finish ()
         capture.reason = "placements_disagree";
         return;
     }
-    set.dims = {
+    set.measured = {
         {"total_mm", median(kept_totals)}, {"barrel_mm", median(barrel)}, {"barrel_diameter_mm", median(diameter)}, {"flight_mm", median(flight)}};
     std::error_code ignored;
     std::filesystem::create_directories(directory(), ignored);

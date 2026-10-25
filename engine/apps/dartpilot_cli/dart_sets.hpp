@@ -35,7 +35,11 @@ class DartSets
         std::string id;
         std::string name;
         std::string created_utc;
-        nlohmann::json dims;
+        // Dimensions by where they come from: measured in the board, from a photo on the measuring sheet, entered by
+        // the user. The set's dimensions take each value from the first of entered, photo, measured that has it.
+        nlohmann::json measured = nlohmann::json::object();
+        nlohmann::json photo = nlohmann::json::object();
+        nlohmann::json entered = nlohmann::json::object();
         // One per placement: board point and the dimensions measured there
         nlohmann::json placements = nlohmann::json::array();
         std::vector<std::string> cameras;
@@ -59,6 +63,10 @@ class DartSets
     };
 
     std::optional<api::Server::CalibrationError> start (const std::string& name);
+    // A set from entered dimensions only, without measuring
+    std::optional<api::Server::CalibrationError> create (const std::string& name, const nlohmann::json& dims);
+    // Enters or corrects dimensions (null removes an entered value, so the measured one counts again)
+    std::optional<api::Server::CalibrationError> update (const std::string& id, const nlohmann::json& dims);
     void cancel ();
     // On the detection thread
     void onUpdate (const fusion::TrackerUpdate& update, const std::vector<cv::Mat>& means);
