@@ -478,3 +478,18 @@ TEST(Replay, BothPipelinesFindTheDartsOfARecordedGame)
     ASSERT_TRUE(again) << error;
     EXPECT_EQ(readFile(again->run_directory / "throws.jsonl"), readFile(directory / "results/tracker/throws.jsonl"));
 }
+
+TEST(StillDetector, ADartLandingIsMotionButImageNoiseIsNot)
+{
+    cv::Mat before(180, 320, CV_32F, cv::Scalar(120.0f));
+    cv::Mat noisy = before.clone();
+    cv::randn(noisy, cv::Scalar(120.0), cv::Scalar(1.5));
+    EXPECT_FALSE(event_detection::moved(before, noisy));
+    // A dart a quarter of the size: a few hundred pixels change, the mean of the image hardly at all
+    cv::Mat dart = before.clone();
+    cv::line(dart, {100, 40}, {160, 90}, cv::Scalar(30.0f), 3);
+    EXPECT_LT(cv::mean(cv::abs(dart - before))[0], 2.5);
+    EXPECT_TRUE(event_detection::moved(before, dart));
+    // A person passing changes everything a little
+    EXPECT_TRUE(event_detection::moved(before, before + 10.0f));
+}

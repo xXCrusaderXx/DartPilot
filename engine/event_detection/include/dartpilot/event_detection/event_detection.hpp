@@ -22,6 +22,11 @@ struct StillSettings
     // Mean brightness change between two samples at a quarter of the size above which a camera moves; image noise
     // gives about 1
     double still_motion = 2.5;
+    // A camera also moves when this many pixels at a quarter of the size change by more than local_change: a dart
+    // landing changes one small place, while image noise changes almost none (at most 2 on the reference setup, a
+    // dart 100 to 700)
+    double local_change = 25.0;
+    int local_change_px = 30;
     // Samples every camera must be still before averaging starts, and frames averaged per camera
     int settle_samples = 15;
     int frames_to_average = 10;
@@ -77,6 +82,10 @@ class StillDetector
     std::int64_t still_since_ns_ = 0;
     std::int64_t last_measured_ns_ = 0;
 };
+
+// Whether a camera moved between two samples: its image as 32-bit grey at a quarter of the size. A person passing
+// changes the whole image, a dart landing one small place.
+bool moved (const cv::Mat& before_small, const cv::Mat& after_small, const StillSettings& settings = {});
 
 // The pixels whose brightness differs by more than threshold between two images of one camera (8-bit or float BGR),
 // with gaps of a few pixels closed: the largest connected region, as an 8-bit mask. Empty if it is smaller than min_area_px.
