@@ -17,8 +17,9 @@ namespace
 class TrackerPipeline : public Pipeline
 {
    public:
-    TrackerPipeline (const std::vector<const geometry::RefinedCamera*>& cameras, const geometry::BoardModel& board)
-        : tracker_(trackerCameras(cameras), board)
+    TrackerPipeline (const std::vector<const geometry::RefinedCamera*>& cameras, const geometry::BoardModel& board,
+                     const fusion::TrackerSettings& settings)
+        : tracker_(trackerCameras(cameras), board, settings)
     {
     }
 
@@ -218,11 +219,11 @@ class BaselinePipeline : public Pipeline
 }  // namespace
 
 std::unique_ptr<Pipeline> makePipeline (std::string_view name, const std::vector<const geometry::RefinedCamera*>& cameras,
-                                        const geometry::BoardModel& board)
+                                        const geometry::BoardModel& board, const fusion::TrackerSettings& settings)
 {
     if(name == "tracker")
     {
-        return std::make_unique<TrackerPipeline>(cameras, board);
+        return std::make_unique<TrackerPipeline>(cameras, board, settings);
     }
     if(name == "baseline")
     {

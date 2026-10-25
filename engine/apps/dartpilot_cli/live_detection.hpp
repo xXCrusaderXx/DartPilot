@@ -14,6 +14,7 @@
 #include "dartpilot/api/server.hpp"
 #include "dartpilot/event_detection/event_detection.hpp"
 #include "dartpilot/fusion/dart_tracker.hpp"
+#include "dartpilot/fusion/detection_params.hpp"
 #include "dartpilot/geometry/board_refinement.hpp"
 #include "preview_sources.hpp"
 
@@ -40,8 +41,8 @@ class LiveDetection
     void intercept (std::function<void(const fusion::TrackerUpdate&)> handler);
     bool ready () const { return ready_; }
 
-    // The values of when the board counts as still, changeable while running (get_detection_params and
-    // set_detection_params): from the next still moment on, not kept across restarts. The handler gets every change.
+    // Every value of the detection (fusion::detectionParams), changeable while running (get_detection_params and
+    // set_detection_params): from the next sample on, not kept across restarts. The handler gets every change.
     nlohmann::json paramsMessage () const;
     void onParamsChanged (std::function<void(const nlohmann::json& params)> handler);
 
@@ -56,7 +57,8 @@ class LiveDetection
     void run ();
     // The camera's latest frame, if it has a new one since the last sample
     std::optional<event_detection::StillSample> sample (Camera& camera, std::size_t index);
-    void publish (const fusion::TrackerUpdate& update, const event_detection::StillMoment& moment, double latency_ms, double detection_latency_ms);
+    void publish (const fusion::TrackerUpdate& update, const event_detection::StillMoment& moment, double latency_ms, double detection_latency_ms,
+                  const fusion::ConfidenceSettings& confidence, int params_revision);
 
     api::Server& server_;
     const FrameFeed& previews_;
@@ -70,8 +72,10 @@ class LiveDetection
     // Unknown names and values out of range are refused as a whole
     std::optional<std::string> setParams (const nlohmann::json& params);
     mutable std::mutex settings_mutex_;
-    event_detection::StillSettings settings_;
+    fusion::DetectionSettings settings_;
     bool settings_changed_ = false;
+    // Counts the changes; every throw names the revision it was made with
+    int params_revision_ = 0;
     std::function<void(const nlohmann::json&)> params_handler_;
     std::mutex intercept_mutex_;
     std::function<void(const fusion::TrackerUpdate&)> intercept_;

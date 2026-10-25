@@ -7,7 +7,9 @@
 #include <opencv2/core.hpp>
 
 #include "dartpilot/geometry/board_refinement.hpp"
+#include "dartpilot/geometry/board_state.hpp"
 #include "dartpilot/geometry/dart_location.hpp"
+#include "dartpilot/tip_candidates/dart_observation.hpp"
 
 // Live detection from still moments of the board (#121, #128): every time all cameras are still, the board is compared
 // with its last still state. A new dart gives a throw, located from the cameras that agree or marked uncertain; an
@@ -51,10 +53,30 @@ struct TrackerUpdate
     std::vector<std::pair<int, cv::Point2d>> moved_cameras;
 };
 
+struct TrackerSettings
+{
+    tip_candidates::ObservationSettings observation;
+    tip_candidates::ViewChangeSettings view_change;
+    geometry::LocateSettings locate;
+    geometry::BoardCheckSettings board_check;
+    // Half size of the patch around each axis point in which a change is compared with the empty board and the last state
+    int patch_px = 2;
+    // A still moment holds at most this many changes: a pulled dart and the one put in, and one more for safety
+    int max_changes = 3;
+    // How far around the axis of a pulled dart the board is taken as it is now, so that its flight is covered as well
+    int pulled_reach_px = 45;
+    // All darts are pulled when at most this many cameras still see something against the empty board: a dart in the
+    // board stands out to at least two cameras, while a single camera may keep a trace of a pushed-out fibre.
+    int takeout_max_cameras = 1;
+};
+
 class DartTracker
 {
    public:
-    DartTracker (std::vector<TrackerCamera> cameras, geometry::BoardModel board);
+    DartTracker (std::vector<TrackerCamera> cameras, geometry::BoardModel board, TrackerSettings settings = {});
+
+    // From the next still moment on
+    void setSettings (const TrackerSettings& settings) { settings_ = settings; }
 
     // The mean images of all cameras at a still moment, in the order of the cameras
     TrackerUpdate addStill (const std::vector<cv::Mat>& images);
@@ -65,6 +87,7 @@ class DartTracker
    private:
     std::vector<TrackerCamera> cameras_;
     geometry::BoardModel board_;
+    TrackerSettings settings_;
     // The empty board, refreshed after every takeout, and the board at the last still moment
     std::vector<cv::Mat> reference_;
     std::vector<cv::Mat> last_;

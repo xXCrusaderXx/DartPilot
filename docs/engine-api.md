@@ -257,6 +257,21 @@ The guided reference measurement (#14), started with `start_reference_run` and s
 - `saved_session`: once a run is done, the id of the session it was stored as in the sessions directory, `null` before. It holds the targets as the annotation set `reference_corners` and the located darts as the run `reference`, without frames, so the benchmark scores it: `python -m dartpilot_tools.benchmark <sessions>/<id>... --run reference --annotations reference_corners` (docs/benchmark.md). Several runs together give the spread of the method for #14.
 - Errors of `start_reference_run`: `not_calibrated`.
 
+### detection_params
+
+Every value of the live detection (docs/detection-params.md), sent after `hello`, as the answer to `get_detection_params`, and to every client after each `set_detection_params`. A client builds its controls from `ranges` and `info`, so values can be added without a client change. `revision` counts the changes since the engine started; every `throw` names the `params_revision` it was made with.
+
+```json
+{ "type": "detection_params", "revision": 2,
+  "params": { "settle_samples": 6, "average_frames": 4, "...": "..." },
+  "ranges": { "settle_samples": { "min": 1, "max": 60, "step": 1, "unit": "" } },
+  "info": { "settle_samples": { "group": "event_detection", "description": "Samples in which every camera must be still ...", "default": 6 } } }
+```
+
+`set_detection_params {"params": {"name": value}}` changes values from the next sample on; `null` sets one back to its default. Values with a `step` of 1 or more are rounded. An unknown name or a value out of range gives `bad_request` and changes nothing. Values are not kept when the engine stops.
+
+`throw` and `takeout` from live detection also carry `detection_latency_ms`: from the last sample in which a camera moved (the dart landing, the hand leaving) to sending.
+
 ### shared_game
 
 One game on several displays (#116, ADR 0010): the app that leads the game shares it with `share_game`, and the engine sends it to every client, the sender included, as the confirmation that it arrived. A client that connects later gets the latest one after `hello`. The engine keeps it when the sharing app disconnects, whose Wi-Fi may only blip, until the next `share_game` or `end_shared_game`, which sends `game: null`. `game` is the app's own record of the game; the engine never reads it, so game rules stay in the app.
@@ -305,6 +320,8 @@ Every request carries a `request_id` chosen by the client and is answered with `
 | `start_reference_run` / `stop_reference_run` | – | The guided reference measurement; its state comes as `reference_run` |
 | `subscribe_calibration_check` / `unsubscribe_calibration_check` | – | Detailed calibration checks every 2 s as `calibration_check` |
 | `get_board_image` | `size_px`, `radius_mm` (optional) | The real board from the front; answered with `board_image` |
+| `get_detection_params` | – | The detection values; answered with `detection_params` |
+| `set_detection_params` | `params` (name → number or `null`) | Changes detection values; `detection_params` goes to every client |
 | `share_game` | `game` (an object of up to 256 KB) | Shares the game with every display; sent on as `shared_game` |
 | `end_shared_game` | – | Ends sharing; `shared_game` with `game: null` |
 | `subscribe_preview` | `camera`, `max_fps`, `max_width` | Starts preview frames of a camera |

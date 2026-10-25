@@ -218,12 +218,14 @@ int runServe (int argc, char* argv[])
             {
                 // Every value in effect, from the start and after each change, so that a replay can use the same ones
                 const auto params_path = recording->directory() / "results" / "live" / "params.jsonl";
-                const auto write = [params_path] (const nlohmann::json& params)
+                const auto write = [params_path] (const nlohmann::json& message)
                 {
                     std::ofstream(params_path, std::ios::app)
-                        << nlohmann::json{{"t_ns", capture::monotonicNowNs()}, {"params", params}}.dump() << "\n";
+                        << nlohmann::json{{"t_ns", capture::monotonicNowNs()}, {"revision", message["revision"]}, {"params", message["params"]}}
+                               .dump()
+                        << "\n";
                 };
-                write(live_detection->paramsMessage()["params"]);
+                write(live_detection->paramsMessage());
                 live_detection->onParamsChanged(write);
             }
             // Until the first still empty board, darts cannot be told from the board.

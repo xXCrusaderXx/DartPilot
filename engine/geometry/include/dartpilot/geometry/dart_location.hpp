@@ -32,8 +32,23 @@ struct DartLocation
     std::vector<double> end_distance_px;
 };
 
+// When views of a dart agree on its point (locateDart)
+struct LocateSettings
+{
+    // A cut-off object shorter than this shows too little of its axis to fix its direction.
+    double min_cut_axis_px = 120.0;
+    // The planes of agreeing views pass within this distance of their common point on the board.
+    double max_plane_distance_mm = 1.5;
+    // Two views alone must cross at least at this angle on the board, or their crossing slides along both lines.
+    double min_crossing_deg = 15.0;
+    // The point's image lies at most this far from a visible end; the entry may hide a few pixels behind the visible end.
+    double max_end_distance_px = 12.0;
+    // Uncertainty of one axis plane on the board, for the covariance of the point
+    double plane_sigma_mm = 0.5;
+};
+
 // The largest group of views whose axis planes meet in one point on the board, each with a visible end of the object
 // where the point lies in its image; two views must cross at a usable angle. Views of a short, cut-off object are not
 // used. Nothing if no two views agree: the engine abstains rather than guess.
-std::optional<DartLocation> locateDart (const std::vector<DartView>& views);
+std::optional<DartLocation> locateDart (const std::vector<DartView>& views, const LocateSettings& settings = {});
 }  // namespace dartpilot::geometry
