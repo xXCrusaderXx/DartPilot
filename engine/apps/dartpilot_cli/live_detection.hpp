@@ -36,9 +36,11 @@ class LiveDetection
     void start ();
     void stop ();
     void setRunning (bool running) { running_ = running; }
-    // While set, every update of the tracker goes to the handler instead of to the clients, e.g. for a reference run.
-    // Called on the detection thread.
-    void intercept (std::function<void(const fusion::TrackerUpdate&)> handler);
+    // While set, every update of the tracker goes to the handler instead of to the clients, with the mean images it
+    // was made from, e.g. for a reference run. Called on the detection thread.
+    using Interceptor = std::function<void(const fusion::TrackerUpdate&, const std::vector<cv::Mat>& means)>;
+    void intercept (Interceptor handler);
+    bool intercepted () const;
     bool ready () const { return ready_; }
 
     // Every value of the detection (fusion::detectionParams), changeable while running (get_detection_params and
@@ -77,7 +79,7 @@ class LiveDetection
     // Counts the changes; every throw names the revision it was made with
     int params_revision_ = 0;
     std::function<void(const nlohmann::json&)> params_handler_;
-    std::mutex intercept_mutex_;
-    std::function<void(const fusion::TrackerUpdate&)> intercept_;
+    mutable std::mutex intercept_mutex_;
+    Interceptor intercept_;
 };
 }  // namespace dartpilot::cli

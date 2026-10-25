@@ -90,6 +90,8 @@ struct DartObservation
     // The object touches the image border, so the camera sees only part of it
     bool cut = false;
     int area_px = 0;
+    // The object as one area (8-bit, the size of the image), for measuring its width along the axis
+    cv::Mat mask;
 };
 
 // image and empty_board are images of the same camera, ideally means of several frames, 8-bit or float BGR. Nothing if

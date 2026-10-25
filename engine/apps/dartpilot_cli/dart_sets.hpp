@@ -1,0 +1,82 @@
+#pragma once
+
+#include <filesystem>
+#include <mutex>
+#include <optional>
+#include <string>
+#include <vector>
+
+#include <nlohmann/json.hpp>
+
+#include "dartpilot/api/server.hpp"
+#include "dartpilot/capture/v4l2_device.hpp"
+#include "dartpilot/geometry/dart_shape.hpp"
+#include "live_detection.hpp"
+
+// The player's darts (#120): a dart set is measured by putting one of its darts into the board at a few places, and
+// stored with its dimensions and a picture of the dart from every camera in calibration/dart-sets. The app names the
+// set that the player at the board throws; detection does not use it yet (the profile is an optional refinement and
+// first has to show its benefit on recordings).
+namespace dartpilot::cli
+{
+class DartSets
+{
+   public:
+    DartSets (api::Server& server, LiveDetection& detection, const std::vector<capture::CameraDevice>& devices,
+              const std::filesystem::path& calibration_directory);
+    ~DartSets ();
+
+    // Placements a new set needs
+    static constexpr int kPlacements = 4;
+
+   private:
+    struct Set
+    {
+        std::string id;
+        std::string name;
+        std::string created_utc;
+        nlohmann::json dims;
+        // One per placement: board point and the dimensions measured there
+        nlohmann::json placements = nlohmann::json::array();
+        std::vector<std::string> cameras;
+    };
+
+    struct Capture
+    {
+        std::string name;
+        std::string state;
+        std::string reason;
+        nlohmann::json camera_states = nlohmann::json::array();
+        std::vector<geometry::DartShape> shapes;
+        std::vector<cv::Point2f> points_mm;
+        // The clearest picture of the dart per camera so far, and how much of the dart it shows
+        std::vector<cv::Mat> crops;
+        std::vector<int> crop_areas;
+    };
+
+    std::optional<api::Server::CalibrationError> start (const std::string& name);
+    void cancel ();
+    // On the detection thread
+    void onUpdate (const fusion::TrackerUpdate& update, const std::vector<cv::Mat>& means);
+    void finish ();
+    void load ();
+    bool save (const Set& set) const;
+    nlohmann::json setJson (const Set& set) const;
+    void publishSets ();
+    void publishCapture ();
+    std::filesystem::path directory () const { return calibration_directory_ / "dart-sets"; }
+
+    api::Server& server_;
+    LiveDetection& detection_;
+    std::vector<std::string> ports_;
+    std::filesystem::path calibration_directory_;
+    std::optional<geometry::StoredExtrinsics> extrinsics_;
+    // The calibration of each camera, in the order of the tracker's cameras; null without one
+    std::vector<const geometry::RefinedCamera*> calibrations_;
+
+    mutable std::mutex mutex_;
+    std::vector<Set> sets_;
+    std::optional<std::string> active_;
+    std::optional<Capture> capture_;
+};
+}  // namespace dartpilot::cli

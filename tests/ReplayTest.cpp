@@ -13,6 +13,7 @@
 #include "dartpilot/fusion/detection_params.hpp"
 #include "dartpilot/geometry/board_plane.hpp"
 #include "dartpilot/geometry/board_refinement.hpp"
+#include "dartpilot/geometry/dart_shape.hpp"
 #include "dartpilot/replay/replay.hpp"
 #include "dartpilot/session/json.hpp"
 #include "dartpilot/session/session_reader.hpp"
@@ -528,4 +529,39 @@ TEST(DetectionParams, EveryValueHasItsDefaultWithinRangeAndCanBeSet)
     EXPECT_TRUE(fusion::setDetectionParam(settings, "settle_samples", 1000.0));
     ASSERT_FALSE(fusion::setDetectionParam(settings, "settle_samples", 6.4));
     EXPECT_EQ(settings.still.settle_samples, 6);
+}
+
+TEST(DartShape, MeasuresLengthFlightAndBarrelOfASyntheticDart)
+{
+    const auto views = aroundTheBoard();
+    const auto extrinsics = fixtureExtrinsics(views);
+    const cv::Point2f tip_mm(30.0f, 60.0f);
+    std::vector<geometry::DartView> dart_views;
+    for(std::size_t c = 0; c < views.size(); ++c)
+    {
+        const cv::Mat board = synthetic_board::renderCameraImage(views[c], 1.0, 90);
+        cv::Mat with_dart = board.clone();
+        drawDart(with_dart, extrinsics.refinement.cameras[c], tip_mm, 30.0);
+        // Through JPEG, as the cameras deliver it
+        std::vector<std::uint8_t> jpeg;
+        cv::imencode(".jpg", with_dart, jpeg);
+        with_dart = cv::imdecode(jpeg, cv::IMREAD_COLOR);
+        if(const auto observation = tip_candidates::observeDart(with_dart, board))
+        {
+            dart_views.push_back({&extrinsics.refinement.cameras[c], *observation});
+        }
+    }
+    ASSERT_GE(dart_views.size(), 2u);
+    const auto location = geometry::locateDart(dart_views);
+    ASSERT_TRUE(location);
+    const auto shape = geometry::measureDart(dart_views, *location);
+    ASSERT_TRUE(shape);
+    // drawDart: point 0–28 mm, barrel 28–75 mm, flight 80–115 mm, 15° off the board's normal. Its lines are drawn with
+    // round ends a few pixels wide, so the drawn dart is longer than 115 mm.
+    EXPECT_NEAR(shape->total_mm, 120.0, 8.0);
+    EXPECT_NEAR(shape->flight_mm, 45.0, 10.0);
+    EXPECT_GT(shape->barrel_mm, 20.0);
+    EXPECT_LT(shape->point_mm, 40.0);
+    EXPECT_NEAR(std::acos(std::abs(shape->direction[2])) * 180.0 / CV_PI, 15.0, 3.0);
+    EXPECT_GE(shape->cameras, 2);
 }
