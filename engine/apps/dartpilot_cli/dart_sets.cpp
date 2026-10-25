@@ -299,6 +299,9 @@ void DartSets::publishCapture ()
         }
         message = {{"type", "dart_set_capture"},
                    {"state", capture_->state},
+                   {"waiting_for", capture_->state == "waiting"                                 ? "dart"
+                                   : capture_->state == "placed" || capture_->state == "failed" ? "pull"
+                                                                                                : ""},
                    {"placed", static_cast<int>(capture_->shapes.size())},
                    {"needed", kPlacements},
                    {"camera_states", capture_->camera_states}};
@@ -367,14 +370,25 @@ void DartSets::onUpdate (const fusion::TrackerUpdate& update, const std::vector<
             return;
         }
         auto& capture = *capture_;
-        if(update.takeout && capture.state == "placed")
+        if(capture.state == "placed" || capture.state == "failed")
         {
-            capture.state = "waiting";
-            capture.reason.clear();
+            int still_seen = 0;
+            for(std::size_t c = 0; c < means.size() && c < capture.before.size(); ++c)
+            {
+                still_seen += !capture.before[c].empty() && tip_candidates::observeDart(means[c], capture.before[c]) ? 1 : 0;
+            }
+            // As the tracker decides a takeout: a dart stands out to at least two cameras.
+            if(update.takeout || (!capture.before.empty() && still_seen <= 1))
+            {
+                capture.state = "waiting";
+                capture.reason.clear();
+            }
         }
+
         if(update.dart && capture.state == "waiting")
         {
             const auto& dart = *update.dart;
+            capture.before = update.before;
             capture.camera_states = json::array();
             std::vector<geometry::DartView> views;
             for(std::size_t c = 0; c < dart.cameras.size() && c < ports_.size(); ++c)
@@ -418,10 +432,6 @@ void DartSets::onUpdate (const fusion::TrackerUpdate& update, const std::vector<
                 complete = static_cast<int>(capture.shapes.size()) >= kPlacements;
                 capture.state = complete ? "measuring" : "placed";
             }
-        }
-        else if(update.takeout && capture.state == "failed")
-        {
-            capture.state = "waiting";
         }
     }
     if(complete)

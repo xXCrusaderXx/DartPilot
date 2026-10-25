@@ -290,9 +290,11 @@ The player's darts (#120). A set is measured by putting one dart of it into the 
 `dart_set_capture` follows a running measurement; the latest one is sent after `hello` too:
 
 ```json
-{ "type": "dart_set_capture", "state": "placed", "placed": 2, "needed": 4,
+{ "type": "dart_set_capture", "state": "placed", "waiting_for": "pull", "placed": 2, "needed": 4,
   "camera_states": [ { "camera": "usb-2.4.3.1.2", "state": "seen" } ] }
 ```
+
+`waiting_for` says what the measurement waits for: `dart` (put it in) or `pull` (pull it out). The dart counts as pulled when the board looks as it did before the dart was put in, in all but one camera. Neither the stored empty board nor the live detection's takeout is needed for that.
 
 `state`:
 - `waiting`: put the dart in;

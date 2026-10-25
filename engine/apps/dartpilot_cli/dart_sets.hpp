@@ -52,6 +52,10 @@ class DartSets
         // The clearest picture of the dart per camera so far, and how much of the dart it shows
         std::vector<cv::Mat> crops;
         std::vector<int> crop_areas;
+        // The board at the last still moment before the dart was put in: once it looks like that again, the dart was
+        // pulled. Waiting for the tracker's takeout instead would hang on a trace the dart left, or on an outdated
+        // empty board.
+        std::vector<cv::Mat> before;
     };
 
     std::optional<api::Server::CalibrationError> start (const std::string& name);

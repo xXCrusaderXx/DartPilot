@@ -46,6 +46,8 @@ struct TrackedDart
 struct TrackerUpdate
 {
     std::optional<TrackedDart> dart;
+    // With a dart: the board at the still moment before it, per camera, as the dart was found against it
+    std::vector<cv::Mat> before;
     // Darts that were in the board when it was found empty again
     std::optional<int> takeout;
     // The tracker has an empty board to compare with and detects darts from now on
