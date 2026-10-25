@@ -89,18 +89,18 @@ std::filesystem::path writeFixtureSession (const std::filesystem::path& root)
     return writer->directory();
 }
 
-// The board refinement of both cameras, from their own images, as the setup GUI would make it
-geometry::StoredExtrinsics fixtureExtrinsics ()
+// The board refinement of the cameras usb-1.2, usb-1.3, … from their own images, as the setup GUI would make it
+geometry::StoredExtrinsics fixtureExtrinsics (const std::vector<cv::Matx33d>& views = {kViews.begin(), kViews.end()})
 {
     std::vector<geometry::RefinementInput> inputs;
-    for(std::size_t c = 0; c < kViews.size(); ++c)
+    for(std::size_t c = 0; c < views.size(); ++c)
     {
-        const auto detection = geometry::detectBoard(synthetic_board::renderCameraImage(kViews[c], 1.0, 90));
+        const auto detection = geometry::detectBoard(synthetic_board::renderCameraImage(views[c], 1.0, 90));
         EXPECT_TRUE(detection);
-        const auto twenty = geometry::sectorAt(*detection, synthetic_board::project(kViews[c], 0.0, 60.0));
+        const auto twenty = geometry::sectorAt(*detection, synthetic_board::project(views[c], 0.0, 60.0));
         EXPECT_TRUE(twenty);
         geometry::RefinementInput input;
-        input.usb_port = c == 0 ? "1.2" : "1.3";
+        input.usb_port = "1." + std::to_string(c + 2);
         input.correspondences = geometry::orientBoard(*detection, twenty.value_or(0));
         input.prior = geometry::boardOnlyPrior(cv::Size(1280, 720));
         inputs.push_back(input);
@@ -318,4 +318,163 @@ TEST(SessionReader, ReadsTheSharedFixture)
     const auto check = session::parseJson(lines(readFile(fixture / "results/replay/calibration_checks.jsonl")).front(), error);
     ASSERT_TRUE(check) << error;
     EXPECT_EQ(check->find("rms_mm")->text, "0.4321");
+}
+
+namespace
+{
+// A dart entering the synthetic board at tip_mm, as camera sees it: a thin point, a thicker barrel and a flight, in a
+// colour that stands out on every field, so frame differencing sees the whole dart
+void drawDart (cv::Mat& image, const geometry::RefinedCamera& camera, const cv::Point2f& tip_mm, double lean_deg)
+{
+    const float out = geometry::cameraCentre(camera)[2] >= 0.0 ? 1.0f : -1.0f;
+    const double tilt = 15.0 * CV_PI / 180.0, lean = lean_deg * CV_PI / 180.0;
+    const cv::Point3f axis(static_cast<float>(std::sin(tilt) * std::cos(lean)), static_cast<float>(std::sin(tilt) * std::sin(lean)),
+                           out * static_cast<float>(std::cos(tilt)));
+    const cv::Point3f tip(tip_mm.x, tip_mm.y, 0.0f);
+    const auto line = [&] (float from_mm, float to_mm, int thickness, const cv::Scalar& colour)
+    {
+        for(float s = from_mm; s < to_mm; s += 1.0f)
+        {
+            cv::line(image, geometry::boardToImage(camera, tip + axis * s), geometry::boardToImage(camera, tip + axis * (s + 1.0f)), colour,
+                     thickness, cv::LINE_AA);
+        }
+    };
+    line(0.0f, 28.0f, 2, cv::Scalar(230, 120, 30));
+    line(28.0f, 75.0f, 6, cv::Scalar(230, 120, 30));
+    line(80.0f, 115.0f, 18, cv::Scalar(200, 200, 200));
+}
+
+// Three cameras around the board, so the dart's axis crosses their views at a wide angle
+std::vector<cv::Matx33d> aroundTheBoard ()
+{
+    std::vector<cv::Matx33d> views;
+    for(const double azimuth_deg : {0.0, 120.0, 240.0})
+    {
+        const double a = azimuth_deg * CV_PI / 180.0;
+        views.push_back(synthetic_board::boardToImage(45.0, 600.0, 0.0) *
+                        cv::Matx33d(std::cos(a), -std::sin(a), 0, std::sin(a), std::cos(a), 0, 0, 0, 1));
+    }
+    return views;
+}
+
+// A game on the three cameras at 10 frames per second: the empty board, a dart, a second dart, the empty board
+// again, with a hand passing in front of the board between them
+std::filesystem::path writeGameSession (const std::filesystem::path& root, const std::vector<cv::Matx33d>& views,
+                                        const geometry::StoredExtrinsics& extrinsics, const std::vector<cv::Point2f>& darts_mm)
+{
+    session::SessionInfo info;
+    info.session_id = "20261024T130000Z-game";
+    info.created_utc = "2026-10-24T13:00:00Z";
+    for(std::size_t c = 0; c < views.size(); ++c)
+    {
+        const std::string port = "1." + std::to_string(c + 2);
+        info.cameras.push_back({"usb-" + port, port, "/dev/null", "Cam", {}, false, {}, std::nullopt, std::nullopt});
+    }
+    std::string error;
+    auto writer = session::SessionWriter::create(root, info, error);
+    EXPECT_TRUE(writer) << error;
+    constexpr std::int64_t kPeriod_ns = 100'000'000;
+    const std::vector<std::vector<std::size_t>> states = {{}, {0}, {0, 1}, {}};
+    for(std::size_t c = 0; c < views.size(); ++c)
+    {
+        const cv::Mat board = synthetic_board::renderCameraImage(views[c], 1.0, 90);
+        std::uint32_t sequence = 0;
+        for(std::size_t s = 0; s < states.size(); ++s)
+        {
+            cv::Mat still = board.clone();
+            for(const std::size_t d : states[s])
+            {
+                drawDart(still, extrinsics.refinement.cameras[c], darts_mm[d], 30.0 + 120.0 * static_cast<double>(d));
+            }
+            std::vector<std::uint8_t> still_jpeg;
+            cv::imencode(".jpg", still, still_jpeg);
+            // A hand moving in front of the board, then the board still for 3 s
+            for(int i = 0; i < 35; ++i)
+            {
+                std::vector<std::uint8_t> jpeg = still_jpeg;
+                if(s > 0 && i < 5)
+                {
+                    cv::Mat hand = still.clone();
+                    cv::rectangle(hand, cv::Rect(200 + 150 * i, 200, 300, 250), cv::Scalar(90, 120, 170), cv::FILLED);
+                    cv::imencode(".jpg", hand, jpeg);
+                }
+                capture::Frame frame;
+                frame.sequence = ++sequence;
+                frame.exposure_ns = 1'000'000'000 + static_cast<std::int64_t>(sequence) * kPeriod_ns;
+                frame.driver_ns = frame.exposure_ns;
+                frame.arrival_ns = frame.exposure_ns;
+                frame.data = jpeg;
+                writer->writeFrame(c, frame);
+            }
+        }
+    }
+    writer->finish("2026-10-24T13:00:15Z", std::vector<capture::CaptureStats>(views.size()));
+    return writer->directory();
+}
+}  // namespace
+
+TEST(Replay, BothPipelinesFindTheDartsOfARecordedGame)
+{
+    TemporaryDirectory root;
+    std::string error;
+    replay::ReplayConfig config;
+    const auto views = aroundTheBoard();
+    config.extrinsics = fixtureExtrinsics(views);
+    config.extrinsics_sha256 = "ab";
+    config.check_interval_ns = 0;
+    const std::vector<cv::Point2f> darts_mm = {{30.0f, 60.0f}, {-50.0f, -20.0f}};
+    const auto directory = writeGameSession(root.path(), views, *config.extrinsics, darts_mm);
+
+    for(const char* pipeline : {"tracker", "baseline"})
+    {
+        // Opened again for every run: the first one writes the session's throws.csv, the second keeps its throw ids.
+        const auto recorded = session::openSession(directory, error);
+        ASSERT_TRUE(recorded) << error;
+        config.pipeline = pipeline;
+        config.run_id = pipeline;
+        const auto summary = replay::replaySession(*recorded, config, error);
+        ASSERT_TRUE(summary) << error;
+        EXPECT_EQ(summary->throws, 2u) << pipeline;
+        EXPECT_EQ(summary->takeouts, 1u) << pipeline;
+        EXPECT_EQ(summary->unmatched_throws, 0u) << pipeline;
+        EXPECT_EQ(summary->wrote_session_throws, std::string(pipeline) == "tracker");
+        const auto results = lines(readFile(summary->run_directory / "throws.jsonl"));
+        ASSERT_EQ(results.size(), 2u) << pipeline;
+        for(std::size_t i = 0; i < results.size(); ++i)
+        {
+            const auto line = session::parseJson(results[i], error);
+            ASSERT_TRUE(line) << error;
+            EXPECT_EQ(line->string("throw_id"), "20261024T130000Z-game/" + std::to_string(i + 1));
+            const auto* point = line->find("board_point");
+            ASSERT_TRUE(point && !point->isNull()) << pipeline << " throw " << i + 1;
+            const auto at = [] (const session::JsonValue& p)
+            { return cv::Point2f(std::stof(p.find("x_mm")->text), std::stof(p.find("y_mm")->text)); };
+            if(std::string(pipeline) == "tracker")
+            {
+                EXPECT_LT(cv::norm(at(*point) - darts_mm[i]), 3.0) << "throw " << i + 1 << ": " << results[i];
+                continue;
+            }
+            // The baseline averages every camera that saw a change: one that looks along the dart sees only the flight and
+            // pulls the mean away, while those that see the whole dart find its point.
+            int right = 0;
+            for(const auto& camera : line->find("camera_measurements")->items)
+            {
+                const auto* camera_point = camera.find("board_point");
+                right += camera_point && !camera_point->isNull() && cv::norm(at(*camera_point) - darts_mm[i]) < 3.0 ? 1 : 0;
+            }
+            EXPECT_GE(right, 2) << "throw " << i + 1 << ": " << results[i];
+        }
+    }
+    const auto recorded = session::openSession(directory, error);
+    ASSERT_TRUE(recorded) << error;
+    ASSERT_EQ(recorded->throws.size(), 2u);
+    EXPECT_EQ(recorded->throws[1].throw_id, "20261024T130000Z-game/2");
+    EXPECT_EQ(recorded->throws[1].source, "replay:tracker");
+    EXPECT_LT(recorded->throws[0].window_start_ns, recorded->throws[0].event_ns);
+
+    config.pipeline = "tracker";
+    config.run_id = "tracker-again";
+    const auto again = replay::replaySession(*recorded, config, error);
+    ASSERT_TRUE(again) << error;
+    EXPECT_EQ(readFile(again->run_directory / "throws.jsonl"), readFile(directory / "results/tracker/throws.jsonl"));
 }
