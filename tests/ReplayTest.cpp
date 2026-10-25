@@ -7,6 +7,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "SyntheticBoard.hpp"
@@ -14,6 +15,7 @@
 #include "dartpilot/geometry/board_plane.hpp"
 #include "dartpilot/geometry/board_refinement.hpp"
 #include "dartpilot/geometry/dart_shape.hpp"
+#include "dartpilot/geometry/dart_sheet.hpp"
 #include "dartpilot/geometry/tip_triangulation.hpp"
 #include "dartpilot/replay/replay.hpp"
 #include "dartpilot/session/json.hpp"
@@ -601,4 +603,57 @@ TEST(TipTriangulation, TheTipsOfAllCamerasMeetAtTheEntryPoint)
             EXPECT_LT(*tips.reprojection_px[v], 3.0) << "view " << v;
         }
     }
+}
+
+TEST(DartSheet, MeasuresTheDartOnAPhotoOfTheSheet)
+{
+    constexpr double kPx_per_mm = 8.0;
+    cv::Mat sheet = geometry::dartSheetImage(kPx_per_mm);
+    if(sheet.empty())
+    {
+        GTEST_SKIP() << "built without ArUco support";
+    }
+    // A dart lying at an angle: point 25 mm × 2.2, barrel 45 × 7, shaft 35 × 4.5, flight 38 × 30
+    const cv::Point2d start_mm(40.0, 110.0), direction(std::cos(0.5), std::sin(0.5));
+    const cv::Point2d normal(-direction.y, direction.x);
+    double along = 0.0;
+    for(const auto& [length, width, grey] : std::vector<std::tuple<double, double, int>>{{25, 2.2, 150}, {45, 7.0, 60}, {35, 4.5, 30}, {38, 30.0, 0}})
+    {
+        const cv::Point2d a = start_mm + direction * along, b = start_mm + direction * (along + length);
+        std::vector<cv::Point> quad;
+        for(const auto& p : {a + normal * (width / 2), b + normal * (width / 2), b - normal * (width / 2), a - normal * (width / 2)})
+        {
+            quad.emplace_back(cvRound(p.x * kPx_per_mm), cvRound(p.y * kPx_per_mm));
+        }
+        cv::fillConvexPoly(sheet, quad, grey == 0 ? cv::Scalar(40, 200, 60) : cv::Scalar(grey, grey, grey));
+        along += length;
+    }
+    // A phone photo: tilted, smaller, a little blurred, through JPEG
+    const std::vector<cv::Point2f> from{{0, 0},
+                                        {static_cast<float>(sheet.cols), 0},
+                                        {static_cast<float>(sheet.cols), static_cast<float>(sheet.rows)},
+                                        {0, static_cast<float>(sheet.rows)}};
+    const std::vector<cv::Point2f> to{{120, 80}, {1480, 140}, {1540, 2080}, {60, 2010}};
+    cv::Mat photo;
+    cv::warpPerspective(sheet, photo, cv::getPerspectiveTransform(from, to), cv::Size(1600, 2160), cv::INTER_AREA, cv::BORDER_CONSTANT,
+                        cv::Scalar(70, 70, 70));
+    cv::GaussianBlur(photo, photo, cv::Size(), 0.8);
+    std::vector<std::uint8_t> jpeg;
+    cv::imencode(".jpg", photo, jpeg, {cv::IMWRITE_JPEG_QUALITY, 90});
+    photo = cv::imdecode(jpeg, cv::IMREAD_COLOR);
+
+    std::string why;
+    const auto measure = geometry::measureDartPhoto(photo, &why);
+    ASSERT_TRUE(measure) << why;
+    EXPECT_NEAR(measure->total_mm, 143.0, 2.0);
+    EXPECT_NEAR(measure->point_mm, 25.0, 2.5);
+    EXPECT_NEAR(measure->barrel_mm, 45.0, 3.0);
+    EXPECT_NEAR(measure->barrel_diameter_mm, 7.0, 1.0);
+    EXPECT_NEAR(measure->shaft_mm, 35.0, 3.0);
+    EXPECT_NEAR(measure->flight_mm, 38.0, 3.0);
+    EXPECT_FALSE(measure->image.empty());
+
+    const cv::Mat blank(2000, 1500, CV_8UC3, cv::Scalar(255, 255, 255));
+    EXPECT_FALSE(geometry::measureDartPhoto(blank, &why));
+    EXPECT_EQ(why, "sheet_not_found");
 }

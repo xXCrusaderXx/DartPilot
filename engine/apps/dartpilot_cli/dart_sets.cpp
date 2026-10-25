@@ -8,6 +8,7 @@
 #include <opencv2/imgproc.hpp>
 
 #include "base64.hpp"
+#include "dartpilot/geometry/dart_sheet.hpp"
 #include "dartpilot/session/session_writer.hpp"
 
 namespace dartpilot::cli
@@ -112,6 +113,8 @@ DartSets::DartSets (api::Server& server, LiveDetection& detection, const std::ve
                                  { return create(request.body.value("name", std::string()), request.body.value("dims", json::object())); });
     server_.onCalibrationRequest("update_dart_set", [this] (const api::CalibrationRequest& request)
                                  { return update(request.body.value("id", std::string()), request.body.value("dims", json::object())); });
+    server_.onCalibrationRequest("measure_dart_photo", [this] (const api::CalibrationRequest& request)
+                                 { return measurePhoto(request.body.value("id", std::string()), request.body.value("jpeg_base64", std::string())); });
     server_.onCalibrationRequest("cancel_dart_set",
                                  [this] (const api::CalibrationRequest&) -> Error
                                  {
@@ -219,8 +222,8 @@ DartSets::DartSets (api::Server& server, LiveDetection& detection, const std::ve
 
 DartSets::~DartSets ()
 {
-    for(const char* type : {"list_dart_sets", "start_dart_set", "create_dart_set", "update_dart_set", "cancel_dart_set", "get_dart_set_image",
-                            "rename_dart_set", "delete_dart_set", "set_active_darts"})
+    for(const char* type : {"list_dart_sets", "start_dart_set", "create_dart_set", "update_dart_set", "measure_dart_photo", "cancel_dart_set",
+                            "get_dart_set_image", "rename_dart_set", "delete_dart_set", "set_active_darts"})
     {
         server_.onCalibrationRequest(type, {});
     }
@@ -456,6 +459,53 @@ std::optional<api::Server::CalibrationError> DartSets::update (const std::string
         if(const auto error = applyEntered(it->entered, dims))
         {
             return api::Server::CalibrationError{"bad_request", *error};
+        }
+        if(!save(*it))
+        {
+            return api::Server::CalibrationError{"save_failed", "Cannot write the dart set"};
+        }
+    }
+    publishSets();
+    return std::nullopt;
+}
+
+std::optional<api::Server::CalibrationError> DartSets::measurePhoto (const std::string& id, const std::string& jpeg_base64)
+{
+    const auto jpeg = fromBase64(jpeg_base64);
+    const cv::Mat photo = jpeg && !jpeg->empty() ? cv::imdecode(*jpeg, cv::IMREAD_COLOR) : cv::Mat();
+    if(photo.empty())
+    {
+        return api::Server::CalibrationError{"bad_request", "jpeg_base64 is not a JPEG image"};
+    }
+    {
+        std::lock_guard lock(mutex_);
+        if(std::none_of(sets_.begin(), sets_.end(), [&] (const Set& s) { return s.id == id; }))
+        {
+            return api::Server::CalibrationError{"unknown_set", "No dart set " + id};
+        }
+    }
+    // Outside the lock: finding the sheet and the dart takes a moment.
+    std::string why;
+    const auto measure = geometry::measureDartPhoto(photo, &why);
+    if(!measure)
+    {
+        return api::Server::CalibrationError{
+            why, why == "sheet_not_found" ? "The four markers of the dart sheet are not in the photo" : "No dart found on the sheet"};
+    }
+    {
+        std::lock_guard lock(mutex_);
+        const auto it = std::find_if(sets_.begin(), sets_.end(), [&] (const Set& s) { return s.id == id; });
+        if(it == sets_.end())
+        {
+            return api::Server::CalibrationError{"unknown_set", "No dart set " + id};
+        }
+        it->photo = {{"total_mm", measure->total_mm},   {"point_mm", measure->point_mm},
+                     {"barrel_mm", measure->barrel_mm}, {"barrel_diameter_mm", measure->barrel_diameter_mm},
+                     {"shaft_mm", measure->shaft_mm},   {"flight_mm", measure->flight_mm}};
+        if(cv::imwrite((directory() / (id + "-photo.jpg")).string(), measure->image) &&
+           std::find(it->cameras.begin(), it->cameras.end(), "photo") == it->cameras.end())
+        {
+            it->cameras.push_back("photo");
         }
         if(!save(*it))
         {

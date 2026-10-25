@@ -67,6 +67,8 @@ class DartSets
     std::optional<api::Server::CalibrationError> create (const std::string& name, const nlohmann::json& dims);
     // Enters or corrects dimensions (null removes an entered value, so the measured one counts again)
     std::optional<api::Server::CalibrationError> update (const std::string& id, const nlohmann::json& dims);
+    // Measures the set's dart on a photo of the dart sheet (geometry::measureDartPhoto) into its photo dimensions
+    std::optional<api::Server::CalibrationError> measurePhoto (const std::string& id, const std::string& jpeg_base64);
     void cancel ();
     // On the detection thread
     void onUpdate (const fusion::TrackerUpdate& update, const std::vector<cv::Mat>& means);
