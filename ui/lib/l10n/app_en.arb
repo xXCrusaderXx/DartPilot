@@ -1048,5 +1048,13 @@
   "scoreCallerHint": "Announces each visit's score, like a caller",
   "callerVolume": "Caller volume",
   "callerTest": "Test",
-  "callerNoVoice": "This device has no speech output. On Linux: install speech-dispatcher (spd-say)."
+  "callerNoVoice": "This device has no speech output. On Linux: install speech-dispatcher (spd-say).",
+  "cameraAssignFailed": "Assignment not stored: {error}",
+  "@cameraAssignFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }

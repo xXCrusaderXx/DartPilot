@@ -1600,4 +1600,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get callerNoVoice => 'This device has no speech output. On Linux: install speech-dispatcher (spd-say).';
+
+  @override
+  String cameraAssignFailed(String error) {
+    return 'Assignment not stored: $error';
+  }
 }

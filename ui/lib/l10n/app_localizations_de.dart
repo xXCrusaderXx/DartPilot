@@ -1601,4 +1601,9 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get callerNoVoice =>
       'Auf diesem Gerät gibt es keine Sprachausgabe. Unter Linux: speech-dispatcher installieren (spd-say).';
+
+  @override
+  String cameraAssignFailed(String error) {
+    return 'Zuordnung nicht gespeichert: $error';
+  }
 }

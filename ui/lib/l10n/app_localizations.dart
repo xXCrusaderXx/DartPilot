@@ -2881,6 +2881,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This device has no speech output. On Linux: install speech-dispatcher (spd-say).'**
   String get callerNoVoice;
+
+  /// No description provided for @cameraAssignFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Assignment not stored: {error}'**
+  String cameraAssignFailed(String error);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

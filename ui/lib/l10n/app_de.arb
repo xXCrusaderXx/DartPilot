@@ -464,5 +464,6 @@
   "scoreCallerHint": "Sagt die Punkte jeder Aufnahme an, wie ein Caller",
   "callerVolume": "Lautstärke der Ansage",
   "callerTest": "Probe",
-  "callerNoVoice": "Auf diesem Gerät gibt es keine Sprachausgabe. Unter Linux: speech-dispatcher installieren (spd-say)."
+  "callerNoVoice": "Auf diesem Gerät gibt es keine Sprachausgabe. Unter Linux: speech-dispatcher installieren (spd-say).",
+  "cameraAssignFailed": "Zuordnung nicht gespeichert: {error}"
 }

@@ -46,9 +46,15 @@ class _CameraAssignScreenState extends State<CameraAssignScreen> {
   });
 
   Future<void> _save() async {
-    await CameraOrderScope.of(context)
+    final l10n = AppLocalizations.of(context);
+    final error = await CameraOrderScope.of(context)
         .assign(_order!, {for (final MapEntry(:key, :value) in _names.entries) key: value.text});
-    if (mounted) Navigator.of(context).pop();
+    if (!mounted) return;
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.cameraAssignFailed(error))));
+      return;
+    }
+    Navigator.of(context).pop();
   }
 
   @override
