@@ -2183,14 +2183,14 @@ abstract class AppLocalizations {
   /// No description provided for @homeCameraMoved.
   ///
   /// In en, this message translates to:
-  /// **'Camera {number} has moved – measure it again.'**
-  String homeCameraMoved(int number);
+  /// **'{camera} has moved – measure it again.'**
+  String homeCameraMoved(String camera);
 
   /// No description provided for @homeCameraWrongPort.
   ///
   /// In en, this message translates to:
-  /// **'Camera {number} is on another USB port than when it was calibrated.'**
-  String homeCameraWrongPort(int number);
+  /// **'{camera} is on another USB port than when it was calibrated.'**
+  String homeCameraWrongPort(String camera);
 
   /// No description provided for @referenceRun.
   ///
@@ -2321,7 +2321,7 @@ abstract class AppLocalizations {
   /// No description provided for @cameraMovedNotice.
   ///
   /// In en, this message translates to:
-  /// **'Camera {camera} was moved – its calibration is being checked.'**
+  /// **'{camera} was moved – its calibration is being checked.'**
   String cameraMovedNotice(String camera);
 
   /// No description provided for @rigKnockedNotice.

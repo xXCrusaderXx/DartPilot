@@ -1204,13 +1204,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get checkChecking => 'Prüfe …';
 
   @override
-  String homeCameraMoved(int number) {
-    return 'Kamera $number hat sich bewegt – miss sie neu ein.';
+  String homeCameraMoved(String camera) {
+    return '$camera hat sich bewegt – miss sie neu ein.';
   }
 
   @override
-  String homeCameraWrongPort(int number) {
-    return 'Kamera $number steckt an einem anderen USB-Port als beim Kalibrieren.';
+  String homeCameraWrongPort(String camera) {
+    return '$camera steckt an einem anderen USB-Port als beim Kalibrieren.';
   }
 
   @override
@@ -1290,7 +1290,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String cameraMovedNotice(String camera) {
-    return 'Kamera $camera wurde verschoben – die Kalibrierung wird geprüft.';
+    return '$camera wurde verschoben – die Kalibrierung wird geprüft.';
   }
 
   @override

@@ -794,19 +794,19 @@
   "checkNoBoard": "No board found – darts in the board or a hand in view?",
   "checkNotCalibrated": "Not calibrated yet.",
   "checkChecking": "Checking …",
-  "homeCameraMoved": "Camera {number} has moved – measure it again.",
+  "homeCameraMoved": "{camera} has moved – measure it again.",
   "@homeCameraMoved": {
     "placeholders": {
-      "number": {
-        "type": "int"
+      "camera": {
+        "type": "String"
       }
     }
   },
-  "homeCameraWrongPort": "Camera {number} is on another USB port than when it was calibrated.",
+  "homeCameraWrongPort": "{camera} is on another USB port than when it was calibrated.",
   "@homeCameraWrongPort": {
     "placeholders": {
-      "number": {
-        "type": "int"
+      "camera": {
+        "type": "String"
       }
     }
   },
@@ -868,7 +868,7 @@
   "referenceNotGoodHint": "Run the setup diagnosis to see where the error comes from, then calibrate the cameras it names again.",
   "referenceCamerasDisagree": "The cameras disagree about where it is",
   "referenceSeenByOneCamera": "Only one camera saw it",
-  "cameraMovedNotice": "Camera {camera} was moved – its calibration is being checked.",
+  "cameraMovedNotice": "{camera} was moved – its calibration is being checked.",
   "@cameraMovedNotice": {
     "placeholders": {
       "camera": {
