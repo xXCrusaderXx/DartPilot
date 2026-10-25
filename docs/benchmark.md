@@ -41,3 +41,14 @@ Groups: throws near a ring or sector boundary (closer than 2 mm), the bulls, dou
 Ground truth can come from an annotation, from the reference measurement (`reference_corners`, #14), or from the corrections players made in a recorded game (`python -m dartpilot_tools.corrections <session>` writes `corrections`; about 3 mm uncertainty, so good for finding wrong scores rather than for millimetre errors).
 
 Ground truth and results are scored with `dartpilot_tools.scoring`, a port of `engine/scoring`. Both are tested against the same points in `tests/fixtures/scoring/cases.json`, so a change to one scorer fails the other's test until both agree.
+
+## Timeline of a throw
+
+To see when each camera delivered which frame around a throw, and which frames a run measured with (#21):
+
+```sh
+cd tools
+python -m dartpilot_tools.timeline ~/.local/share/dartpilot/sessions/<session> --run <run id> [--throw <throw id>]... [--out <dir>]
+```
+
+It writes one PNG per throw, into `results/<run id>/timeline/` by default, every throw of `throws.csv` without `--throw`. The top panel shows the whole event window: a row per camera with every frame at its exposure time, frames lost in between (red ×), the frames the run took the board from before the dart (blue) and with the dart (orange), the event time, and how the run saw the dart in that camera (`seen`, `cut`, …, ✓ when its measurement counted). The bottom panel is ±150 ms around the event: there the cameras' offsets against each other show, and each frame's delivery to the host from exposure to arrival.
