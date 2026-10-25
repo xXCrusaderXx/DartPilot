@@ -165,8 +165,9 @@ ClockCheck checkClock (const std::vector<uint32_t>& ticks, const std::vector<dou
 std::string clockJson (const char* name, const ClockCheck& check)
 {
     char text[256];
-    std::snprintf(text, sizeof(text), ",\"%s\":{\"unchanged\":%d,\"backwards\":%d,\"step_ticks\":{\"p50\":%.0f,\"p95\":%.0f,\"min\":%.0f},\"clock_hz\":%.0f}",
-                  name, check.unchanged, check.backwards, quantile(check.steps, 0.5), quantile(check.steps, 0.95),
+    std::snprintf(text, sizeof(text),
+                  ",\"%s\":{\"unchanged\":%d,\"backwards\":%d,\"step_ticks\":{\"p50\":%.0f,\"p95\":%.0f,\"min\":%.0f},\"clock_hz\":%.0f}", name,
+                  check.unchanged, check.backwards, quantile(check.steps, 0.5), quantile(check.steps, 0.95),
                   check.steps.empty() ? 0.0 : *std::min_element(check.steps.begin(), check.steps.end()), check.clock_hz);
     return text;
 }
