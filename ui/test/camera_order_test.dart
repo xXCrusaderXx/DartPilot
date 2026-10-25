@@ -63,4 +63,57 @@ void main() {
     expect(store.names, {'usb-1': 'Links'});
     expect(find.byKey(const ValueKey('assign-cameras-prompt')), findsNothing);
   });
+
+  testWidgets('an engine that keeps the assignment is the source on every display', (tester) async {
+    final sent = <Map<String, dynamic>>[];
+    final engine = EngineConnection.forTest(sent.add);
+    addTearDown(engine.dispose);
+    // This device assigned the cameras before the engine kept them: that assignment goes to the engine once.
+    final order = CameraOrder(MemoryCameraOrderStore(['usb-2', 'usb-1'], {'usb-2': 'Links'}));
+    await order.load();
+    order.attach(engine);
+    engine.receiveForTest(jsonEncode(hello));
+    engine.receiveForTest(
+      jsonEncode({
+        'type': 'camera_assignment',
+        'cameras': [
+          {'id': 'usb-1', 'order': null, 'name': null},
+          {'id': 'usb-2', 'order': null, 'name': null},
+        ],
+      }),
+    );
+    expect(sent.last['type'], 'set_camera_assignment');
+    expect(
+      sent.last['cameras'],
+      containsAll([
+        {'id': 'usb-2', 'order': 1, 'name': 'Links'},
+        {'id': 'usb-1', 'order': 2, 'name': null},
+      ]),
+    );
+
+    // What the engine then keeps counts, also for names this device never had.
+    engine.receiveForTest(
+      jsonEncode({
+        'type': 'camera_assignment',
+        'cameras': [
+          {'id': 'usb-1', 'order': 1, 'name': 'Oben'},
+          {'id': 'usb-2', 'order': 2, 'name': 'Links'},
+        ],
+      }),
+    );
+    expect(order.sorted(['usb-1', 'usb-2']), ['usb-1', 'usb-2']);
+    expect(order.label(l10n, ['usb-1', 'usb-2'], 'usb-1'), 'Oben');
+    expect(order.needsAssignment(['usb-1', 'usb-2']), isFalse);
+
+    // A swap from this display goes to the engine, not into the device's store.
+    order.assign(['usb-2', 'usb-1'], {});
+    expect(sent.last['type'], 'set_camera_assignment');
+    expect(
+      sent.last['cameras'],
+      containsAll([
+        {'id': 'usb-2', 'order': 1, 'name': 'Links'},
+        {'id': 'usb-1', 'order': 2, 'name': 'Oben'},
+      ]),
+    );
+  });
 }

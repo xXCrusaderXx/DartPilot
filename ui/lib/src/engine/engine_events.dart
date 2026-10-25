@@ -37,6 +37,7 @@ sealed class EngineEvent {
       for (final c in json['clients'] as List<dynamic>? ?? const [])
         if (c is Map<String, dynamic>) PairedClient.fromJson(c),
     ]),
+    'camera_assignment' => CameraAssignment.fromJson(json),
     'engine_status' => EngineStatus(json['detection'] as String? ?? 'running', json['message'] as String? ?? ''),
     _ => null,
   };
@@ -998,4 +999,32 @@ class SharedGame extends EngineEvent {
 
   final String client;
   final Map<String, dynamic>? game;
+}
+
+/// A camera's place and name as the engine keeps them for every client
+class AssignedCamera {
+  const AssignedCamera(this.id, {this.order, this.name});
+
+  final String id;
+
+  /// 1 for "Kamera 1"; null while the camera has not been assigned
+  final int? order;
+  final String? name;
+
+  factory AssignedCamera.fromJson(Map<String, dynamic> json) =>
+      AssignedCamera(json['id'] as String, order: json['order'] as int?, name: json['name'] as String?);
+
+  Map<String, Object?> toJson() => {'id': id, 'order': order, 'name': name};
+}
+
+/// The order and names of the cameras, kept by the engine so that every display agrees
+class CameraAssignment extends EngineEvent {
+  const CameraAssignment(this.cameras);
+
+  final List<AssignedCamera> cameras;
+
+  factory CameraAssignment.fromJson(Map<String, dynamic> json) => CameraAssignment([
+    for (final c in json['cameras'] as List<dynamic>? ?? const [])
+      if (c is Map<String, dynamic>) AssignedCamera.fromJson(c),
+  ]);
 }

@@ -83,6 +83,9 @@ class EngineConnection extends ChangeNotifier {
   /// Reference images by set id and camera, as far as asked for
   final Map<(String, String), DartSetImage> dartSetImages = {};
 
+  /// The cameras' order and names as the engine keeps them; null with engines that keep none
+  CameraAssignment? cameraAssignment;
+
   /// The game an app shares through the engine, this app's own included; null when none is shared
   SharedGame? sharedGame;
 
@@ -165,6 +168,7 @@ class EngineConnection extends ChangeNotifier {
     await _closeChannel();
     hello = null;
     boardState = null;
+    cameraAssignment = null;
     dartSets = null;
     dartSetCapture = null;
     dartSetImages.clear();
@@ -286,6 +290,10 @@ class EngineConnection extends ChangeNotifier {
       detectionReason = event.message.isEmpty ? null : event.message;
       notifyListeners();
     }
+    if (event is CameraAssignment) {
+      cameraAssignment = event;
+      notifyListeners();
+    }
     if (event is DartSets) {
       dartSets = event;
       notifyListeners();
@@ -340,6 +348,12 @@ class EngineConnection extends ChangeNotifier {
 
   void rejectThrow(String throwId, String reason) =>
       _send({'type': 'reject_throw', 'throw_id': throwId, 'reason': reason});
+
+  /// Stores the cameras' order and names in the engine; every client gets them as [cameraAssignment].
+  Future<String?> setCameraAssignment(List<AssignedCamera> cameras) => _request({
+    'type': 'set_camera_assignment',
+    'cameras': [for (final c in cameras) c.toJson()],
+  });
 
   /// Starts measuring a new dart set; progress arrives as [dartSetCapture], the new set in [dartSets].
   Future<String?> startDartSet(String name) => _request({'type': 'start_dart_set', 'name': name});

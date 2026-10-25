@@ -64,7 +64,7 @@ class _DartPilotAppState extends State<DartPilotApp> {
   late EngineSettings _settings = widget.settings ?? EngineSettings();
   late final AppLifecycleListener _lifecycle;
   late final Statistics _statistics = widget.statistics ?? Statistics(MemoryGameStore());
-  late final CameraOrder _cameraOrder = widget.cameraOrder ?? CameraOrder();
+  late final CameraOrder _cameraOrder = (widget.cameraOrder ?? CameraOrder())..attach(_engine);
   late final DartLinks _dartLinks = widget.dartLinks ?? DartLinks();
   late final Caller _caller = widget.caller ?? Caller(RecordingVoice(), store: false);
   final GlobalKey<ScaffoldMessengerState> _messenger = GlobalKey();
