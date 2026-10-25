@@ -1438,4 +1438,18 @@ class AppLocalizationsDe extends AppLocalizations {
   String detectionParamFailed(String name, String error) {
     return '$name nicht übernommen: $error';
   }
+
+  @override
+  String get saveParamProfile => 'Als Profil speichern';
+
+  @override
+  String get paramProfileName => 'Name des Profils';
+
+  @override
+  String get resetAllParams => 'Alle auf Standard';
+
+  @override
+  String resetParam(String value) {
+    return 'Zurück auf $value';
+  }
 }

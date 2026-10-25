@@ -416,5 +416,9 @@
   "statWrongBy": "Abweichung falscher Darts",
   "detectionParams": "Werte der Erkennung",
   "detectionParamsUnavailable": "Diese Engine kann ihre Werte nicht im laufenden Betrieb ändern.",
-  "detectionParamFailed": "{name} nicht übernommen: {error}"
+  "detectionParamFailed": "{name} nicht übernommen: {error}",
+  "saveParamProfile": "Als Profil speichern",
+  "paramProfileName": "Name des Profils",
+  "resetAllParams": "Alle auf Standard",
+  "resetParam": "Zurück auf {value}"
 }

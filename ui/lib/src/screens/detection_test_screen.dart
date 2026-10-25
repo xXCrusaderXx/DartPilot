@@ -8,6 +8,7 @@ import '../engine/engine_connection.dart';
 import '../engine/engine_events.dart';
 import '../input/throw_input_panel.dart';
 import '../stats/detection_log.dart';
+import '../stats/param_profiles.dart';
 import 'game_layout.dart';
 
 /// The detection test: throw, check what the engine made of the dart, pull, again. Wrong and missed darts are
@@ -267,7 +268,8 @@ class _Stats extends StatelessWidget {
   }
 }
 
-/// Sliders for the values of live detection, as the engine offers them
+/// The values of live detection as the engine offers them: grouped by pipeline stage, with what each one does,
+/// marked when changed from the default, and named profiles to return to a setting that worked
 class _ParamsCard extends StatefulWidget {
   const _ParamsCard(this.engine);
 
@@ -280,15 +282,62 @@ class _ParamsCard extends StatefulWidget {
 class _ParamsCardState extends State<_ParamsCard> {
   /// Values being dragged, before they are sent
   final Map<String, double> _dragging = {};
+  Map<String, Map<String, double>> _profiles = {};
 
-  Future<void> _set(String name, double value) async {
+  @override
+  void initState() {
+    super.initState();
+    _loadProfiles();
+  }
+
+  Future<void> _loadProfiles() async {
+    final profiles = await ParamProfiles.load();
+    if (mounted) setState(() => _profiles = profiles);
+  }
+
+  Future<void> _set(Map<String, double> values) async {
     final l10n = AppLocalizations.of(context);
-    final error = await widget.engine.setDetectionParams({name: value});
+    final error = await widget.engine.setDetectionParams(values);
     if (!mounted) return;
-    setState(() => _dragging.remove(name));
+    setState(() => values.keys.forEach(_dragging.remove));
     if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.detectionParamFailed(name, error))));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(l10n.detectionParamFailed(values.keys.join(', '), error))));
     }
+  }
+
+  Future<void> _saveProfile(DetectionParams params) async {
+    final l10n = AppLocalizations.of(context);
+    final controller = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.saveParamProfile),
+        content: TextField(
+          key: const ValueKey('param-profile-name'),
+          controller: controller,
+          autofocus: true,
+          decoration: InputDecoration(labelText: l10n.paramProfileName),
+          onSubmitted: (v) => Navigator.of(dialogContext).pop(v),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(l10n.cancel)),
+          FilledButton(
+            key: const ValueKey('param-profile-save'),
+            onPressed: () => Navigator.of(dialogContext).pop(controller.text),
+            child: Text(l10n.saveParamProfile),
+          ),
+        ],
+      ),
+    );
+    if (name == null || name.trim().isEmpty) return;
+    await ParamProfiles.save(name.trim(), {for (final n in params.ranges.keys) n: ?params.params[n]});
+    await _loadProfiles();
+  }
+
+  Future<void> _deleteProfile(String name) async {
+    await ParamProfiles.delete(name);
+    await _loadProfiles();
   }
 
   @override
@@ -296,6 +345,14 @@ class _ParamsCardState extends State<_ParamsCard> {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final params = widget.engine.detectionParams;
+    final groups = <String, List<String>>{};
+    for (final name in params?.ranges.keys ?? const <String>[]) {
+      groups.putIfAbsent(params!.info[name]?.group ?? '', () => []).add(name);
+    }
+    final changed = [
+      for (final MapEntry(key: name, value: info) in params?.info.entries ?? const <MapEntry<String, ParamInfo>>[])
+        if (info.defaultValue != null && params!.params[name] != null && params.params[name] != info.defaultValue) name,
+    ];
     return Card(
       key: const ValueKey('detection-params'),
       child: Padding(
@@ -303,39 +360,101 @@ class _ParamsCardState extends State<_ParamsCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(l10n.detectionParams, style: theme.textTheme.titleMedium),
+            Row(
+              children: [
+                Expanded(child: Text(l10n.detectionParams, style: theme.textTheme.titleMedium)),
+                if (changed.isNotEmpty)
+                  TextButton(
+                    key: const ValueKey('params-reset-all'),
+                    onPressed: () => _set({for (final n in changed) n: params!.info[n]!.defaultValue!}),
+                    child: Text(l10n.resetAllParams),
+                  ),
+              ],
+            ),
             if (params == null || params.ranges.isEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(l10n.detectionParamsUnavailable, style: theme.textTheme.bodySmall),
               )
-            else
-              for (final MapEntry(key: name, value: range) in params.ranges.entries) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(child: Text(name)),
-                    Text(
-                      '${_format(_dragging[name] ?? params.params[name], range)} ${range.unit}'.trim(),
-                      key: ValueKey('param-value-$name'),
+            else ...[
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  for (final name in _profiles.keys)
+                    InputChip(
+                      key: ValueKey('param-profile-$name'),
+                      label: Text(name),
+                      onPressed: () =>
+                          _set(Map.of(_profiles[name]!)..removeWhere((k, _) => !params.ranges.containsKey(k))),
+                      onDeleted: () => _deleteProfile(name),
                     ),
-                  ],
-                ),
-                Slider(
-                  key: ValueKey('param-$name'),
-                  min: range.min,
-                  max: range.max,
-                  divisions: range.step == null || range.step! <= 0
-                      ? null
-                      : ((range.max - range.min) / range.step!).round().clamp(1, 1000),
-                  value: (_dragging[name] ?? params.params[name] ?? range.min).clamp(range.min, range.max),
-                  onChanged: (v) => setState(() => _dragging[name] = v),
-                  onChangeEnd: (v) => _set(name, v),
-                ),
+                  ActionChip(
+                    key: const ValueKey('param-profile-new'),
+                    avatar: const Icon(Icons.bookmark_add_outlined, size: 18),
+                    label: Text(l10n.saveParamProfile),
+                    onPressed: () => _saveProfile(params),
+                  ),
+                ],
+              ),
+              for (final MapEntry(key: group, value: names) in groups.entries) ...[
+                const SizedBox(height: 12),
+                if (group.isNotEmpty)
+                  Text(group, style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.primary)),
+                for (final name in names) _param(l10n, theme, params, name),
               ],
+            ],
           ],
         ),
       ),
+    );
+  }
+
+  Widget _param(AppLocalizations l10n, ThemeData theme, DetectionParams params, String name) {
+    final range = params.ranges[name]!;
+    final info = params.info[name];
+    final value = params.params[name];
+    final defaultValue = info?.defaultValue;
+    final changed = defaultValue != null && value != null && value != defaultValue;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            if (changed) Icon(Icons.edit, size: 14, color: theme.colorScheme.tertiary),
+            if (changed) const SizedBox(width: 4),
+            Expanded(
+              child: Text(name, style: changed ? TextStyle(color: theme.colorScheme.tertiary) : null),
+            ),
+            Text(
+              '${_format(_dragging[name] ?? value, range)} ${range.unit}'.trim(),
+              key: ValueKey('param-value-$name'),
+            ),
+            if (changed)
+              IconButton(
+                key: ValueKey('param-reset-$name'),
+                tooltip: l10n.resetParam(_format(defaultValue, range)),
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.restart_alt, size: 18),
+                onPressed: () => _set({name: defaultValue}),
+              ),
+          ],
+        ),
+        if (info != null && info.description.isNotEmpty) Text(info.description, style: theme.textTheme.bodySmall),
+        Slider(
+          key: ValueKey('param-$name'),
+          min: range.min,
+          max: range.max,
+          divisions: range.step == null || range.step! <= 0
+              ? null
+              : ((range.max - range.min) / range.step!).round().clamp(1, 1000),
+          value: (_dragging[name] ?? value ?? range.min).clamp(range.min, range.max),
+          onChanged: (v) => setState(() => _dragging[name] = v),
+          onChangeEnd: (v) => _set({name: v}),
+        ),
+      ],
     );
   }
 

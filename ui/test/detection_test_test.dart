@@ -7,6 +7,7 @@ import 'package:dartpilot/src/engine/engine_events.dart';
 import 'package:dartpilot/src/stats/detection_log.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'navigation.dart';
 
@@ -148,5 +149,66 @@ void main() {
     await tester.pumpAndSettle();
     expect(sent.last['type'], 'set_detection_params');
     expect((sent.last['params'] as Map)['settle_ms'], lessThan(1500));
+  });
+
+  testWidgets('values are grouped, explained, reset to their default and kept as profiles', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    tester.view.physicalSize = const Size(1400, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final sent = <Map<String, dynamic>>[];
+    final engine = EngineConnection.forTest(sent.add);
+    addTearDown(engine.dispose);
+    await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
+    await playOffline(tester);
+    engine.state = EngineConnectionState.connected;
+    engine.receiveForTest(jsonEncode({'type': 'engine_status', 'detection': 'running', 'message': ''}));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('detection-test')));
+    await tester.pumpAndSettle();
+    Map<String, dynamic> params(double settle) => {
+      'type': 'detection_params',
+      'params': {'settle_samples': settle, 'still_motion': 2.5},
+      'ranges': {
+        'settle_samples': {'min': 1, 'max': 30, 'step': 1, 'unit': ''},
+        'still_motion': {'min': 0.5, 'max': 10, 'step': 0.1, 'unit': 'grey'},
+      },
+      'info': {
+        'settle_samples': {'group': 'event_detection', 'description': 'Still samples before averaging', 'default': 6},
+        'still_motion': {
+          'group': 'event_detection',
+          'description': 'Mean change that still counts as still',
+          'default': 2.5,
+        },
+      },
+    };
+    engine.receiveForTest(jsonEncode(params(3)));
+    await tester.pumpAndSettle();
+    await tester.dragUntilVisible(
+      find.byKey(const ValueKey('param-still_motion')),
+      find.byKey(const ValueKey('detection-stats')),
+      const Offset(0, -200),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('event_detection'), findsOneWidget);
+    expect(find.text('Still samples before averaging'), findsOneWidget);
+    // Only the changed value can be reset, to its default.
+    expect(find.byKey(const ValueKey('param-reset-still_motion')), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('param-reset-settle_samples')));
+    await tester.pumpAndSettle();
+    expect(sent.last['type'], 'set_detection_params');
+    expect(sent.last['params'], {'settle_samples': 6.0});
+
+    // A profile keeps the values and sets them again.
+    await tester.tap(find.byKey(const ValueKey('param-profile-new')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('param-profile-name')), 'schnell');
+    await tester.tap(find.byKey(const ValueKey('param-profile-save')));
+    await tester.pumpAndSettle();
+    engine.receiveForTest(jsonEncode(params(6)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('param-profile-schnell')));
+    await tester.pumpAndSettle();
+    expect(sent.last['params'], {'settle_samples': 3.0, 'still_motion': 2.5});
   });
 }

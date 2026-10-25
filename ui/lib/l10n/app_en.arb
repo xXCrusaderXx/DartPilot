@@ -923,5 +923,10 @@
   "detectionParams": "Detection values",
   "detectionParamsUnavailable": "This engine cannot change its values while it runs.",
   "detectionParamFailed": "{name} not applied: {error}",
-  "@detectionParamFailed": {"placeholders": {"name": {"type": "String"}, "error": {"type": "String"}}}
+  "@detectionParamFailed": {"placeholders": {"name": {"type": "String"}, "error": {"type": "String"}}},
+  "saveParamProfile": "Save as profile",
+  "paramProfileName": "Profile name",
+  "resetAllParams": "All to default",
+  "resetParam": "Back to {value}",
+  "@resetParam": {"placeholders": {"value": {"type": "String"}}}
 }

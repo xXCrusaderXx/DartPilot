@@ -2593,6 +2593,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{name} not applied: {error}'**
   String detectionParamFailed(String name, String error);
+
+  /// No description provided for @saveParamProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as profile'**
+  String get saveParamProfile;
+
+  /// No description provided for @paramProfileName.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile name'**
+  String get paramProfileName;
+
+  /// No description provided for @resetAllParams.
+  ///
+  /// In en, this message translates to:
+  /// **'All to default'**
+  String get resetAllParams;
+
+  /// No description provided for @resetParam.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to {value}'**
+  String resetParam(String value);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

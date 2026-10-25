@@ -185,12 +185,15 @@ class EngineTakeout extends EngineEvent {
 
 /// The values live detection runs with, changeable while it runs (`set_detection_params`)
 class DetectionParams extends EngineEvent {
-  const DetectionParams(this.params, this.ranges);
+  const DetectionParams(this.params, this.ranges, [this.info = const {}]);
 
   final Map<String, double> params;
 
   /// What each value may be set to; the app offers exactly these
   final Map<String, ParamRange> ranges;
+
+  /// Pipeline stage, description and default of each value; missing with engines that do not describe them
+  final Map<String, ParamInfo> info;
 
   factory DetectionParams.fromJson(Map<String, dynamic> json) => DetectionParams(
     {
@@ -201,6 +204,25 @@ class DetectionParams extends EngineEvent {
       for (final MapEntry(:key, :value) in (json['ranges'] as Map<String, dynamic>? ?? const {}).entries)
         if (value is Map<String, dynamic>) key: ParamRange.fromJson(value),
     },
+    {
+      for (final MapEntry(:key, :value) in (json['info'] as Map<String, dynamic>? ?? const {}).entries)
+        if (value is Map<String, dynamic>) key: ParamInfo.fromJson(value),
+    },
+  );
+}
+
+class ParamInfo {
+  const ParamInfo({this.group = '', this.description = '', this.defaultValue});
+
+  /// The pipeline stage the value belongs to, e.g. event_detection
+  final String group;
+  final String description;
+  final double? defaultValue;
+
+  factory ParamInfo.fromJson(Map<String, dynamic> json) => ParamInfo(
+    group: json['group'] as String? ?? '',
+    description: json['description'] as String? ?? '',
+    defaultValue: (json['default'] as num?)?.toDouble(),
   );
 }
 
