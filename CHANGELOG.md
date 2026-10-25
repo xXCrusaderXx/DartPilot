@@ -5,6 +5,46 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-25
+
+Ground truth and baseline: the first detection is measured against ground truth on a benchmark dataset, next to a frame-differencing baseline. Live detection, remote play and the app grew alongside.
+
+### Added
+
+- Ground truth (ADR 0011, #14):
+  - reference corners for millimetres: 0.3 mm along a wire, about 1 mm across it (#205 follows up);
+  - the player's corrections, confirmed fields and detection-test ratings for the field.
+  - A guided reference measurement in the app, stored as a session the benchmark scores (#167, #170, #181).
+- Benchmark (#17, #180):
+  - one command scores a run against ground truth: errors, field accuracy, abstentions, and groups by ring and by flags (cut, occluded, near a wire, dart of the visit);
+  - annotation sets from corrections, confirmed fields and detection-test ratings (#15, #115).
+- The first dataset, split into development and test sessions (#16), and the baseline report (#19): the live detection placed 51 of 55 confirmed darts in the right field, abstained on 4, and put none in a wrong one. The frame-differencing baseline put 21 in a wrong field.
+- Replay detects throws with the live tracker or the frame-differencing baseline (#18, #188). `serve --record` records games with their corrections and takeouts, and `serve --replay` plays a session through the engine API (#115, #184).
+- Live detection:
+  - a thrown dart reaches the app about 0.5 s after it lands, down from 2.8 s (#190, #192);
+  - every detection value is in one documented registry, changeable while the engine runs, recorded with each throw and replayable (#194, #196);
+  - a detection test in the setup GUI, with each camera's axis drawn into its image (#197);
+  - a knocked camera is reported as moved, while a dart moving the board or its number ring no longer is (#168, #169, #173, #174, #177, #178, #200);
+  - the next visit starts only when the darts of the last one are pulled (#128, #191).
+- Dart sets (#120): the engine measures a player's darts from four placements, and the app keeps them per player (#201, #208).
+- The real board as an image in the game, with its number plates (#166, #171, #175, #176).
+- Remote play:
+  - engines found in the home network by mDNS and UDP and shared by QR code (#109, #182, #183, #185);
+  - pairing with a PIN or a stored token, protocol 1.1 (#110, #207, #209);
+  - one game on several displays (#116, #187, #189).
+- App:
+  - statistics over games with a hit board, an end-of-game summary, and CSV and JSON export (#117, #210);
+  - new cameras assigned once with their live images (#198).
+- Android feasibility spike: three UVC cameras on a phone through libuvc, at 30 fps each (#104, #186).
+- Engine, app and tools carry one version (#202).
+
+### Fixed
+
+- Thrown darts are detected without a person in view (#190).
+- The board state is sent only when it changes (#211).
+- The board check holds while a knocked camera sways (#178, #179).
+- App layout and contrast fixes (#172, #204, #206, #212).
+
 ## [0.2.0] - 2026-10-25
 
 Replay and board model: recorded sessions replay identically, the cameras are calibrated from the dartboard itself with a measured error budget, and board points are scored. The platform and app work done meanwhile ships with it.
