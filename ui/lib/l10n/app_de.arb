@@ -441,5 +441,17 @@
   "dartSetNotMeasured": "Der Dart ließ sich hier nicht vermessen.",
   "dartSetSaveFailed": "Das Set konnte nicht gespeichert werden.",
   "dartSetBoardStillOccupied": "Die Engine sieht noch etwas im Board. Ist es leer, speichere das leere Board neu – sonst geht es nicht weiter.",
-  "dartMeasureUncertain": "unsicher"
+  "dartMeasureUncertain": "unsicher",
+  "pairTitle": "Mit der Engine koppeln",
+  "pairText": "Die Engine unter {address} lässt nur gekoppelte Geräte zu. Gib die PIN ein, die auf ihrem Gerät angezeigt wird – das ist nur einmal nötig.",
+  "pairPin": "PIN",
+  "pairButton": "Koppeln",
+  "pairWrongPin": "Die PIN stimmt nicht. Schau noch einmal auf das Gerät der Engine.",
+  "pairTooManyAttempts": "Zu viele falsche Versuche. Warte eine Minute.",
+  "pairFailed": "Koppeln fehlgeschlagen: {error}",
+  "engineQrPin": "PIN für andere Geräte: {pin}",
+  "pairedDevices": "Gekoppelte Geräte",
+  "noPairedDevices": "Noch kein Gerät gekoppelt.",
+  "pairedDeviceSeen": "zuletzt {when}",
+  "unpairDevice": "Entkoppeln"
 }

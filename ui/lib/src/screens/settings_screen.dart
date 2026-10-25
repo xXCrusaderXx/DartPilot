@@ -5,6 +5,7 @@ import '../engine/engine_choice.dart';
 import '../engine/engine_connection.dart';
 import '../widgets/board_check.dart';
 import '../widgets/engine_card.dart';
+import '../widgets/paired_devices.dart';
 import 'calibration_check_screen.dart';
 import 'calibration_screen.dart';
 import 'cameras_screen.dart';
@@ -147,7 +148,7 @@ class EngineSettingsScreen extends StatelessWidget {
     body: Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 600),
-        child: ListView(padding: const EdgeInsets.all(16), children: const [EngineCard()]),
+        child: ListView(padding: const EdgeInsets.all(16), children: const [EngineCard(), PairedDevicesCard()]),
       ),
     ),
   );

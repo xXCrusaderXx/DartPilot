@@ -2743,6 +2743,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'uncertain'**
   String get dartMeasureUncertain;
+
+  /// No description provided for @pairTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pair with the engine'**
+  String get pairTitle;
+
+  /// No description provided for @pairText.
+  ///
+  /// In en, this message translates to:
+  /// **'The engine at {address} only accepts paired devices. Enter the PIN its device shows – this is needed only once.'**
+  String pairText(String address);
+
+  /// No description provided for @pairPin.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN'**
+  String get pairPin;
+
+  /// No description provided for @pairButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Pair'**
+  String get pairButton;
+
+  /// No description provided for @pairWrongPin.
+  ///
+  /// In en, this message translates to:
+  /// **'The PIN is wrong. Look at the engine\'s device again.'**
+  String get pairWrongPin;
+
+  /// No description provided for @pairTooManyAttempts.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many wrong attempts. Wait a minute.'**
+  String get pairTooManyAttempts;
+
+  /// No description provided for @pairFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Pairing failed: {error}'**
+  String pairFailed(String error);
+
+  /// No description provided for @engineQrPin.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN for other devices: {pin}'**
+  String engineQrPin(String pin);
+
+  /// No description provided for @pairedDevices.
+  ///
+  /// In en, this message translates to:
+  /// **'Paired devices'**
+  String get pairedDevices;
+
+  /// No description provided for @noPairedDevices.
+  ///
+  /// In en, this message translates to:
+  /// **'No device paired yet.'**
+  String get noPairedDevices;
+
+  /// No description provided for @pairedDeviceSeen.
+  ///
+  /// In en, this message translates to:
+  /// **'last {when}'**
+  String pairedDeviceSeen(String when);
+
+  /// No description provided for @unpairDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpair'**
+  String get unpairDevice;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

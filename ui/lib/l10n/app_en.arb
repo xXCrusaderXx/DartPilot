@@ -990,5 +990,45 @@
     }
   },
   "dartSetBoardStillOccupied": "The engine still sees something in the board. If it is empty, store the empty board again – otherwise the measurement cannot go on.",
-  "dartMeasureUncertain": "uncertain"
+  "dartMeasureUncertain": "uncertain",
+  "pairTitle": "Pair with the engine",
+  "pairText": "The engine at {address} only accepts paired devices. Enter the PIN its device shows – this is needed only once.",
+  "@pairText": {
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "pairPin": "PIN",
+  "pairButton": "Pair",
+  "pairWrongPin": "The PIN is wrong. Look at the engine's device again.",
+  "pairTooManyAttempts": "Too many wrong attempts. Wait a minute.",
+  "pairFailed": "Pairing failed: {error}",
+  "@pairFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "engineQrPin": "PIN for other devices: {pin}",
+  "@engineQrPin": {
+    "placeholders": {
+      "pin": {
+        "type": "String"
+      }
+    }
+  },
+  "pairedDevices": "Paired devices",
+  "noPairedDevices": "No device paired yet.",
+  "pairedDeviceSeen": "last {when}",
+  "@pairedDeviceSeen": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "unpairDevice": "Unpair"
 }
