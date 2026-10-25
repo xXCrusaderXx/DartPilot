@@ -17,6 +17,8 @@ std::int64_t monotonicNowNs ()
     return static_cast<std::int64_t>(now.tv_sec) * 1'000'000'000 + now.tv_nsec;
 }
 
+constexpr std::size_t kMaxSharedGameBytes = 256 * 1024;
+
 template <typename... Ts>
 struct Overloaded : Ts...
 {
@@ -400,6 +402,25 @@ nlohmann::json Server::handle (const std::string& connection, const Request& req
                 auto result = resultMessage(request.request_id, true);
                 result["throw_id"] = id;
                 return result;
+            },
+            [&] (const ShareGame& share)
+            {
+                if(share.game.is_null())
+                {
+                    {
+                        std::lock_guard lock(mutex_);
+                        last_states_.erase("shared_game");
+                    }
+                    broadcast(sharedGameMessage(client, nullptr));
+                    return resultMessage(request.request_id, true);
+                }
+                if(share.game.dump().size() > kMaxSharedGameBytes)
+                {
+                    return resultMessage(request.request_id, false, "too_large", "A shared game may have up to 256 KB");
+                }
+                // Kept when the sharing app disconnects, whose Wi-Fi may only blip; the next share or end replaces it.
+                publishState(sharedGameMessage(client, share.game));
+                return resultMessage(request.request_id, true);
             },
             [&] (const SetDetection& detection)
             {

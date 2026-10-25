@@ -129,6 +129,8 @@ nlohmann::json cameraStatusMessage (const CameraStatus& status);
 nlohmann::json engineStatusMessage (const std::string& detection, const std::string& message);
 // calibration_status with the status's fields
 nlohmann::json calibrationStatusMessage (const nlohmann::json& status);
+// The shared game (#116) and the client that shared it; a null game ends sharing
+nlohmann::json sharedGameMessage (const std::string& client, const nlohmann::json& game);
 nlohmann::json resultMessage (const std::string& request_id, bool ok, const std::string& error_code = {}, const std::string& error_message = {});
 
 // Requests from clients
@@ -174,6 +176,12 @@ struct StoreEmptyReference
     // Store even while a camera sees an object, after the user confirmed that the board is empty
     bool force = false;
 };
+// share_game and end_shared_game (#116): the game the leading app shares with the other displays, opaque to the engine;
+// null to end sharing
+struct ShareGame
+{
+    nlohmann::json game;
+};
 struct Subscription
 {
     std::string topic;  // status or preview
@@ -184,7 +192,7 @@ struct Subscription
     int max_width = 0;
 };
 using RequestBody = std::variant<ClientHello, CorrectThrow, RejectThrow, AddThrow, SetDetection, Subscription, CheckBoard, StoreEmptyReference,
-                                 SetDiagnosis, CalibrationRequest>;
+                                 SetDiagnosis, CalibrationRequest, ShareGame>;
 
 struct Request
 {
