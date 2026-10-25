@@ -46,8 +46,15 @@ class _ThrowInputPanelState extends State<ThrowInputPanel> {
         Expanded(
           child: Center(
             child: _keypad
-                ? SingleChildScrollView(
-                    child: Keypad(onThrow: widget.onThrow, geometry: widget.geometry),
+                ? LayoutBuilder(
+                    // Fits the space it has; scrolls only where its keys would get too small to hit
+                    builder: (context, constraints) => SingleChildScrollView(
+                      child: Keypad(
+                        onThrow: widget.onThrow,
+                        geometry: widget.geometry,
+                        maxHeight: constraints.maxHeight,
+                      ),
+                    ),
                   )
                 : Dartboard(
                     key: const ValueKey('dartboard'),
