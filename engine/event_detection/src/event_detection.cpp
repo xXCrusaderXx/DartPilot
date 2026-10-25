@@ -60,6 +60,7 @@ std::optional<StillMoment> StillDetector::addSample (std::int64_t time_ns, const
     }
     if(!still)
     {
+        last_motion_ns_ = time_ns;
         still_samples_ = 0;
         measured_since_motion_ = false;
         restart();
@@ -103,6 +104,7 @@ std::optional<StillMoment> StillDetector::addSample (std::int64_t time_ns, const
     }
     StillMoment moment;
     moment.start_ns = still_since_ns_;
+    moment.last_motion_ns = last_motion_ns_;
     for(auto& camera : cameras_)
     {
         moment.means.push_back(camera.sum / static_cast<double>(camera.frames.size()));

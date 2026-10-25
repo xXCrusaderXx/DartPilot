@@ -621,3 +621,19 @@ TEST(Server, ASharedGameReachesEveryDisplayAndLaterOnes)
     EXPECT_TRUE(after.next("shared_game").is_null());
     server.stop();
 }
+
+TEST(Protocol, DetectionParamsAndLatencies)
+{
+    for(const char* type : {"get_detection_params", "set_detection_params"})
+    {
+        const auto parsed = api::parseRequest(std::string(R"({"type":")") + type + R"(","request_id":"1","params":{"settle_samples":6.0}})");
+        const auto& request = std::get<api::CalibrationRequest>(std::get<api::Request>(parsed).body);
+        EXPECT_EQ(request.type, type);
+    }
+    EXPECT_FALSE(api::takeoutMessage(1, 3).contains("detection_latency_ms"));
+    EXPECT_EQ(api::takeoutMessage(1, 3, 412.5)["detection_latency_ms"], 412.5);
+    api::Throw dart;
+    dart.detection_latency_ms = 480.0;
+    EXPECT_EQ(api::throwMessage(dart, scoring::BoardGeometry{})["detection_latency_ms"], 480.0);
+    EXPECT_EQ(api::throwRecord(dart, scoring::BoardGeometry{})["diagnostics"]["detection_latency_ms"], 480.0);
+}

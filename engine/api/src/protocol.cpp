@@ -176,6 +176,10 @@ json throwMessage (const Throw& dart, const scoring::BoardGeometry& geometry)
                 {"confidence", dart.confidence},
                 {"cameras", cameras},
                 {"processing_latency_ms", dart.processing_latency_ms}};
+    if(dart.detection_latency_ms)
+    {
+        out["detection_latency_ms"] = *dart.detection_latency_ms;
+    }
     if(dart.board_point)
     {
         out["board_point"] = toJson(*dart.board_point);
@@ -208,6 +212,10 @@ json throwRecord (const Throw& dart, const scoring::BoardGeometry& geometry)
                 {"camera_measurements", cameras},
                 {"diagnostics", {{"event_ns", dart.event_ns}}},
                 {"processing_latency_ms", dart.processing_latency_ms}};
+    if(dart.detection_latency_ms)
+    {
+        out["diagnostics"]["detection_latency_ms"] = *dart.detection_latency_ms;
+    }
     if(dart.board_point)
     {
         out["board_point"] = toJson(*dart.board_point);
@@ -248,9 +256,14 @@ json throwCorrectedMessage (const std::string& throw_id, const std::string& acti
     return out;
 }
 
-json takeoutMessage (std::int64_t event_ns, int darts_removed)
+json takeoutMessage (std::int64_t event_ns, int darts_removed, std::optional<double> detection_latency_ms)
 {
-    return {{"type", "takeout"}, {"event_ns", event_ns}, {"darts_removed", darts_removed}};
+    json out = {{"type", "takeout"}, {"event_ns", event_ns}, {"darts_removed", darts_removed}};
+    if(detection_latency_ms)
+    {
+        out["detection_latency_ms"] = *detection_latency_ms;
+    }
+    return out;
 }
 
 json cameraStatusMessage (const CameraStatus& status)
@@ -350,7 +363,7 @@ std::variant<Request, ParseError> parseRequest (const std::string& text)
         }
         else if(type == "detect_board" || type == "set_sector_20" || type == "refine_cameras" || type == "tune_white_balance" ||
                 type == "subscribe_calibration_check" || type == "unsubscribe_calibration_check" || type == "get_board_image" ||
-                type == "start_reference_run" || type == "stop_reference_run")
+                type == "start_reference_run" || type == "stop_reference_run" || type == "get_detection_params" || type == "set_detection_params")
         {
             request.body = CalibrationRequest{type, message};
         }

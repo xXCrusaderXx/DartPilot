@@ -40,7 +40,7 @@ class Server
 
     // Assigns the throw ID, sends the throw to every client and returns it with its ID
     Throw publishThrow (Throw dart);
-    void publishTakeout (std::int64_t event_ns, int darts_removed);
+    void publishTakeout (std::int64_t event_ns, int darts_removed, std::optional<double> detection_latency_ms = std::nullopt);
     // Sent to clients that subscribed to status; a changed state goes to every client
     void publishCameraStatus (const CameraStatus& status);
     void publishEngineStatus (const std::string& detection, const std::string& message);

@@ -93,6 +93,8 @@ struct Throw
     std::string reason;
     std::vector<CameraContribution> cameras;
     double processing_latency_ms = 0.0;
+    // From the last motion the engine saw (the dart landed, the hand left) to sending; live only
+    std::optional<double> detection_latency_ms;
 };
 
 struct CameraStatus
@@ -124,7 +126,7 @@ nlohmann::json throwCorrectedMessage (const std::string& throw_id, const std::st
 nlohmann::json throwRecord (const Throw& dart, const scoring::BoardGeometry& geometry);
 nlohmann::json correctionRecord (const std::string& throw_id, const std::string& action, const std::optional<BoardPoint>& point,
                                  const std::string& client, const std::string& reason, std::int64_t event_ns);
-nlohmann::json takeoutMessage (std::int64_t event_ns, int darts_removed);
+nlohmann::json takeoutMessage (std::int64_t event_ns, int darts_removed, std::optional<double> detection_latency_ms = std::nullopt);
 nlohmann::json cameraStatusMessage (const CameraStatus& status);
 nlohmann::json engineStatusMessage (const std::string& detection, const std::string& message);
 // calibration_status with the status's fields
