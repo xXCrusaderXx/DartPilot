@@ -1,6 +1,6 @@
 # ADR 0011: Ground truth from reference corners and from the player's corrections
 
-- **Status:** proposed
+- **Status:** accepted
 - **Date:** 2026-10-25
 - **Issues:** #14, #15, #16, #115
 
@@ -47,7 +47,7 @@ These errors bound the uncertainty of the method from above, since they also con
 
 ## Not yet met, and what follows
 
-#14 asks for an uncertainty clearly below 1.5 mm. That holds tangentially (0.3 mm), but not radially (about 1 mm). Two ways to close the gap, to be measured before this ADR is accepted:
+#14 asks for an uncertainty clearly below 1.5 mm. That holds tangentially (0.3 mm), but not radially (about 1 mm). The maintainer accepted this ADR with that limitation; closing the gap is #205, for 0.4.0, by one of two measurements:
 
 1. **Targets on the wire.** The point is pushed against the ring wire, and the target lies at the wire's radius minus the point's radius, instead of a guessed distance inside the field. Repeated runs of the same corners give the radial spread directly.
 2. **A close-up photo per target** with a phone held square to the board. It measures the point against the wires in pixels, at well below 0.5 mm per pixel.
