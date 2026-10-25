@@ -204,7 +204,7 @@ How ground truth is made is decided in [ADR 0011](adr/0011-ground-truth.md). The
 
 | Set | Made by | Truth | Uncertainty |
 | - | - | - | - |
-| `reference_corners` | the guided reference run in the app (#167, #181), stored as a session without frames | darts pushed into known wire corners | 0.5 mm along the wire, 1.0 mm across it (1 σ) |
+| `reference_corners` | the guided reference run in the app (#167, #181), stored as a session without frames; while `serve --record` runs, also into the recording, each dart as a throw `<session>/ref<run>-<n>` in `results/live` and `throws.csv`, so a replay measures every camera against the targets (#22, #205) | darts pushed into known wire corners | 0.5 mm along the wire, 1.0 mm across it (1 σ) |
 | `corrections` | `python -m dartpilot_tools.corrections <session>` from a run recorded with `serve --record` (#115) | the points players set when they corrected a dart or added a missed one; rejected darts with `"no_dart": true` | about 3 mm (a tap) |
 | `confirmed` | the same command | darts the engine placed and the player left alone, at the engine's point, with `"field_only": true` | the field only |
 | `ratings` | `python -m dartpilot_tools.detection_test <log>` from a detection test of the setup GUI (#197), stored as a session without frames with the run `detection-test` | darts rated right (`field_only`), moved to another field, given a point after an abstention, or added as missed; `"no_dart"` for false alarms | about 3 mm, or the field only |

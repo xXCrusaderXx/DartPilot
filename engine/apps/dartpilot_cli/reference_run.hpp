@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <functional>
 #include <mutex>
 #include <optional>
 #include <vector>
@@ -44,12 +45,19 @@ class ReferenceRun
                   std::filesystem::path sessions_directory);
     ~ReferenceRun ();
 
+    // While serve records a session: every placed dart also goes into it, as a throw (through log) and with its target
+    // in the annotation set reference_corners, so a replay of the recording can measure each camera against the
+    // targets (#22, #205).
+    void recordInto (std::filesystem::path session_directory, std::string session_id, std::function<void(const nlohmann::json&)> log);
+
    private:
     std::optional<api::Server::CalibrationError> start ();
     void stop ();
     // On the detection thread
     void onUpdate (const fusion::TrackerUpdate& update);
     void publish ();
+    // Under mutex_
+    void record (std::size_t index, const fusion::TrackedDart& dart);
 
     api::Server& server_;
     LiveDetection& detection_;
@@ -62,5 +70,10 @@ class ReferenceRun
     std::vector<ReferenceResult> results_;
     std::filesystem::path sessions_directory_;
     std::string saved_session_;
+    std::filesystem::path recording_directory_;
+    std::string recording_id_;
+    std::function<void(const nlohmann::json&)> recording_log_;
+    // Counts the runs within one recording, so their throw ids stay apart
+    int recorded_runs_ = 0;
 };
 }  // namespace dartpilot::cli

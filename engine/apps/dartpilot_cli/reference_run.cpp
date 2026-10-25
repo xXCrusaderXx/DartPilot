@@ -4,6 +4,7 @@
 #include <cmath>
 #include <fstream>
 
+#include "dartpilot/capture/frame.hpp"
 #include "dartpilot/session/session_writer.hpp"
 #include "dartpilot/version.hpp"
 
@@ -12,6 +13,9 @@ namespace dartpilot::cli
 namespace
 {
 using json = nlohmann::json;
+
+// A target's uncertainty: the spread of wire and point thickness and how the point sits, about 0.5 mm
+constexpr double kTargetVariance_mm2 = 0.25;
 
 double quantile (std::vector<double> values, double q)
 {
@@ -90,8 +94,6 @@ std::optional<std::string> saveReferenceRun (const std::filesystem::path& sessio
     std::ofstream(directory / "manifest.json") << manifest.dump(2) << "\n";
     std::ofstream annotations(directory / "annotations" / "reference_corners.jsonl");
     std::ofstream throws(directory / "results" / "reference" / "throws.jsonl");
-    // The target's uncertainty: the spread of wire and point thickness and how the point sits, about 0.5 mm
-    constexpr double kTargetVariance_mm2 = 0.25;
     for(std::size_t i = 0; i < results.size() && i < targets.size(); ++i)
     {
         const std::string throw_id = id + "/" + std::to_string(i + 1);
@@ -192,6 +194,7 @@ std::optional<api::Server::CalibrationError> ReferenceRun::start ()
         running_ = true;
         results_.clear();
         step_ = detection_.ready() ? "insert_dart" : "empty_board";
+        ++recorded_runs_;
     }
     detection_.intercept([this] (const fusion::TrackerUpdate& update, const std::vector<cv::Mat>&) { onUpdate(update); });
     publish();
@@ -231,6 +234,7 @@ void ReferenceRun::onUpdate (const fusion::TrackerUpdate& update)
                 result.reason = update.dart->reason;
             }
             results_.push_back(result);
+            record(results_.size() - 1, *update.dart);
             step_ = "remove_dart";
         }
         // The next target once the board is empty again; done only after the last dart is pulled
@@ -248,6 +252,50 @@ void ReferenceRun::onUpdate (const fusion::TrackerUpdate& update)
         saved_session_ = saveReferenceRun(sessions_directory_, targets_, results_).value_or("");
     }
     publish();
+}
+
+void ReferenceRun::recordInto (std::filesystem::path session_directory, std::string session_id, std::function<void(const json&)> log)
+{
+    std::lock_guard lock(mutex_);
+    recording_directory_ = std::move(session_directory);
+    recording_id_ = std::move(session_id);
+    recording_log_ = std::move(log);
+}
+
+void ReferenceRun::record (std::size_t index, const fusion::TrackedDart& dart)
+{
+    if(!recording_log_ || index >= targets_.size())
+    {
+        return;
+    }
+    // Ids of their own, so they stay apart from the game's throws and from other runs in the same recording
+    const std::string throw_id = recording_id_ + "/ref" + std::to_string(recorded_runs_) + "-" + std::to_string(index + 1);
+    const auto& target = targets_[index];
+    json point = nullptr;
+    if(dart.location)
+    {
+        point = {{"x_mm", dart.location->board_mm.x}, {"y_mm", dart.location->board_mm.y}};
+    }
+    json cameras = json::array();
+    for(const auto& view : dart.cameras)
+    {
+        cameras.push_back({{"state", view.state}, {"used", view.used}});
+    }
+    // The still moment just ended, so its frames lie inside the event window the recording gives the throw.
+    recording_log_({{"throw_id", throw_id},
+                    {"accepted", dart.location.has_value()},
+                    {"board_point", point},
+                    {"score", nullptr},
+                    {"camera_measurements", cameras},
+                    {"diagnostics", {{"event_ns", capture::monotonicNowNs()}, {"reference_target", target.label}}}});
+    std::error_code ignored;
+    std::filesystem::create_directories(recording_directory_ / "annotations", ignored);
+    std::ofstream(recording_directory_ / "annotations" / "reference_corners.jsonl", std::ios::app)
+        << json{{"throw_id", throw_id},         {"x_mm", target.board_mm.x},
+                {"y_mm", target.board_mm.y},    {"covariance_mm2", {{"xx", kTargetVariance_mm2}, {"xy", 0.0}, {"yy", kTargetVariance_mm2}}},
+                {"source", "reference_corner"}, {"label", target.label}}
+               .dump()
+        << "\n";
 }
 
 void ReferenceRun::publish ()
