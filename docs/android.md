@@ -1,45 +1,41 @@
-# The app on Android
+# Android
 
-This page records how the player app runs on a phone with the engine on another computer (#114, [ADR 0008](adr/0008-engine-deployment.md)): how to set it up, and what the phone has to do for the camera previews. The measurements tell whether a phone could decode three camera streams itself, which the Android engine (#104, #106) needs.
+Whether a phone can run the cameras for DartPilot, measured before the Android engine is built (#104, ADR 0008).
 
-## Setup with a USB cable
+## The spike
 
-No USB adapter is needed: the phone connects to the computer by USB for debugging, and adb forwards the engine port.
+`engine/android/spike/` holds a native library (`libdartpilot_spike.so`). It builds libusb 1.0.27 and libuvc with the NDK and opens each camera through `uvc_wrap()` on the file descriptor that the Android USB Host API grants after the user's permission. The cameras stream MJPG 1280×720 at 30 fps, and the library measures them. A small Java app around it (`engine/android/spike/app/`) asks for the permissions, runs the measurement off the UI thread, reads the battery before and after, and logs the result as JSON (logcat tag `DartPilotSpike`).
 
-1. On the phone, enable the developer options (tap *Build number* seven times) and *USB debugging*; allow the computer when asked.
-2. On the computer, accept the Android SDK licences once: `flutter doctor --android-licenses`.
-3. Start the engine: `dartpilot serve --simulate --cameras`.
-4. Forward the port and install the app:
+Measured per camera: frames, frame rate, frame intervals (p50, p95, max), gaps in the frame sequence, incomplete JPEGs (missing SOI/EOI), bytes per frame, and how many frames carried a PTS and an SCR in their UVC payload headers. For the process: CPU time over wall time, summed over all cores.
 
-   ```sh
-   adb reverse tcp:8484 tcp:8484
-   (cd ui && flutter build apk --debug && adb install -r build/app/outputs/flutter-apk/app-debug.apk)
-   ```
+## Results
 
-5. In the app, connect to `ws://localhost:8484/`.
+Pixel 10a, Android 17. The three reference cameras sit behind the maintainer's USB hub on a USB-C to USB-A adapter; the phone was not charging. Measured 2026-10-25.
 
-`adb reverse` is lost whenever the phone drops the USB connection (cable, USB mode change); run it again and reconnect. Over Wi-Fi, the engine listens with `--listen 0.0.0.0` and the app finds it with the network search (#109).
+| Run | Camera | Frames | fps | Interval p50 / p95 / max | Gaps | Broken JPEG | Frame size |
+| - | - | - | - | - | - | - | - |
+| 1 camera, 30 s | 0 | 894 | 30.01 | 32.0 / 36.1 / 37.0 ms | 0 | 0 | 31.2 KB |
+| 3 cameras, 60 s | 0 | 1796 | 30.00 | 32.1 / 36.2 / 40.2 ms | 0 | 0 | 31.8 KB |
+| | 1 | 1797 | 30.00 | 32.1 / 36.1 / 70.1 ms | 0 | 0 | 31.3 KB |
+| | 2 | 1798 | 30.00 | 32.1 / 36.1 / 75.0 ms | 0 | 0 | 30.7 KB |
 
-## Measurements
+| Run | CPU (process, all cores) | Battery drain | Battery temperature |
+| - | - | - | - |
+| 1 camera | 7.1 % | about 300 mA | – |
+| 3 cameras | 21.6 % | about 745 mA (charge counter 2 035 000 → 2 022 500 µAh in 60.3 s) | 28.3 °C, unchanged |
 
-Pixel 10a, Android 17, 8 cores, 1080 × 2424 px at about 2.6 device pixels per logical pixel; debug build; engine with three cameras (MJPG 1280 × 720, 30 fps) on the computer, over `adb reverse`. CPU is the app process's user and system time over 20 s, as a share of one core.
+- **Three cameras at 30 fps work.** The isochronous bandwidth was enough for 3 × MJPG 720p30 behind one hub on one bus, without a lost or broken frame.
+- **Timing:** an occasional single frame arrives one frame period late (70–75 ms), but none is lost.
+- **Power:** about 750 mA for three cameras, i.e. a 5000 mAh battery lasts roughly 6 hours on transport alone. Playing longer needs a hub with its own supply that also charges the phone.
+- **Not measured yet:** decoding the JPEGs at the detection rate. The 21.6 % CPU are transport only. Also not yet tried: unplugging and re-plugging a camera.
+- **Timestamps:** the first runs reported no PTS/SCR. The cause was in the spike, not in the cameras: libuvc never sets `frame->source`. A re-run with the fix is pending; on the PC the same cameras deliver PTS and SCR (ADR 0005).
 
-| View | Previews | Before | After |
-| ---- | -------- | ------ | ----- |
-| Cameras page, three panels | 3 × 640 px at 10 fps | 100 % | 87 % |
-| One camera full screen | 1 × 1280 × 720 at 15 fps (before: plus 2 × 640 px at 10 fps underneath) | 94 % | 62 % |
+## Building
 
-Memory (resident) stayed between 580 and 700 MB.
+```sh
+cmake -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK/build/cmake/android.toolchain.cmake \
+      -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-26 -DCMAKE_BUILD_TYPE=Release engine/android/spike
+cmake --build build
+```
 
-Where the time goes (three panels, before): the Dart UI thread 36 % (receiving and splitting the binary messages, rebuilding), a Dart worker 16 %, two image-decoding threads 13 % each, the raster thread 12 %. The work is already spread over several threads; none is near a full core, so moving work to more threads would not lower the load.
-
-What changed between *before* and *after*:
-
-- Panels decode their preview at the size they are shown and ask the engine for no more pixels than they need (in steps of 160 px up to 640 px). On this phone a full-width panel is about 1000 device pixels, more than the 640 px preview, so this only helps on smaller or less dense screens.
-- Panels pause while a camera is shown full screen. This is most of the gain for the full-screen view.
-
-Further savings, if needed: a lower preview rate for the overview (5 instead of 10 fps halves the decoding), or hardware decoding.
-
-## What this means for an engine on the phone
-
-Decoding one 1280 × 720 stream at 15 fps costs the app about half a core (full screen, after). Three streams at 30 fps, as the engine needs them, would be roughly 6 × that: about three cores of eight for JPEG decoding alone, before detection. That is possible on this phone but leaves little room; the Android spike (#104) should measure the decoding inside the engine (libjpeg-turbo, or the cameras' hardware path) rather than estimate it from the app.
+The spike app builds it through Gradle (`externalNativeBuild`). libusb and libuvc are fetched at configure time.
