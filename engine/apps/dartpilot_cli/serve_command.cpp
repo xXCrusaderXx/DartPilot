@@ -1,5 +1,6 @@
 #include "serve_command.hpp"
 
+#include <array>
 #include <atomic>
 #include <chrono>
 #include <csignal>
@@ -9,10 +10,14 @@
 #include <string>
 #include <thread>
 
+#include <unistd.h>
+
 #include "board_watch.hpp"
 #include "calibration_service.hpp"
+#include "dartpilot/api/discovery.hpp"
 #include "dartpilot/api/server.hpp"
 #include "dartpilot/api/simulator.hpp"
+#include "dartpilot/version.hpp"
 #include "live_detection.hpp"
 #include "live_diagnosis.hpp"
 #include "paths.hpp"
@@ -92,6 +97,7 @@ int runServe (int argc, char* argv[])
 
     api::Hello hello;
     hello.mode = simulate ? "simulate" : "live";
+    hello.engine_id = engineId();
     api::Server server(port, host, hello);
     server.setPreviewScaler(scaleJpeg);
     CameraPreviews camera_previews(server);
@@ -157,6 +163,24 @@ int runServe (int argc, char* argv[])
     {
         board_watch->start();
     }
+    // Announced only when apps elsewhere in the network can reach the engine at all
+    std::unique_ptr<api::Discovery> discovery;
+    if(host != "127.0.0.1" && host != "localhost" && host != "::1")
+    {
+        std::array<char, 256> name{};
+        ::gethostname(name.data(), name.size() - 1);
+        discovery =
+            std::make_unique<api::Discovery>(api::DiscoveryInfo{name.data(), port, hello.mode, hello.engine_id, std::string(dartpilot::kVersion)});
+        if(!discovery->start(error))
+        {
+            std::fprintf(stderr, "%s; apps can still connect by address.\n", error.c_str());
+            discovery.reset();
+        }
+        else
+        {
+            std::printf("Announced in the network as %s%s\n", name.data(), discovery->announcedByMdns() ? " (mDNS and UDP)" : " (UDP)");
+        }
+    }
     api::Simulator simulator(server, settings);
     if(live_detection)
     {
@@ -187,6 +211,7 @@ int runServe (int argc, char* argv[])
     board_watch.reset();
     simulated_previews.stop();
     camera_previews.stop();
+    discovery.reset();
     server.stop();
     std::printf("%zu throws\n", server.throws().size());
     return 0;

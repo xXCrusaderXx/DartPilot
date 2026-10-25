@@ -61,6 +61,8 @@ std::string combineBoardState (const std::vector<CameraBoardState>& cameras);
 struct Hello
 {
     std::string mode;  // live, replay, simulate
+    // Stable per engine installation, as in discovery (#109)
+    std::string engine_id;
     std::string session_id;
     scoring::BoardGeometry board_geometry;
     std::string board_geometry_source = "nominal";
