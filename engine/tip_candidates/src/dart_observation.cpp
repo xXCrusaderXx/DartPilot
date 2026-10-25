@@ -470,7 +470,7 @@ std::optional<DartObservation> observeDart (const cv::Mat& image, const cv::Mat&
         middles.push_back(centre + main * (static_cast<float>(s.bin_px) * bin + 0.5f * static_cast<float>(s.bin_px)) +
                           across * (0.5f * (range.first + range.second)));
     }
-    if(middles.size() < s.min_axis_points)
+    if(middles.size() < static_cast<std::size_t>(s.min_axis_points))
     {
         return std::nullopt;
     }
@@ -509,7 +509,7 @@ std::optional<DartObservation> observeDart (const cv::Mat& image, const cv::Mat&
             }
         }
     }
-    if(best.size() < s.min_axis_points)
+    if(best.size() < static_cast<std::size_t>(s.min_axis_points))
     {
         return std::nullopt;
     }
