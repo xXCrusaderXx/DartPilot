@@ -256,7 +256,8 @@ class _DartSetCaptureScreenState extends State<DartSetCaptureScreen> {
   @override
   void dispose() {
     final state = _engine?.dartSetCapture?.state;
-    if (state != null && state != 'done' && state != 'failed' && state != 'cancelled') _engine?.cancelDartSet();
+    final saveFailed = state == 'failed' && _engine?.dartSetCapture?.reason == 'save_failed';
+    if (state != null && state != 'done' && state != 'cancelled' && !saveFailed) _engine?.cancelDartSet();
     super.dispose();
   }
 
@@ -265,9 +266,12 @@ class _DartSetCaptureScreenState extends State<DartSetCaptureScreen> {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final capture = EngineScope.of(context).dartSetCapture;
-    final error = _error ?? (capture?.state == 'failed' ? capture?.reason ?? 'failed' : null);
+    // A failed place is not the end: the player pulls the dart and the next place counts. Only saving can fail for good.
+    final failed = capture?.state == 'failed';
+    final error = _error ?? (failed && capture?.reason == 'save_failed' ? 'save_failed' : null);
     final (icon, text) = switch (capture?.state) {
       _ when error != null => (Icons.error_outline, _errorText(l10n, error)),
+      'failed' => (Icons.warning_amber, l10n.dartSetPlacementFailed(_placementReason(l10n, capture?.reason))),
       'measuring' => (Icons.hourglass_top, l10n.dartSetMeasuring),
       'placed' => (Icons.swap_horiz, l10n.dartSetPlaced),
       'done' => (Icons.check_circle, l10n.dartSetDone),
@@ -345,7 +349,15 @@ class _DartSetCaptureScreenState extends State<DartSetCaptureScreen> {
     _ => l10n.dartNotSeen,
   };
 
+  String _placementReason(AppLocalizations l10n, String? reason) => switch (reason) {
+    'cameras_disagree' => l10n.dartSetCamerasDisagree,
+    'seen_by_one_camera' => l10n.dartSetSeenByOne,
+    'placements_disagree' => l10n.dartSetPlacementsDisagree,
+    _ => l10n.dartSetNotMeasured,
+  };
+
   String _errorText(AppLocalizations l10n, String code) => switch (code) {
+    'save_failed' => l10n.dartSetSaveFailed,
     'not_calibrated' => l10n.dartSetNotCalibrated,
     'board_not_empty' => l10n.dartSetBoardNotEmpty,
     'busy' => l10n.dartSetBusy,

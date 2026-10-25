@@ -1494,4 +1494,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dartFlight => 'Flight';
+
+  @override
+  String dartSetPlacementFailed(String reason) {
+    return '$reason Pull the dart and put it in somewhere else.';
+  }
+
+  @override
+  String get dartSetCamerasDisagree => 'The cameras did not agree.';
+
+  @override
+  String get dartSetSeenByOne => 'Only one camera saw the dart.';
+
+  @override
+  String get dartSetPlacementsDisagree => 'This place does not fit the other measurements.';
+
+  @override
+  String get dartSetNotMeasured => 'The dart could not be measured here.';
+
+  @override
+  String get dartSetSaveFailed => 'The set could not be saved.';
 }

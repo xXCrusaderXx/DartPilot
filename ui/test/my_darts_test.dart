@@ -115,6 +115,19 @@ void main() {
     expect(find.text('Kamera 2: Dart am Rand abgeschnitten'), findsOneWidget);
     expect(step(), startsWith('Gemessen.'));
     expect(find.text('1 von 4 Stellen'), findsOneWidget);
+    // A place that failed is not the end of the measurement.
+    engine.receiveForTest(
+      jsonEncode({
+        'type': 'dart_set_capture',
+        'state': 'failed',
+        'placed': 1,
+        'needed': 4,
+        'reason': 'seen_by_one_camera',
+      }),
+    );
+    await tester.pump();
+    expect(step(), 'Nur eine Kamera hat den Dart gesehen. Zieh den Dart und steck ihn an eine andere Stelle.');
+    expect(find.text('Abbrechen'), findsOneWidget);
     engine.receiveForTest(jsonEncode({'type': 'dart_set_capture', 'state': 'done', 'placed': 4, 'needed': 4}));
     await tester.pump();
     expect(step(), startsWith('Fertig'));

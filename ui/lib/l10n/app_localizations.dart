@@ -2695,6 +2695,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Flight'**
   String get dartFlight;
+
+  /// No description provided for @dartSetPlacementFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'{reason} Pull the dart and put it in somewhere else.'**
+  String dartSetPlacementFailed(String reason);
+
+  /// No description provided for @dartSetCamerasDisagree.
+  ///
+  /// In en, this message translates to:
+  /// **'The cameras did not agree.'**
+  String get dartSetCamerasDisagree;
+
+  /// No description provided for @dartSetSeenByOne.
+  ///
+  /// In en, this message translates to:
+  /// **'Only one camera saw the dart.'**
+  String get dartSetSeenByOne;
+
+  /// No description provided for @dartSetPlacementsDisagree.
+  ///
+  /// In en, this message translates to:
+  /// **'This place does not fit the other measurements.'**
+  String get dartSetPlacementsDisagree;
+
+  /// No description provided for @dartSetNotMeasured.
+  ///
+  /// In en, this message translates to:
+  /// **'The dart could not be measured here.'**
+  String get dartSetNotMeasured;
+
+  /// No description provided for @dartSetSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The set could not be saved.'**
+  String get dartSetSaveFailed;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

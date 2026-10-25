@@ -433,5 +433,11 @@
   "dartSetBoardNotEmpty": "Bitte erst alle Darts aus dem Board ziehen.",
   "dartSetBusy": "Die Engine ist gerade beschäftigt. Versuch es gleich noch einmal.",
   "dartSetFailed": "Vermessen fehlgeschlagen: {reason}",
-  "dartFlight": "Flight"
+  "dartFlight": "Flight",
+  "dartSetPlacementFailed": "{reason} Zieh den Dart und steck ihn an eine andere Stelle.",
+  "dartSetCamerasDisagree": "Die Kameras waren sich nicht einig.",
+  "dartSetSeenByOne": "Nur eine Kamera hat den Dart gesehen.",
+  "dartSetPlacementsDisagree": "Diese Stelle passt nicht zu den anderen Messungen.",
+  "dartSetNotMeasured": "Der Dart ließ sich hier nicht vermessen.",
+  "dartSetSaveFailed": "Das Set konnte nicht gespeichert werden."
 }
