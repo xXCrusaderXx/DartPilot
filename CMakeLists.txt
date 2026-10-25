@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.20)
 
-# The one version of the project: between releases the next one with -dev, e.g. 0.3.0-dev after v0.2.0. ui/pubspec.yaml
+# The one version of the project: between releases the next one with -dev, e.g. 0.4.0-dev after v0.3.0. ui/pubspec.yaml
 # and tools/pyproject.toml carry the same (VersionTest checks it). Release builds override it with
 # -DDARTPILOT_VERSION=X.Y.Z[-suffix] (see .github/workflows/release.yml).
-set(DARTPILOT_VERSION 0.3.0-dev CACHE STRING "DartPilot version, X.Y.Z with an optional -suffix")
+set(DARTPILOT_VERSION 0.4.0-dev CACHE STRING "DartPilot version, X.Y.Z with an optional -suffix")
 string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+" DARTPILOT_VERSION_NUMBER "${DARTPILOT_VERSION}")
 if(NOT DARTPILOT_VERSION_NUMBER)
   message(FATAL_ERROR "DARTPILOT_VERSION '${DARTPILOT_VERSION}' is not X.Y.Z[-suffix]")

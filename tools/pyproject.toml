@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "dartpilot-tools"
 description = "Benchmark evaluation and annotation tools for DartPilot"
-version = "0.3.0.dev0"
+version = "0.4.0.dev0"
 license = "GPL-3.0-or-later"
 requires-python = ">=3.11"
 dependencies = [
