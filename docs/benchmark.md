@@ -29,4 +29,6 @@ It pairs each throw of `results/<run id>/throws.jsonl` with its ground truth in 
 
 Groups: throws near a ring or sector boundary (closer than 2 mm), the bulls, doubles and triples. Per camera: the error of each camera's own board point, where the run records one.
 
+Ground truth can come from an annotation, from the reference measurement (`reference_corners`, #14), or from the corrections players made in a recorded game (`python -m dartpilot_tools.corrections <session>` writes `corrections`; about 3 mm uncertainty, so good for finding wrong scores rather than for millimetre errors).
+
 Ground truth and results are scored with `dartpilot_tools.scoring`, a port of `engine/scoring`. Both are tested against the same points in `tests/fixtures/scoring/cases.json`, so a change to one scorer fails the other's test until both agree.

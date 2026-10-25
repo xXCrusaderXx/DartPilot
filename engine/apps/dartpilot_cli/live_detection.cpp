@@ -29,8 +29,8 @@ constexpr double kConfidenceThreeCameras = 0.95;
 constexpr double kConfidenceAbstained = 0.3;
 }  // namespace
 
-LiveDetection::LiveDetection (api::Server& server, const CameraPreviews& previews, const std::vector<capture::CameraDevice>& devices,
-                              const std::filesystem::path& calibration_directory)
+LiveDetection::LiveDetection (api::Server& server, const FrameFeed& previews, const std::vector<capture::CameraDevice>& devices,
+                              const std::filesystem::path& calibration_directory, bool stored_references)
     : server_(server)
     , previews_(previews)
     , extrinsics_(geometry::loadExtrinsics((calibration_directory / "extrinsics.yml").string()))
@@ -40,7 +40,8 @@ LiveDetection::LiveDetection (api::Server& server, const CameraPreviews& preview
     {
         fusion::TrackerCamera camera{
             "usb-" + device.usb_port, nullptr,
-            geometry::loadEmptyReference((calibration_directory / geometry::emptyReferenceFileName(device.usb_port)).string())};
+            stored_references ? geometry::loadEmptyReference((calibration_directory / geometry::emptyReferenceFileName(device.usb_port)).string())
+                              : cv::Mat()};
         if(extrinsics_)
         {
             for(const auto& refined : extrinsics_->refinement.cameras)

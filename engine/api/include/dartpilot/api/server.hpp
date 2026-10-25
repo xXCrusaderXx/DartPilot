@@ -86,6 +86,9 @@ class Server
     // Board points of the darts since the last takeout, e.g. for a simulated camera image
     std::vector<BoardPoint> visitPoints () const;
 
+    // Every throw and every correction as a record of a session's throws.jsonl, e.g. to write it into the recording
+    void onLogged (std::function<void(const nlohmann::json& record)> handler);
+
     // Called when a client pauses or resumes detection
     void onDetectionChanged (std::function<void(bool running)> handler);
 
@@ -119,6 +122,8 @@ class Server
     std::map<std::string, Client> clients_;
     std::map<std::string, std::string> camera_states_;
     std::function<void(bool)> detection_handler_;
+    std::function<void(const nlohmann::json&)> logged_handler_;
+    void logged (const nlohmann::json& record);
     PreviewScaler preview_scaler_;
     std::function<void()> check_board_handler_;
     std::function<std::optional<std::string>(bool)> store_reference_handler_;

@@ -179,6 +179,7 @@ Every detection run over a session gets its own directory `results/<run id>/`, s
 - `frames` lists the `sequence` numbers of the frames each camera contributed, so a result points back to exact frames.
 - A rejected throw has `"accepted": false`, keeps its measurements and diagnostics, and may leave `board_point` and `score` as `null`.
 - `processing_latency_ms` is measured live; in a replay it is the processing time of the replay and is not compared between runs.
+- A run recorded live by `dartpilot serve --record` (`results/live/`) also holds the players' corrections, each as a line of its own after the throw: `{"throw_id": "…/17", "correction": {"action": "corrected", "board_point": {…}, "client": "app"}}`, with `rejected` (and `reason`) or `added` (a dart the engine missed, with `event_ns`) as other actions. `python -m dartpilot_tools.corrections <session>` turns them into the annotation set `corrections`: ground-truth candidates with about 3 mm uncertainty for the benchmark.
 
 ## Calibration checks
 

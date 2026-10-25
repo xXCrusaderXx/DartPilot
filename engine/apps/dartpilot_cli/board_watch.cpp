@@ -24,11 +24,12 @@ constexpr int kSamplesToAverage = 10;
 constexpr auto kOccupiedConfirm = std::chrono::seconds(4);
 }  // namespace
 
-BoardWatch::BoardWatch (api::Server& server, const CameraPreviews& previews, std::vector<capture::CameraDevice> devices,
-                        std::filesystem::path calibration_directory)
+BoardWatch::BoardWatch (api::Server& server, const FrameFeed& previews, std::vector<capture::CameraDevice> devices,
+                        std::filesystem::path calibration_directory, bool stored_references)
     : server_(server)
     , previews_(previews)
     , calibration_directory_(std::move(calibration_directory))
+    , stored_references_(stored_references)
 {
     const auto extrinsics = geometry::loadExtrinsics((calibration_directory_ / "extrinsics.yml").string());
     if(extrinsics)
@@ -39,7 +40,10 @@ BoardWatch::BoardWatch (api::Server& server, const CameraPreviews& previews, std
     {
         Camera camera;
         camera.usb_port = device.usb_port;
-        camera.reference = geometry::loadEmptyReference((calibration_directory_ / geometry::emptyReferenceFileName(device.usb_port)).string());
+        if(stored_references)
+        {
+            camera.reference = geometry::loadEmptyReference((calibration_directory_ / geometry::emptyReferenceFileName(device.usb_port)).string());
+        }
         if(extrinsics)
         {
             for(const auto& refined : extrinsics->refinement.cameras)
@@ -213,6 +217,10 @@ api::BoardStateInfo BoardWatch::info () const
 
 std::optional<std::string> BoardWatch::storeReferences (bool force)
 {
+    if(!stored_references_)
+    {
+        return "not_available";
+    }
     std::lock_guard lock(mutex_);
     for(const auto& camera : cameras_)
     {

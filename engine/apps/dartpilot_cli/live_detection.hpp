@@ -23,8 +23,10 @@ namespace dartpilot::cli
 class LiveDetection
 {
    public:
-    LiveDetection (api::Server& server, const CameraPreviews& previews, const std::vector<capture::CameraDevice>& devices,
-                   const std::filesystem::path& calibration_directory);
+    // stored_references: compare the start with the stored images of the empty board; off for a replayed session, whose
+    // light and day differ from today's images, so that it learns its empty board from its own first still moment
+    LiveDetection (api::Server& server, const FrameFeed& previews, const std::vector<capture::CameraDevice>& devices,
+                   const std::filesystem::path& calibration_directory, bool stored_references = true);
     ~LiveDetection ();
 
     // Whether detection can run: the cameras are calibrated; otherwise why not
@@ -57,7 +59,7 @@ class LiveDetection
     void publish (const fusion::TrackerUpdate& update, std::int64_t event_ns, double latency_ms);
 
     api::Server& server_;
-    const CameraPreviews& previews_;
+    const FrameFeed& previews_;
     std::optional<geometry::StoredExtrinsics> extrinsics_;
     std::vector<Camera> cameras_;
     std::optional<fusion::DartTracker> tracker_;

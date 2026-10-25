@@ -119,6 +119,11 @@ nlohmann::json throwMessage (const Throw& dart, const scoring::BoardGeometry& ge
 // action: corrected, rejected or added
 nlohmann::json throwCorrectedMessage (const std::string& throw_id, const std::string& action, const std::optional<BoardPoint>& point,
                                       const scoring::BoardGeometry& geometry, const std::string& client);
+// The records of a recorded session's results/<run>/throws.jsonl (docs/replay-format.md): a throw as the engine sent it,
+// and a client's correction of it (action corrected, rejected or added) as a line of its own
+nlohmann::json throwRecord (const Throw& dart, const scoring::BoardGeometry& geometry);
+nlohmann::json correctionRecord (const std::string& throw_id, const std::string& action, const std::optional<BoardPoint>& point,
+                                 const std::string& client, const std::string& reason, std::int64_t event_ns);
 nlohmann::json takeoutMessage (std::int64_t event_ns, int darts_removed);
 nlohmann::json cameraStatusMessage (const CameraStatus& status);
 nlohmann::json engineStatusMessage (const std::string& detection, const std::string& message);

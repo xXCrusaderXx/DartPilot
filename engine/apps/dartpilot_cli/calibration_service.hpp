@@ -25,7 +25,7 @@ class CalibrationService
 {
    public:
     // started: when the cameras started, so the white balance tuning waits for their exposure to settle
-    CalibrationService (api::Server& server, const CameraPreviews& previews, std::vector<capture::CameraDevice> devices,
+    CalibrationService (api::Server& server, const FrameFeed& previews, std::vector<capture::CameraDevice> devices,
                         std::filesystem::path calibration_directory, std::chrono::steady_clock::time_point started);
     ~CalibrationService ();
 
@@ -61,7 +61,7 @@ class CalibrationService
     void publishStatus ();
 
     api::Server& server_;
-    const CameraPreviews& previews_;
+    const FrameFeed& previews_;
     std::vector<capture::CameraDevice> devices_;
     std::filesystem::path directory_;
     std::chrono::steady_clock::time_point cameras_started_;

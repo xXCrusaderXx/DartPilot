@@ -95,7 +95,7 @@ std::string lensSource (geometry::IntrinsicsSource source)
 }
 }  // namespace
 
-CalibrationService::CalibrationService (api::Server& server, const CameraPreviews& previews, std::vector<capture::CameraDevice> devices,
+CalibrationService::CalibrationService (api::Server& server, const FrameFeed& previews, std::vector<capture::CameraDevice> devices,
                                         std::filesystem::path calibration_directory, std::chrono::steady_clock::time_point started)
     : server_(server)
     , previews_(previews)

@@ -23,6 +23,7 @@
 #include "paths.hpp"
 #include "preview_sources.hpp"
 #include "reference_run.hpp"
+#include "session_recording.hpp"
 
 namespace dartpilot::cli
 {
@@ -35,9 +36,12 @@ void onInterrupt (int) { interrupted = true; }
 int usage ()
 {
     std::fprintf(stderr,
-                 "Usage: dartpilot serve --cameras [--listen ADDRESS] [--port N]\n"
+                 "Usage: dartpilot serve --cameras [--record] [--listen ADDRESS] [--port N]\n"
+                 "       dartpilot serve --replay SESSION [--listen ADDRESS] [--port N]\n"
                  "       dartpilot serve --simulate [--cameras] [--listen ADDRESS] [--port N] [--seed N] [--interval MS] [--occupied]\n"
                  "  --cameras      the real cameras: previews, status, board check, diagnosis, calibration, and live darts\n"
+                 "  --record       record the game as a session, with the throws and the players' corrections\n"
+                 "  --replay       play a recorded session in real time as if its cameras were connected\n"
                  "  --simulate     simulated darts and takeouts; without --cameras also simulated cameras\n"
                  "  --listen       address to listen on (default 127.0.0.1; 0.0.0.0 for the whole network)\n"
                  "  --port         default 8484\n"
@@ -50,6 +54,8 @@ int runServe (int argc, char* argv[])
 {
     bool simulate = false;
     bool cameras = false;
+    bool record = false;
+    std::filesystem::path replay;
     std::string host = "127.0.0.1";
     int port = 8484;
     api::SimulatorSettings settings;
@@ -63,6 +69,14 @@ int runServe (int argc, char* argv[])
         else if(arg == "--cameras")
         {
             cameras = true;
+        }
+        else if(arg == "--record")
+        {
+            record = true;
+        }
+        else if(arg == "--replay" && i + 1 < argc)
+        {
+            replay = argv[++i];
         }
         else if(arg == "--listen" && i + 1 < argc)
         {
@@ -89,15 +103,41 @@ int runServe (int argc, char* argv[])
             return usage();
         }
     }
-    if(!simulate && !cameras)
+    if(!replay.empty() && (cameras || record))
     {
-        std::fprintf(stderr, "Live darts need the cameras: --cameras, or --simulate without them.\n");
+        std::fprintf(stderr, "--replay plays a recorded session instead of the cameras; it cannot be combined with --cameras or --record.\n");
         return usage();
     }
+    if(record && !cameras)
+    {
+        std::fprintf(stderr, "--record records the cameras: use it with --cameras.\n");
+        return usage();
+    }
+    if(!simulate && !cameras && replay.empty())
+    {
+        std::fprintf(stderr, "Live darts need the cameras: --cameras, a recorded session with --replay, or --simulate without them.\n");
+        return usage();
+    }
+    std::optional<session::RecordedSession> recorded;
+    std::string error;
 
     api::Hello hello;
-    hello.mode = simulate ? "simulate" : "live";
+    hello.mode = simulate ? "simulate" : replay.empty() ? "live" : "replay";
     hello.engine_id = engineId();
+    if(!replay.empty())
+    {
+        recorded = session::openSession(replay, error);
+        if(!recorded)
+        {
+            std::fprintf(stderr, "%s\n", error.c_str());
+            return 1;
+        }
+        hello.session_id = recorded->session_id;
+    }
+    if(record)
+    {
+        hello.session_id = session::newSessionId();
+    }
     api::Server server(port, host, hello);
     server.setPreviewScaler(scaleJpeg);
     CameraPreviews camera_previews(server);
@@ -108,11 +148,23 @@ int runServe (int argc, char* argv[])
     std::unique_ptr<CalibrationService> calibration;
     std::unique_ptr<LiveDetection> live_detection;
     std::unique_ptr<ReferenceRun> reference_run;
-    if(cameras)
+    std::unique_ptr<SessionPlayback> playback;
+    std::unique_ptr<SessionRecording> recording;
+    if(cameras || recorded)
     {
         std::vector<api::CameraInfo> infos;
         const auto cameras_started = std::chrono::steady_clock::now();
-        const auto devices = camera_previews.start();
+        std::vector<capture::CameraDevice> devices;
+        if(recorded)
+        {
+            playback = std::make_unique<SessionPlayback>(server, std::move(*recorded));
+            devices = playback->devices();
+        }
+        else
+        {
+            devices = camera_previews.start();
+        }
+        const FrameFeed& feed = playback ? static_cast<const FrameFeed&>(*playback) : camera_previews;
         for(const auto& device : devices)
         {
             infos.push_back({"usb-" + device.usb_port, device.name, "ok"});
@@ -123,15 +175,26 @@ int runServe (int argc, char* argv[])
             return 1;
         }
         server.setCameras(infos);
+        if(record)
+        {
+            recording = SessionRecording::start(dataHome() / "sessions", hello.session_id, devices, camera_previews, error);
+            if(!recording)
+            {
+                std::fprintf(stderr, "Cannot record: %s\n", error.c_str());
+                return 1;
+            }
+            server.onLogged([&recording] (const nlohmann::json& record_line) { recording->log(record_line); });
+            std::printf("Recording into %s\n", recording->directory().c_str());
+        }
         settings.camera_status = false;
         settings.board_state = false;
         settings.diagnosis = false;
-        board_watch = std::make_unique<BoardWatch>(server, camera_previews, devices, dataHome() / "calibration");
-        live_diagnosis = std::make_unique<LiveDiagnosis>(server, camera_previews, devices, dataHome() / "calibration", cameras_started);
-        calibration = std::make_unique<CalibrationService>(server, camera_previews, devices, dataHome() / "calibration", cameras_started);
+        board_watch = std::make_unique<BoardWatch>(server, feed, devices, dataHome() / "calibration", !playback);
+        live_diagnosis = std::make_unique<LiveDiagnosis>(server, feed, devices, dataHome() / "calibration", cameras_started);
+        calibration = std::make_unique<CalibrationService>(server, feed, devices, dataHome() / "calibration", cameras_started);
         if(!simulate)
         {
-            live_detection = std::make_unique<LiveDetection>(server, camera_previews, devices, dataHome() / "calibration");
+            live_detection = std::make_unique<LiveDetection>(server, feed, devices, dataHome() / "calibration", !playback);
             reference_run = std::make_unique<ReferenceRun>(server, *live_detection, dataHome() / "calibration", dataHome() / "sessions");
             // Until the first still empty board, darts cannot be told from the board.
             const auto unavailable = live_detection->unavailableReason();
@@ -153,7 +216,6 @@ int runServe (int argc, char* argv[])
                                         return std::nullopt;
                                     });
     }
-    std::string error;
     if(!server.start(error))
     {
         std::fprintf(stderr, "%s %s:%d\n", error.c_str(), host.c_str(), port);
@@ -181,6 +243,10 @@ int runServe (int argc, char* argv[])
             std::printf("Announced in the network as %s%s\n", name.data(), discovery->announcedByMdns() ? " (mDNS and UDP)" : " (UDP)");
         }
     }
+    if(playback)
+    {
+        playback->start();
+    }
     api::Simulator simulator(server, settings);
     if(live_detection)
     {
@@ -199,9 +265,16 @@ int runServe (int argc, char* argv[])
 
     std::signal(SIGINT, onInterrupt);
     std::signal(SIGTERM, onInterrupt);
+    bool told_finished = false;
     while(!interrupted)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        if(playback && playback->finished() && !told_finished)
+        {
+            std::printf("The recorded session has been played; the engine keeps serving its last frames.\n");
+            std::fflush(stdout);
+            told_finished = true;
+        }
     }
     simulator.stop();
     reference_run.reset();
@@ -209,6 +282,9 @@ int runServe (int argc, char* argv[])
     calibration.reset();
     live_diagnosis.reset();
     board_watch.reset();
+    server.onLogged({});
+    recording.reset();
+    playback.reset();
     simulated_previews.stop();
     camera_previews.stop();
     discovery.reset();
