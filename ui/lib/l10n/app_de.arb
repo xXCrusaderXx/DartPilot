@@ -453,5 +453,8 @@
   "pairedDevices": "Gekoppelte Geräte",
   "noPairedDevices": "Noch kein Gerät gekoppelt.",
   "pairedDeviceSeen": "zuletzt {when}",
-  "unpairDevice": "Entkoppeln"
+  "unpairDevice": "Entkoppeln",
+  "watchGame": "Zuschauen",
+  "sharedGameEnded": "Das Spiel auf dem anderen Gerät ist beendet.",
+  "watchGameTitle": "Laufendes Spiel ansehen: {mode}"
 }

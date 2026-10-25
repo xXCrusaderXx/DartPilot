@@ -19,6 +19,7 @@ sealed class EngineEvent {
     'board_state' => EngineBoardState.fromJson(json),
     'board_image' => BoardImage.fromJson(json),
     'reference_run' => ReferenceRun.fromJson(json),
+    'shared_game' => SharedGame(json['client'] as String? ?? '', json['game'] as Map<String, dynamic>?),
     'diagnosis' => EngineDiagnosis.fromJson(json),
     'calibration_status' => CalibrationStatus.fromJson(json),
     'white_balance' => WhiteBalanceState.fromJson(json),
@@ -988,4 +989,13 @@ class PairedClients extends EngineEvent {
   const PairedClients(this.clients);
 
   final List<PairedClient> clients;
+}
+
+/// The game another app leads and shares through the engine (#116); [game] is that app's game record, null once it
+/// has ended
+class SharedGame extends EngineEvent {
+  const SharedGame(this.client, this.game);
+
+  final String client;
+  final Map<String, dynamic>? game;
 }

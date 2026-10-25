@@ -1030,5 +1030,15 @@
       }
     }
   },
-  "unpairDevice": "Unpair"
+  "unpairDevice": "Unpair",
+  "watchGame": "Watching",
+  "sharedGameEnded": "The game on the other display has ended.",
+  "watchGameTitle": "Watch the running game: {mode}",
+  "@watchGameTitle": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  }
 }

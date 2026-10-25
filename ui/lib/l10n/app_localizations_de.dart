@@ -1565,4 +1565,15 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get unpairDevice => 'Entkoppeln';
+
+  @override
+  String get watchGame => 'Zuschauen';
+
+  @override
+  String get sharedGameEnded => 'Das Spiel auf dem anderen Gerät ist beendet.';
+
+  @override
+  String watchGameTitle(String mode) {
+    return 'Laufendes Spiel ansehen: $mode';
+  }
 }

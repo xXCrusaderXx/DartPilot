@@ -83,6 +83,9 @@ class EngineConnection extends ChangeNotifier {
   /// Reference images by set id and camera, as far as asked for
   final Map<(String, String), DartSetImage> dartSetImages = {};
 
+  /// The game an app shares through the engine, this app's own included; null when none is shared
+  SharedGame? sharedGame;
+
   /// Latest state of the setup diagnosis; null before it ran
   EngineDiagnosis? diagnosis;
 
@@ -170,6 +173,7 @@ class EngineConnection extends ChangeNotifier {
     pairedClients = null;
     boardImage = null;
     referenceRun = null;
+    sharedGame = null;
     diagnosis = null;
     _clearCalibration();
     if (state != EngineConnectionState.disconnected) {
@@ -260,6 +264,10 @@ class EngineConnection extends ChangeNotifier {
         event is BoardPlaneResult ||
         event is RefinementResult ||
         event is CalibrationCheck) {
+      notifyListeners();
+    }
+    if (event is SharedGame) {
+      sharedGame = event.game == null ? null : event;
       notifyListeners();
     }
     if (event is ReferenceRun) {
@@ -469,6 +477,11 @@ class EngineConnection extends ChangeNotifier {
   void unwatchCalibrationCheck() {
     if (_checkWatchers > 0 && --_checkWatchers == 0) _send({'type': 'unsubscribe_calibration_check'});
   }
+
+  /// Shares the game this app leads, for other displays to follow (#116)
+  void shareGame(Map<String, dynamic> game) => _send({'type': 'share_game', 'game': game});
+
+  void endSharedGame() => _send({'type': 'end_shared_game'});
 
   /// Starts the reference measurement afresh, or stops it; its state arrives as [referenceRun].
   Future<String?> startReferenceRun() => _request({'type': 'start_reference_run'});
