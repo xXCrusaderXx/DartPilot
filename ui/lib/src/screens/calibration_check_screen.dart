@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' show NumberFormat;
 
 import '../../l10n/app_localizations.dart';
+import '../engine/camera_order.dart';
 import '../engine/engine_connection.dart';
 import '../engine/engine_events.dart';
 import '../theme.dart';
@@ -39,8 +40,7 @@ class _CalibrationCheckScreenState extends State<CalibrationCheckScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final engine = EngineScope.of(context);
-    final cameras = engine.hello?.cameras ?? const <String>[];
+    final cameras = orderedCameras(context);
     return Scaffold(
       appBar: AppBar(title: Text(l10n.calibrationCheck)),
       body: LayoutBuilder(
@@ -119,7 +119,7 @@ class _CameraCheck extends StatelessWidget {
               children: [
                 Icon(Icons.circle, size: 12, color: colour),
                 const SizedBox(width: 8),
-                Text(l10n.cameraNumber(number), style: theme.textTheme.titleSmall),
+                Text(cameraLabel(context, camera), style: theme.textTheme.titleSmall),
               ],
             ),
           ),

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../theme.dart';
 import '../../l10n/app_localizations.dart';
+import '../engine/camera_order.dart';
 import '../engine/engine_connection.dart';
 import '../engine/engine_events.dart';
 
@@ -141,11 +142,10 @@ class _ResultCard extends StatelessWidget {
   }
 }
 
-/// "Camera 2" for the second camera of the diagnosis; the id where it is not one of them
-String cameraName(AppLocalizations l10n, List<String> cameras, String id) {
-  final index = cameras.indexOf(id);
-  return index < 0 ? id : l10n.cameraNumber(index + 1);
-}
+/// The player's name of a camera of the diagnosis, or "Kamera N" in the player's order; the id where it is not one of
+/// them
+String cameraName(BuildContext context, List<String> cameras, String id) =>
+    CameraOrderScope.of(context).label(AppLocalizations.of(context), cameras, id);
 
 /// Darts the diagnosis needs for findings that hold (docs/setup-diagnosis.md: 8 to 10 places)
 const int diagnosisDarts = 8;
@@ -293,7 +293,7 @@ class _FindingTile extends StatelessWidget {
       key: ValueKey('finding-${finding.code}-${camera ?? 'all'}'),
       child: ListTile(
         leading: Icon(icon, color: color),
-        title: Text(camera == null ? text.message : '${cameraName(l10n, cameras, camera)}: ${text.message}'),
+        title: Text(camera == null ? text.message : '${cameraName(context, cameras, camera)}: ${text.message}'),
         subtitle: text.hint.isEmpty ? null : Text(text.hint),
         isThreeLine: text.hint.length > 60,
       ),

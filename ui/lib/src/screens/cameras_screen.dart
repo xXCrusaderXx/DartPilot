@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 
 import '../theme.dart';
 import '../../l10n/app_localizations.dart';
+import '../engine/camera_order.dart';
 import '../engine/engine_connection.dart';
 import '../engine/engine_events.dart';
+import 'camera_assign_screen.dart';
 
 /// Live images of the engine's cameras with their status. Each camera is a panel that can be collapsed, which also
 /// stops its preview; tapping an image opens it full screen.
@@ -47,12 +49,20 @@ class _CamerasScreenState extends State<CamerasScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final cameras = EngineScope.of(context).hello?.cameras ?? const <String>[];
+    final cameras = orderedCameras(context);
     final allCollapsed = cameras.isNotEmpty && cameras.every(_collapsed.contains);
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.cameras),
         actions: [
+          if (cameras.isNotEmpty)
+            IconButton(
+              key: const ValueKey('assign-cameras'),
+              tooltip: l10n.assignCameras,
+              onPressed: () =>
+                  Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const CameraAssignScreen())),
+              icon: const Icon(Icons.swap_vert),
+            ),
           if (cameras.isNotEmpty)
             TextButton.icon(
               onPressed: () => setState(() => allCollapsed ? _collapsed.clear() : _collapsed.addAll(cameras)),
@@ -220,7 +230,15 @@ class _CameraPanelState extends State<CameraPanel> with _PreviewWatcher<CameraPa
                 children: [
                   _StateDot(status?.state ?? 'ok'),
                   const SizedBox(width: 8),
-                  Expanded(child: Text(widget.camera, style: theme.textTheme.titleSmall)),
+                  Expanded(
+                    child: Text.rich(
+                      TextSpan(
+                        text: cameraLabel(context, widget.camera),
+                        children: [TextSpan(text: '  ${widget.camera}', style: theme.textTheme.bodySmall)],
+                      ),
+                      style: theme.textTheme.titleSmall,
+                    ),
+                  ),
                   Icon(widget.expanded ? Icons.expand_less : Icons.expand_more),
                 ],
               ),

@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../theme.dart';
 import '../../l10n/app_localizations.dart';
+import '../engine/camera_order.dart';
 import '../engine/engine_connection.dart';
 import '../stats/statistics.dart';
 import '../widgets/board_check.dart';
 import '../widgets/player_picker.dart';
 import 'around_the_clock_screen.dart';
 import 'calibration_screen.dart';
+import 'camera_assign_screen.dart';
 import 'cricket_screen.dart';
 import 'training_screen.dart';
 import 'x01_setup_screen.dart';
@@ -70,6 +72,24 @@ class HomeScreen extends StatelessWidget {
                     title: Text(l10n.firstProfileTitle),
                     subtitle: Text(l10n.firstProfileText),
                     trailing: FilledButton(onPressed: () => createProfile(context), child: Text(l10n.newProfile)),
+                  ),
+                ),
+              ],
+              if (EngineScope.of(context).isConnected &&
+                  CameraOrderScope.of(context).needsAssignment(EngineScope.of(context).hello?.cameras ?? const [])) ...[
+                const SizedBox(height: 16),
+                Card(
+                  key: const ValueKey('assign-cameras-prompt'),
+                  child: ListTile(
+                    leading: const Icon(Icons.videocam_outlined, size: 32),
+                    title: Text(l10n.newCamerasTitle),
+                    subtitle: Text(l10n.newCamerasText),
+                    trailing: FilledButton(
+                      onPressed: () =>
+                          Navigator.of(context)
+                              .push(MaterialPageRoute<void>(builder: (_) => const CameraAssignScreen())),
+                      child: Text(l10n.assignCameras),
+                    ),
                   ),
                 ),
               ],
@@ -169,7 +189,7 @@ class _StatusCard extends StatelessWidget {
               ),
             if (connected) const BoardStateRow(),
             if (connected)
-              for (final (i, camera) in (engine.hello?.cameras ?? const <String>[]).indexed)
+              for (final camera in orderedCameras(context))
                 if (engine.calibration?.of(camera)?.check?.needsCalibration ?? false)
                   Padding(
                     key: ValueKey('calibration-warning-$camera'),
@@ -181,8 +201,8 @@ class _StatusCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             engine.calibration!.of(camera)!.check!.state == 'wrong_port'
-                                ? l10n.homeCameraWrongPort(i + 1)
-                                : l10n.homeCameraMoved(i + 1),
+                                ? l10n.homeCameraWrongPort(cameraLabel(context, camera))
+                                : l10n.homeCameraMoved(cameraLabel(context, camera)),
                           ),
                         ),
                         TextButton(

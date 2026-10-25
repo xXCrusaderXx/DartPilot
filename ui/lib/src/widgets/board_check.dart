@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../engine/camera_order.dart';
 import '../engine/engine_connection.dart';
 import '../engine/engine_events.dart';
 import 'overlay_preview.dart';
@@ -106,7 +107,11 @@ class _BoardOccupiedDialogState extends State<BoardOccupiedDialog> {
               Text(l10n.boardOccupiedText),
               for (final camera in cameras) ...[
                 const SizedBox(height: 12),
-                Text(camera.reason.isEmpty ? camera.camera : '${camera.camera}: ${camera.reason}'),
+                Text(
+                  camera.reason.isEmpty
+                      ? cameraLabel(context, camera.camera)
+                      : '${cameraLabel(context, camera.camera)}: ${camera.reason}',
+                ),
                 const SizedBox(height: 4),
                 MarkedPreview(key: ValueKey('board-preview-${camera.camera}'), board: camera),
               ],

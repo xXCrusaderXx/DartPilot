@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import '../l10n/app_localizations.dart';
+import 'engine/camera_order.dart';
 import 'engine/engine_choice.dart';
 import 'engine/engine_connection.dart';
 import 'engine/engine_events.dart';
@@ -14,7 +15,15 @@ import 'theme.dart';
 import 'screens/main_shell.dart';
 
 class DartPilotApp extends StatefulWidget {
-  const DartPilotApp({super.key, this.locale, this.engine, this.manager, this.settings, this.statistics});
+  const DartPilotApp({
+    super.key,
+    this.locale,
+    this.engine,
+    this.manager,
+    this.settings,
+    this.statistics,
+    this.cameraOrder,
+  });
 
   /// Fixed locale for tests; the system language otherwise
   final Locale? locale;
@@ -30,6 +39,9 @@ class DartPilotApp extends StatefulWidget {
   /// Played games for the statistics; kept in memory only when none is given (tests), main() gives the stored ones
   final Statistics? statistics;
 
+  /// The player's order and names of the cameras; kept in memory only when none is given (tests)
+  final CameraOrder? cameraOrder;
+
   @override
   State<DartPilotApp> createState() => _DartPilotAppState();
 }
@@ -41,6 +53,7 @@ class _DartPilotAppState extends State<DartPilotApp> {
   late EngineSettings _settings = widget.settings ?? EngineSettings();
   late final AppLifecycleListener _lifecycle;
   late final Statistics _statistics = widget.statistics ?? Statistics(MemoryGameStore());
+  late final CameraOrder _cameraOrder = widget.cameraOrder ?? CameraOrder();
   final GlobalKey<ScaffoldMessengerState> _messenger = GlobalKey();
   StreamSubscription<EngineEvent>? _events;
   final Set<String> _movedCameras = {};
@@ -60,12 +73,13 @@ class _DartPilotAppState extends State<DartPilotApp> {
     _movedQuiet = Timer(movedQuiet, () => _movedQuiet = null);
     final l10n = AppLocalizations.of(context);
     final cameras = _engine.hello?.cameras ?? const <String>[];
-    final number = cameras.indexOf(moved.first) + 1;
     _messenger.currentState?.showSnackBar(
       SnackBar(
         key: const ValueKey('camera-moved'),
         content: Text(
-          moved.length > 1 ? l10n.rigKnockedNotice : l10n.cameraMovedNotice(number > 0 ? '$number' : moved.first),
+          moved.length > 1
+              ? l10n.rigKnockedNotice
+              : l10n.cameraMovedNotice(_cameraOrder.label(l10n, cameras, moved.first)),
         ),
         duration: const Duration(seconds: 8),
       ),
@@ -137,7 +151,10 @@ class _DartPilotAppState extends State<DartPilotApp> {
       connection: _engine,
       child: StatisticsScope(
         statistics: _statistics,
-        child: manager == null ? app : LocalEngineScope(manager: manager, settings: _settings, child: app),
+        child: CameraOrderScope(
+          order: _cameraOrder,
+          child: manager == null ? app : LocalEngineScope(manager: manager, settings: _settings, child: app),
+        ),
       ),
     );
   }

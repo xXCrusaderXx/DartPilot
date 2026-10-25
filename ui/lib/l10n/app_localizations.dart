@@ -2183,14 +2183,14 @@ abstract class AppLocalizations {
   /// No description provided for @homeCameraMoved.
   ///
   /// In en, this message translates to:
-  /// **'Camera {number} has moved – measure it again.'**
-  String homeCameraMoved(int number);
+  /// **'{camera} has moved – measure it again.'**
+  String homeCameraMoved(String camera);
 
   /// No description provided for @homeCameraWrongPort.
   ///
   /// In en, this message translates to:
-  /// **'Camera {number} is on another USB port than when it was calibrated.'**
-  String homeCameraWrongPort(int number);
+  /// **'{camera} is on another USB port than when it was calibrated.'**
+  String homeCameraWrongPort(String camera);
 
   /// No description provided for @referenceRun.
   ///
@@ -2321,7 +2321,7 @@ abstract class AppLocalizations {
   /// No description provided for @cameraMovedNotice.
   ///
   /// In en, this message translates to:
-  /// **'Camera {camera} was moved – its calibration is being checked.'**
+  /// **'{camera} was moved – its calibration is being checked.'**
   String cameraMovedNotice(String camera);
 
   /// No description provided for @rigKnockedNotice.
@@ -2437,6 +2437,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Engine'**
   String get engineSettings;
+
+  /// No description provided for @assignCameras.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign cameras'**
+  String get assignCameras;
+
+  /// No description provided for @assignCamerasHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Each camera gets its place: camera 1, 2, 3. The live image shows which is which. The arrows swap two cameras, and a name helps to find one again.'**
+  String get assignCamerasHint;
+
+  /// No description provided for @cameraNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Name (optional)'**
+  String get cameraNameLabel;
+
+  /// No description provided for @moveCameraUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Move up'**
+  String get moveCameraUp;
+
+  /// No description provided for @moveCameraDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Move down'**
+  String get moveCameraDown;
+
+  /// No description provided for @saveCameraOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get saveCameraOrder;
+
+  /// No description provided for @newCamerasTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New cameras found'**
+  String get newCamerasTitle;
+
+  /// No description provided for @newCamerasText.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign them once, so that camera 1, 2 and 3 are always the same.'**
+  String get newCamerasText;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
