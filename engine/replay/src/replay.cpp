@@ -175,6 +175,21 @@ std::string throwLine (const session::RecordedSession& session, const ReplayConf
     return line.str();
 }
 
+// The camera offsets of an association experiment, if any, as a field of the run's config
+std::string offsetsJson (const ReplayConfig& config)
+{
+    if(config.camera_offset_ns.empty())
+    {
+        return "";
+    }
+    std::string out;
+    for(const auto& [camera, offset] : config.camera_offset_ns)
+    {
+        out += (out.empty() ? "" : ", ") + jsonString(camera) + ": " + std::to_string(offset);
+    }
+    return ", \"camera_offset_ns\": {" + out + "}";
+}
+
 std::string configJson (const ReplayConfig& config)
 {
     std::string params;
@@ -183,15 +198,16 @@ std::string configJson (const ReplayConfig& config)
         params += (params.empty() ? "" : ", ") + jsonString(param.name) + ": " + number(param.get(config.detection), 6);
     }
     return "{\"calibration_check\": {\"interval_ns\": " + std::to_string(config.check_interval_ns) +
-           ", \"frames\": " + std::to_string(config.check_frames) + "}, \"pipeline\": " + jsonString(config.pipeline) + ", \"params\": {" + params +
-           "}}";
+           ", \"frames\": " + std::to_string(config.check_frames) + "}, \"pipeline\": " + jsonString(config.pipeline) + offsetsJson(config) +
+           ", \"params\": {" + params + "}}";
 }
 }  // namespace
 
 std::string_view moduleName () { return "replay"; }
 
-std::vector<ReplayFrame> replayOrder (const session::RecordedSession& session)
+std::vector<ReplayFrame> replayOrder (const session::RecordedSession& session, const std::vector<std::int64_t>& offsets_ns)
 {
+    const auto offset = [&] (std::size_t camera) { return camera < offsets_ns.size() ? offsets_ns[camera] : 0; };
     std::vector<ReplayFrame> order;
     for(std::size_t c = 0; c < session.cameras.size(); ++c)
     {
@@ -204,8 +220,8 @@ std::vector<ReplayFrame> replayOrder (const session::RecordedSession& session)
     std::stable_sort(order.begin(), order.end(),
                      [&] (const ReplayFrame& a, const ReplayFrame& b)
                      {
-                         const auto ta = session.cameras[a.camera].frames[a.frame].exposure_ns;
-                         const auto tb = session.cameras[b.camera].frames[b.frame].exposure_ns;
+                         const auto ta = session.cameras[a.camera].frames[a.frame].exposure_ns + offset(a.camera);
+                         const auto tb = session.cameras[b.camera].frames[b.frame].exposure_ns + offset(b.camera);
                          return ta != tb ? ta < tb : session.cameras[a.camera].id < session.cameras[b.camera].id;
                      });
     return order;
@@ -303,6 +319,15 @@ std::optional<ReplaySummary> replaySession (const session::RecordedSession& sess
         }
     }
 
+    std::vector<std::int64_t> offsets_ns(session.cameras.size(), 0);
+    for(std::size_t c = 0; c < session.cameras.size(); ++c)
+    {
+        if(const auto it = config.camera_offset_ns.find(session.cameras[c].id); it != config.camera_offset_ns.end())
+        {
+            offsets_ns[c] = it->second;
+        }
+    }
+
     // Throw detection samples every camera's latest frame at fixed steps of recorded time, as live detection does.
     event_detection::StillDetector still(session.cameras.size(), config.detection.still);
     std::vector<std::optional<std::size_t>> latest(session.cameras.size()), sampled(session.cameras.size());
@@ -351,7 +376,7 @@ std::optional<ReplaySummary> replaySession (const session::RecordedSession& sess
                 ++summary.undecodable_frames;
                 continue;
             }
-            samples[c] = event_detection::StillSample{std::move(image), index.sequence, index.exposure_ns};
+            samples[c] = event_detection::StillSample{std::move(image), index.sequence, index.exposure_ns + offsets_ns[c]};
         }
         const auto moment = still.addSample(time_ns, samples, !pipeline->ready());
         if(!moment)
@@ -376,17 +401,18 @@ std::optional<ReplaySummary> replaySession (const session::RecordedSession& sess
         previous_moment = *moment;
     };
 
-    for(const ReplayFrame& item : replayOrder(session))
+    for(const ReplayFrame& item : replayOrder(session, offsets_ns))
     {
         ++summary.frames;
         const session::FrameIndex& index = session.cameras[item.camera].frames[item.frame];
+        const std::int64_t at_ns = index.exposure_ns + offsets_ns[item.camera];
         if(pipeline)
         {
             if(!next_sample_ns)
             {
-                next_sample_ns = index.exposure_ns;
+                next_sample_ns = at_ns;
             }
-            while(*next_sample_ns < index.exposure_ns)
+            while(*next_sample_ns < at_ns)
             {
                 sample(*next_sample_ns);
                 *next_sample_ns += config.detection.still.sample_interval_ns;
