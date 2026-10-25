@@ -58,14 +58,10 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
   void _add(DartThrow dart) {
     setState(() => _game.add(dart));
     if (!_game.isFinished) return;
-    final l10n = AppLocalizations.of(context);
     showWinnerDialog(
       context,
       winner: _game.players[_game.winner!].name,
-      lines: [
-        for (final p in _game.players)
-          '${p.name}: ${p.points} ${l10n.points}, ${l10n.marksPerRound} ${p.marksPerRound.toStringAsFixed(2)}',
-      ],
+      record: currentRecord,
       onUndo: () => setState(_game.undo),
       newGame: CricketScreen.setup,
     );

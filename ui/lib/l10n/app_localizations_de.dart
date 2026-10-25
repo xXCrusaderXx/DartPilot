@@ -1378,4 +1378,37 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get newCamerasText => 'Ordne sie einmal zu, damit Kamera 1, 2 und 3 immer dieselben sind.';
+
+  @override
+  String get statsAverageTrend => 'Average-Verlauf (X01)';
+
+  @override
+  String get statsHitBoard => 'Trefferbild';
+
+  @override
+  String statsMisses(int count) {
+    return 'Daneben: $count';
+  }
+
+  @override
+  String get statsExport => 'Exportieren';
+
+  @override
+  String get exportDartsCsv => 'Alle Darts als CSV';
+
+  @override
+  String get exportGamesJson => 'Spiele und Kennzahlen als JSON';
+
+  @override
+  String exportSaved(String path) {
+    return 'Gespeichert: $path';
+  }
+
+  @override
+  String exportFailed(String error) {
+    return 'Export fehlgeschlagen: $error';
+  }
+
+  @override
+  String get copyPath => 'Pfad kopieren';
 }

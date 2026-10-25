@@ -2485,6 +2485,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Assign them once, so that camera 1, 2 and 3 are always the same.'**
   String get newCamerasText;
+
+  /// No description provided for @statsAverageTrend.
+  ///
+  /// In en, this message translates to:
+  /// **'Average over games (X01)'**
+  String get statsAverageTrend;
+
+  /// No description provided for @statsHitBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'Hit board'**
+  String get statsHitBoard;
+
+  /// No description provided for @statsMisses.
+  ///
+  /// In en, this message translates to:
+  /// **'Misses: {count}'**
+  String statsMisses(int count);
+
+  /// No description provided for @statsExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export'**
+  String get statsExport;
+
+  /// No description provided for @exportDartsCsv.
+  ///
+  /// In en, this message translates to:
+  /// **'All darts as CSV'**
+  String get exportDartsCsv;
+
+  /// No description provided for @exportGamesJson.
+  ///
+  /// In en, this message translates to:
+  /// **'Games and figures as JSON'**
+  String get exportGamesJson;
+
+  /// No description provided for @exportSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved: {path}'**
+  String exportSaved(String path);
+
+  /// No description provided for @exportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Export failed: {error}'**
+  String exportFailed(String error);
+
+  /// No description provided for @copyPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy path'**
+  String get copyPath;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

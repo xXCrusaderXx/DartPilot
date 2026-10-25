@@ -1378,4 +1378,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get newCamerasText => 'Assign them once, so that camera 1, 2 and 3 are always the same.';
+
+  @override
+  String get statsAverageTrend => 'Average over games (X01)';
+
+  @override
+  String get statsHitBoard => 'Hit board';
+
+  @override
+  String statsMisses(int count) {
+    return 'Misses: $count';
+  }
+
+  @override
+  String get statsExport => 'Export';
+
+  @override
+  String get exportDartsCsv => 'All darts as CSV';
+
+  @override
+  String get exportGamesJson => 'Games and figures as JSON';
+
+  @override
+  String exportSaved(String path) {
+    return 'Saved: $path';
+  }
+
+  @override
+  String exportFailed(String error) {
+    return 'Export failed: $error';
+  }
+
+  @override
+  String get copyPath => 'Copy path';
 }

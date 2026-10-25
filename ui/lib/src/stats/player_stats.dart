@@ -37,6 +37,9 @@ class PlayerStats {
   /// Darts per field label (T20, S5, D16, 25, BULL, MISS), over all modes
   final Map<String, int> fields = {};
 
+  /// Darts per ring and sector, for the hit board; bulls and misses have sector 0
+  final Map<(Ring, int), int> hits = {};
+
   // X01
   int x01Darts = 0;
   int x01Points = 0;
@@ -99,6 +102,8 @@ PlayerStats computePlayerStats(List<GameRecord> games, String player, {DateTime?
     for (final t in mine) {
       stats.rings[t.score.ring] = stats.rings[t.score.ring]! + 1;
       stats.fields[t.score.label] = (stats.fields[t.score.label] ?? 0) + 1;
+      final key = (t.score.ring, _hasSector(t.score.ring) ? t.score.sector : 0);
+      stats.hits[key] = (stats.hits[key] ?? 0) + 1;
     }
     final PlayedGame played;
     switch (game) {
@@ -180,3 +185,5 @@ PlayedGame _addX01(PlayerStats stats, GameRecord record, X01Game game, int index
   if (played) stats.legs++;
   return PlayedGame(record, won: game.winner == index, darts: darts, average: state.threeDartAverage);
 }
+
+bool _hasSector(Ring ring) => ring != Ring.innerBull && ring != Ring.outerBull && ring != Ring.miss;

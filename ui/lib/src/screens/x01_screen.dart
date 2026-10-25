@@ -61,14 +61,10 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
   }
 
   Future<void> _showWinner() {
-    final l10n = AppLocalizations.of(context);
     return showWinnerDialog(
       context,
       winner: _game.players[_game.winner!].name,
-      lines: [
-        for (final p in _game.players)
-          '${p.name}: ${l10n.legs} ${p.legsWon}, ${l10n.average} ${p.threeDartAverage.toStringAsFixed(1)}',
-      ],
+      record: currentRecord,
       onUndo: () => setState(_game.undo),
       newGame: (_) => const X01SetupScreen(),
     );
