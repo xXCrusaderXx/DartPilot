@@ -1661,4 +1661,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dimsImplausible => 'A value lies outside what a dart can have.';
+
+  @override
+  String get addSetPhoto => 'Measure by photo';
+
+  @override
+  String get addSetPhotoHint => 'Lay the dart on the printed sheet and take a photo';
+
+  @override
+  String get dartPhotoHowTo =>
+      'Print the dart sheet (docs/calibration/dart-sheet-A4.png) at 100 % on A4 and lay it flat. Put one dart of the set in the middle of the sheet. Take the photo from above, with all four corner markers fully in view.';
+
+  @override
+  String get dartPhotoTake => 'Take photo';
+
+  @override
+  String get dartPhotoMeasuring => 'Measuring the photo …';
+
+  @override
+  String get dartPhotoDone => 'Photo measured – the dimensions are with the set.';
+
+  @override
+  String get dartPhotoNoSheet => 'The sheet was not found. All four markers must be fully in the picture.';
+
+  @override
+  String get dartPhotoNoDart => 'No dart was found on the sheet. Put it in the middle, without shadow.';
 }

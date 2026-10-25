@@ -483,5 +483,13 @@
   "dimPhoto": "Foto",
   "dimMeasuredValue": "gemessen: {value}",
   "dimsSave": "Speichern",
-  "dimsImplausible": "Ein Wert liegt außerhalb dessen, was ein Dart haben kann."
+  "dimsImplausible": "Ein Wert liegt außerhalb dessen, was ein Dart haben kann.",
+  "addSetPhoto": "Per Foto vermessen",
+  "addSetPhotoHint": "Dart auf das ausgedruckte Messblatt legen und fotografieren",
+  "dartPhotoHowTo": "Das Messblatt (docs/calibration/dart-sheet-A4.png) in 100 % auf A4 drucken und flach hinlegen. Einen Dart des Sets mitten aufs Blatt legen. Von oben fotografieren, so dass alle vier Marker in den Ecken ganz zu sehen sind.",
+  "dartPhotoTake": "Foto aufnehmen",
+  "dartPhotoMeasuring": "Foto wird ausgewertet …",
+  "dartPhotoDone": "Foto ausgewertet – die Maße stehen beim Set.",
+  "dartPhotoNoSheet": "Das Messblatt wurde nicht gefunden. Alle vier Marker müssen ganz im Bild sein.",
+  "dartPhotoNoDart": "Auf dem Blatt wurde kein Dart gefunden. Leg ihn mitten aufs Blatt, ohne Schatten."
 }

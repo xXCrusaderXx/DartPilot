@@ -2995,6 +2995,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A value lies outside what a dart can have.'**
   String get dimsImplausible;
+
+  /// No description provided for @addSetPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Measure by photo'**
+  String get addSetPhoto;
+
+  /// No description provided for @addSetPhotoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Lay the dart on the printed sheet and take a photo'**
+  String get addSetPhotoHint;
+
+  /// No description provided for @dartPhotoHowTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Print the dart sheet (docs/calibration/dart-sheet-A4.png) at 100 % on A4 and lay it flat. Put one dart of the set in the middle of the sheet. Take the photo from above, with all four corner markers fully in view.'**
+  String get dartPhotoHowTo;
+
+  /// No description provided for @dartPhotoTake.
+  ///
+  /// In en, this message translates to:
+  /// **'Take photo'**
+  String get dartPhotoTake;
+
+  /// No description provided for @dartPhotoMeasuring.
+  ///
+  /// In en, this message translates to:
+  /// **'Measuring the photo …'**
+  String get dartPhotoMeasuring;
+
+  /// No description provided for @dartPhotoDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo measured – the dimensions are with the set.'**
+  String get dartPhotoDone;
+
+  /// No description provided for @dartPhotoNoSheet.
+  ///
+  /// In en, this message translates to:
+  /// **'The sheet was not found. All four markers must be fully in the picture.'**
+  String get dartPhotoNoSheet;
+
+  /// No description provided for @dartPhotoNoDart.
+  ///
+  /// In en, this message translates to:
+  /// **'No dart was found on the sheet. Put it in the middle, without shadow.'**
+  String get dartPhotoNoDart;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -1,7 +1,9 @@
+import 'dart:typed_data';
 import 'dart:convert';
 
 import 'package:dartpilot/src/app.dart';
 import 'package:dartpilot/src/engine/engine_connection.dart';
+import 'package:dartpilot/src/screens/my_darts_screen.dart';
 import 'package:dartpilot/src/stats/dart_links.dart';
 import 'package:dartpilot/src/stats/statistics.dart';
 import 'package:flutter/material.dart';
@@ -49,6 +51,15 @@ void main() {
     if (sets != null) engine.receiveForTest(jsonEncode(sets));
     await tester.pumpAndSettle();
   }
+
+  void answer(String? error) => engine.receiveForTest(
+    jsonEncode({
+      'type': 'result',
+      'request_id': '${sent.length}',
+      'ok': error == null,
+      if (error != null) 'error': {'code': error, 'message': ''},
+    }),
+  );
 
   Future<void> openMyDarts(WidgetTester tester) async {
     await openSettings(tester);
@@ -230,5 +241,26 @@ void main() {
       'id': 'set-1',
       'dims': {'barrel_mm': null, 'weight_g': 22.0},
     });
+  });
+
+  testWidgets('a set is measured by a photo of the dart sheet, and a failed photo is explained', (tester) async {
+    takeDartPhoto = () async => Uint8List.fromList([0xFF, 0xD8, 0xFF, 0xD9]);
+    await start(tester, sets: dartSets());
+    await openMyDarts(tester);
+    await tester.tap(find.byKey(const ValueKey('dart-set-menu-set-1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('photo-set-1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('dart-photo-take')));
+    await tester.pump();
+    await tester.pump();
+    expect(sent.last, {
+      'type': 'measure_dart_photo',
+      'id': 'set-1',
+      'jpeg_base64': base64Encode([0xFF, 0xD8, 0xFF, 0xD9]),
+    });
+    answer('sheet_not_found');
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Messblatt wurde nicht gefunden'), findsOneWidget);
   });
 }

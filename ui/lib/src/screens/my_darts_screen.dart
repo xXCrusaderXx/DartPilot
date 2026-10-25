@@ -1,4 +1,8 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../engine/engine_connection.dart';
@@ -29,6 +33,13 @@ class MyDartsScreen extends StatelessWidget {
               onTap: () => Navigator.of(sheetContext).pop('measure'),
             ),
             ListTile(
+              key: const ValueKey('add-set-photo'),
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: Text(l10n.addSetPhoto),
+              subtitle: Text(l10n.addSetPhotoHint),
+              onTap: () => Navigator.of(sheetContext).pop('photo'),
+            ),
+            ListTile(
               key: const ValueKey('add-set-enter'),
               leading: const Icon(Icons.edit_note),
               title: Text(l10n.addSetEnter),
@@ -44,6 +55,15 @@ class MyDartsScreen extends StatelessWidget {
     if (name == null || !context.mounted) return;
     if (how == 'measure') {
       await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => DartSetCaptureScreen(name: name)));
+      return;
+    }
+    if (how == 'photo') {
+      final before = {for (final s in engine.dartSets?.sets ?? const <DartSet>[]) s.id};
+      final error = await engine.createDartSet(name, const {});
+      if (!context.mounted) return;
+      if (error != null) return _showDimsError(context, error);
+      final id = await _newSetId(engine, before);
+      if (id != null && context.mounted) await measureByPhoto(context, id);
       return;
     }
     final dims = await showDialog<Map<String, double?>>(
@@ -152,7 +172,9 @@ class _DartSetCard extends StatelessWidget {
                 PopupMenuButton<String>(
                   key: ValueKey('dart-set-menu-${set.id}'),
                   onSelected: (action) async {
-                    if (action == 'dims') {
+                    if (action == 'photo') {
+                      await measureByPhoto(context, set.id);
+                    } else if (action == 'dims') {
                       final dims = await showDialog<Map<String, double?>>(
                         context: context,
                         builder: (_) => DartDimsDialog(title: set.name, set: set),
@@ -170,6 +192,7 @@ class _DartSetCard extends StatelessWidget {
                   },
                   itemBuilder: (_) => [
                     PopupMenuItem(value: 'dims', key: ValueKey('edit-dims-${set.id}'), child: Text(l10n.enterDims)),
+                    PopupMenuItem(value: 'photo', key: ValueKey('photo-${set.id}'), child: Text(l10n.addSetPhoto)),
                     PopupMenuItem(value: 'rename', child: Text(l10n.renameDartSet)),
                     PopupMenuItem(
                       value: 'delete',
@@ -561,4 +584,76 @@ class _DartDimsDialogState extends State<DartDimsDialog> {
       ],
     );
   }
+}
+
+/// The id of the set that appears in [EngineConnection.dartSets] next to `before`, once the engine sent it
+Future<String?> _newSetId(EngineConnection engine, Set<String> before) async {
+  String? find() => engine.dartSets?.sets.map((s) => s.id).where((id) => !before.contains(id)).firstOrNull;
+  if (find() case final id?) return id;
+  final found = Completer<String?>();
+  void listener() {
+    if (find() case final id? when !found.isCompleted) found.complete(id);
+  }
+
+  engine.addListener(listener);
+  try {
+    return await found.future.timeout(const Duration(seconds: 5), onTimeout: () => null);
+  } finally {
+    engine.removeListener(listener);
+  }
+}
+
+/// Takes the photo of the dart on its sheet: the camera on phones, a picture file elsewhere. Downscaled to at most
+/// 3000 px and JPEG quality 90, as the engine needs the whole sheet sharp but not the camera's full size.
+@visibleForTesting
+Future<Uint8List?> Function() takeDartPhoto = () async {
+  final camera =
+      !kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS);
+  final file = await ImagePicker().pickImage(
+    source: camera ? ImageSource.camera : ImageSource.gallery,
+    maxWidth: 3000,
+    maxHeight: 3000,
+    imageQuality: 90,
+  );
+  return file?.readAsBytes();
+};
+
+/// The photo measurement of a set (#120): how to lay the dart on the printed sheet, the photo, and the engine's answer
+Future<void> measureByPhoto(BuildContext context, String id) async {
+  final l10n = AppLocalizations.of(context);
+  final engine = EngineScope.of(context);
+  final messenger = ScaffoldMessenger.of(context);
+  final go = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(l10n.addSetPhoto),
+      content: Text(l10n.dartPhotoHowTo),
+      actions: [
+        TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(l10n.cancel)),
+        FilledButton(
+          key: const ValueKey('dart-photo-take'),
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          child: Text(l10n.dartPhotoTake),
+        ),
+      ],
+    ),
+  );
+  if (go != true) return;
+  final jpeg = await takeDartPhoto();
+  if (jpeg == null) return;
+  messenger.showSnackBar(SnackBar(content: Text(l10n.dartPhotoMeasuring)));
+  final error = await engine.measureDartPhoto(id, jpeg);
+  messenger
+    ..hideCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(
+        key: const ValueKey('dart-photo-result'),
+        content: Text(switch (error) {
+          null => l10n.dartPhotoDone,
+          'sheet_not_found' => l10n.dartPhotoNoSheet,
+          'dart_not_found' => l10n.dartPhotoNoDart,
+          _ => l10n.dartSetFailed(error),
+        }),
+      ),
+    );
 }

@@ -1662,4 +1662,29 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get dimsImplausible => 'Ein Wert liegt außerhalb dessen, was ein Dart haben kann.';
+
+  @override
+  String get addSetPhoto => 'Per Foto vermessen';
+
+  @override
+  String get addSetPhotoHint => 'Dart auf das ausgedruckte Messblatt legen und fotografieren';
+
+  @override
+  String get dartPhotoHowTo =>
+      'Das Messblatt (docs/calibration/dart-sheet-A4.png) in 100 % auf A4 drucken und flach hinlegen. Einen Dart des Sets mitten aufs Blatt legen. Von oben fotografieren, so dass alle vier Marker in den Ecken ganz zu sehen sind.';
+
+  @override
+  String get dartPhotoTake => 'Foto aufnehmen';
+
+  @override
+  String get dartPhotoMeasuring => 'Foto wird ausgewertet …';
+
+  @override
+  String get dartPhotoDone => 'Foto ausgewertet – die Maße stehen beim Set.';
+
+  @override
+  String get dartPhotoNoSheet => 'Das Messblatt wurde nicht gefunden. Alle vier Marker müssen ganz im Bild sein.';
+
+  @override
+  String get dartPhotoNoDart => 'Auf dem Blatt wurde kein Dart gefunden. Leg ihn mitten aufs Blatt, ohne Schatten.';
 }
