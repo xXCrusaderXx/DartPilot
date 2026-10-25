@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <optional>
+#include <thread>
 
 #include <opencv2/imgproc.hpp>
 
@@ -20,15 +21,28 @@ constexpr int kMaxChanges = 3;
 // How far around the axis of a pulled dart the board is taken as it is now, so that its flight is covered as well
 constexpr int kPulledReach_px = 45;
 
+// Runs work(c) for every camera at once; each call may only write what belongs to its own camera.
+template <typename Work>
+void forEachCamera (std::size_t count, Work work)
+{
+    std::vector<std::thread> threads;
+    for(std::size_t c = 1; c < count; ++c)
+    {
+        threads.emplace_back([&work, c] { work(c); });
+    }
+    if(count > 0)
+    {
+        work(0);
+    }
+    for(auto& thread : threads)
+    {
+        thread.join();
+    }
+}
 
 // Mean absolute grey difference of two images around the axis points of an observation
 double differenceAlong (const tip_candidates::DartObservation& observation, const cv::Mat& a, const cv::Mat& b)
 {
-    cv::Mat a_gray, b_gray;
-    cv::cvtColor(a, a_gray, cv::COLOR_BGR2GRAY);
-    cv::cvtColor(b, b_gray, cv::COLOR_BGR2GRAY);
-    a_gray.convertTo(a_gray, CV_32F);
-    b_gray.convertTo(b_gray, CV_32F);
     const cv::Rect image(0, 0, a.cols, a.rows);
     double sum = 0.0;
     int count = 0;
@@ -37,7 +51,12 @@ double differenceAlong (const tip_candidates::DartObservation& observation, cons
         const cv::Rect patch = cv::Rect(cvRound(p.x) - kPatch_px, cvRound(p.y) - kPatch_px, 2 * kPatch_px + 1, 2 * kPatch_px + 1) & image;
         if(patch.area() > 0)
         {
-            sum += cv::mean(cv::abs(a_gray(patch) - b_gray(patch)))[0];
+            cv::Mat a_gray, b_gray;
+            cv::cvtColor(a(patch), a_gray, cv::COLOR_BGR2GRAY);
+            cv::cvtColor(b(patch), b_gray, cv::COLOR_BGR2GRAY);
+            a_gray.convertTo(a_gray, CV_32F);
+            b_gray.convertTo(b_gray, CV_32F);
+            sum += cv::mean(cv::abs(a_gray - b_gray))[0];
             ++count;
         }
     }
@@ -84,9 +103,9 @@ TrackerUpdate DartTracker::addStill (const std::vector<cv::Mat>& images)
     }
 
     std::vector<std::optional<tip_candidates::DartObservation>> against_empty(count);
-    for(std::size_t c = 0; darts_in_board_ > 0 && c < count; ++c)
+    if(darts_in_board_ > 0)
     {
-        against_empty[c] = tip_candidates::observeDart(means[c], reference_[c]);
+        forEachCamera(count, [&] (std::size_t c) { against_empty[c] = tip_candidates::observeDart(means[c], reference_[c]); });
     }
     // Pulled when at most one camera still sees something against the empty board: a dart in the board stands out to
     // at least two cameras, while a single camera may keep a trace of a pushed-out fibre.
@@ -102,9 +121,11 @@ TrackerUpdate DartTracker::addStill (const std::vector<cv::Mat>& images)
 
     // A camera whose view changed as a whole was knocked: everything in it differs from before, which is no dart. Checked
     // after the takeout, so that three darts pulled at once are not taken for it.
+    std::vector<std::optional<cv::Point2d>> shifts(count);
+    forEachCamera(count, [&] (std::size_t c) { shifts[c] = tip_candidates::viewChange(last_[c], means[c]); });
     for(std::size_t c = 0; c < count; ++c)
     {
-        if(const auto shift = tip_candidates::viewChange(last_[c], means[c]))
+        if(const auto& shift = shifts[c])
         {
             update.moved_cameras.emplace_back(static_cast<int>(c), *shift);
             last_[c] = means[c];
@@ -132,9 +153,9 @@ TrackerUpdate DartTracker::addStill (const std::vector<cv::Mat>& images)
         // the image now, a dart put in.
         std::vector<int> seen;
         double in_before = 0.0, in_now = 0.0;
+        forEachCamera(count, [&] (std::size_t c) { changes[c] = tip_candidates::observeDart(means[c], before[c]); });
         for(std::size_t c = 0; c < count; ++c)
         {
-            changes[c] = tip_candidates::observeDart(means[c], before[c]);
             if(!changes[c])
             {
                 continue;

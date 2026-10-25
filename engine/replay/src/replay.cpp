@@ -175,9 +175,9 @@ std::string configJson (const ReplayConfig& config)
     return "{\"calibration_check\": {\"interval_ns\": " + std::to_string(config.check_interval_ns) +
            ", \"frames\": " + std::to_string(config.check_frames) + "}, \"pipeline\": " + jsonString(config.pipeline) +
            ", \"still\": {\"sample_interval_ns\": " + std::to_string(still.sample_interval_ns) +
-           ", \"still_motion\": " + number(still.still_motion, 2) + ", \"local_change\": " + number(still.local_change, 1) +
-           ", \"local_change_px\": " + std::to_string(still.local_change_px) + ", \"settle_samples\": " + std::to_string(still.settle_samples) +
-           ", \"frames_to_average\": " + std::to_string(still.frames_to_average) +
+           ", \"motion_span_ns\": " + std::to_string(still.motion_span_ns) + ", \"still_motion\": " + number(still.still_motion, 2) +
+           ", \"local_change\": " + number(still.local_change, 1) + ", \"local_change_px\": " + std::to_string(still.local_change_px) +
+           ", \"settle_samples\": " + std::to_string(still.settle_samples) + ", \"frames_to_average\": " + std::to_string(still.frames_to_average) +
            ", \"retry_interval_ns\": " + std::to_string(still.retry_interval_ns) + "}}";
 }
 }  // namespace
