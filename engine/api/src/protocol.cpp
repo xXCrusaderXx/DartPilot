@@ -143,7 +143,9 @@ json helloMessage (const Hello& hello)
             {"detection", hello.detection},
             {"detection_reason", hello.detection_reason.empty() ? json(nullptr) : json(hello.detection_reason)},
             {"board_state", toJson(hello.board_state)},
-            {"calibration_status", hello.calibration_status}};
+            {"calibration_status", hello.calibration_status},
+            {"pairing", hello.pairing},
+            {"pairing_pin_digits", 6}};
 }
 
 json sharedGameMessage (const std::string& client, const json& game) { return {{"type", "shared_game"}, {"client", client}, {"game", game}}; }
@@ -340,6 +342,14 @@ std::variant<Request, ParseError> parseRequest (const std::string& text)
         if(type == "hello")
         {
             request.body = ClientHello{message.value("client", std::string())};
+        }
+        else if(type == "pair")
+        {
+            request.body = Pair{message.value("pin", std::string()), message.value("token", std::string())};
+        }
+        else if(type == "get_pairing_pin" || type == "list_paired_clients" || type == "unpair")
+        {
+            request.body = PairingAdmin{type, message.value("id", std::string())};
         }
         else if(type == "correct_throw")
         {

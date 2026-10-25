@@ -11,6 +11,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include "dartpilot/api/pairing.hpp"
 #include "dartpilot/api/protocol.hpp"
 #include "dartpilot/api/throw_log.hpp"
 
@@ -28,6 +29,10 @@ class Server
 {
    public:
     Server (int port, std::string host, Hello hello);
+
+    // Clients from other computers must pair first (#110); without this, every client is trusted, as when the engine
+    // listens only on this computer. trust_local false treats this computer like any other, for tests.
+    void requirePairing (std::shared_ptr<Pairing> pairing, bool trust_local = true);
     ~Server ();
     Server (const Server&) = delete;
     Server& operator=(const Server&) = delete;
@@ -102,6 +107,10 @@ class Server
         // Valid from the open to the close callback of its connection; only used under mutex_
         ix::WebSocket* socket = nullptr;
         std::string name;
+        std::string address;
+        // local, paired or required, as in hello
+        std::string pairing = "local";
+        bool trusted () const { return pairing != "required"; }
         bool status = false;
         struct Preview
         {
@@ -119,6 +128,8 @@ class Server
     ThrowLog log_;
     std::unique_ptr<ix::WebSocketServer> server_;
     mutable std::mutex mutex_;
+    std::shared_ptr<Pairing> pairing_;
+    bool trust_local_ = true;
     std::map<std::string, Client> clients_;
     std::map<std::string, std::string> camera_states_;
     std::function<void(bool)> detection_handler_;

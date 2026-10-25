@@ -43,16 +43,24 @@ Server::Server (int port, std::string host, Hello hello)
                 {
                     // hello first, then the client is registered for events, so it never sees an event before hello.
                     std::unique_lock lock(mutex_);
-                    const Hello hello = hello_;
+                    Client client{&socket, {}, state->getRemoteIp()};
+                    const bool local = trust_local_ && isLocalAddress(client.address);
+                    client.pairing = pairing_ && !local ? "required" : "local";
+                    Hello hello = hello_;
+                    hello.pairing = client.pairing;
                     const auto states = last_states_;
                     lock.unlock();
                     socket.sendText(helloMessage(hello).dump());
-                    for(const auto& [type, state] : states)
+                    // A client that has not paired sees nothing of the board until it does.
+                    if(client.trusted())
                     {
-                        socket.sendText(state.dump());
+                        for(const auto& [type, state] : states)
+                        {
+                            socket.sendText(state.dump());
+                        }
                     }
                     lock.lock();
-                    clients_[connection] = Client{&socket, {}, false};
+                    clients_[connection] = std::move(client);
                     break;
                 }
                 case ix::WebSocketMessageType::Close:
@@ -116,7 +124,7 @@ void Server::broadcast (const nlohmann::json& message, bool status_only)
     std::lock_guard lock(mutex_);
     for(const auto& [id, client] : clients_)
     {
-        if(client.socket && (!status_only || client.status))
+        if(client.socket && client.trusted() && (!status_only || client.status))
         {
             client.socket->sendText(text);
         }
@@ -358,15 +366,117 @@ std::size_t Server::clientCount () const
     return clients_.size();
 }
 
+void Server::requirePairing (std::shared_ptr<Pairing> pairing, bool trust_local)
+{
+    std::lock_guard lock(mutex_);
+    pairing_ = std::move(pairing);
+    trust_local_ = trust_local;
+}
+
 nlohmann::json Server::handle (const std::string& connection, const Request& request)
 {
-    std::string client;
+    std::string client, address, pairing;
+    std::shared_ptr<Pairing> pairer;
     {
         std::lock_guard lock(mutex_);
-        client = clients_[connection].name;
+        const Client& known = clients_[connection];
+        client = known.name;
+        address = known.address;
+        pairing = known.pairing;
+        pairer = pairing_;
     }
+    if(pairing == "required" && !std::holds_alternative<ClientHello>(request.body) && !std::holds_alternative<Pair>(request.body))
+    {
+        return resultMessage(request.request_id, false, "not_paired", "Pair with the engine's PIN first");
+    }
+    const auto now_s = [] { return static_cast<std::int64_t>(std::time(nullptr)); };
     return std::visit(
         Overloaded{
+            [&] (const Pair& pair)
+            {
+                if(!pairer)
+                {
+                    return resultMessage(request.request_id, false, "not_available", "This engine needs no pairing");
+                }
+                const auto result = pair.token.empty() ? pairer->pairWithPin(pair.pin, client, address, now_s())
+                                                       : pairer->pairWithToken(pair.token, client, address, now_s());
+                if(!result.token)
+                {
+                    const std::string message = result.error == "too_many_attempts" ? "Too many wrong attempts; wait a minute"
+                                                : result.error == "unknown_token"   ? "This engine does not know the token; pair with its PIN"
+                                                                                    : "Wrong PIN";
+                    return resultMessage(request.request_id, false, result.error, message);
+                }
+                nlohmann::json states;
+                {
+                    std::lock_guard lock(mutex_);
+                    auto& known = clients_[connection];
+                    // A client on this computer stays local; it may pair to get a token for other connections.
+                    if(known.pairing == "required")
+                    {
+                        known.pairing = "paired";
+                    }
+                    if(known.socket)
+                    {
+                        known.socket->sendText(nlohmann::json{{"type", "paired"}, {"token", *result.token}, {"engine_id", hello_.engine_id}}.dump());
+                        // What it could not see before pairing
+                        if(pairing == "required")
+                        {
+                            for(const auto& [type, state] : last_states_)
+                            {
+                                known.socket->sendText(state.dump());
+                            }
+                        }
+                    }
+                }
+                return resultMessage(request.request_id, true);
+            },
+            [&] (const PairingAdmin& admin)
+            {
+                if(!isLocalAddress(address) || pairing != "local")
+                {
+                    return resultMessage(request.request_id, false, "not_allowed", "Only a client on the engine's computer may do this");
+                }
+                if(!pairer)
+                {
+                    return resultMessage(request.request_id, false, "not_available", "This engine needs no pairing");
+                }
+                std::lock_guard lock(mutex_);
+                auto* socket = clients_[connection].socket;
+                if(admin.type == "get_pairing_pin")
+                {
+                    const auto pin = pairer->pin(now_s());
+                    char expires[32];
+                    const std::time_t t = static_cast<std::time_t>(pin.expires_s);
+                    std::tm tm{};
+                    ::gmtime_r(&t, &tm);
+                    std::strftime(expires, sizeof(expires), "%Y-%m-%dT%H:%M:%SZ", &tm);
+                    if(socket)
+                    {
+                        socket->sendText(nlohmann::json{{"type", "pairing_pin"}, {"pin", pin.pin}, {"expires_utc", expires}}.dump());
+                    }
+                }
+                else if(admin.type == "list_paired_clients")
+                {
+                    nlohmann::json list = nlohmann::json::array();
+                    for(const auto& paired : pairer->paired())
+                    {
+                        list.push_back({{"id", paired.id},
+                                        {"client", paired.client},
+                                        {"created_utc", paired.created_utc},
+                                        {"last_seen_utc", paired.last_seen_utc}});
+                    }
+                    if(socket)
+                    {
+                        socket->sendText(nlohmann::json{{"type", "paired_clients"}, {"clients", list}}.dump());
+                    }
+                }
+                else if(!pairer->unpair(admin.id))
+                {
+                    return resultMessage(request.request_id, false, "unknown_client", "No paired client " + admin.id);
+                }
+                return resultMessage(request.request_id, true);
+            },
             [&] (const ClientHello& hello)
             {
                 std::lock_guard lock(mutex_);

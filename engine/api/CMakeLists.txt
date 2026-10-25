@@ -20,7 +20,7 @@ set(JSON_Install OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(ixwebsocket nlohmann_json)
 
 find_package(Threads REQUIRED)
-dartpilot_add_module(api DEPS scoring dartpilot_version nlohmann_json::nlohmann_json ixwebsocket Threads::Threads)
+dartpilot_add_module(api DEPS scoring session dartpilot_version nlohmann_json::nlohmann_json ixwebsocket Threads::Threads)
 
 # mDNS announcement through the Avahi daemon where its client library is installed; without it, only the UDP answers.
 find_package(PkgConfig QUIET)
