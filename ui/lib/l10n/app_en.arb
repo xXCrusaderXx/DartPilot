@@ -794,19 +794,19 @@
   "checkNoBoard": "No board found – darts in the board or a hand in view?",
   "checkNotCalibrated": "Not calibrated yet.",
   "checkChecking": "Checking …",
-  "homeCameraMoved": "{camera} has moved – measure it again.",
+  "homeCameraMoved": "Camera {number} has moved – measure it again.",
   "@homeCameraMoved": {
     "placeholders": {
-      "camera": {
-        "type": "String"
+      "number": {
+        "type": "int"
       }
     }
   },
-  "homeCameraWrongPort": "{camera} is on another USB port than when it was calibrated.",
+  "homeCameraWrongPort": "Camera {number} is on another USB port than when it was calibrated.",
   "@homeCameraWrongPort": {
     "placeholders": {
-      "camera": {
-        "type": "String"
+      "number": {
+        "type": "int"
       }
     }
   },
@@ -868,7 +868,7 @@
   "referenceNotGoodHint": "Run the setup diagnosis to see where the error comes from, then calibrate the cameras it names again.",
   "referenceCamerasDisagree": "The cameras disagree about where it is",
   "referenceSeenByOneCamera": "Only one camera saw it",
-  "cameraMovedNotice": "{camera} was moved – its calibration is being checked.",
+  "cameraMovedNotice": "Camera {camera} was moved – its calibration is being checked.",
   "@cameraMovedNotice": {
     "placeholders": {
       "camera": {
@@ -1030,5 +1030,15 @@
       }
     }
   },
-  "unpairDevice": "Unpair"
+  "unpairDevice": "Unpair",
+  "watchGame": "Watching",
+  "sharedGameEnded": "The game on the other display has ended.",
+  "watchGameTitle": "Watch the running game: {mode}",
+  "@watchGameTitle": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -17,3 +17,11 @@ abstract interface class DartGame {
   /// Replaces the dart at `index` in [throws] and replays the game
   void replace(int index, DartThrow dart);
 }
+
+/// [game] with [throws] added, for a game rebuilt from a shared or stored record
+G replayed<G extends DartGame>(G game, List<DartThrow> throws) {
+  for (final t in throws) {
+    game.add(t);
+  }
+  return game;
+}

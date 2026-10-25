@@ -2183,14 +2183,14 @@ abstract class AppLocalizations {
   /// No description provided for @homeCameraMoved.
   ///
   /// In en, this message translates to:
-  /// **'{camera} has moved – measure it again.'**
-  String homeCameraMoved(String camera);
+  /// **'Camera {number} has moved – measure it again.'**
+  String homeCameraMoved(int number);
 
   /// No description provided for @homeCameraWrongPort.
   ///
   /// In en, this message translates to:
-  /// **'{camera} is on another USB port than when it was calibrated.'**
-  String homeCameraWrongPort(String camera);
+  /// **'Camera {number} is on another USB port than when it was calibrated.'**
+  String homeCameraWrongPort(int number);
 
   /// No description provided for @referenceRun.
   ///
@@ -2321,7 +2321,7 @@ abstract class AppLocalizations {
   /// No description provided for @cameraMovedNotice.
   ///
   /// In en, this message translates to:
-  /// **'{camera} was moved – its calibration is being checked.'**
+  /// **'Camera {camera} was moved – its calibration is being checked.'**
   String cameraMovedNotice(String camera);
 
   /// No description provided for @rigKnockedNotice.
@@ -2815,6 +2815,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unpair'**
   String get unpairDevice;
+
+  /// No description provided for @watchGame.
+  ///
+  /// In en, this message translates to:
+  /// **'Watching'**
+  String get watchGame;
+
+  /// No description provided for @sharedGameEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'The game on the other display has ended.'**
+  String get sharedGameEnded;
+
+  /// No description provided for @watchGameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch the running game: {mode}'**
+  String watchGameTitle(String mode);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

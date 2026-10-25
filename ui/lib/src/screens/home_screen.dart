@@ -12,6 +12,7 @@ import 'calibration_screen.dart';
 import 'camera_assign_screen.dart';
 import 'cricket_screen.dart';
 import 'training_screen.dart';
+import 'watch_game_screen.dart';
 import 'x01_setup_screen.dart';
 
 /// The hub once the app is set up: the engine's state, the games to play locally or solo, and playing together.
@@ -63,6 +64,7 @@ class HomeScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             children: [
               _StatusCard(onConnect: onConnect),
+              const SharedGameCard(),
               if (StatisticsScope.maybeOf(context)?.profiles.isEmpty ?? false) ...[
                 const SizedBox(height: 16),
                 Card(

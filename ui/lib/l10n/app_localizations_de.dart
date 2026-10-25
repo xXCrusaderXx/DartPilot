@@ -1204,13 +1204,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get checkChecking => 'Prüfe …';
 
   @override
-  String homeCameraMoved(String camera) {
-    return '$camera hat sich bewegt – miss sie neu ein.';
+  String homeCameraMoved(int number) {
+    return 'Kamera $number hat sich bewegt – miss sie neu ein.';
   }
 
   @override
-  String homeCameraWrongPort(String camera) {
-    return '$camera steckt an einem anderen USB-Port als beim Kalibrieren.';
+  String homeCameraWrongPort(int number) {
+    return 'Kamera $number steckt an einem anderen USB-Port als beim Kalibrieren.';
   }
 
   @override
@@ -1290,7 +1290,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String cameraMovedNotice(String camera) {
-    return '$camera wurde verschoben – die Kalibrierung wird geprüft.';
+    return 'Kamera $camera wurde verschoben – die Kalibrierung wird geprüft.';
   }
 
   @override
@@ -1565,4 +1565,15 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get unpairDevice => 'Entkoppeln';
+
+  @override
+  String get watchGame => 'Zuschauen';
+
+  @override
+  String get sharedGameEnded => 'Das Spiel auf dem anderen Gerät ist beendet.';
+
+  @override
+  String watchGameTitle(String mode) {
+    return 'Laufendes Spiel ansehen: $mode';
+  }
 }

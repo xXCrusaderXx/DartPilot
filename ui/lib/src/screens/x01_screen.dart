@@ -10,22 +10,38 @@ import '../stats/game_record.dart';
 import '../stats/statistics.dart';
 import '../widgets/winner_dialog.dart';
 import 'my_darts_screen.dart';
+import 'watched_board.dart';
 import 'x01_setup_screen.dart';
 
 class X01Screen extends StatefulWidget {
-  const X01Screen({super.key, required this.settings, this.bots = const {}});
+  const X01Screen({
+    super.key,
+    required this.settings,
+    this.bots = const {},
+    this.replay = const [],
+    this.watching = false,
+  });
 
   final X01Settings settings;
 
   /// Bot level per player index; the others are people
   final Map<int, int> bots;
 
+  /// Darts already thrown, for a game rebuilt from a shared record
+  final List<DartThrow> replay;
+
+  /// Only shows another app's game: no input, nothing kept or shared (#116)
+  final bool watching;
+
   @override
   State<X01Screen> createState() => _X01ScreenState();
 }
 
 class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
-  late final X01Game _game = X01Game(widget.settings);
+  @override
+  bool get watching => widget.watching;
+
+  late final X01Game _game = replayed(X01Game(widget.settings), widget.replay);
 
   @override
   GameRecord buildRecord(String id, DateTime started, DateTime ended) => GameRecord(
@@ -74,7 +90,9 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
   @override
   Widget build(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.watching) return;
       scheduleBotTurn();
+      shareGame();
       if (mounted && !_game.isFinished) useDartsOf(context, _game.players[_game.current].name);
     });
     final l10n = AppLocalizations.of(context);
@@ -119,21 +137,23 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
           ),
         const Spacer(),
         OutlinedButton.icon(
-          onPressed: _game.canUndo ? () => setState(_game.undo) : null,
+          onPressed: _game.canUndo && !widget.watching ? () => setState(_game.undo) : null,
           icon: const Icon(Icons.undo),
           label: Text(l10n.undo),
         ),
       ],
     );
-    final input = GameInput(
-      game: _game,
-      shownThrows: [for (final d in visit.darts) d.dart],
-      onDart: (dart) {
-        // While a bot is at the oche, its darts are its own.
-        if (!isBotTurn) _add(dart);
-      },
-      onChanged: () => setState(() {}),
-    );
+    final input = widget.watching
+        ? WatchedBoard(throws: [for (final d in visit.darts) d.dart])
+        : GameInput(
+            game: _game,
+            shownThrows: [for (final d in visit.darts) d.dart],
+            onDart: (dart) {
+              // While a bot is at the oche, its darts are its own.
+              if (!isBotTurn) _add(dart);
+            },
+            onChanged: () => setState(() {}),
+          );
 
     return Scaffold(
       appBar: AppBar(title: Text('${widget.settings.startScore}')),
