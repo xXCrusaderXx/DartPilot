@@ -36,7 +36,8 @@ double cpuSeconds ()
 {
     rusage usage{};
     getrusage(RUSAGE_SELF, &usage);
-    return static_cast<double>(usage.ru_utime.tv_sec + usage.ru_stime.tv_sec) + static_cast<double>(usage.ru_utime.tv_usec + usage.ru_stime.tv_usec) * 1e-6;
+    return static_cast<double>(usage.ru_utime.tv_sec + usage.ru_stime.tv_sec) +
+           static_cast<double>(usage.ru_utime.tv_usec + usage.ru_stime.tv_usec) * 1e-6;
 }
 
 struct Camera
@@ -258,8 +259,8 @@ std::string run (const std::vector<int>& fds, int seconds_to_run)
                       "\"bytes_per_frame\":%.0f,\"pts_frames\":%d,\"scr_frames\":%d",
                       i == 0 ? "" : ",", c.index, c.opened ? "true" : "false", c.streaming ? "true" : "false", kWidth, kHeight, kFps, c.frames,
                       span_s > 0 ? (c.frames - 1) / span_s : 0.0, quantile(c.intervals_ms, 0.5), quantile(c.intervals_ms, 0.95),
-                      c.intervals_ms.empty() ? 0.0 : *std::max_element(c.intervals_ms.begin(), c.intervals_ms.end()), c.sequence_gaps,
-                      c.broken_jpeg, c.frames > 0 ? c.bytes / c.frames : 0.0, c.pts_frames, c.scr_frames);
+                      c.intervals_ms.empty() ? 0.0 : *std::max_element(c.intervals_ms.begin(), c.intervals_ms.end()), c.sequence_gaps, c.broken_jpeg,
+                      c.frames > 0 ? c.bytes / c.frames : 0.0, c.pts_frames, c.scr_frames);
         json += text;
         json += ",\"clock_frequency_hz\":" + std::to_string(c.clock_frequency_hz);
         json += clockJson("pts", checkClock(c.pts_ticks, c.host_s));
