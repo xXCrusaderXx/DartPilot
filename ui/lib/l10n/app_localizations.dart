@@ -2851,6 +2851,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Watch the running game: {mode}'**
   String watchGameTitle(String mode);
+
+  /// No description provided for @callMatchShot.
+  ///
+  /// In en, this message translates to:
+  /// **'Game shot and the match!'**
+  String get callMatchShot;
+
+  /// No description provided for @callGameShot.
+  ///
+  /// In en, this message translates to:
+  /// **'Game shot!'**
+  String get callGameShot;
+
+  /// No description provided for @callBust.
+  ///
+  /// In en, this message translates to:
+  /// **'Bust'**
+  String get callBust;
+
+  /// No description provided for @callNoScore.
+  ///
+  /// In en, this message translates to:
+  /// **'No score'**
+  String get callNoScore;
+
+  /// No description provided for @callOneEighty.
+  ///
+  /// In en, this message translates to:
+  /// **'One hundred and eighty!'**
+  String get callOneEighty;
+
+  /// No description provided for @callYouRequire.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}, you require {remaining}'**
+  String callYouRequire(String name, int remaining);
+
+  /// No description provided for @scoreCaller.
+  ///
+  /// In en, this message translates to:
+  /// **'Score caller'**
+  String get scoreCaller;
+
+  /// No description provided for @scoreCallerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Announces each visit\'s score, like a caller'**
+  String get scoreCallerHint;
+
+  /// No description provided for @callerVolume.
+  ///
+  /// In en, this message translates to:
+  /// **'Caller volume'**
+  String get callerVolume;
+
+  /// No description provided for @callerTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Test'**
+  String get callerTest;
+
+  /// No description provided for @callerNoVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'This device has no speech output. On Linux: install speech-dispatcher (spd-say).'**
+  String get callerNoVoice;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

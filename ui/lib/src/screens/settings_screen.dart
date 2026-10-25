@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../engine/engine_choice.dart';
 import '../engine/engine_connection.dart';
+import '../sound/caller.dart';
 import '../widgets/board_check.dart';
 import '../widgets/engine_card.dart';
 import '../widgets/paired_devices.dart';
@@ -110,6 +111,8 @@ class SettingsScreen extends StatelessWidget {
                 subtitle: Text(l10n.settingsEmptyBoardHint),
                 onTap: () => storeEmptyBoard(context),
               ),
+              section(l10n.scoreCaller),
+              const CallerSettings(),
               section(l10n.settingsCalibration),
               ListTile(
                 key: const ValueKey('settings-calibration'),
@@ -152,4 +155,59 @@ class EngineSettingsScreen extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// The score caller in the settings: on or off, its volume, and a test phrase
+class CallerSettings extends StatefulWidget {
+  const CallerSettings({super.key});
+
+  @override
+  State<CallerSettings> createState() => _CallerSettingsState();
+}
+
+class _CallerSettingsState extends State<CallerSettings> {
+  bool? _available;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_available != null) return;
+    CallerScope.of(context).voice.available.then((a) {
+      if (mounted) setState(() => _available = a);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final caller = CallerScope.of(context);
+    final available = _available ?? true;
+    return Column(
+      children: [
+        SwitchListTile(
+          key: const ValueKey('caller-enabled'),
+          secondary: const Icon(Icons.record_voice_over_outlined),
+          title: Text(l10n.scoreCaller),
+          subtitle: Text(available ? l10n.scoreCallerHint : l10n.callerNoVoice),
+          value: caller.enabled && available,
+          onChanged: available ? (on) => caller.set(enabled: on) : null,
+        ),
+        if (caller.enabled && available)
+          ListTile(
+            leading: const Icon(Icons.volume_up_outlined),
+            title: Text(l10n.callerVolume),
+            subtitle: Slider(
+              key: const ValueKey('caller-volume'),
+              value: caller.volume,
+              onChanged: (v) => caller.set(volume: v),
+            ),
+            trailing: TextButton(
+              key: const ValueKey('caller-test'),
+              onPressed: () => caller.call([l10n.callOneEighty], l10n.localeName),
+              child: Text(l10n.callerTest),
+            ),
+          ),
+      ],
+    );
+  }
 }

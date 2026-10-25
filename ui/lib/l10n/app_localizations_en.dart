@@ -1585,4 +1585,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String watchGameTitle(String mode) {
     return 'Watch the running game: $mode';
   }
+
+  @override
+  String get callMatchShot => 'Game shot and the match!';
+
+  @override
+  String get callGameShot => 'Game shot!';
+
+  @override
+  String get callBust => 'Bust';
+
+  @override
+  String get callNoScore => 'No score';
+
+  @override
+  String get callOneEighty => 'One hundred and eighty!';
+
+  @override
+  String callYouRequire(String name, int remaining) {
+    return '$name, you require $remaining';
+  }
+
+  @override
+  String get scoreCaller => 'Score caller';
+
+  @override
+  String get scoreCallerHint => 'Announces each visit\'s score, like a caller';
+
+  @override
+  String get callerVolume => 'Caller volume';
+
+  @override
+  String get callerTest => 'Test';
+
+  @override
+  String get callerNoVoice => 'This device has no speech output. On Linux: install speech-dispatcher (spd-say).';
 }
