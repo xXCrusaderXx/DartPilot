@@ -9,6 +9,7 @@ import '../input/game_input.dart';
 import '../stats/game_record.dart';
 import '../stats/statistics.dart';
 import '../widgets/winner_dialog.dart';
+import 'my_darts_screen.dart';
 import 'game_layout.dart';
 import 'players_setup_screen.dart';
 
@@ -76,7 +77,10 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
 
   @override
   Widget build(BuildContext context) {
-    WidgetsBinding.instance.addPostFrameCallback((_) => scheduleBotTurn());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      scheduleBotTurn();
+      if (mounted && !_game.isFinished) useDartsOf(context, _game.players[_game.current].name);
+    });
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final players = _game.players;

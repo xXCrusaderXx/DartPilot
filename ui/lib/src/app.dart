@@ -10,6 +10,7 @@ import 'engine/engine_choice.dart';
 import 'engine/engine_connection.dart';
 import 'engine/engine_events.dart';
 import 'engine/engine_manager.dart';
+import 'stats/dart_links.dart';
 import 'stats/statistics.dart';
 import 'theme.dart';
 import 'screens/main_shell.dart';
@@ -23,6 +24,7 @@ class DartPilotApp extends StatefulWidget {
     this.settings,
     this.statistics,
     this.cameraOrder,
+    this.dartLinks,
   });
 
   /// Fixed locale for tests; the system language otherwise
@@ -42,6 +44,9 @@ class DartPilotApp extends StatefulWidget {
   /// The player's order and names of the cameras; kept in memory only when none is given (tests)
   final CameraOrder? cameraOrder;
 
+  /// Which dart set each player throws; kept in memory only when none is given (tests)
+  final DartLinks? dartLinks;
+
   @override
   State<DartPilotApp> createState() => _DartPilotAppState();
 }
@@ -54,6 +59,7 @@ class _DartPilotAppState extends State<DartPilotApp> {
   late final AppLifecycleListener _lifecycle;
   late final Statistics _statistics = widget.statistics ?? Statistics(MemoryGameStore());
   late final CameraOrder _cameraOrder = widget.cameraOrder ?? CameraOrder();
+  late final DartLinks _dartLinks = widget.dartLinks ?? DartLinks();
   final GlobalKey<ScaffoldMessengerState> _messenger = GlobalKey();
   StreamSubscription<EngineEvent>? _events;
   final Set<String> _movedCameras = {};
@@ -153,7 +159,10 @@ class _DartPilotAppState extends State<DartPilotApp> {
         statistics: _statistics,
         child: CameraOrderScope(
           order: _cameraOrder,
-          child: manager == null ? app : LocalEngineScope(manager: manager, settings: _settings, child: app),
+          child: DartLinksScope(
+            links: _dartLinks,
+            child: manager == null ? app : LocalEngineScope(manager: manager, settings: _settings, child: app),
+          ),
         ),
       ),
     );

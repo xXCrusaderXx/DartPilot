@@ -797,13 +797,17 @@
   "homeCameraMoved": "{camera} has moved – measure it again.",
   "@homeCameraMoved": {
     "placeholders": {
-      "camera": {"type": "String"}
+      "camera": {
+        "type": "String"
+      }
     }
   },
   "homeCameraWrongPort": "{camera} is on another USB port than when it was calibrated.",
   "@homeCameraWrongPort": {
     "placeholders": {
-      "camera": {"type": "String"}
+      "camera": {
+        "type": "String"
+      }
     }
   },
   "referenceRun": "Reference measurement",
@@ -902,13 +906,89 @@
   "statsAverageTrend": "Average over games (X01)",
   "statsHitBoard": "Hit board",
   "statsMisses": "Misses: {count}",
-  "@statsMisses": {"placeholders": {"count": {"type": "int"}}},
+  "@statsMisses": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "statsExport": "Export",
   "exportDartsCsv": "All darts as CSV",
   "exportGamesJson": "Games and figures as JSON",
   "exportSaved": "Saved: {path}",
   "exportFailed": "Export failed: {error}",
   "copyPath": "Copy path",
-  "@exportSaved": {"placeholders": {"path": {"type": "String"}}},
-  "@exportFailed": {"placeholders": {"error": {"type": "String"}}}
+  "@exportSaved": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "@exportFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "myDarts": "My darts",
+  "myDartsHint": "Measure your darts so that detection finds them better",
+  "myDartsIntro": "Optional: the engine measures a dart set (point, barrel, length, appearance). It then finds the point more precisely and tells new darts from those in the board. Without a set it detects any dart as before.",
+  "dartSetsUnavailable": "This engine cannot measure darts yet.",
+  "noDartSets": "No dart set measured yet.",
+  "addDartSet": "Add dart set",
+  "renameDartSet": "Rename",
+  "dartSetName": "Name of the set",
+  "dartSetNameHint": "e.g. Anna's darts",
+  "dartSetStart": "Next",
+  "dartSetInUse": "in use",
+  "dartSetThrownBy": "Thrown by:",
+  "dartPoint": "Point",
+  "dartBarrel": "Barrel",
+  "dartTotal": "Total",
+  "dartSetPutIn": "Put one dart of the set into the board and take your hand away.",
+  "dartSetMeasuring": "Measuring …",
+  "dartSetPlaced": "Measured. Pull the dart and put it in somewhere else.",
+  "dartSetDone": "Done – the set is measured.",
+  "dartSetProgress": "{placed} of {needed} places",
+  "@dartSetProgress": {
+    "placeholders": {
+      "placed": {
+        "type": "int"
+      },
+      "needed": {
+        "type": "int"
+      }
+    }
+  },
+  "dartSetClose": "Close",
+  "dartSetNotCalibrated": "The cameras are not calibrated yet.",
+  "dartSetBoardNotEmpty": "Please pull all darts out of the board first.",
+  "dartSetBusy": "The engine is busy. Try again in a moment.",
+  "dartSetFailed": "Measuring failed: {reason}",
+  "@dartSetFailed": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "dartFlight": "Flight",
+  "dartSetPlacementFailed": "{reason} Pull the dart and put it in somewhere else.",
+  "dartSetCamerasDisagree": "The cameras did not agree.",
+  "dartSetSeenByOne": "Only one camera saw the dart.",
+  "dartSetPlacementsDisagree": "This place does not fit the other measurements.",
+  "dartSetNotMeasured": "The dart could not be measured here.",
+  "dartSetSaveFailed": "The set could not be saved.",
+  "@dartSetPlacementFailed": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "dartSetBoardStillOccupied": "The engine still sees something in the board. If it is empty, store the empty board again – otherwise the measurement cannot go on.",
+  "dartMeasureUncertain": "uncertain"
 }

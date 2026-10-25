@@ -27,6 +27,9 @@ sealed class EngineEvent {
     'refinement' => RefinementResult.fromJson(json),
     'calibration_check' => CalibrationCheck.fromJson(json),
     'camera_moved' => CameraMoved(json['camera'] as String),
+    'dart_sets' => DartSets.fromJson(json),
+    'dart_set_capture' => DartSetCapture.fromJson(json),
+    'dart_set_image' => DartSetImage.fromJson(json),
     'engine_status' => EngineStatus(json['detection'] as String? ?? 'running', json['message'] as String? ?? ''),
     _ => null,
   };
@@ -837,4 +840,94 @@ class CameraMoved extends EngineEvent {
   const CameraMoved(this.camera);
 
   final String camera;
+}
+
+/// A measured set of the player's darts (#120): its dimensions and where reference images exist
+class DartSet {
+  const DartSet({required this.id, required this.name, this.dims = const {}, this.cameras = const [], this.created});
+
+  final String id;
+  final String name;
+
+  /// total_mm, barrel_mm, barrel_diameter_mm, flight_mm (later point_mm), as far as the engine measured them
+  final Map<String, double> dims;
+
+  /// Cameras with a reference image of the dart
+  final List<String> cameras;
+  final DateTime? created;
+
+  factory DartSet.fromJson(Map<String, dynamic> json) => DartSet(
+    id: json['id'] as String,
+    name: json['name'] as String? ?? '',
+    dims: {
+      for (final MapEntry(:key, :value) in (json['dims'] as Map<String, dynamic>? ?? const {}).entries)
+        if (value is num) key: value.toDouble(),
+    },
+    cameras: [
+      for (final i in json['images'] as List<dynamic>? ?? const [])
+        if (i is Map<String, dynamic> && i['camera'] is String) i['camera'] as String,
+    ],
+    created: DateTime.tryParse(json['created_utc'] as String? ?? ''),
+  );
+}
+
+/// The dart sets of the engine and the one it detects with; null: generic detection
+class DartSets extends EngineEvent {
+  const DartSets(this.sets, this.active);
+
+  final List<DartSet> sets;
+  final String? active;
+
+  factory DartSets.fromJson(Map<String, dynamic> json) => DartSets([
+    for (final s in json['sets'] as List<dynamic>? ?? const [])
+      if (s is Map<String, dynamic>) DartSet.fromJson(s),
+  ], json['active'] as String?);
+}
+
+/// Progress of measuring a new dart set: the player puts one dart at several places, each with the hand away
+class DartSetCapture extends EngineEvent {
+  const DartSetCapture({
+    required this.state,
+    this.placed = 0,
+    this.needed = 4,
+    this.reason,
+    this.set,
+    this.cameraStates = const {},
+  });
+
+  /// waiting (for the dart), measuring, placed (pull it and put it elsewhere), done, failed, cancelled
+  final String state;
+  final int placed;
+  final int needed;
+  final String? reason;
+
+  /// The new set, once done
+  final DartSet? set;
+
+  /// How each camera saw the dart at the current place (seen, cut, not_seen), to tell why a place failed
+  final Map<String, String> cameraStates;
+
+  factory DartSetCapture.fromJson(Map<String, dynamic> json) => DartSetCapture(
+    state: json['state'] as String? ?? 'waiting',
+    placed: json['placed'] as int? ?? 0,
+    needed: json['needed'] as int? ?? 4,
+    reason: json['reason'] as String?,
+    set: json['set'] is Map<String, dynamic> ? DartSet.fromJson(json['set'] as Map<String, dynamic>) : null,
+    cameraStates: {
+      for (final c in json['camera_states'] as List<dynamic>? ?? const [])
+        if (c is Map<String, dynamic> && c['camera'] is String) c['camera'] as String: c['state'] as String? ?? '',
+    },
+  );
+}
+
+/// A reference image of a dart set: the dart as one camera sees it
+class DartSetImage extends EngineEvent {
+  const DartSetImage(this.id, this.camera, this.jpeg);
+
+  final String id;
+  final String camera;
+  final Uint8List jpeg;
+
+  factory DartSetImage.fromJson(Map<String, dynamic> json) =>
+      DartSetImage(json['id'] as String, json['camera'] as String, base64Decode(json['jpeg_base64'] as String? ?? ''));
 }

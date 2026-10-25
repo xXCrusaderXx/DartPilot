@@ -9,6 +9,7 @@ import 'calibration_check_screen.dart';
 import 'calibration_screen.dart';
 import 'cameras_screen.dart';
 import 'diagnosis_screen.dart';
+import 'my_darts_screen.dart';
 import 'reference_run_screen.dart';
 
 /// Everything that is set up rather than played: the connection, the cameras, the setup diagnosis and calibration.
@@ -72,6 +73,15 @@ class SettingsScreen extends StatelessWidget {
                 subtitle: Text(l10n.settingsCamerasHint),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => open(const CamerasScreen()),
+              ),
+              ListTile(
+                key: const ValueKey('open-my-darts'),
+                enabled: connected,
+                leading: const Icon(Icons.straighten_outlined),
+                title: Text(l10n.myDarts),
+                subtitle: Text(l10n.myDartsHint),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => open(const MyDartsScreen()),
               ),
               ListTile(
                 key: const ValueKey('open-diagnosis'),

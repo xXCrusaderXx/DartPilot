@@ -53,6 +53,15 @@ class EngineConnection extends ChangeNotifier {
   /// Latest state of the reference measurement; null before it ran
   ReferenceRun? referenceRun;
 
+  /// The measured dart sets and the active one (#120); null with engines that have none
+  DartSets? dartSets;
+
+  /// Progress of measuring a new dart set; null when none is measured
+  DartSetCapture? dartSetCapture;
+
+  /// Reference images by set id and camera, as far as asked for
+  final Map<(String, String), DartSetImage> dartSetImages = {};
+
   /// Latest state of the setup diagnosis; null before it ran
   EngineDiagnosis? diagnosis;
 
@@ -129,6 +138,9 @@ class EngineConnection extends ChangeNotifier {
     await _closeChannel();
     hello = null;
     boardState = null;
+    dartSets = null;
+    dartSetCapture = null;
+    dartSetImages.clear();
     boardImage = null;
     referenceRun = null;
     diagnosis = null;
@@ -221,6 +233,18 @@ class EngineConnection extends ChangeNotifier {
       detectionReason = event.message.isEmpty ? null : event.message;
       notifyListeners();
     }
+    if (event is DartSets) {
+      dartSets = event;
+      notifyListeners();
+    }
+    if (event is DartSetCapture) {
+      dartSetCapture = event;
+      notifyListeners();
+    }
+    if (event is DartSetImage) {
+      dartSetImages[(event.id, event.camera)] = event;
+      notifyListeners();
+    }
     if (event is EngineDiagnosis) {
       diagnosis = event;
       notifyListeners();
@@ -263,6 +287,29 @@ class EngineConnection extends ChangeNotifier {
 
   void rejectThrow(String throwId, String reason) =>
       _send({'type': 'reject_throw', 'throw_id': throwId, 'reason': reason});
+
+  /// Starts measuring a new dart set; progress arrives as [dartSetCapture], the new set in [dartSets].
+  Future<String?> startDartSet(String name) => _request({'type': 'start_dart_set', 'name': name});
+
+  void cancelDartSet() => _send({'type': 'cancel_dart_set'});
+
+  Future<String?> renameDartSet(String id, String name) =>
+      _request({'type': 'rename_dart_set', 'id': id, 'name': name});
+
+  Future<String?> deleteDartSet(String id) => _request({'type': 'delete_dart_set', 'id': id});
+
+  /// Asks for a set's reference image from one camera; it arrives in [dartSetImages].
+  void requestDartSetImage(String id, String camera) =>
+      _send({'type': 'get_dart_set_image', 'id': id, 'camera': camera});
+
+  /// The darts the player at the board throws; null for generic detection. Sent only when it changes.
+  void useDarts(String? id) {
+    final sets = dartSets;
+    if (sets == null || sets.active == id) return;
+    if (id != null && !sets.sets.any((s) => s.id == id)) return;
+    dartSets = DartSets(sets.sets, id);
+    _send({'type': 'set_active_darts', 'id': id});
+  }
 
   /// Starts or changes the preview of a camera. Several widgets may watch the same camera; the engine gets the
   /// highest rate and width any of them asked for, and the preview stops when the last handle is released.
