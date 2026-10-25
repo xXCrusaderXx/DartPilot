@@ -217,6 +217,11 @@ int runServe (int argc, char* argv[])
         {
             live_detection = std::make_unique<LiveDetection>(server, feed, devices, dataHome() / "calibration", !playback);
             reference_run = std::make_unique<ReferenceRun>(server, *live_detection, dataHome() / "calibration", dataHome() / "sessions");
+            if(recording)
+            {
+                reference_run->recordInto(recording->directory(), hello.session_id,
+                                          [&recording] (const nlohmann::json& record_line) { recording->log(record_line); });
+            }
             dart_sets = std::make_unique<DartSets>(server, *live_detection, devices, dataHome() / "calibration");
             if(recording)
             {
