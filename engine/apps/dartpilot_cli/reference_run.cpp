@@ -193,7 +193,7 @@ std::optional<api::Server::CalibrationError> ReferenceRun::start ()
         results_.clear();
         step_ = detection_.ready() ? "insert_dart" : "empty_board";
     }
-    detection_.intercept([this] (const fusion::TrackerUpdate& update) { onUpdate(update); });
+    detection_.intercept([this] (const fusion::TrackerUpdate& update, const std::vector<cv::Mat>&) { onUpdate(update); });
     publish();
     return std::nullopt;
 }

@@ -739,3 +739,14 @@ TEST(Server, AnUnpairedClientSeesNothingUntilItPairs)
     EXPECT_EQ(returning.next("paired")["token"], paired["token"]);
     server.stop();
 }
+
+TEST(Protocol, DartSetRequestsReachTheirHandlers)
+{
+    for(const char* type :
+        {"list_dart_sets", "start_dart_set", "cancel_dart_set", "get_dart_set_image", "rename_dart_set", "delete_dart_set", "set_active_darts"})
+    {
+        const auto parsed = api::parseRequest(std::string(R"({"type":")") + type + R"(","request_id":"1","id":"ab12","name":"Anna"})");
+        ASSERT_TRUE(std::holds_alternative<api::Request>(parsed)) << type;
+        EXPECT_EQ(std::get<api::CalibrationRequest>(std::get<api::Request>(parsed).body).type, type);
+    }
+}

@@ -170,6 +170,7 @@ TrackerUpdate DartTracker::addStill (const std::vector<cv::Mat>& images)
     // looked at in turn: one where the image is the empty board again is a pulled dart, which is then taken out of the
     // comparison by copying the current image over it, and the search goes on for the dart that was put in.
     std::vector<cv::Mat> before = last_;
+    const std::vector<cv::Mat> previous = last_;
     std::vector<std::optional<tip_candidates::DartObservation>> changes(count);
     for(int pass = 0; pass < settings_.max_changes; ++pass)
     {
@@ -258,6 +259,7 @@ TrackerUpdate DartTracker::addStill (const std::vector<cv::Mat>& images)
     }
     ++darts_in_board_;
     update.dart = std::move(dart);
+    update.before = previous;
     return update;
 }
 }  // namespace dartpilot::fusion

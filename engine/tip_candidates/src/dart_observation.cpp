@@ -443,6 +443,7 @@ std::optional<DartObservation> observeDart (const cv::Mat& image, const cv::Mat&
         }
     }
     observation.area_px = static_cast<int>(pixels.size());
+    observation.mask = area;
 
     // Middles of the cross-sections along the main direction of the object
     const auto [centre, main] = fitLine(pixels);

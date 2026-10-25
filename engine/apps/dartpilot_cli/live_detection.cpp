@@ -233,24 +233,30 @@ void LiveDetection::run ()
     }
 }
 
-void LiveDetection::intercept (std::function<void(const fusion::TrackerUpdate&)> handler)
+void LiveDetection::intercept (Interceptor handler)
 {
     std::lock_guard lock(intercept_mutex_);
     intercept_ = std::move(handler);
+}
+
+bool LiveDetection::intercepted () const
+{
+    std::lock_guard lock(intercept_mutex_);
+    return static_cast<bool>(intercept_);
 }
 
 void LiveDetection::publish (const fusion::TrackerUpdate& update, const event_detection::StillMoment& moment, double latency_ms,
                              double detection_latency_ms, const fusion::ConfidenceSettings& confidence, int params_revision)
 {
     ready_ = tracker_ && tracker_->ready();
-    std::function<void(const fusion::TrackerUpdate&)> intercept;
+    Interceptor intercept;
     {
         std::lock_guard lock(intercept_mutex_);
         intercept = intercept_;
     }
     if(intercept)
     {
-        intercept(update);
+        intercept(update, moment.means);
         return;
     }
     if(update.became_ready && running_)

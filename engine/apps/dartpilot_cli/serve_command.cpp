@@ -16,6 +16,7 @@
 
 #include "board_watch.hpp"
 #include "calibration_service.hpp"
+#include "dart_sets.hpp"
 #include "dartpilot/api/discovery.hpp"
 #include "dartpilot/api/server.hpp"
 #include "dartpilot/api/simulator.hpp"
@@ -165,6 +166,7 @@ int runServe (int argc, char* argv[])
     std::unique_ptr<LiveDiagnosis> live_diagnosis;
     std::unique_ptr<CalibrationService> calibration;
     std::unique_ptr<LiveDetection> live_detection;
+    std::unique_ptr<DartSets> dart_sets;
     std::unique_ptr<ReferenceRun> reference_run;
     std::unique_ptr<SessionPlayback> playback;
     std::unique_ptr<SessionRecording> recording;
@@ -214,6 +216,7 @@ int runServe (int argc, char* argv[])
         {
             live_detection = std::make_unique<LiveDetection>(server, feed, devices, dataHome() / "calibration", !playback);
             reference_run = std::make_unique<ReferenceRun>(server, *live_detection, dataHome() / "calibration", dataHome() / "sessions");
+            dart_sets = std::make_unique<DartSets>(server, *live_detection, devices, dataHome() / "calibration");
             if(recording)
             {
                 // Every value in effect, from the start and after each change, so that a replay can use the same ones
@@ -309,6 +312,7 @@ int runServe (int argc, char* argv[])
         }
     }
     simulator.stop();
+    dart_sets.reset();
     reference_run.reset();
     live_detection.reset();
     calibration.reset();

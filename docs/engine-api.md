@@ -272,6 +272,50 @@ Every value of the live detection (docs/detection-params.md), sent after `hello`
 
 `throw` and `takeout` from live detection also carry `detection_latency_ms`: from the last sample in which a camera moved (the dart landing, the hand leaving) to sending.
 
+### Dart sets
+
+The player's darts (#120). A set is measured by putting one dart of it into the board at four places, taking the hand away each time and pulling the dart before the next. From the cameras that agree on the dart, the engine reconstructs its axis in 3D and measures it along the axis. Sets are stored in `calibration/dart-sets/` with a picture of the dart from every camera. The app names the set the player at the board throws; detection does not use it yet.
+
+`dart_sets` is sent after `hello`, to every client after each change, and in answer to `list_dart_sets`:
+
+```json
+{ "type": "dart_sets", "active": "3f9a01c2",
+  "sets": [ { "id": "3f9a01c2", "name": "Anna's darts", "created_utc": "2026-10-25T13:02:11Z",
+              "dims": { "total_mm": 142.0, "barrel_mm": 46.0, "barrel_diameter_mm": 7.1, "flight_mm": 38.0 },
+              "images": [ { "camera": "usb-2.4.3.1.2" } ] } ] }
+```
+
+`dims` holds, per dimension, the value from the first source that has it: entered by the user, from a photo, measured in the board. `dims_source` names the source per dimension, and `measured`, `photo` and `entered` hold each source's values. Dimensions: `total_mm`, `point_mm`, `barrel_mm`, `barrel_diameter_mm`, `shaft_mm`, `flight_mm`, `weight_g`. An entered value must lie in a plausible range (e.g. 50–250 mm total, 3–15 mm barrel diameter), or `bad_request`. Measured values are medians over the placements, in mm. `barrel_diameter_mm` and the barrel's length come from the dart's outline and are less certain than its total length.
+
+`dart_set_capture` follows a running measurement; the latest one is sent after `hello` too:
+
+```json
+{ "type": "dart_set_capture", "state": "placed", "waiting_for": "pull", "placed": 2, "needed": 4,
+  "camera_states": [ { "camera": "usb-2.4.3.1.2", "state": "seen" } ] }
+```
+
+`waiting_for` says what the measurement waits for: `dart` (put it in) or `pull` (pull it out). The dart counts as pulled when the board looks as it did before the dart was put in, in all but one camera. Neither the stored empty board nor the live detection's takeout is needed for that.
+
+`state`:
+- `waiting`: put the dart in;
+- `placed`: measured, pull it;
+- `failed`: this placement was not measured, `reason` (`cameras_disagree`, `seen_by_one_camera`, `not_measured`, `placements_disagree`, `save_failed`); pull it and try again;
+- `measuring`: the last placement is being combined;
+- `done`: with the stored `set`;
+- `cancelled`.
+
+| Request | Fields | Effect |
+| - | - | - |
+| `list_dart_sets` | – | Sends `dart_sets` |
+| `create_dart_set` | `name`, `dims` | A set from entered dimensions only, without measuring |
+| `update_dart_set` | `id`, `dims` | Enters or corrects dimensions; `null` removes an entered value, so the measured one counts again |
+| `start_dart_set` | `name` | Starts measuring a new set; `not_calibrated`, `busy` (a reference run or another measurement runs) |
+| `cancel_dart_set` | – | Stops it; `dart_set_capture` with `cancelled` |
+| `get_dart_set_image` | `id`, `camera` | Answered with `{type: "dart_set_image", id, camera, jpeg_base64}` |
+| `rename_dart_set` | `id`, `name` | `unknown_set` |
+| `delete_dart_set` | `id` | `unknown_set` |
+| `set_active_darts` | `id` or `null` | The set the player at the board throws; `dart_sets` goes to every client |
+
 ### shared_game
 
 One game on several displays (#116, ADR 0010): the app that leads the game shares it with `share_game`, and the engine sends it to every client, the sender included, as the confirmation that it arrived. A client that connects later gets the latest one after `hello`. The engine keeps it when the sharing app disconnects, whose Wi-Fi may only blip, until the next `share_game` or `end_shared_game`, which sends `game: null`. `game` is the app's own record of the game; the engine never reads it, so game rules stay in the app.
