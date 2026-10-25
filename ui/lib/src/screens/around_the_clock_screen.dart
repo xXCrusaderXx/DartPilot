@@ -106,14 +106,18 @@ class _AroundTheClockScreenState extends State<AroundTheClockScreen> with Record
     });
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    // While its darts are in the board, the visit that ended stays on the scoreboard with its player.
+    final atOche = _takeout.isClosed(_game)
+        ? (_game.current + _game.players.length - 1) % _game.players.length
+        : _game.current;
     final panel = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (var i = 0; i < _game.players.length; ++i)
           Card(
-            color: i == _game.current ? theme.colorScheme.secondaryContainer : null,
+            color: i == atOche ? theme.colorScheme.secondaryContainer : null,
             child: ListTile(
-              leading: i == _game.current ? const Icon(Icons.arrow_right) : null,
+              leading: i == atOche ? const Icon(Icons.arrow_right) : null,
               title: Text(_game.players[i].name),
               subtitle: Text(
                 '${_game.players[i].dartsThrown} ${l10n.darts} · '

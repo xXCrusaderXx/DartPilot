@@ -102,15 +102,17 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
     });
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final visit = _game.currentVisit;
-    final checkout = _game.checkoutSuggestion;
+    // While its darts are in the board, the visit that ended stays on the scoreboard with its player.
+    final waiting = _takeout.isClosed(_game);
+    final visit = waiting ? _game.visits[_game.visits.length - 2] : _game.currentVisit;
+    final checkout = waiting ? null : _game.checkoutSuggestion;
 
     final scoreboard = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(l10n.leg(_game.legNumber), style: theme.textTheme.titleMedium),
         const SizedBox(height: 8),
-        for (var i = 0; i < _game.players.length; ++i) _PlayerCard(_game.players[i], active: i == _game.current),
+        for (var i = 0; i < _game.players.length; ++i) _PlayerCard(_game.players[i], active: i == visit.player),
         const SizedBox(height: 12),
         Row(
           children: [

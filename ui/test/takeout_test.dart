@@ -42,6 +42,16 @@ void main() {
   String remaining(WidgetTester tester, String player) =>
       tester.widget<Text>(find.byKey(ValueKey('remaining-$player'))).data!;
 
+  /// The player whose card is marked as at the oche
+  String atOche(WidgetTester tester) {
+    final card = find.ancestor(of: find.byIcon(Icons.arrow_right), matching: find.byType(Card));
+    final remainingText = find.descendant(
+      of: card,
+      matching: find.byWidgetPredicate((w) => w.key.toString().contains('remaining-')),
+    );
+    return (tester.widget<Text>(remainingText).key! as ValueKey<String>).value.substring('remaining-'.length);
+  }
+
   testWidgets('after three darts the next visit waits for the takeout, and darts meanwhile wait too', (tester) async {
     final engine = await startGame(tester, ['Anna', 'Ben']);
     for (var i = 1; i <= 3; ++i) {
@@ -50,6 +60,9 @@ void main() {
     }
     expect(remaining(tester, 'Anna'), '121');
     expect(find.text('Darts entfernen'), findsOneWidget);
+    // Anna's visit stays on the scoreboard until her darts are out.
+    expect(atOche(tester), 'Anna');
+    expect(tester.widget<Text>(find.byKey(const ValueKey('visit-dart-2'))).data, 'T20');
 
     // A dart before the takeout counts only once the board is empty again.
     engine.receiveForTest(throwJson('s/4', 0, 103));
@@ -67,6 +80,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Darts entfernen'), findsNothing);
     expect(remaining(tester, 'Ben'), '241');
+    expect(atOche(tester), 'Ben');
   });
 
   testWidgets('the player ends the wait when the engine missed the takeout', (tester) async {

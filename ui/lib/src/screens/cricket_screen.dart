@@ -106,6 +106,10 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
     });
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    // While its darts are in the board, the visit that ended stays on the scoreboard with its player.
+    final atOche = _takeout.isClosed(_game)
+        ? (_game.current + _game.players.length - 1) % _game.players.length
+        : _game.current;
     final players = _game.players;
 
     TableRow row(String label, List<String> cells, {TextStyle? style}) => TableRow(
@@ -116,7 +120,7 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
         ),
         for (var i = 0; i < cells.length; ++i)
           Container(
-            color: i == _game.current ? theme.colorScheme.secondaryContainer : null,
+            color: i == atOche ? theme.colorScheme.secondaryContainer : null,
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Text(cells[i], textAlign: TextAlign.center, style: style ?? theme.textTheme.titleLarge),
           ),
