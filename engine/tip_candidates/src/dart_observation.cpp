@@ -543,7 +543,7 @@ std::optional<DartObservation> observeDart (const cv::Mat& image, const cv::Mat&
     return observation;
 }
 
-std::optional<cv::Point2d> viewChange (const cv::Mat& before, const cv::Mat& after, const ViewChangeSettings& s)
+std::optional<cv::Point2d> viewChange (const cv::Mat& before, const cv::Mat& after, const ViewChangeSettings& s, const cv::Mat& region)
 {
     cv::Mat a, b;
     cv::cvtColor(before, a, cv::COLOR_BGR2GRAY);
@@ -556,21 +556,29 @@ std::optional<cv::Point2d> viewChange (const cv::Mat& before, const cv::Mat& aft
     const cv::Point2d shift = cv::phaseCorrelate(a.clone(), b.clone(), window);
     cv::Mat moved;
     cv::warpAffine(a, moved, cv::Matx23d(1, 0, shift.x, 0, 1, shift.y), a.size(), cv::INTER_LINEAR, cv::BORDER_REPLICATE);
-    const cv::Mat changed = cv::abs(b - moved) > s.changed_level;
+    const bool limited = !region.empty() && region.size() == a.size();
+    const cv::Mat changed = (cv::abs(b - moved) > s.changed_level) & (limited ? region : cv::Mat(a.size(), CV_8U, cv::Scalar(255)));
     int cells = 0;
     for(int y = 0; y < s.cells; ++y)
     {
         for(int x = 0; x < s.cells; ++x)
         {
             const cv::Rect cell(x * changed.cols / s.cells, y * changed.rows / s.cells, changed.cols / s.cells, changed.rows / s.cells);
-            cells += cv::countNonZero(changed(cell)) > s.changed_cell_share * cell.area() ? 1 : 0;
+            const int compared = limited ? cv::countNonZero(region(cell)) : cell.area();
+            if(compared < s.min_cell_region_share * cell.area())
+            {
+                continue;
+            }
+            cells += cv::countNonZero(changed(cell)) > s.changed_cell_share * compared ? 1 : 0;
         }
     }
     if(cells > s.max_cells_for_a_dart)
     {
         return shift;
     }
-    if(std::hypot(shift.x, shift.y) > s.moved_camera_px && cv::mean(cv::abs(b - moved))[0] <= s.explained_share * cv::mean(cv::abs(b - a))[0])
+    const cv::Mat mask = limited ? region : cv::Mat();
+    if(std::hypot(shift.x, shift.y) > s.moved_camera_px &&
+       cv::mean(cv::abs(b - moved), mask)[0] <= s.explained_share * cv::mean(cv::abs(b - a), mask)[0])
     {
         return shift;
     }
