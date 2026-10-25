@@ -186,6 +186,53 @@ json throwMessage (const Throw& dart, const scoring::BoardGeometry& geometry)
     return out;
 }
 
+json throwRecord (const Throw& dart, const scoring::BoardGeometry& geometry)
+{
+    json cameras = json::array();
+    for(const auto& camera : dart.cameras)
+    {
+        json measurement = {{"camera", camera.camera}, {"frames", {{"after", camera.frames}}}, {"used", camera.used}};
+        if(!camera.reason.empty())
+        {
+            measurement["reason"] = camera.reason;
+        }
+        cameras.push_back(measurement);
+    }
+    json out = {{"throw_id", dart.throw_id},
+                {"accepted", dart.accepted},
+                {"board_point", nullptr},
+                {"score", nullptr},
+                {"confidence", dart.confidence},
+                {"camera_measurements", cameras},
+                {"diagnostics", {{"event_ns", dart.event_ns}}},
+                {"processing_latency_ms", dart.processing_latency_ms}};
+    if(dart.board_point)
+    {
+        out["board_point"] = toJson(*dart.board_point);
+        out["score"] = toJson(scoring::score(dart.board_point->x_mm, dart.board_point->y_mm, geometry));
+    }
+    if(!dart.reason.empty())
+    {
+        out["diagnostics"]["reason"] = dart.reason;
+    }
+    return out;
+}
+
+json correctionRecord (const std::string& throw_id, const std::string& action, const std::optional<BoardPoint>& point, const std::string& client,
+                       const std::string& reason, std::int64_t event_ns)
+{
+    json correction = {{"action", action}, {"board_point", point ? toJson(*point) : json(nullptr)}, {"client", client}};
+    if(!reason.empty())
+    {
+        correction["reason"] = reason;
+    }
+    if(action == "added")
+    {
+        correction["event_ns"] = event_ns;
+    }
+    return {{"throw_id", throw_id}, {"correction", correction}};
+}
+
 json throwCorrectedMessage (const std::string& throw_id, const std::string& action, const std::optional<BoardPoint>& point,
                             const scoring::BoardGeometry& geometry, const std::string& client)
 {

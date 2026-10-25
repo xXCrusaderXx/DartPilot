@@ -529,3 +529,52 @@ TEST(Discovery, AnswersASearchOncePerSecondWithTheEngineFields)
     EXPECT_TRUE(askDiscovery(port, R"({"type":"discover","protocol":"dartpilot/2.0"})", 1000));
     discovery.stop();
 }
+
+TEST(Server, ThrowsAndCorrectionsAreLoggedAsSessionRecords)
+{
+    ix::initNetSystem();
+    const int port = 20000 + static_cast<int>(std::random_device{}() % 20000);
+    api::Hello hello;
+    hello.session_id = "20261025T080000Z-test";
+    api::Server server(port, "127.0.0.1", hello);
+    std::vector<nlohmann::json> records;
+    std::mutex records_mutex;
+    server.onLogged(
+        [&] (const nlohmann::json& record)
+        {
+            std::lock_guard lock(records_mutex);
+            records.push_back(record);
+        });
+    std::string error;
+    ASSERT_TRUE(server.start(error)) << error;
+
+    api::Throw dart;
+    dart.event_ns = 5'000'000'000;
+    dart.board_point = api::BoardPoint{0.0, 103.0, std::array<double, 3>{0.5, 0.0, 0.5}};
+    dart.confidence = 0.9;
+    dart.cameras.push_back({"usb-1.2", true, {41, 42}, ""});
+    const auto recorded = server.publishThrow(dart);
+    EXPECT_EQ(recorded.throw_id, "20261025T080000Z-test/1");
+
+    TestClient client(port);
+    client.next("hello");
+    client.send({{"type", "hello"}, {"request_id", "0"}, {"client", "app"}});
+    client.next("result");
+    client.send({{"type", "correct_throw"}, {"request_id", "1"}, {"throw_id", recorded.throw_id}, {"board_point", {{"x_mm", 1.0}, {"y_mm", 60.0}}}});
+    client.next("result");
+    client.send({{"type", "add_throw"}, {"request_id", "2"}, {"board_point", {{"x_mm", -30.0}, {"y_mm", 0.0}}}});
+    client.next("result");
+    server.stop();
+
+    std::lock_guard lock(records_mutex);
+    ASSERT_EQ(records.size(), 3u);
+    EXPECT_EQ(records[0]["throw_id"], "20261025T080000Z-test/1");
+    EXPECT_EQ(records[0]["score"]["label"], "T20");
+    EXPECT_EQ(records[0]["camera_measurements"][0]["frames"]["after"], nlohmann::json({41, 42}));
+    EXPECT_EQ(records[0]["diagnostics"]["event_ns"], 5'000'000'000);
+    EXPECT_EQ(records[1]["correction"]["action"], "corrected");
+    EXPECT_EQ(records[1]["correction"]["client"], "app");
+    EXPECT_EQ(records[1]["correction"]["board_point"]["y_mm"], 60.0);
+    EXPECT_EQ(records[2]["correction"]["action"], "added");
+    EXPECT_TRUE(records[2]["correction"].contains("event_ns"));
+}

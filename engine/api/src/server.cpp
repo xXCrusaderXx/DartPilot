@@ -130,6 +130,7 @@ Throw Server::publishThrow (Throw dart)
         visit_points_.push_back(*recorded.board_point);
     }
     broadcast(throwMessage(recorded, hello_.board_geometry));
+    logged(throwRecord(recorded, hello_.board_geometry));
     return recorded;
 }
 
@@ -324,6 +325,25 @@ void Server::publishEngineStatus (const std::string& detection, const std::strin
     broadcast(engineStatusMessage(detection, message));
 }
 
+void Server::onLogged (std::function<void(const nlohmann::json&)> handler)
+{
+    std::lock_guard lock(mutex_);
+    logged_handler_ = std::move(handler);
+}
+
+void Server::logged (const nlohmann::json& record)
+{
+    std::function<void(const nlohmann::json&)> handler;
+    {
+        std::lock_guard lock(mutex_);
+        handler = logged_handler_;
+    }
+    if(handler)
+    {
+        handler(record);
+    }
+}
+
 void Server::onDetectionChanged (std::function<void(bool)> handler)
 {
     std::lock_guard lock(mutex_);
@@ -358,6 +378,7 @@ nlohmann::json Server::handle (const std::string& connection, const Request& req
                     return resultMessage(request.request_id, false, *error, "No throw " + correction.throw_id);
                 }
                 broadcast(throwCorrectedMessage(correction.throw_id, "corrected", correction.board_point, hello_.board_geometry, client));
+                logged(correctionRecord(correction.throw_id, "corrected", correction.board_point, client, "", 0));
                 return resultMessage(request.request_id, true);
             },
             [&] (const RejectThrow& rejection)
@@ -367,12 +388,15 @@ nlohmann::json Server::handle (const std::string& connection, const Request& req
                     return resultMessage(request.request_id, false, *error, "No throw " + rejection.throw_id);
                 }
                 broadcast(throwCorrectedMessage(rejection.throw_id, "rejected", std::nullopt, hello_.board_geometry, client));
+                logged(correctionRecord(rejection.throw_id, "rejected", std::nullopt, client, rejection.reason, 0));
                 return resultMessage(request.request_id, true);
             },
             [&] (const AddThrow& addition)
             {
-                const std::string id = log_.add(addition.board_point, monotonicNowNs(), client);
+                const std::int64_t event_ns = monotonicNowNs();
+                const std::string id = log_.add(addition.board_point, event_ns, client);
                 broadcast(throwCorrectedMessage(id, "added", addition.board_point, hello_.board_geometry, client));
+                logged(correctionRecord(id, "added", addition.board_point, client, "", event_ns));
                 auto result = resultMessage(request.request_id, true);
                 result["throw_id"] = id;
                 return result;

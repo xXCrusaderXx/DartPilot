@@ -23,8 +23,9 @@ namespace dartpilot::cli
 class BoardWatch
 {
    public:
-    BoardWatch (api::Server& server, const CameraPreviews& previews, std::vector<capture::CameraDevice> devices,
-                std::filesystem::path calibration_directory);
+    // stored_references: off for a replayed session, which is neither compared with nor stored as today's empty board
+    BoardWatch (api::Server& server, const FrameFeed& previews, std::vector<capture::CameraDevice> devices,
+                std::filesystem::path calibration_directory, bool stored_references = true);
     ~BoardWatch ();
 
     void start ();
@@ -58,8 +59,9 @@ class BoardWatch
     std::optional<std::string> storeReferences (bool force);
 
     api::Server& server_;
-    const CameraPreviews& previews_;
+    const FrameFeed& previews_;
     std::filesystem::path calibration_directory_;
+    bool stored_references_ = true;
     geometry::BoardModel board_;
     std::vector<Camera> cameras_;
     mutable std::mutex mutex_;

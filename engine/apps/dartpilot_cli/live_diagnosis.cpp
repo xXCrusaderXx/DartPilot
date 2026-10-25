@@ -21,7 +21,7 @@ constexpr auto kRepeat = std::chrono::seconds(20);
 double seconds (std::chrono::steady_clock::duration duration) { return std::chrono::duration<double>(duration).count(); }
 }  // namespace
 
-LiveDiagnosis::LiveDiagnosis (api::Server& server, const CameraPreviews& previews, const std::vector<capture::CameraDevice>& devices,
+LiveDiagnosis::LiveDiagnosis (api::Server& server, const FrameFeed& previews, const std::vector<capture::CameraDevice>& devices,
                               const std::filesystem::path& calibration_directory, std::chrono::steady_clock::time_point started)
     : server_(server)
     , previews_(previews)
