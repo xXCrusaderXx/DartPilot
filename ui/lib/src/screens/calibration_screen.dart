@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' show NumberFormat;
 
 import '../../l10n/app_localizations.dart';
+import '../engine/camera_order.dart';
 import '../engine/engine_connection.dart';
 import '../engine/engine_events.dart';
 import '../theme.dart';
@@ -28,7 +29,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
   late CalibrationStep _step = widget.startCamera == null ? CalibrationStep.overview : CalibrationStep.board;
 
   /// Camera of the board step
-  late int _camera = math.max(0, EngineScope.of(context).hello?.cameras.indexOf(widget.startCamera ?? '') ?? 0);
+  late int _camera = math.max(0, orderedCameras(context).indexOf(widget.startCamera ?? ''));
 
   /// Error code of the last request, shown until the next one
   String? _error;
@@ -57,7 +58,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final engine = EngineScope.of(context);
-    final cameras = engine.hello?.cameras ?? const <String>[];
+    final cameras = orderedCameras(context);
     final steps = [
       (CalibrationStep.light, l10n.calibStepLight),
       (CalibrationStep.board, l10n.calibStepBoard),
@@ -161,7 +162,7 @@ class _Overview extends StatelessWidget {
             color: StatusColors.of(context).warning.withValues(alpha: 0.15),
             child: ListTile(leading: const Icon(Icons.update), title: Text(l10n.calibStale)),
           ),
-        for (final (i, camera) in cameras.indexed)
+        for (final camera in cameras)
           Builder(
             builder: (context) {
               final c = status.of(camera);
@@ -172,7 +173,7 @@ class _Overview extends StatelessWidget {
                     c?.refined == true ? Icons.check_circle : Icons.radio_button_unchecked,
                     color: c?.refined == true ? StatusColors.of(context).good : theme.disabledColor,
                   ),
-                  title: Text(l10n.cameraNumber(i + 1)),
+                  title: Text(cameraLabel(context, camera)),
                   subtitle: Text(
                     [
                       c?.boardPlaneMm == null
@@ -273,7 +274,7 @@ class _LightStep extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final engine = EngineScope.of(context);
-    final cameras = engine.hello!.cameras;
+    final cameras = orderedCameras(context);
     final state = engine.whiteBalance;
     final running = state?.running ?? false;
     return Column(
@@ -289,9 +290,9 @@ class _LightStep extends StatelessWidget {
             _ => l10n.calibLightFailed,
           }, key: const ValueKey('calib-light-state')),
         const SizedBox(height: 8),
-        for (final (i, camera) in cameras.indexed)
+        for (final camera in cameras)
           _KelvinBar(
-            label: l10n.cameraNumber(i + 1),
+            label: cameraLabel(context, camera),
             camera: state?.cameras.where((c) => c.camera == camera).firstOrNull,
             stored: engine.calibration?.of(camera)?.whiteBalanceKelvin,
           ),
@@ -592,7 +593,6 @@ class _RefineStep extends StatelessWidget {
     final theme = Theme.of(context);
     final status = StatusColors.of(context);
     final engine = EngineScope.of(context);
-    final cameras = engine.hello!.cameras;
     final result = engine.refinement;
     final running = busy || result?.state == 'running';
     return Column(
@@ -614,7 +614,7 @@ class _RefineStep extends StatelessWidget {
                   },
                 ),
                 title: Text(
-                  '${l10n.cameraNumber(cameras.indexOf(c.camera) + 1)} · ${_mm(l10n, c.heldOutMm)} mm  ·  ${switch (c.quality) {
+                  '${cameraLabel(context, c.camera)} · ${_mm(l10n, c.heldOutMm)} mm  ·  ${switch (c.quality) {
                     'good' => l10n.calibQualityGood,
                     'fair' => l10n.calibQualityFair,
                     _ => l10n.calibQualityPoor,

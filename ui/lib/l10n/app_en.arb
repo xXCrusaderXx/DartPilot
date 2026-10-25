@@ -794,20 +794,16 @@
   "checkNoBoard": "No board found – darts in the board or a hand in view?",
   "checkNotCalibrated": "Not calibrated yet.",
   "checkChecking": "Checking …",
-  "homeCameraMoved": "Camera {number} has moved – measure it again.",
+  "homeCameraMoved": "{camera} has moved – measure it again.",
   "@homeCameraMoved": {
     "placeholders": {
-      "number": {
-        "type": "int"
-      }
+      "camera": {"type": "String"}
     }
   },
-  "homeCameraWrongPort": "Camera {number} is on another USB port than when it was calibrated.",
+  "homeCameraWrongPort": "{camera} is on another USB port than when it was calibrated.",
   "@homeCameraWrongPort": {
     "placeholders": {
-      "number": {
-        "type": "int"
-      }
+      "camera": {"type": "String"}
     }
   },
   "referenceRun": "Reference measurement",
@@ -868,7 +864,7 @@
   "referenceNotGoodHint": "Run the setup diagnosis to see where the error comes from, then calibrate the cameras it names again.",
   "referenceCamerasDisagree": "The cameras disagree about where it is",
   "referenceSeenByOneCamera": "Only one camera saw it",
-  "cameraMovedNotice": "Camera {camera} was moved – its calibration is being checked.",
+  "cameraMovedNotice": "{camera} was moved – its calibration is being checked.",
   "@cameraMovedNotice": {
     "placeholders": {
       "camera": {
@@ -894,5 +890,13 @@
   "scanEngineQrHint": "Point the camera at the QR code that the engine's device shows.",
   "enterAddressManually": "Enter the address or scan a QR code",
   "restartEngine": "Restart the engine",
-  "engineSettings": "Engine"
+  "engineSettings": "Engine",
+  "assignCameras": "Assign cameras",
+  "assignCamerasHint": "Each camera gets its place: camera 1, 2, 3. The live image shows which is which. The arrows swap two cameras, and a name helps to find one again.",
+  "cameraNameLabel": "Name (optional)",
+  "moveCameraUp": "Move up",
+  "moveCameraDown": "Move down",
+  "saveCameraOrder": "Apply",
+  "newCamerasTitle": "New cameras found",
+  "newCamerasText": "Assign them once, so that camera 1, 2 and 3 are always the same."
 }

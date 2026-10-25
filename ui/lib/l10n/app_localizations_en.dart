@@ -1205,13 +1205,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get checkChecking => 'Checking …';
 
   @override
-  String homeCameraMoved(int number) {
-    return 'Camera $number has moved – measure it again.';
+  String homeCameraMoved(String camera) {
+    return '$camera has moved – measure it again.';
   }
 
   @override
-  String homeCameraWrongPort(int number) {
-    return 'Camera $number is on another USB port than when it was calibrated.';
+  String homeCameraWrongPort(String camera) {
+    return '$camera is on another USB port than when it was calibrated.';
   }
 
   @override
@@ -1290,7 +1290,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String cameraMovedNotice(String camera) {
-    return 'Camera $camera was moved – its calibration is being checked.';
+    return '$camera was moved – its calibration is being checked.';
   }
 
   @override
@@ -1353,4 +1353,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get engineSettings => 'Engine';
+
+  @override
+  String get assignCameras => 'Assign cameras';
+
+  @override
+  String get assignCamerasHint =>
+      'Each camera gets its place: camera 1, 2, 3. The live image shows which is which. The arrows swap two cameras, and a name helps to find one again.';
+
+  @override
+  String get cameraNameLabel => 'Name (optional)';
+
+  @override
+  String get moveCameraUp => 'Move up';
+
+  @override
+  String get moveCameraDown => 'Move down';
+
+  @override
+  String get saveCameraOrder => 'Apply';
+
+  @override
+  String get newCamerasTitle => 'New cameras found';
+
+  @override
+  String get newCamerasText => 'Assign them once, so that camera 1, 2 and 3 are always the same.';
 }

@@ -1204,13 +1204,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get checkChecking => 'Prüfe …';
 
   @override
-  String homeCameraMoved(int number) {
-    return 'Kamera $number hat sich bewegt – miss sie neu ein.';
+  String homeCameraMoved(String camera) {
+    return '$camera hat sich bewegt – miss sie neu ein.';
   }
 
   @override
-  String homeCameraWrongPort(int number) {
-    return 'Kamera $number steckt an einem anderen USB-Port als beim Kalibrieren.';
+  String homeCameraWrongPort(String camera) {
+    return '$camera steckt an einem anderen USB-Port als beim Kalibrieren.';
   }
 
   @override
@@ -1290,7 +1290,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String cameraMovedNotice(String camera) {
-    return 'Kamera $camera wurde verschoben – die Kalibrierung wird geprüft.';
+    return '$camera wurde verschoben – die Kalibrierung wird geprüft.';
   }
 
   @override
@@ -1353,4 +1353,29 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get engineSettings => 'Engine';
+
+  @override
+  String get assignCameras => 'Kameras zuordnen';
+
+  @override
+  String get assignCamerasHint =>
+      'Jede Kamera bekommt ihren Platz: Kamera 1, 2, 3. Am Livebild erkennst du, welche welche ist. Mit den Pfeilen tauschst du zwei Kameras, ein Name hilft beim Wiederfinden.';
+
+  @override
+  String get cameraNameLabel => 'Name (optional)';
+
+  @override
+  String get moveCameraUp => 'Nach oben';
+
+  @override
+  String get moveCameraDown => 'Nach unten';
+
+  @override
+  String get saveCameraOrder => 'Übernehmen';
+
+  @override
+  String get newCamerasTitle => 'Neue Kameras gefunden';
+
+  @override
+  String get newCamerasText => 'Ordne sie einmal zu, damit Kamera 1, 2 und 3 immer dieselben sind.';
 }
