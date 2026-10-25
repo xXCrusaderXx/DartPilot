@@ -2737,6 +2737,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The engine still sees something in the board. If it is empty, store the empty board again – otherwise the measurement cannot go on.'**
   String get dartSetBoardStillOccupied;
+
+  /// No description provided for @dartMeasureUncertain.
+  ///
+  /// In en, this message translates to:
+  /// **'uncertain'**
+  String get dartMeasureUncertain;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

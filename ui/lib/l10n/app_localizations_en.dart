@@ -1518,4 +1518,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get dartSetBoardStillOccupied =>
       'The engine still sees something in the board. If it is empty, store the empty board again – otherwise the measurement cannot go on.';
+
+  @override
+  String get dartMeasureUncertain => 'uncertain';
 }

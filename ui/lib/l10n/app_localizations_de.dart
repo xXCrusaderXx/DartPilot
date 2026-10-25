@@ -1518,4 +1518,7 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get dartSetBoardStillOccupied =>
       'Die Engine sieht noch etwas im Board. Ist es leer, speichere das leere Board neu – sonst geht es nicht weiter.';
+
+  @override
+  String get dartMeasureUncertain => 'unsicher';
 }

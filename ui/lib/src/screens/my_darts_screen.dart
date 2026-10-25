@@ -139,7 +139,8 @@ class _DartSetCard extends StatelessWidget {
             Text(
               [
                 '${l10n.dartTotal} ${mm('total_mm')}',
-                '${l10n.dartBarrel} ${mm('barrel_mm')} × ${mm('barrel_diameter_mm')}',
+                // The engine's barrel split is not reliable yet (#208).
+                '${l10n.dartBarrel} ${mm('barrel_mm')} × ${mm('barrel_diameter_mm')} (${l10n.dartMeasureUncertain})',
                 if (set.dims['flight_mm'] != null) '${l10n.dartFlight} ${mm('flight_mm')}',
                 if (set.dims['point_mm'] != null) '${l10n.dartPoint} ${mm('point_mm')}',
               ].join('  ·  '),
