@@ -34,7 +34,8 @@ target_link_libraries(CaptureTest PRIVATE dartpilot::capture GTest::gtest_main)
 gtest_discover_tests(CaptureTest)
 
 add_executable(ScoringTest ScoringTest.cpp)
-target_link_libraries(ScoringTest PRIVATE dartpilot::scoring GTest::gtest_main)
+target_link_libraries(ScoringTest PRIVATE dartpilot::scoring nlohmann_json::nlohmann_json GTest::gtest_main)
+target_compile_definitions(ScoringTest PRIVATE DARTPILOT_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 gtest_discover_tests(ScoringTest)
 
 add_executable(SessionTest SessionTest.cpp)

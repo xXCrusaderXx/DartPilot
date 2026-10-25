@@ -1,8 +1,11 @@
 #include <gtest/gtest.h>
 
 #include <cmath>
+#include <fstream>
 #include <limits>
 #include <numbers>
+
+#include <nlohmann/json.hpp>
 
 #include "dartpilot/scoring/score.hpp"
 
@@ -188,4 +191,19 @@ TEST(Score, IsDeterministic)
     const auto b = score(-73.25, 41.5);
     EXPECT_EQ(a.points, b.points);
     EXPECT_EQ(a.boundary_distance_mm, b.boundary_distance_mm);
+}
+
+// The cases the Python port of the scorer (tools/dartpilot_tools/scoring.py) is tested with: both must agree with them.
+TEST(Score, SharedCasesWithThePythonScorer)
+{
+    std::ifstream file(std::string(DARTPILOT_SOURCE_DIR) + "/tests/fixtures/scoring/cases.json");
+    ASSERT_TRUE(file);
+    const auto cases = nlohmann::json::parse(file);
+    ASSERT_GT(cases.size(), 500u);
+    for(const auto& c : cases)
+    {
+        const auto s = dartpilot::scoring::score(c["x_mm"].get<double>(), c["y_mm"].get<double>());
+        EXPECT_EQ(dartpilot::scoring::label(s), c["label"].get<std::string>()) << c.dump();
+        EXPECT_EQ(s.points, c["points"].get<int>()) << c.dump();
+    }
 }
