@@ -1,5 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-feature android:name="android.hardware.usb.host" android:required="true" />
+    <!-- Android grants USB video class devices only to apps with the camera permission -->
+    <uses-permission android:name="android.permission.CAMERA" />
 
     <application android:label="DartPilot UVC spike">
         <activity

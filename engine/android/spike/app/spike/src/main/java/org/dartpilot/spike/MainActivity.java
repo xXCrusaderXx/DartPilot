@@ -1,11 +1,13 @@
 package org.dartpilot.spike;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbInterface;
@@ -124,11 +126,25 @@ public class MainActivity extends Activity {
         }
         wanted = count;
         pending = new ArrayList<>(all.subList(0, count));
+        if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[] {Manifest.permission.CAMERA}, 1);
+            return;
+        }
         askNext();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
+        if (results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) {
+            askNext();
+        } else {
+            show("Ohne Kamera-Berechtigung gibt Android die USB-Kameras nicht frei.");
+        }
     }
 
     /** Asks for the next camera that has no permission yet; runs once all have one. */
     private void askNext() {
+        if (pending.isEmpty()) return;
         for (UsbDevice device : pending) {
             if (!usb.hasPermission(device)) {
                 Intent intent = new Intent(ACTION_PERMISSION).setPackage(getPackageName());
@@ -167,7 +183,7 @@ public class MainActivity extends Activity {
             String batteryJson = String.format(java.util.Locale.ROOT,
                     "{\"charge_before_uah\":%d,\"charge_after_uah\":%d,\"drain_ma\":%.0f,\"level_before\":%d,"
                             + "\"level_after\":%d,\"temperature_before_c\":%.1f,\"temperature_after_c\":%.1f}",
-                    chargeBefore, chargeAfter, (chargeBefore - chargeAfter) * 3.6 / elapsedMs,
+                    chargeBefore, chargeAfter, (chargeBefore - chargeAfter) * 3600.0 / elapsedMs,
                     levelBefore, battery.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY),
                     temperatureBefore, batteryTemperature());
             String report = "{\"cameras_requested\":" + fds.length + ",\"battery\":" + batteryJson
