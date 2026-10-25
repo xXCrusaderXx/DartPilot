@@ -738,6 +738,7 @@ TEST(Server, AnUnpairedClientSeesNothingUntilItPairs)
     EXPECT_TRUE(returning.next("result")["ok"]);
     EXPECT_EQ(returning.next("paired")["token"], paired["token"]);
     server.stop();
+}
 
 TEST(Protocol, DartSetRequestsReachTheirHandlers)
 {

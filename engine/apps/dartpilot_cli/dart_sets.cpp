@@ -35,9 +35,8 @@ struct Dimension
     double min;
     double max;
 };
-constexpr Dimension kDimensions[] = {{"total_mm", 50, 250},  {"point_mm", 10, 60},  {"barrel_mm", 10, 80}, {"barrel_diameter_mm", 3, 15},
-                                     {"shaft_mm", 5, 80},    {"flight_mm", 10, 80}, {"weight_g", 10, 50}};
-
+constexpr Dimension kDimensions[] = {{"total_mm", 50, 250}, {"point_mm", 10, 60},  {"barrel_mm", 10, 80}, {"barrel_diameter_mm", 3, 15},
+                                     {"shaft_mm", 5, 80},   {"flight_mm", 10, 80}, {"weight_g", 10, 50}};
 
 json dimsJson (const geometry::DartShape& shape)
 {
@@ -109,11 +108,9 @@ DartSets::DartSets (api::Server& server, LiveDetection& detection, const std::ve
                                  });
     server_.onCalibrationRequest("start_dart_set",
                                  [this] (const api::CalibrationRequest& request) { return start(request.body.value("name", std::string())); });
-    server_.onCalibrationRequest("create_dart_set",
-                                 [this] (const api::CalibrationRequest& request)
+    server_.onCalibrationRequest("create_dart_set", [this] (const api::CalibrationRequest& request)
                                  { return create(request.body.value("name", std::string()), request.body.value("dims", json::object())); });
-    server_.onCalibrationRequest("update_dart_set",
-                                 [this] (const api::CalibrationRequest& request)
+    server_.onCalibrationRequest("update_dart_set", [this] (const api::CalibrationRequest& request)
                                  { return update(request.body.value("id", std::string()), request.body.value("dims", json::object())); });
     server_.onCalibrationRequest("cancel_dart_set",
                                  [this] (const api::CalibrationRequest&) -> Error
@@ -222,8 +219,8 @@ DartSets::DartSets (api::Server& server, LiveDetection& detection, const std::ve
 
 DartSets::~DartSets ()
 {
-    for(const char* type :
-        {"list_dart_sets", "start_dart_set", "create_dart_set", "update_dart_set", "cancel_dart_set", "get_dart_set_image", "rename_dart_set", "delete_dart_set", "set_active_darts"})
+    for(const char* type : {"list_dart_sets", "start_dart_set", "create_dart_set", "update_dart_set", "cancel_dart_set", "get_dart_set_image",
+                            "rename_dart_set", "delete_dart_set", "set_active_darts"})
     {
         server_.onCalibrationRequest(type, {});
     }
@@ -272,14 +269,8 @@ bool DartSets::save (const Set& set) const
     std::error_code ignored;
     std::filesystem::create_directories(directory(), ignored);
     std::ofstream out(directory() / (set.id + ".json"));
-    out << json{{"id", set.id},
-                {"name", set.name},
-                {"created_utc", set.created_utc},
-                {"measured", set.measured},
-                {"photo", set.photo},
-                {"entered", set.entered},
-                {"placements", set.placements},
-                {"cameras", set.cameras}}
+    out << json{{"id", set.id},       {"name", set.name},       {"created_utc", set.created_utc}, {"measured", set.measured},
+                {"photo", set.photo}, {"entered", set.entered}, {"placements", set.placements},   {"cameras", set.cameras}}
                .dump(2)
         << "\n";
     return static_cast<bool>(out);
@@ -295,7 +286,8 @@ json DartSets::setJson (const Set& set) const
     json dims = json::object(), sources = json::object();
     for(const auto& dimension : kDimensions)
     {
-        for(const auto& [source, values] : {std::pair<const char*, const json*>{"entered", &set.entered}, {"photo", &set.photo}, {"measured", &set.measured}})
+        for(const auto& [source, values] :
+            {std::pair<const char*, const json*>{"entered", &set.entered}, {"photo", &set.photo}, {"measured", &set.measured}})
         {
             if(values->contains(dimension.name) && (*values)[dimension.name].is_number())
             {
@@ -402,8 +394,7 @@ std::optional<std::string> applyEntered (json& entered, const json& dims)
     json result = entered;
     for(const auto& [name, value] : dims.items())
     {
-        const auto* dimension =
-            std::find_if(std::begin(kDimensions), std::end(kDimensions), [&] (const Dimension& d) { return name == d.name; });
+        const auto* dimension = std::find_if(std::begin(kDimensions), std::end(kDimensions), [&] (const Dimension& d) { return name == d.name; });
         if(dimension == std::end(kDimensions))
         {
             return "Unknown dimension " + name;
