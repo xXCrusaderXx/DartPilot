@@ -8,7 +8,10 @@
 
 #include <chrono>
 #include <condition_variable>
+#include <ctime>
 #include <deque>
+#include <filesystem>
+#include <fstream>
 #include <mutex>
 #include <optional>
 #include <random>
@@ -19,6 +22,7 @@
 #include <nlohmann/json.hpp>
 
 #include "dartpilot/api/discovery.hpp"
+#include "dartpilot/api/pairing.hpp"
 #include "dartpilot/api/protocol.hpp"
 #include "dartpilot/api/server.hpp"
 #include "dartpilot/api/simulator.hpp"
@@ -65,7 +69,7 @@ TEST(Protocol, HelloNamesProtocolAndGeometry)
     hello.board_geometry.outer_bull_radius_mm = 15.4;
     hello.board_geometry_source = "measured";
     const json message = api::helloMessage(hello);
-    EXPECT_EQ(message["protocol"], "dartpilot/1.0");
+    EXPECT_EQ(message["protocol"], "dartpilot/1.1");
     EXPECT_EQ(message["board_geometry"]["outer_bull_radius_mm"], 15.4);
     EXPECT_EQ(message["board_geometry"]["source"], "measured");
     EXPECT_TRUE(message["session_id"].is_null());
@@ -205,7 +209,7 @@ TEST(Server, HelloThrowsAndCorrectionsOverWebSocket)
 
     TestClient a(port);
     TestClient b(port);
-    EXPECT_EQ(a.next("hello")["protocol"], "dartpilot/1.0");
+    EXPECT_EQ(a.next("hello")["protocol"], "dartpilot/1.1");
     EXPECT_EQ(b.next("hello")["mode"], "simulate");
 
     api::Throw dart;
@@ -516,7 +520,7 @@ TEST(Discovery, AnswersASearchOncePerSecondWithTheEngineFields)
     ASSERT_TRUE(discovery.start(error)) << error;
 
     EXPECT_FALSE(askDiscovery(port, R"({"type":"hello"})", 300));
-    const auto answer = askDiscovery(port, R"({"type":"discover","protocol":"dartpilot/1.0"})", 1000);
+    const auto answer = askDiscovery(port, R"({"type":"discover","protocol":"dartpilot/1.1"})", 1000);
     ASSERT_TRUE(answer);
     const auto engine = nlohmann::json::parse(*answer);
     EXPECT_EQ(engine["type"], "engine");
@@ -525,7 +529,7 @@ TEST(Discovery, AnswersASearchOncePerSecondWithTheEngineFields)
     EXPECT_EQ(engine["protocol"], api::kProtocol);
     EXPECT_EQ(engine["id"], "abcdefghijklmnopqrstuvwxyz");
     // The same asker again within a second gets no answer; an app of another protocol major gets one later.
-    EXPECT_FALSE(askDiscovery(port, R"({"type":"discover","protocol":"dartpilot/1.0"})", 300));
+    EXPECT_FALSE(askDiscovery(port, R"({"type":"discover","protocol":"dartpilot/1.1"})", 300));
     std::this_thread::sleep_for(std::chrono::milliseconds(1100));
     EXPECT_TRUE(askDiscovery(port, R"({"type":"discover","protocol":"dartpilot/2.0"})", 1000));
     discovery.stop();
@@ -636,4 +640,95 @@ TEST(Protocol, DetectionParamsAndLatencies)
     dart.detection_latency_ms = 480.0;
     EXPECT_EQ(api::throwMessage(dart, scoring::BoardGeometry{})["detection_latency_ms"], 480.0);
     EXPECT_EQ(api::throwRecord(dart, scoring::BoardGeometry{})["diagnostics"]["detection_latency_ms"], 480.0);
+}
+
+TEST(Pairing, PinTokenLimitsAndStore)
+{
+    const auto store = std::filesystem::temp_directory_path() / ("dartpilot-pairing-" + std::to_string(std::random_device{}()) + ".json");
+    std::int64_t now = 1'800'000'000;
+    std::vector<std::string> shown;
+    std::string token;
+    {
+        api::Pairing pairing(store);
+        pairing.onNewPin([&] (const api::Pairing::Pin& pin) { shown.push_back(pin.pin); });
+        const auto pin = pairing.pin(now);
+        ASSERT_EQ(pin.pin.size(), 6u);
+        EXPECT_EQ(shown.back(), pin.pin);
+        EXPECT_EQ(pairing.pin(now + 599).pin, pin.pin);
+        EXPECT_EQ(pairing.pairWithPin("000000" == pin.pin ? "111111" : "000000", "phone", "10.0.0.5", now).error, "wrong_pin");
+        const auto paired = pairing.pairWithPin(pin.pin, "phone", "10.0.0.5", now);
+        ASSERT_TRUE(paired.token);
+        token = *paired.token;
+        EXPECT_GE(token.size(), 32u);
+        // One PIN pairs one client.
+        EXPECT_NE(pairing.pin(now).pin, pin.pin);
+        EXPECT_EQ(pairing.pairWithPin(pin.pin, "tablet", "10.0.0.6", now).error, "wrong_pin");
+        // Five failures a minute per address, then nothing, even the right PIN
+        for(int i = 0; i < 4; ++i)
+        {
+            pairing.pairWithToken("nope", "", "10.0.0.7", now);
+        }
+        EXPECT_EQ(pairing.pairWithToken("nope", "", "10.0.0.7", now).error, "unknown_token");
+        EXPECT_EQ(pairing.pairWithPin(pairing.pin(now).pin, "x", "10.0.0.7", now).error, "too_many_attempts");
+        EXPECT_TRUE(pairing.pairWithPin(pairing.pin(now).pin, "x", "10.0.0.8", now).token);
+        EXPECT_NE(pairing.pin(now + 600).pin, "");
+    }
+    // The token survives a restart, stored only as its hash.
+    const std::string stored = [&]
+    {
+        std::ifstream in(store);
+        return std::string(std::istreambuf_iterator<char>(in), {});
+    }();
+    EXPECT_EQ(stored.find(token), std::string::npos);
+    api::Pairing again(store);
+    EXPECT_TRUE(again.pairWithToken(token, "phone", "10.0.0.5", now + 3600).token);
+    ASSERT_EQ(again.paired().size(), 2u);
+    EXPECT_TRUE(again.unpair(again.paired().front().id));
+    EXPECT_FALSE(again.pairWithToken(token, "phone", "10.0.0.5", now + 3600).token);
+    std::filesystem::remove(store);
+    EXPECT_TRUE(api::isLocalAddress("127.0.0.1"));
+    EXPECT_TRUE(api::isLocalAddress("::1"));
+    EXPECT_FALSE(api::isLocalAddress("192.168.178.20"));
+}
+
+TEST(Server, AnUnpairedClientSeesNothingUntilItPairs)
+{
+    ix::initNetSystem();
+    const int port = 20000 + static_cast<int>(std::random_device{}() % 20000);
+    api::Server server(port, "127.0.0.1", api::Hello{});
+    auto pairing = std::make_shared<api::Pairing>(std::filesystem::path());
+    server.requirePairing(pairing, false);
+    std::string error;
+    ASSERT_TRUE(server.start(error)) << error;
+    server.publishState({{"type", "diagnosis"}, {"step", "x"}});
+
+    TestClient stranger(port);
+    EXPECT_EQ(stranger.next("hello")["pairing"], "required");
+    stranger.send({{"type", "check_board"}, {"request_id", "1"}});
+    EXPECT_EQ(stranger.next("result")["error"]["code"], "not_paired");
+    stranger.send({{"type", "get_pairing_pin"}, {"request_id", "2"}});
+    EXPECT_EQ(stranger.next("result")["error"]["code"], "not_paired");
+    server.publishTakeout(1, 3);
+    stranger.send({{"type", "pair"}, {"pin", "999999" == pairing->pin(0).pin ? "000000" : "999999"}, {"request_id", "3"}});
+    EXPECT_EQ(stranger.next("result")["error"]["code"], "wrong_pin");
+    EXPECT_TRUE(stranger.next("takeout").is_null());
+    EXPECT_TRUE(stranger.next("diagnosis").is_null());
+
+    stranger.send({{"type", "pair"}, {"pin", pairing->pin(std::time(nullptr)).pin}, {"request_id", "4"}});
+    EXPECT_TRUE(stranger.next("result")["ok"]);
+    const auto paired = stranger.next("paired");
+    ASSERT_TRUE(paired["token"].is_string());
+    EXPECT_EQ(stranger.next("diagnosis")["step"], "x");
+    server.publishTakeout(2, 1);
+    EXPECT_EQ(stranger.next("takeout")["darts_removed"], 1);
+    // An admin request needs a client on the engine's computer.
+    stranger.send({{"type", "list_paired_clients"}, {"request_id", "5"}});
+    EXPECT_EQ(stranger.next("result")["error"]["code"], "not_allowed");
+
+    TestClient returning(port);
+    returning.next("hello");
+    returning.send({{"type", "pair"}, {"token", paired["token"]}, {"request_id", "6"}});
+    EXPECT_TRUE(returning.next("result")["ok"]);
+    EXPECT_EQ(returning.next("paired")["token"], paired["token"]);
+    server.stop();
 }

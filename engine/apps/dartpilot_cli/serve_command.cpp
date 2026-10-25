@@ -6,6 +6,7 @@
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
+#include <ctime>
 #include <fstream>
 #include <memory>
 #include <string>
@@ -140,6 +141,22 @@ int runServe (int argc, char* argv[])
         hello.session_id = session::newSessionId();
     }
     api::Server server(port, host, hello);
+    // In the network, other computers must pair with the PIN first (#110); on this computer only, nobody else can connect.
+    const bool networked = host != "127.0.0.1" && host != "localhost" && host != "::1";
+    std::shared_ptr<api::Pairing> pairing;
+    if(networked)
+    {
+        pairing = std::make_shared<api::Pairing>(dataHome() / "paired-clients.json");
+        pairing->onNewPin(
+            [] (const api::Pairing::Pin& pin)
+            {
+                std::printf("Pairing PIN for other devices: %s (changes after each pairing and every %lld min)\n", pin.pin.c_str(),
+                            static_cast<long long>(api::Pairing::kPinLifetime_s / 60));
+                std::fflush(stdout);
+            });
+        server.requirePairing(pairing);
+        pairing->pin(static_cast<std::int64_t>(std::time(nullptr)));
+    }
     server.setPreviewScaler(scaleJpeg);
     CameraPreviews camera_previews(server);
     std::vector<std::string> simulated = {"sim-1", "sim-2", "sim-3"};

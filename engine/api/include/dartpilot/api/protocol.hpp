@@ -11,10 +11,10 @@
 
 #include "dartpilot/scoring/score.hpp"
 
-// Messages of the engine API, protocol dartpilot/1.0 (docs/engine-api.md). Pure functions, no network.
+// Messages of the engine API, protocol dartpilot/1.1 (docs/engine-api.md). Pure functions, no network.
 namespace dartpilot::api
 {
-inline constexpr const char* kProtocol = "dartpilot/1.0";
+inline constexpr const char* kProtocol = "dartpilot/1.1";
 
 struct BoardPoint
 {
@@ -73,6 +73,9 @@ struct Hello
     BoardStateInfo board_state;
     // What is calibrated per camera (calibration_status), for the calibration wizard; null without real cameras
     nlohmann::json calibration_status;
+    // Per client (#110): local (on this computer, or the engine listens only there), paired, or required (only pair
+    // is allowed until the client paired)
+    std::string pairing = "local";
 };
 
 struct CameraContribution
@@ -140,6 +143,18 @@ struct ClientHello
 {
     std::string client;
 };
+// pair (#110): with the engine's PIN, or with the token of an earlier pairing
+struct Pair
+{
+    std::string pin;
+    std::string token;
+};
+// get_pairing_pin, list_paired_clients, unpair: only for clients on this computer
+struct PairingAdmin
+{
+    std::string type;
+    std::string id;
+};
 struct CorrectThrow
 {
     std::string throw_id;
@@ -194,7 +209,7 @@ struct Subscription
     int max_width = 0;
 };
 using RequestBody = std::variant<ClientHello, CorrectThrow, RejectThrow, AddThrow, SetDetection, Subscription, CheckBoard, StoreEmptyReference,
-                                 SetDiagnosis, CalibrationRequest, ShareGame>;
+                                 SetDiagnosis, CalibrationRequest, ShareGame, Pair, PairingAdmin>;
 
 struct Request
 {

@@ -1,6 +1,6 @@
 # Engine API
 
-- **Protocol version:** `dartpilot/1.0`
+- **Protocol version:** `dartpilot/1.1` (1.1 adds pairing, #110)
 - **Status:** proposed ([ADR 0007](adr/0007-engine-api.md), issue #37)
 
 The engine reports darts, takeouts and its state to clients over a WebSocket; clients can correct darts and watch the cameras. The engine knows no games: turns, game scores and statistics belong to the client.
@@ -9,13 +9,14 @@ The engine reports darts, takeouts and its state to clients over a WebSocket; cl
 
 - `ws://<host>:8484/` by default. `dartpilot serve` listens on localhost; `--listen 0.0.0.0` makes it reachable from other devices in the network, `--port` changes the port.
 - Text messages are UTF-8 JSON objects with a `type` field. Binary messages are camera previews (see [Previews](#previews)).
+- In the network, a client must pair with the engine first (see [Pairing](#pairing)); on the engine's own computer it never has to.
 - Any number of clients may connect. Every event goes to every client; corrections made by one client are announced to all.
 - Times (`*_ns`) are on the engine's `CLOCK_MONOTONIC`, the time base of the recorded sessions. Clients use them for ordering and differences, not as wall-clock time.
 - Fields follow [board-coordinates.md](board-coordinates.md) and [replay-format.md](replay-format.md): a **board point** is `{ "x_mm", "y_mm", "covariance_mm2": { "xx", "xy", "yy" } }`, a **score** has the fields of the deterministic scorer (#12).
 
 ## Versioning
 
-The engine's first message is `hello` with `"protocol": "dartpilot/1.0"`. Within major version 1, minor versions only add message types and fields; clients ignore unknown types and fields. A client that does not support the major version closes the connection.
+The engine's first message is `hello` with `"protocol": "dartpilot/1.1"`. Within major version 1, minor versions only add message types and fields; clients ignore unknown types and fields. A client that does not support the major version closes the connection.
 
 ## Engine → client
 
@@ -26,7 +27,7 @@ Sent once after the connection opens.
 ```json
 {
   "type": "hello",
-  "protocol": "dartpilot/1.0",
+  "protocol": "dartpilot/1.1",
   "engine": { "version": "0.4.0", "commit": "0b299b1" },
   "mode": "live",
   "session_id": "20261024T190000Z-7c1e",
@@ -287,6 +288,8 @@ Every request carries a `request_id` chosen by the client and is answered with `
 | `type` | Fields | Effect |
 | ------ | ------ | ------ |
 | `hello` | `client`, `protocol` | Names the client for logs and corrections; optional |
+| `pair` | `pin` or `token` | Pairs a client in the network; see [Pairing](#pairing) |
+| `get_pairing_pin`, `list_paired_clients`, `unpair` | –, –, `id` | Only on the engine's computer; see [Pairing](#pairing) |
 | `correct_throw` | `throw_id`, `board_point` | Replaces the board point of a throw; broadcast as `throw_corrected` |
 | `reject_throw` | `throw_id`, `reason` | Marks a throw as not having happened |
 | `add_throw` | `board_point` | Adds a dart the engine missed |
@@ -326,6 +329,27 @@ Preview frames are binary messages:
 
 The engine sends the camera's own JPEG when it fits `max_width`, otherwise a scaled copy, and drops frames rather than queueing them when a client is slow.
 
+## Pairing
+
+An engine that listens in the network (`--listen` other than localhost) accepts clients from other computers only after they paired (#110). Clients on the engine's computer (127.0.0.1, ::1) never pair, and an engine that listens only on localhost asks nobody.
+
+- `hello` tells each client its state in `pairing`: `local`, `paired` or `required`, and `pairing_pin_digits` (6).
+- Until a client has paired, the engine answers every request except `hello` and `pair` with `not_paired`, and sends it nothing but `hello` and results: no state, previews, throws or other events.
+- `pair {"pin": "123456"}` pairs with the engine's current PIN. `pair {"token": "…"}` pairs with the token of an earlier pairing, which the client stores per `engine.id` of `hello`. On success, `result` ok follows `{ "type": "paired", "token": "…", "engine_id": "…" }`, then the state messages the client could not see before. A token login keeps its token.
+- Errors: `wrong_pin`, `unknown_token`, `too_many_attempts` (more than 5 failures within a minute from one address; then even the right PIN waits), `not_available` (this engine needs no pairing).
+- The **PIN** has 6 digits. It changes after every successful pairing and every 10 minutes, and the engine prints each new one in its log.
+- The engine stores per paired client an id, the client's name, `created_utc`, `last_seen_utc` and a **SHA-256 of the token**, never the token itself, in `paired-clients.json` in its data directory, readable only by the user. A token is 256 random bits.
+
+Only for clients on the engine's computer, e.g. the PC app that started or shares the engine; others get `not_allowed`:
+
+| Request | Answer |
+| - | - |
+| `get_pairing_pin` | `{ "type": "pairing_pin", "pin": "123456", "expires_utc": "…" }`, for showing the PIN and putting it into the QR code |
+| `list_paired_clients` | `{ "type": "paired_clients", "clients": [ { "id", "client", "created_utc", "last_seen_utc" } ] }` |
+| `unpair` `{ "id" }` | Forgets that client; its token no longer pairs. `unknown_client` for an unknown id |
+
+The connection itself is not encrypted (`ws://`): pairing keeps strangers in the network out, but someone who can read the network traffic can read the token. Use it in a home network you trust.
+
 ## Typical flow
 
 1. The client connects and receives `hello`; it sets up its scorer and board drawing from `board_geometry`.
@@ -358,4 +382,4 @@ On the reference recordings, replayed through the tracker, all located darts wer
 
 ## Not in version 1
 
-Authentication and encryption (use it in a trusted network only), several boards per engine, and engine-side game logic.
+Encryption (use it in a trusted network only; pairing is the only protection), several boards per engine, and engine-side game logic.
