@@ -77,12 +77,40 @@ def region(point_mm: tuple[float, float]) -> str:
     }.get(score(*point_mm).ring, "outside")
 
 
+FUSED = "fused"
+
+
+def _fused_pairs(session, run_id: str) -> list[metrics.Pair]:
+    """The run's accepted throws with their fused point as the reference: how far each camera lies from what all
+    cameras agreed on. A consistency check until there is ground truth, not an accuracy."""
+    out = []
+    for t in session.run(run_id).throws:
+        point = t.get("board_point")
+        if not t.get("accepted") or not point or "correction" in t:
+            continue
+        cameras = {
+            m["camera"]: (m["board_point"]["x_mm"], m["board_point"]["y_mm"])
+            for m in t.get("camera_measurements", [])
+            if m.get("board_point")
+        }
+        out.append(
+            metrics.Pair(
+                t["throw_id"], True, (point["x_mm"], point["y_mm"]), (point["x_mm"], point["y_mm"]), None, cameras
+            )
+        )
+    return out
+
+
 def camera_table(sessions, run_id: str, annotation_set: str, centres: dict[str, np.ndarray]) -> pd.DataFrame:
     """One row per throw and camera that has its own board point: error, its radial and tangential part, the region
-    of the true point, and the viewing angle where the camera's pose is known."""
+    of the true point, and the viewing angle where the camera's pose is known. `annotation_set` "fused" compares
+    each camera with the run's fused point instead of ground truth."""
     rows = []
     for session in sessions:
-        for pair in metrics.pairs(session, run_id, annotation_set):
+        pairs = (
+            _fused_pairs(session, run_id) if annotation_set == FUSED else metrics.pairs(session, run_id, annotation_set)
+        )
+        for pair in pairs:
             if pair.field_only:
                 continue
             tx, ty = pair.truth_mm
@@ -194,6 +222,11 @@ def plot_angle(table: pd.DataFrame, path: Path) -> None:
 
 def report(table: pd.DataFrame, run_id: str, annotation_set: str) -> str:
     lines = [f"# Single-camera projection error: run `{run_id}` against `{annotation_set}`", ""]
+    if annotation_set == FUSED:
+        lines += [
+            "Against the run's fused point: how far each camera lies from the cameras' agreement, not from the truth.",
+            "",
+        ]
     if table.empty:
         return "\n".join(lines + ["No camera of the run has its own board point for a throw with ground truth."]) + "\n"
     s = summary(table)
@@ -224,7 +257,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("sessions", nargs="+", type=Path, help="session directories")
     parser.add_argument("--run", required=True, help="detection run id, results/<run id>/")
-    parser.add_argument("--annotations", required=True, help="annotation set(s), comma separated")
+    parser.add_argument(
+        "--annotations", required=True, help="annotation set(s), comma separated; 'fused' for the run's fused point"
+    )
     parser.add_argument(
         "--calibration", type=Path, default=DEFAULT_CALIBRATION, help="directory with extrinsics.yml, for the angles"
     )
