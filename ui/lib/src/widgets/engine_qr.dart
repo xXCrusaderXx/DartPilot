@@ -5,6 +5,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../engine/engine_connection.dart';
 
 /// Virtual interfaces (libvirt, Docker, VPNs) that other devices in the home network cannot reach
 final RegExp _virtualInterface = RegExp(r'^(lo|virbr|docker|br-|veth|tun|tap|wg|zt)');
@@ -31,24 +32,46 @@ Future<List<String>> homeNetworkAddresses() async {
   return addresses..sort((a, b) => rank(a).compareTo(rank(b)));
 }
 
-/// The address of the engine on this device as a QR code, for a phone or tablet to scan
-class EngineQrDialog extends StatelessWidget {
+/// The address of the engine on this device as a QR code, for a phone or tablet to scan; with the engine's PIN in it
+/// where the engine asks for pairing (#110), so scanning also pairs.
+class EngineQrDialog extends StatefulWidget {
   const EngineQrDialog({super.key, required this.port});
 
   final int port;
 
   @override
+  State<EngineQrDialog> createState() => _EngineQrDialogState();
+}
+
+class _EngineQrDialogState extends State<EngineQrDialog> {
+  late final Future<List<String>> _addresses = homeNetworkAddresses();
+  bool _askedPin = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final engine = EngineScope.of(context);
+    // Only an engine with pairing (#110) has a PIN; older ones answer with an error, which changes nothing.
+    if (!_askedPin && engine.isConnected) {
+      _askedPin = true;
+      engine.requestPairingPin();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final pin = EngineScope.of(context).pairingPin?.pin;
+    final port = widget.port;
     return AlertDialog(
       title: Text(l10n.engineQrTitle),
       content: FutureBuilder<List<String>>(
-        future: homeNetworkAddresses(),
+        future: _addresses,
         builder: (context, snapshot) {
           final addresses = snapshot.data;
           if (addresses == null) return const SizedBox(height: 260, child: Center(child: CircularProgressIndicator()));
           if (addresses.isEmpty) return Text(l10n.engineQrNoNetwork);
-          final url = 'ws://${addresses.first}:$port/';
+          final url = 'ws://${addresses.first}:$port/${pin == null ? '' : '?pin=$pin'}';
           return Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -61,6 +84,14 @@ class EngineQrDialog extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               SelectableText(url, key: const ValueKey('engine-qr-url')),
+              if (pin != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  l10n.engineQrPin(pin),
+                  key: const ValueKey('engine-qr-pin'),
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ],
             ],
           );
         },

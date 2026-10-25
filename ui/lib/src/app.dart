@@ -10,6 +10,7 @@ import 'engine/engine_choice.dart';
 import 'engine/engine_connection.dart';
 import 'engine/engine_events.dart';
 import 'engine/engine_manager.dart';
+import 'engine/pairing_tokens.dart';
 import 'stats/dart_links.dart';
 import 'stats/statistics.dart';
 import 'theme.dart';
@@ -52,7 +53,7 @@ class DartPilotApp extends StatefulWidget {
 }
 
 class _DartPilotAppState extends State<DartPilotApp> {
-  late final EngineConnection _engine = widget.engine ?? EngineConnection();
+  late final EngineConnection _engine = widget.engine ?? EngineConnection(tokens: PrefsPairingTokens());
   late final EngineManager? _manager =
       widget.manager ?? (widget.engine == null && EngineManager.supported ? EngineManager() : null);
   late EngineSettings _settings = widget.settings ?? EngineSettings();

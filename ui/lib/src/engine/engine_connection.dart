@@ -10,28 +10,49 @@ import '../board/dart_throw.dart';
 import '../board/scoring.dart';
 import 'engine_discovery.dart';
 import 'engine_events.dart';
+import 'pairing_tokens.dart';
 
 enum EngineConnectionState { disconnected, connecting, connected, failed }
 
 /// The app's connection to an engine (docs/engine-api.md). One per app; screens listen to [events].
 class EngineConnection extends ChangeNotifier {
-  EngineConnection({WebSocketChannel Function(Uri uri)? connector, EngineDiscovery? discovery})
+  EngineConnection({WebSocketChannel Function(Uri uri)? connector, EngineDiscovery? discovery, PairingTokens? tokens})
     : _connector = connector ?? WebSocketChannel.connect,
       discovery = discovery ?? EngineDiscovery.network(),
+      tokens = tokens ?? MemoryPairingTokens(),
       clientName = 'dartpilot-app-${math.Random().nextInt(0x7fffffff).toRadixString(16)}';
 
   /// For tests: requests go to `onSend` instead of a socket
   @visibleForTesting
-  EngineConnection.forTest(void Function(Map<String, dynamic>) onSend, {EngineDiscovery? discovery})
-    : _connector = WebSocketChannel.connect,
-      discovery = discovery ?? EngineDiscovery(const []),
-      clientName = 'test',
-      _testSink = onSend;
+  EngineConnection.forTest(
+    void Function(Map<String, dynamic>) onSend, {
+    EngineDiscovery? discovery,
+    PairingTokens? tokens,
+  }) : _connector = WebSocketChannel.connect,
+       discovery = discovery ?? EngineDiscovery(const []),
+       tokens = tokens ?? MemoryPairingTokens(),
+       clientName = 'test',
+       _testSink = onSend;
 
   final WebSocketChannel Function(Uri uri) _connector;
 
   /// Finds engines in the network for the engine card
   final EngineDiscovery discovery;
+
+  /// Tokens from pairing with network engines (#110)
+  final PairingTokens tokens;
+
+  /// The engine asks this device to pair before anything else; the app asks for the PIN
+  bool pairingRequired = false;
+
+  /// A PIN that came with the address (QR code), tried as soon as the engine asks for pairing
+  String? _pendingPin;
+
+  /// The PIN of the engine on this device, for other devices to pair with; null until asked for
+  PairingPin? pairingPin;
+
+  /// The devices paired with the engine on this device; null until asked for
+  PairedClients? pairedClients;
   void Function(Map<String, dynamic>)? _testSink;
 
   /// Sent in hello, so the app recognises its own corrections in throw_corrected
@@ -108,9 +129,12 @@ class EngineConnection extends ChangeNotifier {
   /// The board geometry the engine scores with, nominal without an engine
   BoardGeometry get geometry => hello?.geometry ?? const BoardGeometry();
 
+  /// Connects to `newUrl`. A `pin` in its query (from a QR code) pairs this device right away.
   Future<void> connect(String newUrl) async {
     await disconnect();
-    url = newUrl;
+    final (address, pin) = splitPairingPin(newUrl);
+    _pendingPin = pin;
+    url = newUrl = address;
     state = EngineConnectionState.connecting;
     error = null;
     notifyListeners();
@@ -141,6 +165,9 @@ class EngineConnection extends ChangeNotifier {
     dartSets = null;
     dartSetCapture = null;
     dartSetImages.clear();
+    pairingRequired = false;
+    pairingPin = null;
+    pairedClients = null;
     boardImage = null;
     referenceRun = null;
     diagnosis = null;
@@ -190,6 +217,24 @@ class EngineConnection extends ChangeNotifier {
         ..clear()
         ..addAll({for (final c in event.cameras) c: EngineCameraStatus(c, 'ok')});
       state = EngineConnectionState.connected;
+      pairingRequired = event.pairing == 'required';
+      if (pairingRequired) _pairOnConnect(event.engineId);
+      notifyListeners();
+    }
+    if (event is Paired) {
+      pairingRequired = false;
+      _pendingPin = null;
+      final id = event.engineId.isNotEmpty ? event.engineId : hello?.engineId;
+      if (id != null) tokens.store(id, event.token);
+      if (boardState?.state == 'empty') requestBoardImage();
+      notifyListeners();
+    }
+    if (event is PairingPin) {
+      pairingPin = event;
+      notifyListeners();
+    }
+    if (event is PairedClients) {
+      pairedClients = event;
       notifyListeners();
     }
     switch (event) {
@@ -309,6 +354,38 @@ class EngineConnection extends ChangeNotifier {
     if (id != null && !sets.sets.any((s) => s.id == id)) return;
     dartSets = DartSets(sets.sets, id);
     _send({'type': 'set_active_darts', 'id': id});
+  }
+
+  /// After an engine's hello that asks for pairing: the stored token, else the PIN from the QR code
+  Future<void> _pairOnConnect(String? engineId) async {
+    final token = engineId == null ? null : await tokens.tokenFor(engineId);
+    if (token != null) {
+      final error = await _request({'type': 'pair', 'token': token});
+      if (error == null) return;
+      // The engine forgot this device (unpaired, or reinstalled): the PIN is needed again.
+      if (error == 'unknown_token') await tokens.forget(engineId!);
+    }
+    final pin = _pendingPin;
+    if (pin != null) await pairWithPin(pin);
+  }
+
+  /// Pairs this device with the PIN the engine shows; completes with the error code (wrong_pin, too_many_attempts)
+  /// or null. The token arrives as `paired` and is stored for later connections.
+  Future<String?> pairWithPin(String pin) {
+    _pendingPin = null;
+    return _request({'type': 'pair', 'pin': pin});
+  }
+
+  /// For the engine on this device: its PIN arrives as [pairingPin].
+  void requestPairingPin() => _send({'type': 'get_pairing_pin'});
+
+  /// For the engine on this device: the paired devices arrive as [pairedClients].
+  void requestPairedClients() => _send({'type': 'list_paired_clients'});
+
+  Future<String?> unpair(String id) async {
+    final error = await _request({'type': 'unpair', 'id': id});
+    if (error == null) requestPairedClients();
+    return error;
   }
 
   /// Starts or changes the preview of a camera. Several widgets may watch the same camera; the engine gets the
@@ -450,4 +527,20 @@ class PreviewHandle {
   final int maxWidth;
 
   void release() => _connection._releasePreview(this);
+}
+
+/// The engine address and the PIN that a QR code adds to it (`ws://host:8484/?pin=123456`); the PIN is null without one
+(String, String?) splitPairingPin(String url) {
+  final uri = Uri.tryParse(url);
+  final pin = uri?.queryParameters['pin'];
+  if (uri == null || pin == null) return (url, null);
+  final rest = Map.of(uri.queryParameters)..remove('pin');
+  final address = Uri(
+    scheme: uri.scheme,
+    host: uri.host,
+    port: uri.hasPort ? uri.port : null,
+    path: uri.path,
+    queryParameters: rest.isEmpty ? null : rest,
+  );
+  return (address.toString(), pin);
 }

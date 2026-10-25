@@ -4,6 +4,7 @@ import '../../l10n/app_localizations.dart';
 import '../engine/engine_connection.dart';
 import 'connect_screen.dart';
 import 'home_screen.dart';
+import 'pairing_screen.dart';
 import 'settings_screen.dart';
 import 'statistics_screen.dart';
 
@@ -21,8 +22,10 @@ class _RootScreenState extends State<RootScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final connected = EngineScope.of(context).isConnected;
+    final engine = EngineScope.of(context);
+    final connected = engine.isConnected;
     if (!connected && !_offline) return ConnectScreen(onPlayOffline: () => setState(() => _offline = true));
+    if (connected && engine.pairingRequired) return const PairingScreen();
     return MainShell(onConnect: () => setState(() => _offline = false));
   }
 }

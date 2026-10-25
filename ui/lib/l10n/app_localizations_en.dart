@@ -1521,4 +1521,48 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dartMeasureUncertain => 'uncertain';
+
+  @override
+  String get pairTitle => 'Pair with the engine';
+
+  @override
+  String pairText(String address) {
+    return 'The engine at $address only accepts paired devices. Enter the PIN its device shows – this is needed only once.';
+  }
+
+  @override
+  String get pairPin => 'PIN';
+
+  @override
+  String get pairButton => 'Pair';
+
+  @override
+  String get pairWrongPin => 'The PIN is wrong. Look at the engine\'s device again.';
+
+  @override
+  String get pairTooManyAttempts => 'Too many wrong attempts. Wait a minute.';
+
+  @override
+  String pairFailed(String error) {
+    return 'Pairing failed: $error';
+  }
+
+  @override
+  String engineQrPin(String pin) {
+    return 'PIN for other devices: $pin';
+  }
+
+  @override
+  String get pairedDevices => 'Paired devices';
+
+  @override
+  String get noPairedDevices => 'No device paired yet.';
+
+  @override
+  String pairedDeviceSeen(String when) {
+    return 'last $when';
+  }
+
+  @override
+  String get unpairDevice => 'Unpair';
 }

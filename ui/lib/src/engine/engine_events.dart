@@ -30,6 +30,12 @@ sealed class EngineEvent {
     'dart_sets' => DartSets.fromJson(json),
     'dart_set_capture' => DartSetCapture.fromJson(json),
     'dart_set_image' => DartSetImage.fromJson(json),
+    'paired' => Paired(json['token'] as String, json['engine_id'] as String? ?? ''),
+    'pairing_pin' => PairingPin(json['pin'] as String, DateTime.tryParse(json['expires_utc'] as String? ?? '')),
+    'paired_clients' => PairedClients([
+      for (final c in json['clients'] as List<dynamic>? ?? const [])
+        if (c is Map<String, dynamic>) PairedClient.fromJson(c),
+    ]),
     'engine_status' => EngineStatus(json['detection'] as String? ?? 'running', json['message'] as String? ?? ''),
     _ => null,
   };
@@ -50,6 +56,9 @@ class EngineHello extends EngineEvent {
     this.calibration,
     this.detection = 'running',
     this.detectionReason,
+    this.engineId,
+    this.pairing,
+    this.pinDigits = 6,
   });
 
   final String protocol;
@@ -66,6 +75,13 @@ class EngineHello extends EngineEvent {
   /// running, paused or unavailable; [detectionReason] says why: not_calibrated, no_empty_reference
   final String detection;
   final String? detectionReason;
+
+  /// The engine installation's id; tokens from pairing are kept per id
+  final String? engineId;
+
+  /// required (pair before anything else), paired, or local (this device, no pairing); null with engines before #110
+  final String? pairing;
+  final int pinDigits;
 
   factory EngineHello.fromJson(Map<String, dynamic> json) {
     final g = json['board_geometry'] as Map<String, dynamic>;
@@ -88,6 +104,9 @@ class EngineHello extends EngineEvent {
           : null,
       detection: json['detection'] as String? ?? 'running',
       detectionReason: json['detection_reason'] as String?,
+      engineId: (json['engine'] as Map<String, dynamic>?)?['id'] as String?,
+      pairing: json['pairing'] as String?,
+      pinDigits: json['pairing_pin_digits'] as int? ?? 6,
       boardState: json['board_state'] is Map<String, dynamic>
           ? EngineBoardState.fromJson(json['board_state'] as Map<String, dynamic>)
           : null,
@@ -930,4 +949,43 @@ class DartSetImage extends EngineEvent {
 
   factory DartSetImage.fromJson(Map<String, dynamic> json) =>
       DartSetImage(json['id'] as String, json['camera'] as String, base64Decode(json['jpeg_base64'] as String? ?? ''));
+}
+
+/// Pairing succeeded (#110): the token for later connections to this engine
+class Paired extends EngineEvent {
+  const Paired(this.token, this.engineId);
+
+  final String token;
+  final String engineId;
+}
+
+/// The engine's current PIN, for the device that shares it to show
+class PairingPin extends EngineEvent {
+  const PairingPin(this.pin, this.expires);
+
+  final String pin;
+  final DateTime? expires;
+}
+
+class PairedClient {
+  const PairedClient({required this.id, required this.client, this.created, this.lastSeen});
+
+  final String id;
+  final String client;
+  final DateTime? created;
+  final DateTime? lastSeen;
+
+  factory PairedClient.fromJson(Map<String, dynamic> json) => PairedClient(
+    id: json['id'] as String,
+    client: json['client'] as String? ?? '',
+    created: DateTime.tryParse(json['created_utc'] as String? ?? ''),
+    lastSeen: DateTime.tryParse(json['last_seen_utc'] as String? ?? ''),
+  );
+}
+
+/// The devices paired with the engine on this device
+class PairedClients extends EngineEvent {
+  const PairedClients(this.clients);
+
+  final List<PairedClient> clients;
 }

@@ -1521,4 +1521,48 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get dartMeasureUncertain => 'unsicher';
+
+  @override
+  String get pairTitle => 'Mit der Engine koppeln';
+
+  @override
+  String pairText(String address) {
+    return 'Die Engine unter $address lässt nur gekoppelte Geräte zu. Gib die PIN ein, die auf ihrem Gerät angezeigt wird – das ist nur einmal nötig.';
+  }
+
+  @override
+  String get pairPin => 'PIN';
+
+  @override
+  String get pairButton => 'Koppeln';
+
+  @override
+  String get pairWrongPin => 'Die PIN stimmt nicht. Schau noch einmal auf das Gerät der Engine.';
+
+  @override
+  String get pairTooManyAttempts => 'Zu viele falsche Versuche. Warte eine Minute.';
+
+  @override
+  String pairFailed(String error) {
+    return 'Koppeln fehlgeschlagen: $error';
+  }
+
+  @override
+  String engineQrPin(String pin) {
+    return 'PIN für andere Geräte: $pin';
+  }
+
+  @override
+  String get pairedDevices => 'Gekoppelte Geräte';
+
+  @override
+  String get noPairedDevices => 'Noch kein Gerät gekoppelt.';
+
+  @override
+  String pairedDeviceSeen(String when) {
+    return 'zuletzt $when';
+  }
+
+  @override
+  String get unpairDevice => 'Entkoppeln';
 }
