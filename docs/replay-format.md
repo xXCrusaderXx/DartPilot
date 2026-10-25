@@ -197,7 +197,27 @@ While replaying, every camera with a board refinement is checked against it (#49
 
 ## Annotations
 
-Ground truth lives in `annotations/<annotation set>.jsonl`, one line per throw, keyed by `throw_id`. It carries the board point (`x_mm`, `y_mm`, `covariance_mm2`, `source`, `frames`, see [board-coordinates.md](board-coordinates.md)) and **never a score**: benchmarks score the result and the ground truth with the same scorer and geometry. Its other fields (tip pixel per camera, annotator, uncertainty, flags such as "near wire" or "occluded") are defined with the ground-truth method (#14) and the annotation tool (#15).
+Ground truth lives in `annotations/<annotation set>.jsonl`, one line per throw, keyed by `throw_id`. It carries the board point (`x_mm`, `y_mm`, `covariance_mm2`, `source`, `frames`, see [board-coordinates.md](board-coordinates.md)) and **never a score**: benchmarks score the result and the ground truth with the same scorer and geometry.
+
+How ground truth is made is decided in [ADR 0011](adr/0011-ground-truth.md). There is no separate annotation tool (#15): the sets come from what the reference run, play and the detection test already record.
+
+| Set | Made by | Truth | Uncertainty |
+| - | - | - | - |
+| `reference_corners` | the guided reference run in the app (#167, #181), stored as a session without frames | darts pushed into known wire corners | 0.5 mm along the wire, 1.0 mm across it (1 σ) |
+| `corrections` | `python -m dartpilot_tools.corrections <session>` from a run recorded with `serve --record` (#115) | the points players set when they corrected a dart or added a missed one; rejected darts with `"no_dart": true` | about 3 mm (a tap) |
+| `confirmed` | the same command | darts the engine placed and the player left alone, at the engine's point, with `"field_only": true` | the field only |
+| `ratings` | `python -m dartpilot_tools.detection_test <log>` from a detection test of the setup GUI (#197), stored as a session without frames with the run `detection-test` | darts rated right (`field_only`), moved to another field, given a point after an abstention, or added as missed; `"no_dart"` for false alarms | about 3 mm, or the field only |
+
+A `field_only` truth counts for the field and the ring (segment and multiplier accuracy, abstention, false acceptance), never for millimetre errors. The benchmark takes several sets at once: `--annotations corrections,confirmed`.
+
+Every entry carries `flags`, derived from the run that detected the throw and from the truth:
+
+- `cut`: a camera saw the dart cut off by the image border;
+- `occluded`: a camera did not see it, or its axis disagreed with the others (an earlier dart in the way);
+- `near_wire`: the true point is within 2 mm of a ring or sector wire;
+- `darts_in_board`: darts already in the board when it landed. From the takeouts a live run records (`{"takeout": {"event_ns", "darts_removed"}}` lines in its `throws.jsonl`), or from the dart's place in its round in the detection test; `null` for runs recorded before takeouts were logged.
+
+A live run records the states of the cameras it did not use (`reason`); a used camera may have seen a cut dart without the run saying so, so `cut` is complete only for replays and detection tests. The benchmark reports its groups by these flags, including first, second and third dart.
 
 ## Replay and determinism
 
