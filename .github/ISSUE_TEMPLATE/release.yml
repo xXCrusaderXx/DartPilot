@@ -26,3 +26,5 @@ body:
     attributes:
       value: |
         Close this issue, then close the milestone. The `Milestone release` workflow publishes `vX.Y.Z` with the milestone's issues and PRs as release notes.
+
+        Afterwards, a PR on `dev` moves the version to the next release with `-dev` (e.g. `0.4.0-dev` after `v0.3.0`) in `CMakeLists.txt`, `ui/pubspec.yaml` (with the build number + 1) and `tools/pyproject.toml` (`0.4.0.dev0`).

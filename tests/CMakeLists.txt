@@ -16,6 +16,11 @@ add_executable(SmokeTest SmokeTest.cpp)
 target_link_libraries(SmokeTest PRIVATE dartpilot::replay dartpilot_version GTest::gtest_main)
 gtest_discover_tests(SmokeTest)
 
+add_executable(VersionTest VersionTest.cpp)
+target_link_libraries(VersionTest PRIVATE dartpilot_version GTest::gtest_main)
+target_compile_definitions(VersionTest PRIVATE DARTPILOT_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+gtest_discover_tests(VersionTest)
+
 add_executable(FocusTest FocusTest.cpp)
 target_link_libraries(FocusTest PRIVATE dartpilot::capture GTest::gtest_main)
 gtest_discover_tests(FocusTest)
