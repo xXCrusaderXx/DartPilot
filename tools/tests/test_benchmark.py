@@ -47,3 +47,21 @@ def test_command_writes_the_report(tmp_path):
     assert summary["frame_drop_rate"] is not None
     assert "Segment accuracy" in (tmp_path / "report.md").read_text()
     assert (tmp_path / "error_histogram.png").exists()
+
+
+def test_field_only_truth_counts_for_the_field_but_not_the_millimetres():
+    from dartpilot_tools.benchmark.metrics import Pair, summary, table
+
+    pairs_ = [
+        Pair("a", True, (0.0, 60.0), (0.0, 60.0), None, {}, field_only=True, flags={"darts_in_board": 0}),
+        Pair("b", True, (0.0, 62.0), (0.0, 61.0), None, {}, flags={"occluded": True, "darts_in_board": 2}),
+        Pair("c", False, None, (0.0, 61.0), None, {}, flags={"occluded": True, "darts_in_board": 1}),
+    ]
+    result = summary(table(pairs_))
+    assert result["accepted"] == 2
+    assert result["segment_accuracy"] == 1.0
+    assert result["error_mm"]["count"] == 1
+    assert result["groups"]["occluded"]["throws"] == 2
+    assert result["groups"]["occluded"]["accepted"] == 1
+    assert result["groups"]["first dart"]["throws"] == 1
+    assert result["groups"]["third dart"]["accepted"] == 1

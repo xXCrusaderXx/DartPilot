@@ -23,13 +23,21 @@ class Pair:
     truth_mm: tuple[float, float]
     latency_ms: float | None
     camera_points: dict[str, tuple[float, float]]
+    # The truth knows the field only (a dart the player confirmed), not its millimetres
+    field_only: bool = False
+    flags: dict | None = None
 
 
 def pairs(session: Session, run_id: str, annotation_set: str) -> list[Pair]:
-    """The throws of a run that have ground truth, in the order of the annotations."""
-    results = {t["throw_id"]: t for t in session.run(run_id).throws}
+    """The throws of a run that have ground truth, in the order of the annotations. annotation_set may name several
+    sets separated by commas, e.g. "corrections,confirmed"."""
+    # The throws the engine sent; a live run also holds the players' corrections and the takeouts.
+    results = {t["throw_id"]: t for t in session.run(run_id).throws if "throw_id" in t and "correction" not in t}
     out = []
-    for truth in session.annotations(annotation_set):
+    truths = [truth for name in annotation_set.split(",") for truth in session.annotations(name.strip())]
+    for truth in truths:
+        if truth.get("no_dart"):
+            continue
         result = results.get(truth["throw_id"])
         if result is None:
             continue
@@ -47,6 +55,8 @@ def pairs(session: Session, run_id: str, annotation_set: str) -> list[Pair]:
                 (truth["x_mm"], truth["y_mm"]),
                 result.get("processing_latency_ms"),
                 cameras,
+                bool(truth.get("field_only")),
+                truth.get("flags"),
             )
         )
     return out
@@ -63,13 +73,19 @@ def table(pairs_: list[Pair]) -> pd.DataFrame:
             "truth_label": truth.label,
             "truth_ring": truth.ring,
             "near_boundary": truth.boundary_distance_mm < NEAR_BOUNDARY_MM,
+            "field_only": p.field_only,
+            "cut": bool((p.flags or {}).get("cut")),
+            "occluded": bool((p.flags or {}).get("occluded")),
+            "darts_in_board": (p.flags or {}).get("darts_in_board"),
             "latency_ms": p.latency_ms,
             "error_mm": math.nan,
             "radial_mm": math.nan,
             "tangential_mm": math.nan,
             "result_label": None,
         }
-        if p.result_mm is not None:
+        if p.result_mm is not None and p.field_only:
+            row["result_label"] = score(*p.result_mm).label
+        elif p.result_mm is not None:
             dx, dy = p.result_mm[0] - p.truth_mm[0], p.result_mm[1] - p.truth_mm[1]
             r = math.hypot(*p.truth_mm)
             # Components along the radius through the true point and across it (counter-clockwise positive)
@@ -80,7 +96,7 @@ def table(pairs_: list[Pair]) -> pd.DataFrame:
                 tangential_mm=-dx * uy + dy * ux,
                 result_label=score(*p.result_mm).label,
             )
-        for camera, point in p.camera_points.items():
+        for camera, point in p.camera_points.items() if not p.field_only else []:
             row[f"camera_error_mm:{camera}"] = math.hypot(point[0] - p.truth_mm[0], point[1] - p.truth_mm[1])
         rows.append(row)
     return pd.DataFrame(rows)
@@ -124,18 +140,31 @@ def summary(frame: pd.DataFrame) -> dict:
         "groups": {},
         "cameras": {},
     }
+    # Groups over all throws with ground truth, so that abstentions show where they happen
+    in_board = (
+        frame["darts_in_board"] if "darts_in_board" in frame else pd.Series([None] * len(frame), index=frame.index)
+    )
     groups = {
-        "near_boundary": accepted["near_boundary"],
-        "bull": accepted["truth_ring"].isin(["inner_bull", "outer_bull"]),
-        "double": accepted["truth_ring"] == "double",
-        "triple": accepted["truth_ring"] == "triple",
+        "near_boundary": frame["near_boundary"],
+        "bull": frame["truth_ring"].isin(["inner_bull", "outer_bull"]),
+        "double": frame["truth_ring"] == "double",
+        "triple": frame["truth_ring"] == "triple",
+        "cut": frame["cut"] if "cut" in frame else frame["near_boundary"] & False,
+        "occluded": frame["occluded"] if "occluded" in frame else frame["near_boundary"] & False,
+        "first dart": in_board == 0,
+        "second dart": in_board == 1,
+        "third dart": in_board >= 2,
     }
     for name, mask in groups.items():
-        part = accepted[mask]
+        part = frame[mask.fillna(False).astype(bool)]
+        if name.endswith("dart") and len(part) == 0:
+            continue
+        taken = part[part["accepted"]]
         result["groups"][name] = {
-            "accepted": int(len(part)),
-            "segment_accuracy": float((part["result_label"] == part["truth_label"]).mean()) if len(part) else None,
-            "error_mm": _quantiles(part["error_mm"]),
+            "throws": int(len(part)),
+            "accepted": int(len(taken)),
+            "segment_accuracy": float((taken["result_label"] == taken["truth_label"]).mean()) if len(taken) else None,
+            "error_mm": _quantiles(taken["error_mm"]),
         }
     for column in frame.columns:
         if column.startswith("camera_error_mm:"):

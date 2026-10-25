@@ -43,10 +43,17 @@ def markdown(summary: dict, title: str) -> str:
     ]
     if summary.get("frame_drop_rate") is not None:
         lines.append(f"| Frame drop rate | {_pct(summary['frame_drop_rate'], 3)} |")
-    lines += ["", "## Groups", "", "| Group | Accepted | Segment accuracy | Error median / P90 |", "| - | - | - | - |"]
+    lines += [
+        "",
+        "## Groups",
+        "",
+        "| Group | Throws | Accepted | Segment accuracy | Error median / P90 |",
+        "| - | - | - | - | - |",
+    ]
     for name, g in summary["groups"].items():
         lines.append(
-            f"| {name} | {g['accepted']} | {_pct(g['segment_accuracy'])} | {_q(g['error_mm'], ('median', 'p90'))} |"
+            f"| {name} | {g.get('throws', '–')} | {g['accepted']} | {_pct(g['segment_accuracy'])} "
+            f"| {_q(g['error_mm'], ('median', 'p90'))} |"
         )
     if summary["cameras"]:
         lines += ["", "## Per camera", "", "| Camera | Throws | Error median / P90 |", "| - | - | - |"]

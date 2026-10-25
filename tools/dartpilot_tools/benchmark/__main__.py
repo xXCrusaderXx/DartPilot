@@ -19,7 +19,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m dartpilot_tools.benchmark", description=__doc__.split("\n\n")[1])
     parser.add_argument("sessions", nargs="+", type=Path, help="session directories")
     parser.add_argument("--run", required=True, help="detection run id, results/<run id>/")
-    parser.add_argument("--annotations", required=True, help="annotation set, annotations/<set>.jsonl")
+    parser.add_argument(
+        "--annotations", required=True, help="annotation set, annotations/<set>.jsonl; several separated by commas"
+    )
     parser.add_argument("--out", type=Path, default=Path("benchmark"), help="output directory (default: benchmark)")
     args = parser.parse_args(argv)
 

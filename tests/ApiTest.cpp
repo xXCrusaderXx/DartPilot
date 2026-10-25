@@ -576,10 +576,12 @@ TEST(Server, ThrowsAndCorrectionsAreLoggedAsSessionRecords)
     client.next("result");
     client.send({{"type", "add_throw"}, {"request_id", "2"}, {"board_point", {{"x_mm", -30.0}, {"y_mm", 0.0}}}});
     client.next("result");
+    server.publishTakeout(6'000'000'000, 2);
     server.stop();
 
     std::lock_guard lock(records_mutex);
-    ASSERT_EQ(records.size(), 3u);
+    ASSERT_EQ(records.size(), 4u);
+    EXPECT_EQ(records[3]["takeout"]["darts_removed"], 2);
     EXPECT_EQ(records[0]["throw_id"], "20261025T080000Z-test/1");
     EXPECT_EQ(records[0]["score"]["label"], "T20");
     EXPECT_EQ(records[0]["camera_measurements"][0]["frames"]["after"], nlohmann::json({41, 42}));

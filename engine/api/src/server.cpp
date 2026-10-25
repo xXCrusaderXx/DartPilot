@@ -180,6 +180,8 @@ void Server::publishTakeout (std::int64_t event_ns, int darts_removed, std::opti
         visit_points_.clear();
     }
     broadcast(takeoutMessage(event_ns, darts_removed, detection_latency_ms));
+    // Recorded too, so the annotations can tell which dart of a visit a throw was
+    logged({{"takeout", {{"event_ns", event_ns}, {"darts_removed", darts_removed}}}});
 }
 
 void Server::setBoardState (BoardStateInfo board)
