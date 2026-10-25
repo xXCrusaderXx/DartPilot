@@ -102,7 +102,8 @@ int usage ()
 {
     std::fprintf(stderr,
                  "Usage: dartpilot replay <session directory> [--pipeline tracker|baseline|none] [--run-id ID] [--extrinsics FILE]\n"
-                 "                        [--check-every SECONDS] [--no-checks] [--params FILE [--params-revision N]] [--param NAME=VALUE]...\n"
+                 "                        [--check-every SECONDS] [--no-checks] [--params FILE [--params-revision N]] [--param NAME=VALUE]... "
+                 "[--camera-offset ID=MS]...\n"
                  "  --pipeline     throw detection: tracker (the live detection, default), baseline (frame differencing) or none\n"
                  "  --params       detection values from a file, e.g. a session's results/live/params.jsonl (docs/detection-params.md)\n"
                  "  --param        one detection value, after --params; all values are recorded in the run's run.json\n");
@@ -133,6 +134,17 @@ int runReplay (int argc, char* argv[])
         else if(arg == "--check-every" && i + 1 < argc)
         {
             config.check_interval_ns = static_cast<std::int64_t>(std::atof(argv[++i]) * 1e9);
+        }
+        else if(arg == "--camera-offset" && i + 1 < argc)
+        {
+            // CAMERA=MS shifts that camera's frames in time, for the association experiment of #24
+            const std::string assignment = argv[++i];
+            const auto equals = assignment.find('=');
+            if(equals == std::string::npos)
+            {
+                return usage();
+            }
+            config.camera_offset_ns[assignment.substr(0, equals)] = static_cast<std::int64_t>(std::atof(assignment.c_str() + equals + 1) * 1e6);
         }
         else if(arg == "--params" && i + 1 < argc)
         {
