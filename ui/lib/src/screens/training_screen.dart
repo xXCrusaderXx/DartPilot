@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../games/training.dart';
 import '../input/game_input.dart';
+import '../input/takeout_gate.dart';
 
 class TrainingScreen extends StatefulWidget {
   const TrainingScreen({super.key});
@@ -13,6 +14,7 @@ class TrainingScreen extends StatefulWidget {
 
 class _TrainingScreenState extends State<TrainingScreen> {
   final Training _training = Training();
+  final TakeoutGate _takeout = TakeoutGate();
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +60,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
       ],
     );
     final input = GameInput(
+      takeout: _takeout,
       game: _training,
       shownThrows: visit,
       onDart: (dart) => setState(() => _training.add(dart)),

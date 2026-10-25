@@ -229,6 +229,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get countAsMiss => 'Als Daneben zählen';
 
   @override
+  String get removeDarts => 'Darts entfernen';
+
+  @override
+  String get removeDartsHint => 'Die nächste Aufnahme beginnt, sobald die Darts aus dem Board sind.';
+
+  @override
+  String get dartsRemoved => 'Darts sind raus';
+
+  @override
   String get enterManually => 'Selbst eingeben';
 
   @override

@@ -22,14 +22,17 @@ mixin BotTurns<T extends StatefulWidget> on State<T> {
   Timer? _timer;
   final Map<int, Bot> _bots = {};
 
+  /// True while the darts of the last visit are still in the board
+  bool get waitsForTakeout => false;
+
   bool get isBotTurn => !botGame.isFinished && botPlayers.containsKey(playerAtOche);
 
   /// Call after every build: starts the bot's next dart if a bot is at the oche.
   void scheduleBotTurn() {
-    if (_timer != null || !isBotTurn) return;
+    if (_timer != null || !isBotTurn || waitsForTakeout) return;
     _timer = Timer(pause, () {
       _timer = null;
-      if (!mounted || !isBotTurn) return;
+      if (!mounted || !isBotTurn || waitsForTakeout) return;
       final player = playerAtOche;
       final bot = _bots.putIfAbsent(player, () => Bot(botLevel(botPlayers[player]!)));
       addBotDart(bot.nextDart(botGame));

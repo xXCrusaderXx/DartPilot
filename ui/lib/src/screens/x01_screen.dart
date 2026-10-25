@@ -6,6 +6,7 @@ import '../games/x01.dart';
 import '../bots/bot_turns.dart';
 import '../games/dart_game.dart';
 import '../input/game_input.dart';
+import '../input/takeout_gate.dart';
 import '../stats/game_record.dart';
 import '../stats/statistics.dart';
 import '../widgets/winner_dialog.dart';
@@ -42,6 +43,10 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
   bool get watching => widget.watching;
 
   late final X01Game _game = replayed(X01Game(widget.settings), widget.replay);
+  final TakeoutGate _takeout = TakeoutGate();
+
+  @override
+  bool get waitsForTakeout => _takeout.isClosed(_game);
 
   @override
   GameRecord buildRecord(String id, DateTime started, DateTime ended) => GameRecord(
@@ -147,6 +152,7 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
         ? WatchedBoard(throws: [for (final d in visit.darts) d.dart])
         : GameInput(
             game: _game,
+            takeout: _takeout,
             shownThrows: [for (final d in visit.darts) d.dart],
             onDart: (dart) {
               // While a bot is at the oche, its darts are its own.

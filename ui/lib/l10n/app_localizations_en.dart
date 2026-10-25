@@ -234,6 +234,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get countAsMiss => 'Count as miss';
 
   @override
+  String get removeDarts => 'Remove the darts';
+
+  @override
+  String get removeDartsHint => 'The next visit starts once the darts are out of the board.';
+
+  @override
+  String get dartsRemoved => 'Darts are out';
+
+  @override
   String get enterManually => 'Enter them';
 
   @override

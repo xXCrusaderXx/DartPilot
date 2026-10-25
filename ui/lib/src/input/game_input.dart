@@ -8,10 +8,12 @@ import '../board/scoring.dart';
 import '../engine/engine_connection.dart';
 import '../engine/engine_events.dart';
 import '../games/dart_game.dart';
+import 'takeout_gate.dart';
 import 'throw_input_panel.dart';
 
 /// Input of a game screen: darts from the engine when connected, manual input otherwise, uncertain darts as a
-/// suggestion to confirm or correct, corrections of the last darts, and the takeout that ends a visit.
+/// suggestion to confirm or correct, corrections of the last darts, and the takeout that ends a visit. While an engine
+/// is connected, a finished visit waits for its takeout before the next one starts.
 class GameInput extends StatefulWidget {
   const GameInput({
     super.key,
@@ -19,6 +21,7 @@ class GameInput extends StatefulWidget {
     required this.onDart,
     required this.onChanged,
     this.shownThrows = const [],
+    this.takeout,
   });
 
   final DartGame game;
@@ -30,6 +33,9 @@ class GameInput extends StatefulWidget {
   final VoidCallback onChanged;
   final List<DartThrow> shownThrows;
 
+  /// Closed after each visit while an engine is connected; without one, visits follow each other at once
+  final TakeoutGate? takeout;
+
   @override
   State<GameInput> createState() => _GameInputState();
 }
@@ -39,6 +45,14 @@ class _GameInputState extends State<GameInput> {
   StreamSubscription<EngineEvent>? _subscription;
   EngineThrow? _pending;
   int? _correcting;
+
+  /// Engine events of the next visit, kept while the darts of the last one are still in the board
+  final List<EngineEvent> _held = [];
+
+  /// Set while the darts of a takeout's missing darts are added: that visit is out of the board already
+  bool _takenOut = false;
+
+  bool get _waiting => widget.takeout?.isClosed(widget.game) ?? false;
 
   @override
   void didChangeDependencies() {
@@ -62,13 +76,53 @@ class _GameInputState extends State<GameInput> {
   DartThrow _engineDart(BoardPoint point, String throwId, double? confidence) =>
       DartThrow(point, ThrowInput.engine, geometry: _geometry, engineThrowId: throwId, confidence: confidence);
 
+  /// Adds a dart through the screen and closes the gate when it ended the visit
+  void _add(DartThrow dart) {
+    final game = widget.game;
+    final before = game.throws.length;
+    final inVisit = game.dartsInVisit;
+    widget.onDart(dart);
+    final gate = widget.takeout;
+    if (gate != null &&
+        !_takenOut &&
+        (_engine?.isConnected ?? false) &&
+        game.throws.length == before + 1 &&
+        game.dartsInVisit == 0 &&
+        !game.isFinished) {
+      gate.close(game, inVisit + 1);
+      widget.onChanged();
+    }
+  }
+
+  void _dartsRemoved() {
+    widget.takeout?.open();
+    widget.onChanged();
+    final held = [..._held];
+    _held.clear();
+    held.forEach(_onEvent);
+  }
+
   void _onEvent(EngineEvent event) {
     if (!mounted || widget.game.isFinished) return;
+    if (_waiting) {
+      if (event is EngineTakeout) {
+        _dartsRemoved();
+      } else if (event is EngineThrow) {
+        _held.add(event);
+      } else {
+        _onVisitEvent(event);
+      }
+      return;
+    }
+    _onVisitEvent(event);
+  }
+
+  void _onVisitEvent(EngineEvent event) {
     switch (event) {
       case EngineThrow(:final accepted, :final point, :final throwId, :final confidence):
         if (accepted) {
           // An accepted dart without a point bounced out or landed off the board.
-          widget.onDart(_engineDart(point ?? fieldCentre(Ring.miss, geometry: _geometry), throwId, confidence));
+          _add(_engineDart(point ?? fieldCentre(Ring.miss, geometry: _geometry), throwId, confidence));
         } else {
           setState(() => _pending = event);
         }
@@ -79,7 +133,7 @@ class _GameInputState extends State<GameInput> {
           widget.game.replace(index, _engineDart(point, throwId, null));
           widget.onChanged();
         } else if (action == 'added' && point != null) {
-          widget.onDart(_engineDart(point, throwId, null));
+          _add(_engineDart(point, throwId, null));
         } else if (action == 'rejected' && index == widget.game.throws.length - 1) {
           widget.game.undo();
           widget.onChanged();
@@ -107,9 +161,11 @@ class _GameInputState extends State<GameInput> {
       ),
     );
     if (countAsMiss != true || !mounted) return;
+    _takenOut = true;
     for (var i = 0; i < missing && !widget.game.isFinished; ++i) {
       _manual(DartThrow(fieldCentre(Ring.miss, geometry: _geometry), ThrowInput.keypad, geometry: _geometry));
     }
+    _takenOut = false;
   }
 
   /// A dart entered on the board or keypad: confirms a suggestion with a new point, corrects a dart, or is a new dart.
@@ -120,7 +176,7 @@ class _GameInputState extends State<GameInput> {
     if (pending != null) {
       engine?.correctThrow(pending.throwId, dart.point);
       setState(() => _pending = null);
-      widget.onDart(_engineDart(dart.point, pending.throwId, null));
+      _add(_engineDart(dart.point, pending.throwId, null));
     } else if (correcting != null && correcting < widget.game.throws.length) {
       final old = widget.game.throws[correcting];
       final id = old.engineThrowId;
@@ -131,7 +187,7 @@ class _GameInputState extends State<GameInput> {
       );
       setState(() => _correcting = null);
       widget.onChanged();
-    } else {
+    } else if (!_waiting) {
       _manual(dart);
     }
   }
@@ -139,14 +195,14 @@ class _GameInputState extends State<GameInput> {
   void _manual(DartThrow dart) {
     final engine = _engine;
     if (engine != null && engine.isConnected) engine.addThrow(dart.point);
-    widget.onDart(dart);
+    _add(dart);
   }
 
   void _confirmPending() {
     final pending = _pending;
     if (pending?.point == null) return;
     setState(() => _pending = null);
-    widget.onDart(_engineDart(pending!.point!, pending.throwId, pending.confidence));
+    _add(_engineDart(pending!.point!, pending.throwId, pending.confidence));
   }
 
   void _discardPending() {
@@ -168,8 +224,24 @@ class _GameInputState extends State<GameInput> {
     final recentStart = throws.length > 3 ? throws.length - 3 : 0;
     final correcting = _correcting;
 
+    final waiting = _waiting;
     Widget? banner;
-    if (pending != null) {
+    if (waiting && correcting == null) {
+      banner = Card(
+        color: theme.colorScheme.primaryContainer,
+        child: ListTile(
+          key: const ValueKey('remove-darts'),
+          leading: const Icon(Icons.back_hand_outlined),
+          title: Text(l10n.removeDarts),
+          subtitle: Text(l10n.removeDartsHint),
+          trailing: TextButton(
+            key: const ValueKey('darts-removed'),
+            onPressed: _dartsRemoved,
+            child: Text(l10n.dartsRemoved),
+          ),
+        ),
+      );
+    } else if (pending != null) {
       banner = Card(
         color: theme.colorScheme.tertiaryContainer,
         child: ListTile(
@@ -207,7 +279,7 @@ class _GameInputState extends State<GameInput> {
         Expanded(
           child: ThrowInputPanel(
             geometry: _geometry,
-            shownThrows: [...widget.shownThrows, ?pendingDart],
+            shownThrows: waiting ? widget.takeout!.darts(widget.game) : [...widget.shownThrows, ?pendingDart],
             onThrow: _onInput,
           ),
         ),
