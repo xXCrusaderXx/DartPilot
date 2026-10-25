@@ -4,6 +4,7 @@ import '../../l10n/app_localizations.dart';
 import '../engine/engine_choice.dart';
 import '../engine/engine_connection.dart';
 import '../widgets/board_check.dart';
+import '../widgets/engine_card.dart';
 import 'calibration_check_screen.dart';
 import 'calibration_screen.dart';
 import 'cameras_screen.dart';
@@ -49,6 +50,7 @@ class SettingsScreen extends StatelessWidget {
                       : l10n.playingWithoutEngine,
                 ),
                 subtitle: Text(connected ? engine.url : l10n.playingWithoutEngineHint),
+                onTap: () => open(const EngineSettingsScreen()),
                 trailing: connected
                     ? OutlinedButton(
                         key: const ValueKey('settings-disconnect'),
@@ -122,4 +124,21 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The engine itself, reachable while connected: where it runs, its options (simulated darts, cameras, sharing in
+/// the network with its QR code), start, stop and its log.
+class EngineSettingsScreen extends StatelessWidget {
+  const EngineSettingsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: Text(AppLocalizations.of(context).engineSettings)),
+    body: Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 600),
+        child: ListView(padding: const EdgeInsets.all(16), children: const [EngineCard()]),
+      ),
+    ),
+  );
 }

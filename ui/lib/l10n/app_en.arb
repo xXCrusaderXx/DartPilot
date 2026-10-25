@@ -883,5 +883,16 @@
   "detectionNotCalibrated": "Not calibrated yet – darts are not detected. Calibrate the cameras under Settings.",
   "detectionWaitingForEmptyBoard": "Waiting for an empty, still board before detecting darts.",
   "detectionPaused": "Detection paused",
-  "detectionUnavailable": "Darts are not detected right now."
+  "detectionUnavailable": "Darts are not detected right now.",
+  "shareEngine": "Share in the network",
+  "shareEngineHint": "Phones and tablets in your home network can connect to this engine. Only in a network you trust: there is no PIN yet.",
+  "showEngineQr": "QR code",
+  "engineQrTitle": "Connect another device",
+  "engineQrHint": "Scan this code with the DartPilot app on your phone or tablet (Engine → In the network → scan).",
+  "engineQrNoNetwork": "This device has no address in a home network.",
+  "scanEngineQr": "Scan QR code",
+  "scanEngineQrHint": "Point the camera at the QR code that the engine's device shows.",
+  "enterAddressManually": "Enter the address or scan a QR code",
+  "restartEngine": "Restart the engine",
+  "engineSettings": "Engine"
 }

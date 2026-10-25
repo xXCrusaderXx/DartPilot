@@ -8,6 +8,7 @@ import '../engine/engine_choice.dart';
 import '../engine/engine_connection.dart';
 import '../engine/engine_discovery.dart';
 import '../engine/engine_manager.dart';
+import 'engine_qr.dart';
 
 /// The engine the app plays against, on the connection page: its own on this device (where it can run one), or one in
 /// the network by address or search, with the connection state.
@@ -31,6 +32,9 @@ class _EngineCardState extends State<EngineCard> {
 
   /// Result of the last search; null before the first one
   List<FoundEngine>? _found;
+
+  /// The player asked for the address field
+  bool _manual = false;
 
   @override
   void dispose() {
@@ -133,32 +137,43 @@ class _EngineCardState extends State<EngineCard> {
             if (onThisDevice) ...[
               const SizedBox(height: 8),
               _LocalEngineSection(local: local!),
-            ] else ...[
+            ] else if (connected) ...[
               const SizedBox(height: 8),
-              _AddressRow(
-                field: TextField(
-                  controller: _url,
-                  enabled: !connected,
-                  decoration: InputDecoration(labelText: l10n.engineAddress, isDense: true),
-                ),
-                buttons: [
-                  if (!connected && engine.discovery.available) ...[
-                    IconButton(
-                      key: const ValueKey('engine-search'),
-                      onPressed: _searching ? null : _startSearch,
-                      tooltip: l10n.searchEngines,
-                      icon: _searching
-                          ? const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Icon(Icons.travel_explore),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                  connected
-                      ? OutlinedButton(onPressed: engine.disconnect, child: Text(l10n.disconnect))
-                      : FilledButton(onPressed: _connect, child: Text(l10n.connect)),
+              Row(
+                children: [
+                  Expanded(child: Text(engine.url, key: const ValueKey('connected-url'))),
+                  OutlinedButton(onPressed: engine.disconnect, child: Text(l10n.disconnect)),
                 ],
               ),
-              if (!connected && _found != null) ..._foundList(l10n, theme),
+            ] else ...[
+              ..._networkSearch(l10n, theme, engine),
+              if (_showManual(engine)) ...[
+                const SizedBox(height: 8),
+                _AddressRow(
+                  field: TextField(
+                    key: const ValueKey('engine-address'),
+                    controller: _url,
+                    decoration: InputDecoration(labelText: l10n.engineAddress, isDense: true),
+                  ),
+                  buttons: [
+                    if (canScanQr) ...[
+                      IconButton(
+                        key: const ValueKey('engine-scan'),
+                        onPressed: () async {
+                          final url = await scanEngineQr(context);
+                          if (url == null || !mounted) return;
+                          _url.text = url;
+                          _connect();
+                        },
+                        tooltip: l10n.scanEngineQr,
+                        icon: const Icon(Icons.qr_code_scanner),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    FilledButton(onPressed: _connect, child: Text(l10n.connect)),
+                  ],
+                ),
+              ],
             ],
           ],
         ),
@@ -166,17 +181,44 @@ class _EngineCardState extends State<EngineCard> {
     );
   }
 
-  List<Widget> _foundList(AppLocalizations l10n, ThemeData theme) {
-    final found = _found!;
-    if (found.isEmpty) {
-      return [
-        const SizedBox(height: 8),
-        Text(_searching ? l10n.searchingEngines : l10n.noEnginesFound, style: theme.textTheme.bodySmall),
-      ];
+  /// The address by hand (and the QR code) only when the search cannot be used, found nothing, or is asked for
+  bool _showManual(EngineConnection engine) =>
+      _manual || !engine.discovery.available || (!_searching && (_found?.isEmpty ?? false));
+
+  /// Engines in the network, searched for by itself when this view opens
+  List<Widget> _networkSearch(AppLocalizations l10n, ThemeData theme, EngineConnection engine) {
+    if (!engine.discovery.available) return const [];
+    if (_found == null && !_searching) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _found == null && !_searching) _startSearch();
+      });
     }
+    final found = _found ?? const <FoundEngine>[];
     return [
       const SizedBox(height: 8),
-      Text(l10n.foundEngines, style: theme.textTheme.labelLarge),
+      Row(
+        children: [
+          Expanded(
+            child: Text(
+              _searching && found.isEmpty
+                  ? l10n.searchingEngines
+                  : found.isEmpty
+                  ? l10n.noEnginesFound
+                  : l10n.foundEngines,
+              style: found.isEmpty ? theme.textTheme.bodySmall : theme.textTheme.labelLarge,
+            ),
+          ),
+          if (_searching)
+            const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
+          else
+            IconButton(
+              key: const ValueKey('engine-search'),
+              onPressed: _startSearch,
+              tooltip: l10n.searchEngines,
+              icon: const Icon(Icons.refresh),
+            ),
+        ],
+      ),
       for (final e in found)
         ListTile(
           key: ValueKey('found-${e.key}'),
@@ -194,6 +236,15 @@ class _EngineCardState extends State<EngineCard> {
           ),
           enabled: e.compatible,
           onTap: e.compatible ? () => _connectTo(e) : null,
+        ),
+      if (!_showManual(engine))
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton(
+            key: const ValueKey('engine-manual'),
+            onPressed: () => setState(() => _manual = true),
+            child: Text(l10n.enterAddressManually),
+          ),
         ),
     ];
   }
@@ -225,6 +276,12 @@ class _LocalEngineSection extends StatelessWidget {
         _ => l10n.localEngineCrashed,
       },
     };
+    final started = manager.startedWith;
+    final changed =
+        manager.state == LocalEngineState.running &&
+        started != null &&
+        started !=
+            (simulate: settings.simulate, cameras: settings.simulate ? settings.cameras : true, share: settings.share);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -234,7 +291,7 @@ class _LocalEngineSection extends StatelessWidget {
           style: manager.state == LocalEngineState.failed ? TextStyle(color: theme.colorScheme.error) : null,
         ),
         StatefulBuilder(
-          builder: (context, setState) => Column(
+          builder: (inner, setState) => Column(
             children: [
               SwitchListTile(
                 key: const ValueKey('simulate-darts'),
@@ -242,10 +299,11 @@ class _LocalEngineSection extends StatelessWidget {
                 title: Text(l10n.simulateDarts),
                 subtitle: Text(l10n.simulateDartsHint),
                 value: settings.simulate,
-                onChanged: busy
+                onChanged: manager.state == LocalEngineState.starting
                     ? null
                     : (value) {
-                        setState(() => settings.simulate = value);
+                        settings.simulate = value;
+                        (context as Element).markNeedsBuild();
                         settings.save();
                       },
               ),
@@ -256,13 +314,28 @@ class _LocalEngineSection extends StatelessWidget {
                   title: Text(l10n.useCameras),
                   subtitle: Text(l10n.useCamerasHint),
                   value: settings.cameras,
-                  onChanged: busy
+                  onChanged: manager.state == LocalEngineState.starting
                       ? null
                       : (value) {
-                          setState(() => settings.cameras = value);
+                          settings.cameras = value;
+                          (context as Element).markNeedsBuild();
                           settings.save();
                         },
                 ),
+              SwitchListTile(
+                key: const ValueKey('share-engine'),
+                contentPadding: EdgeInsets.zero,
+                title: Text(l10n.shareEngine),
+                subtitle: Text(l10n.shareEngineHint),
+                value: settings.share,
+                onChanged: manager.state == LocalEngineState.starting
+                    ? null
+                    : (value) {
+                        settings.share = value;
+                        (context as Element).markNeedsBuild();
+                        settings.save();
+                      },
+              ),
             ],
           ),
         ),
@@ -271,6 +344,25 @@ class _LocalEngineSection extends StatelessWidget {
           spacing: 8,
           runSpacing: 8,
           children: [
+            if (changed)
+              FilledButton.icon(
+                key: const ValueKey('local-engine-restart'),
+                onPressed: () => startLocalEngine(manager, EngineScope.of(context), settings),
+                icon: const Icon(Icons.restart_alt),
+                label: Text(l10n.restartEngine),
+              ),
+            if (manager.state == LocalEngineState.running &&
+                (manager.startedWith?.share ?? false) &&
+                manager.port != null)
+              TextButton.icon(
+                key: const ValueKey('show-engine-qr'),
+                onPressed: () => showDialog<void>(
+                  context: context,
+                  builder: (_) => EngineQrDialog(port: manager.port!),
+                ),
+                icon: const Icon(Icons.qr_code_2),
+                label: Text(l10n.showEngineQr),
+              ),
             TextButton.icon(
               onPressed: () => showDialog<void>(
                 context: context,

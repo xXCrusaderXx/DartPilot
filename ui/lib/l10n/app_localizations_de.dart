@@ -1318,4 +1318,39 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get detectionUnavailable => 'Darts werden gerade nicht erkannt.';
+
+  @override
+  String get shareEngine => 'Im Netzwerk freigeben';
+
+  @override
+  String get shareEngineHint =>
+      'Handys und Tablets im Heimnetz können sich mit dieser Engine verbinden. Nur in einem Netz, dem du vertraust: Es gibt noch keinen PIN.';
+
+  @override
+  String get showEngineQr => 'QR-Code';
+
+  @override
+  String get engineQrTitle => 'Anderes Gerät verbinden';
+
+  @override
+  String get engineQrHint =>
+      'Scanne diesen Code mit der DartPilot-App auf Handy oder Tablet (Engine → Im Netzwerk → Scannen).';
+
+  @override
+  String get engineQrNoNetwork => 'Dieses Gerät hat keine Adresse in einem Heimnetz.';
+
+  @override
+  String get scanEngineQr => 'QR-Code scannen';
+
+  @override
+  String get scanEngineQrHint => 'Richte die Kamera auf den QR-Code, den das Gerät mit der Engine anzeigt.';
+
+  @override
+  String get enterAddressManually => 'Adresse eingeben oder QR-Code scannen';
+
+  @override
+  String get restartEngine => 'Engine neu starten';
+
+  @override
+  String get engineSettings => 'Engine';
 }
