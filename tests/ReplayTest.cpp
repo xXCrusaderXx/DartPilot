@@ -3,6 +3,7 @@
 #include <cmath>
 #include <filesystem>
 #include <fstream>
+#include <map>
 #include <random>
 #include <set>
 #include <sstream>
@@ -274,6 +275,47 @@ TEST(Replay, TwoRunsGiveByteIdenticalResults)
 
     // A run never overwrites another.
     EXPECT_FALSE(replay::replaySession(*recorded, config, error));
+}
+
+TEST(Replay, AKnockedCameraAndATurnedBoardFailTheirChecks)
+{
+    TemporaryDirectory root;
+    std::string error;
+    const auto recorded = session::openSession(writeFixtureSession(root.path()), error);
+    ASSERT_TRUE(recorded) << error;
+    replay::ReplayConfig config;
+    config.extrinsics = fixtureExtrinsics();
+    config.check_interval_ns = 400'000'000;
+    // Per camera the error of its first and its second check, the second after the move
+    const auto checkErrors = [&] (const std::string& run_id)
+    {
+        config.run_id = run_id;
+        const auto summary = replay::replaySession(*recorded, config, error);
+        std::map<std::string, std::vector<double>> errors_mm;
+        for(const auto& line : lines(readFile(summary->run_directory / "calibration_checks.jsonl")))
+        {
+            const auto value = session::parseJson(line, error);
+            errors_mm[value->string("camera")].push_back(value->find("board_found")->boolean ? std::stod(value->find("rms_mm")->text) : 1e9);
+        }
+        return errors_mm;
+    };
+
+    config.moves = {{400'000'000, "usb-1.2", {6.0, -3.0}, 0.0}};
+    auto knocked = checkErrors("knocked");
+    ASSERT_EQ(knocked["usb-1.2"].size(), 2u);
+    ASSERT_EQ(knocked["usb-1.3"].size(), 2u);
+    EXPECT_LT(knocked["usb-1.2"][0], 1.0);
+    EXPECT_GT(knocked["usb-1.2"][1], 2.5);
+    EXPECT_LT(knocked["usb-1.3"][1], 1.0);
+
+    config.moves = {{400'000'000, "", {}, 1.5}};
+    auto turned = checkErrors("turned");
+    for(const char* camera : {"usb-1.2", "usb-1.3"})
+    {
+        ASSERT_EQ(turned[camera].size(), 2u) << camera;
+        EXPECT_LT(turned[camera][0], 1.0) << camera;
+        EXPECT_GT(turned[camera][1], 2.5) << camera;
+    }
 }
 
 TEST(Replay, WithoutARefinementThereAreNoChecks)

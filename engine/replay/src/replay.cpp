@@ -8,6 +8,7 @@
 #include <memory>
 #include <sstream>
 
+#include <opencv2/calib3d.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 
@@ -190,6 +191,75 @@ std::string offsetsJson (const ReplayConfig& config)
     return ", \"camera_offset_ns\": {" + out + "}";
 }
 
+// The image moves of a calibration check test, if any, as a field of the run's config
+std::string movesJson (const ReplayConfig& config)
+{
+    if(config.moves.empty())
+    {
+        return "";
+    }
+    std::string out;
+    for(const auto& move : config.moves)
+    {
+        out += (out.empty() ? "" : ", ") + std::string("{\"from_ns\": ") + std::to_string(move.from_ns) +
+               (move.camera.empty() ? ", \"board_turn_deg\": " + number(move.board_turn_deg, 3)
+                                    : ", \"camera\": " + jsonString(move.camera) + ", \"shift_px\": [" + number(move.shift_px.x, 2) + ", " +
+                                          number(move.shift_px.y, 2) + "]") +
+               "}";
+    }
+    return ", \"moves\": [" + out + "]";
+}
+
+// Per camera the image warp of the moves, by the time it starts; the board turn maps each camera's projection of the
+// board onto its projection of the turned board, so the board turns in the image as it would on the wall
+std::vector<std::vector<std::pair<std::int64_t, cv::Mat>>> moveWarps (const session::RecordedSession& session, const ReplayConfig& config,
+                                                                      const std::vector<const geometry::RefinedCamera*>& calibrations)
+{
+    std::vector<std::vector<std::pair<std::int64_t, cv::Mat>>> warps(session.cameras.size());
+    std::optional<std::int64_t> start_ns;
+    for(const auto& camera : session.cameras)
+    {
+        if(!camera.frames.empty() && (!start_ns || camera.frames.front().exposure_ns < *start_ns))
+        {
+            start_ns = camera.frames.front().exposure_ns;
+        }
+    }
+    for(const auto& move : config.moves)
+    {
+        for(std::size_t c = 0; c < session.cameras.size(); ++c)
+        {
+            cv::Mat warp;
+            if(move.camera == session.cameras[c].id)
+            {
+                warp = (cv::Mat_<double>(3, 3) << 1, 0, move.shift_px.x, 0, 1, move.shift_px.y, 0, 0, 1);
+            }
+            else if(move.camera.empty() && calibrations[c])
+            {
+                std::vector<cv::Point2f> from, to;
+                const double turn = move.board_turn_deg * CV_PI / 180.0;
+                for(int i = 0; i < 16; ++i)
+                {
+                    for(const double radius_mm : {60.0, 170.0})
+                    {
+                        const double angle = i * CV_PI / 8.0;
+                        from.push_back(geometry::boardToImage(*calibrations[c], cv::Point3f(static_cast<float>(radius_mm * std::cos(angle)),
+                                                                                            static_cast<float>(radius_mm * std::sin(angle)), 0.0f)));
+                        to.push_back(
+                            geometry::boardToImage(*calibrations[c], cv::Point3f(static_cast<float>(radius_mm * std::cos(angle + turn)),
+                                                                                 static_cast<float>(radius_mm * std::sin(angle + turn)), 0.0f)));
+                    }
+                }
+                warp = cv::findHomography(from, to);
+            }
+            if(!warp.empty())
+            {
+                warps[c].emplace_back(start_ns.value_or(0) + move.from_ns, warp);
+            }
+        }
+    }
+    return warps;
+}
+
 std::string configJson (const ReplayConfig& config)
 {
     std::string params;
@@ -199,7 +269,7 @@ std::string configJson (const ReplayConfig& config)
     }
     return "{\"calibration_check\": {\"interval_ns\": " + std::to_string(config.check_interval_ns) +
            ", \"frames\": " + std::to_string(config.check_frames) + "}, \"pipeline\": " + jsonString(config.pipeline) + offsetsJson(config) +
-           ", \"params\": {" + params + "}}";
+           movesJson(config) + ", \"params\": {" + params + "}}";
 }
 }  // namespace
 
@@ -319,6 +389,23 @@ std::optional<ReplaySummary> replaySession (const session::RecordedSession& sess
         }
     }
 
+    const auto warps = moveWarps(session, config, calibrations);
+    // The image as it was taken after the moves that started by then
+    const auto decode = [&] (std::size_t camera, std::size_t frame)
+    {
+        cv::Mat image = cv::imdecode(readers[camera].read(frame), cv::IMREAD_COLOR);
+        for(const auto& [from_ns, warp] : warps[camera])
+        {
+            if(!image.empty() && session.cameras[camera].frames[frame].exposure_ns >= from_ns)
+            {
+                cv::Mat moved;
+                cv::warpPerspective(image, moved, warp, image.size(), cv::INTER_LINEAR, cv::BORDER_REPLICATE);
+                image = moved;
+            }
+        }
+        return image;
+    };
+
     std::vector<std::int64_t> offsets_ns(session.cameras.size(), 0);
     for(std::size_t c = 0; c < session.cameras.size(); ++c)
     {
@@ -370,7 +457,7 @@ std::optional<ReplaySummary> replaySession (const session::RecordedSession& sess
             }
             sampled[c] = latest[c];
             const auto& index = session.cameras[c].frames[*latest[c]];
-            cv::Mat image = cv::imdecode(readers[c].read(*latest[c]), cv::IMREAD_COLOR);
+            cv::Mat image = decode(c, *latest[c]);
             if(image.empty())
             {
                 ++summary.undecodable_frames;
@@ -436,7 +523,7 @@ std::optional<ReplaySummary> replaySession (const session::RecordedSession& sess
             continue;
         }
         // Frames are decoded only where a stage needs them.
-        const cv::Mat image = cv::imdecode(readers[item.camera].read(item.frame), cv::IMREAD_COLOR);
+        const cv::Mat image = decode(item.camera, item.frame);
         if(image.empty())
         {
             ++summary.undecodable_frames;
