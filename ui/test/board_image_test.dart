@@ -52,6 +52,8 @@ void main() {
         ),
       ),
     );
+    // The real board stays sharp throughout; the numbers on it are drawn.
+    expect(find.byType(ImageFiltered), findsNothing);
     final picture = tester.getRect(find.byKey(const ValueKey('board-image')));
     // The whole image is shown: 400 px for 2 × 250 mm, 0.8 px per mm.
     expect(picture.size, const Size(400, 400));

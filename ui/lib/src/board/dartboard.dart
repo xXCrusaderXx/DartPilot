@@ -21,6 +21,9 @@ class Dartboard extends StatelessWidget {
   /// Radius drawn around the scoring area for the number ring, in mm
   static const double numberRingMm = 30.0;
 
+  /// Where the projected numbers sit over the real board's number plates
+  static const double realNumbersRadiusMm = 208.0;
+
   @override
   Widget build(BuildContext context) {
     return AspectRatio(
@@ -149,6 +152,23 @@ class _DartboardPainter extends CustomPainter {
       }
     }
 
+    if (!drawBoard) {
+      // The projected numbers cover the photographed ones: placed by the calibrated board geometry, they show where
+      // the engine puts each sector.
+      final plate = Paint()..color = const Color(0xE6141414);
+      for (final sector in sectorsClockwiseFromTop) {
+        final angle = sectorMiddleDeg(sector, geometry) * math.pi / 180.0;
+        canvas.drawCircle(
+          centre + Offset(math.cos(angle), -math.sin(angle)) * Dartboard.realNumbersRadiusMm * scale,
+          13 * scale,
+          plate,
+        );
+      }
+      for (final sector in sectorsClockwiseFromTop) {
+        _drawNumber(canvas, centre, scale, sector, radiusMm: Dartboard.realNumbersRadiusMm, sizeMm: 17);
+      }
+    }
+
     for (var i = 0; i < throws.length; ++i) {
       final point = throws[i].point;
       final position = centre + Offset(point.xMm * scale, -point.yMm * scale);
@@ -169,13 +189,18 @@ class _DartboardPainter extends CustomPainter {
     }
   }
 
-  void _drawNumber(Canvas canvas, Offset centre, double scale, int sector) {
+  void _drawNumber(Canvas canvas, Offset centre, double scale, int sector, {double? radiusMm, double sizeMm = 13}) {
     final angle = sectorMiddleDeg(sector, geometry) * math.pi / 180.0;
-    final radius = (geometry.doubleOuterRadiusMm + Dartboard.numberRingMm / 2) * scale;
+    final radius = (radiusMm ?? geometry.doubleOuterRadiusMm + Dartboard.numberRingMm / 2) * scale;
     final painter = TextPainter(
       text: TextSpan(
         text: '$sector',
-        style: TextStyle(color: Colors.white, fontSize: 13 * scale, fontWeight: FontWeight.w600),
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: sizeMm * scale,
+          fontWeight: FontWeight.w600,
+          shadows: const [Shadow(blurRadius: 3)],
+        ),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
