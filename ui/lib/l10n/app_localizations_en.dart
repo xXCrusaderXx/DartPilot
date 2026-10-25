@@ -1353,4 +1353,89 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get engineSettings => 'Engine';
+
+  @override
+  String get detectionTest => 'Test detection';
+
+  @override
+  String get detectionTestDescription => 'Throw, check the result, pull – for faster and more reliable detection';
+
+  @override
+  String get detectionTestNeedsEngine => 'The test needs a connected engine.';
+
+  @override
+  String detectionRound(int number) {
+    return 'Round $number';
+  }
+
+  @override
+  String get detectionTestHint =>
+      'Throw, check, pull. Tap a wrong dart, then the board where it really is; tap the board for a dart the engine missed.';
+
+  @override
+  String get detectionTestCorrecting => 'Now tap the board where this dart really is.';
+
+  @override
+  String get outcomeRight => 'right';
+
+  @override
+  String get outcomeWrong => 'wrong';
+
+  @override
+  String get outcomeAbstained => 'unsure';
+
+  @override
+  String get outcomeMissed => 'missed';
+
+  @override
+  String get outcomeFalseAlarm => 'no dart';
+
+  @override
+  String get noDart => 'No dart';
+
+  @override
+  String medianMax(String median, String max) {
+    return 'median $median · max $max';
+  }
+
+  @override
+  String get statDarts => 'Darts';
+
+  @override
+  String get statPlacedRight => 'Placed right';
+
+  @override
+  String get statAbstained => 'Unsure';
+
+  @override
+  String get statMissed => 'Missed';
+
+  @override
+  String get statFalseAlarms => 'False alarms';
+
+  @override
+  String get statDetectionLatency => 'Until detected';
+
+  @override
+  String get statProcessing => 'Processing';
+
+  @override
+  String get statTakeoutLatency => 'Pull detected after';
+
+  @override
+  String get statTakeoutMismatches => 'Pulls with a wrong count';
+
+  @override
+  String get statWrongBy => 'Error of wrong darts';
+
+  @override
+  String get detectionParams => 'Detection values';
+
+  @override
+  String get detectionParamsUnavailable => 'This engine cannot change its values while it runs.';
+
+  @override
+  String detectionParamFailed(String name, String error) {
+    return '$name not applied: $error';
+  }
 }

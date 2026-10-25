@@ -2437,6 +2437,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Engine'**
   String get engineSettings;
+
+  /// No description provided for @detectionTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Test detection'**
+  String get detectionTest;
+
+  /// No description provided for @detectionTestDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Throw, check the result, pull – for faster and more reliable detection'**
+  String get detectionTestDescription;
+
+  /// No description provided for @detectionTestNeedsEngine.
+  ///
+  /// In en, this message translates to:
+  /// **'The test needs a connected engine.'**
+  String get detectionTestNeedsEngine;
+
+  /// No description provided for @detectionRound.
+  ///
+  /// In en, this message translates to:
+  /// **'Round {number}'**
+  String detectionRound(int number);
+
+  /// No description provided for @detectionTestHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Throw, check, pull. Tap a wrong dart, then the board where it really is; tap the board for a dart the engine missed.'**
+  String get detectionTestHint;
+
+  /// No description provided for @detectionTestCorrecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Now tap the board where this dart really is.'**
+  String get detectionTestCorrecting;
+
+  /// No description provided for @outcomeRight.
+  ///
+  /// In en, this message translates to:
+  /// **'right'**
+  String get outcomeRight;
+
+  /// No description provided for @outcomeWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'wrong'**
+  String get outcomeWrong;
+
+  /// No description provided for @outcomeAbstained.
+  ///
+  /// In en, this message translates to:
+  /// **'unsure'**
+  String get outcomeAbstained;
+
+  /// No description provided for @outcomeMissed.
+  ///
+  /// In en, this message translates to:
+  /// **'missed'**
+  String get outcomeMissed;
+
+  /// No description provided for @outcomeFalseAlarm.
+  ///
+  /// In en, this message translates to:
+  /// **'no dart'**
+  String get outcomeFalseAlarm;
+
+  /// No description provided for @noDart.
+  ///
+  /// In en, this message translates to:
+  /// **'No dart'**
+  String get noDart;
+
+  /// No description provided for @medianMax.
+  ///
+  /// In en, this message translates to:
+  /// **'median {median} · max {max}'**
+  String medianMax(String median, String max);
+
+  /// No description provided for @statDarts.
+  ///
+  /// In en, this message translates to:
+  /// **'Darts'**
+  String get statDarts;
+
+  /// No description provided for @statPlacedRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Placed right'**
+  String get statPlacedRight;
+
+  /// No description provided for @statAbstained.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsure'**
+  String get statAbstained;
+
+  /// No description provided for @statMissed.
+  ///
+  /// In en, this message translates to:
+  /// **'Missed'**
+  String get statMissed;
+
+  /// No description provided for @statFalseAlarms.
+  ///
+  /// In en, this message translates to:
+  /// **'False alarms'**
+  String get statFalseAlarms;
+
+  /// No description provided for @statDetectionLatency.
+  ///
+  /// In en, this message translates to:
+  /// **'Until detected'**
+  String get statDetectionLatency;
+
+  /// No description provided for @statProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing'**
+  String get statProcessing;
+
+  /// No description provided for @statTakeoutLatency.
+  ///
+  /// In en, this message translates to:
+  /// **'Pull detected after'**
+  String get statTakeoutLatency;
+
+  /// No description provided for @statTakeoutMismatches.
+  ///
+  /// In en, this message translates to:
+  /// **'Pulls with a wrong count'**
+  String get statTakeoutMismatches;
+
+  /// No description provided for @statWrongBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Error of wrong darts'**
+  String get statWrongBy;
+
+  /// No description provided for @detectionParams.
+  ///
+  /// In en, this message translates to:
+  /// **'Detection values'**
+  String get detectionParams;
+
+  /// No description provided for @detectionParamsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This engine cannot change its values while it runs.'**
+  String get detectionParamsUnavailable;
+
+  /// No description provided for @detectionParamFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} not applied: {error}'**
+  String detectionParamFailed(String name, String error);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

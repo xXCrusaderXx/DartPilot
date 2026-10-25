@@ -29,7 +29,7 @@ void main() {
     expect(find.text('Verbunden (simuliert)'), findsOneWidget);
     // Without a profile, home asks for one first.
     expect(find.text('Wer spielt?'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Zusammen spielen'), 200);
+    await tester.scrollUntilVisible(find.text('Lokal oder solo spielen'), 200);
     expect(find.text('Lokal oder solo spielen'), findsOneWidget);
 
     // A live engine that is not calibrated says so on home.

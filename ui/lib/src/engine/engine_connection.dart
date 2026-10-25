@@ -53,6 +53,9 @@ class EngineConnection extends ChangeNotifier {
   /// Latest state of the reference measurement; null before it ran
   ReferenceRun? referenceRun;
 
+  /// The values of live detection; null until asked for, and with engines that cannot change them
+  DetectionParams? detectionParams;
+
   /// Latest state of the setup diagnosis; null before it ran
   EngineDiagnosis? diagnosis;
 
@@ -129,6 +132,7 @@ class EngineConnection extends ChangeNotifier {
     await _closeChannel();
     hello = null;
     boardState = null;
+    detectionParams = null;
     boardImage = null;
     referenceRun = null;
     diagnosis = null;
@@ -221,6 +225,10 @@ class EngineConnection extends ChangeNotifier {
       detectionReason = event.message.isEmpty ? null : event.message;
       notifyListeners();
     }
+    if (event is DetectionParams) {
+      detectionParams = event;
+      notifyListeners();
+    }
     if (event is EngineDiagnosis) {
       diagnosis = event;
       notifyListeners();
@@ -263,6 +271,13 @@ class EngineConnection extends ChangeNotifier {
 
   void rejectThrow(String throwId, String reason) =>
       _send({'type': 'reject_throw', 'throw_id': throwId, 'reason': reason});
+
+  /// Asks for the values of live detection; they arrive as [detectionParams]. Older engines answer with an error.
+  void requestDetectionParams() => _send({'type': 'get_detection_params'});
+
+  /// Changes values of live detection while it runs; every client gets the new values as [detectionParams].
+  Future<String?> setDetectionParams(Map<String, double> params) =>
+      _request({'type': 'set_detection_params', 'params': params});
 
   /// Starts or changes the preview of a camera. Several widgets may watch the same camera; the engine gets the
   /// highest rate and width any of them asked for, and the preview stops when the last handle is released.

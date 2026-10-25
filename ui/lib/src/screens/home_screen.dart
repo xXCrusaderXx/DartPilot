@@ -9,6 +9,7 @@ import '../widgets/player_picker.dart';
 import 'around_the_clock_screen.dart';
 import 'calibration_screen.dart';
 import 'cricket_screen.dart';
+import 'detection_test_screen.dart';
 import 'training_screen.dart';
 import 'x01_setup_screen.dart';
 
@@ -85,6 +86,20 @@ class HomeScreen extends StatelessWidget {
                     subtitle: Text(description),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: onTap,
+                  ),
+                ),
+              if (EngineScope.of(context).isConnected)
+                Card(
+                  child: ListTile(
+                    key: const ValueKey('detection-test'),
+                    leading: const Icon(Icons.science_outlined, size: 32),
+                    title: Text(l10n.detectionTest),
+                    subtitle: Text(l10n.detectionTestDescription),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () async {
+                      if (!await confirmBoardEmpty(context) || !context.mounted) return;
+                      Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const DetectionTestScreen()));
+                    },
                   ),
                 ),
               const SizedBox(height: 24),

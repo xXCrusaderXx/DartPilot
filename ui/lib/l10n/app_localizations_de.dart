@@ -1353,4 +1353,89 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get engineSettings => 'Engine';
+
+  @override
+  String get detectionTest => 'Erkennung testen';
+
+  @override
+  String get detectionTestDescription => 'Werfen, Ergebnis prüfen, ziehen – für eine schnellere und sichere Erkennung';
+
+  @override
+  String get detectionTestNeedsEngine => 'Für den Test muss eine Engine verbunden sein.';
+
+  @override
+  String detectionRound(int number) {
+    return 'Runde $number';
+  }
+
+  @override
+  String get detectionTestHint =>
+      'Werfen, prüfen, ziehen. Einen falschen Dart antippen und dann aufs Board, wo er wirklich steckt; einen verpassten Dart einfach aufs Board tippen.';
+
+  @override
+  String get detectionTestCorrecting => 'Jetzt aufs Board tippen, wo dieser Dart wirklich steckt.';
+
+  @override
+  String get outcomeRight => 'richtig';
+
+  @override
+  String get outcomeWrong => 'falsch';
+
+  @override
+  String get outcomeAbstained => 'unsicher';
+
+  @override
+  String get outcomeMissed => 'verpasst';
+
+  @override
+  String get outcomeFalseAlarm => 'kein Dart';
+
+  @override
+  String get noDart => 'Kein Dart';
+
+  @override
+  String medianMax(String median, String max) {
+    return 'Median $median · max $max';
+  }
+
+  @override
+  String get statDarts => 'Darts';
+
+  @override
+  String get statPlacedRight => 'Richtig platziert';
+
+  @override
+  String get statAbstained => 'Unsicher';
+
+  @override
+  String get statMissed => 'Verpasst';
+
+  @override
+  String get statFalseAlarms => 'Fehlalarme';
+
+  @override
+  String get statDetectionLatency => 'Bis zur Erkennung';
+
+  @override
+  String get statProcessing => 'Rechenzeit';
+
+  @override
+  String get statTakeoutLatency => 'Ziehen erkannt nach';
+
+  @override
+  String get statTakeoutMismatches => 'Ziehen mit falscher Anzahl';
+
+  @override
+  String get statWrongBy => 'Abweichung falscher Darts';
+
+  @override
+  String get detectionParams => 'Werte der Erkennung';
+
+  @override
+  String get detectionParamsUnavailable => 'Diese Engine kann ihre Werte nicht im laufenden Betrieb ändern.';
+
+  @override
+  String detectionParamFailed(String name, String error) {
+    return '$name nicht übernommen: $error';
+  }
 }

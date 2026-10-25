@@ -14,7 +14,10 @@ sealed class EngineEvent {
     'hello' => EngineHello.fromJson(json),
     'throw' => EngineThrow.fromJson(json),
     'throw_corrected' => EngineThrowCorrected.fromJson(json),
-    'takeout' => EngineTakeout(json['darts_removed'] as int? ?? 0),
+    'takeout' => EngineTakeout(
+      json['darts_removed'] as int? ?? 0,
+      detectionLatencyMs: (json['detection_latency_ms'] as num?)?.toDouble(),
+    ),
     'camera_status' => EngineCameraStatus.fromJson(json),
     'board_state' => EngineBoardState.fromJson(json),
     'board_image' => BoardImage.fromJson(json),
@@ -27,6 +30,7 @@ sealed class EngineEvent {
     'refinement' => RefinementResult.fromJson(json),
     'calibration_check' => CalibrationCheck.fromJson(json),
     'camera_moved' => CameraMoved(json['camera'] as String),
+    'detection_params' => DetectionParams.fromJson(json),
     'engine_status' => EngineStatus(json['detection'] as String? ?? 'running', json['message'] as String? ?? ''),
     _ => null,
   };
@@ -99,6 +103,9 @@ class EngineThrow extends EngineEvent {
     required this.point,
     required this.confidence,
     this.reason = '',
+    this.cameras = const [],
+    this.processingLatencyMs,
+    this.detectionLatencyMs,
   });
 
   final String throwId;
@@ -109,11 +116,42 @@ class EngineThrow extends EngineEvent {
   final double confidence;
   final String reason;
 
+  /// Each camera's part in the result
+  final List<ThrowCamera> cameras;
+
+  /// Time the engine computed the result
+  final double? processingLatencyMs;
+
+  /// From the end of the last motion (the dart has landed) to sending; missing with older engines
+  final double? detectionLatencyMs;
+
   factory EngineThrow.fromJson(Map<String, dynamic> json) => EngineThrow(
     throwId: json['throw_id'] as String,
     accepted: json['accepted'] as bool,
     point: _point(json['board_point']),
     confidence: (json['confidence'] as num? ?? 0).toDouble(),
+    reason: json['reason'] as String? ?? '',
+    cameras: [
+      for (final c in json['cameras'] as List<dynamic>? ?? const [])
+        if (c is Map<String, dynamic>) ThrowCamera.fromJson(c),
+    ],
+    processingLatencyMs: (json['processing_latency_ms'] as num?)?.toDouble(),
+    detectionLatencyMs: (json['detection_latency_ms'] as num?)?.toDouble(),
+  );
+}
+
+class ThrowCamera {
+  const ThrowCamera(this.camera, {required this.used, this.reason = ''});
+
+  final String camera;
+  final bool used;
+
+  /// Why the camera was not used: not_seen, cut, disagrees
+  final String reason;
+
+  factory ThrowCamera.fromJson(Map<String, dynamic> json) => ThrowCamera(
+    json['camera'] as String? ?? '',
+    used: json['used'] as bool? ?? false,
     reason: json['reason'] as String? ?? '',
   );
 }
@@ -137,9 +175,51 @@ class EngineThrowCorrected extends EngineEvent {
 }
 
 class EngineTakeout extends EngineEvent {
-  const EngineTakeout(this.dartsRemoved);
+  const EngineTakeout(this.dartsRemoved, {this.detectionLatencyMs});
 
   final int dartsRemoved;
+
+  /// From the end of the last motion (the hand is out of view) to sending; missing with older engines
+  final double? detectionLatencyMs;
+}
+
+/// The values live detection runs with, changeable while it runs (`set_detection_params`)
+class DetectionParams extends EngineEvent {
+  const DetectionParams(this.params, this.ranges);
+
+  final Map<String, double> params;
+
+  /// What each value may be set to; the app offers exactly these
+  final Map<String, ParamRange> ranges;
+
+  factory DetectionParams.fromJson(Map<String, dynamic> json) => DetectionParams(
+    {
+      for (final MapEntry(:key, :value) in (json['params'] as Map<String, dynamic>? ?? const {}).entries)
+        if (value is num) key: value.toDouble(),
+    },
+    {
+      for (final MapEntry(:key, :value) in (json['ranges'] as Map<String, dynamic>? ?? const {}).entries)
+        if (value is Map<String, dynamic>) key: ParamRange.fromJson(value),
+    },
+  );
+}
+
+class ParamRange {
+  const ParamRange({required this.min, required this.max, this.step, this.unit = ''});
+
+  final double min;
+  final double max;
+
+  /// null: any value between min and max
+  final double? step;
+  final String unit;
+
+  factory ParamRange.fromJson(Map<String, dynamic> json) => ParamRange(
+    min: (json['min'] as num).toDouble(),
+    max: (json['max'] as num).toDouble(),
+    step: (json['step'] as num?)?.toDouble(),
+    unit: json['unit'] as String? ?? '',
+  );
 }
 
 class EngineCameraStatus extends EngineEvent {
