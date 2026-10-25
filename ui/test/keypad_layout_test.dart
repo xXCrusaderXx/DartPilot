@@ -25,6 +25,8 @@ void main() {
       await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine, statistics: statistics));
       engine.receiveForTest(jsonEncode(hello));
       await tester.pumpAndSettle();
+      // On a phone the card about new cameras pushes the games down.
+      await tester.scrollUntilVisible(find.text('X01'), 200);
       await tester.tap(find.text('X01'));
       await tester.pumpAndSettle();
       await pickPlayers(tester, ['Anna', 'Ben']);
