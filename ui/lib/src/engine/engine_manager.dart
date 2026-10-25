@@ -52,6 +52,9 @@ class EngineManager extends ChangeNotifier {
   Timer? _readyTimer;
   Completer<String?>? _ready;
 
+  /// The options the running engine was started with, so a change can ask for a restart
+  ({bool simulate, bool cameras, bool share})? startedWith;
+
   /// Port of the running engine, from [url]
   int? get port => url == null ? null : Uri.tryParse(url!)?.port;
 
@@ -63,6 +66,7 @@ class EngineManager extends ChangeNotifier {
   /// [share] makes the engine listen on the network, for other devices to connect to (#109).
   Future<String?> start({bool simulate = false, bool cameras = true, bool share = false}) async {
     await stop();
+    startedWith = (simulate: simulate, cameras: simulate ? cameras : true, share: share);
     final program = resolvedExecutable;
     if (program == null || !File(program).existsSync()) {
       return _failed(LocalEngineError.notFound, 'Engine program not found: ${program ?? 'dartpilot'}');

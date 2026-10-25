@@ -1347,4 +1347,10 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get enterAddressManually => 'Adresse eingeben oder QR-Code scannen';
+
+  @override
+  String get restartEngine => 'Engine neu starten';
+
+  @override
+  String get engineSettings => 'Engine';
 }

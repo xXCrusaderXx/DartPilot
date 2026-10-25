@@ -388,5 +388,7 @@
   "engineQrNoNetwork": "Dieses Gerät hat keine Adresse in einem Heimnetz.",
   "scanEngineQr": "QR-Code scannen",
   "scanEngineQrHint": "Richte die Kamera auf den QR-Code, den das Gerät mit der Engine anzeigt.",
-  "enterAddressManually": "Adresse eingeben oder QR-Code scannen"
+  "enterAddressManually": "Adresse eingeben oder QR-Code scannen",
+  "restartEngine": "Engine neu starten",
+  "engineSettings": "Engine"
 }

@@ -253,4 +253,46 @@ void main() {
     expect(loaded.cameras, isFalse);
     expect(loaded.executable, '/opt/dartpilot/dartpilot');
   });
+
+  testWidgets('while the engine runs, its options are in the settings and a change offers a restart', (tester) async {
+    tester.view.physicalSize = const Size(1000, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    SharedPreferences.setMockInitialValues({});
+    final processes = <FakeProcess>[];
+    final starts = <List<String>>[];
+    final manager = EngineManager(
+      start: (_, args) async {
+        starts.add(args);
+        return (processes..add(FakeProcess())).last;
+      },
+      findEngine: () => program,
+      freePort: () async => 8500,
+    );
+    final engine = EngineConnection(
+      connector: (uri) => throw const SocketException('no engine in tests'),
+      discovery: EngineDiscovery(const []),
+    );
+    addTearDown(engine.dispose);
+    addTearDown(manager.dispose);
+    final settings = EngineSettings(mode: EngineMode.thisDevice);
+    await tester.pumpWidget(
+      DartPilotApp(locale: const Locale('de'), engine: engine, manager: manager, settings: settings),
+    );
+    await tester.tap(find.byKey(const ValueKey('local-engine-start')));
+    await tester.pump();
+    processes.last.out('Engine API (live) on ws://127.0.0.1:8500/ - Ctrl+C to stop');
+    await tester.pump();
+    expect(find.byKey(const ValueKey('local-engine-restart')), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('share-engine')));
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('local-engine-restart')));
+    await tester.pump();
+    processes.last.out('Engine API (live) on ws://0.0.0.0:8500/ - Ctrl+C to stop');
+    await tester.pump();
+    expect(starts.last, contains('--listen'));
+    expect(find.byKey(const ValueKey('local-engine-restart')), findsNothing);
+    expect(find.byKey(const ValueKey('show-engine-qr')), findsOneWidget);
+  });
 }

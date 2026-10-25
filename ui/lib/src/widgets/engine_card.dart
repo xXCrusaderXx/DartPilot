@@ -276,6 +276,12 @@ class _LocalEngineSection extends StatelessWidget {
         _ => l10n.localEngineCrashed,
       },
     };
+    final started = manager.startedWith;
+    final changed =
+        manager.state == LocalEngineState.running &&
+        started != null &&
+        started !=
+            (simulate: settings.simulate, cameras: settings.simulate ? settings.cameras : true, share: settings.share);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -285,7 +291,7 @@ class _LocalEngineSection extends StatelessWidget {
           style: manager.state == LocalEngineState.failed ? TextStyle(color: theme.colorScheme.error) : null,
         ),
         StatefulBuilder(
-          builder: (context, setState) => Column(
+          builder: (inner, setState) => Column(
             children: [
               SwitchListTile(
                 key: const ValueKey('simulate-darts'),
@@ -293,10 +299,11 @@ class _LocalEngineSection extends StatelessWidget {
                 title: Text(l10n.simulateDarts),
                 subtitle: Text(l10n.simulateDartsHint),
                 value: settings.simulate,
-                onChanged: busy
+                onChanged: manager.state == LocalEngineState.starting
                     ? null
                     : (value) {
-                        setState(() => settings.simulate = value);
+                        settings.simulate = value;
+                        (context as Element).markNeedsBuild();
                         settings.save();
                       },
               ),
@@ -307,10 +314,11 @@ class _LocalEngineSection extends StatelessWidget {
                   title: Text(l10n.useCameras),
                   subtitle: Text(l10n.useCamerasHint),
                   value: settings.cameras,
-                  onChanged: busy
+                  onChanged: manager.state == LocalEngineState.starting
                       ? null
                       : (value) {
-                          setState(() => settings.cameras = value);
+                          settings.cameras = value;
+                          (context as Element).markNeedsBuild();
                           settings.save();
                         },
                 ),
@@ -320,10 +328,11 @@ class _LocalEngineSection extends StatelessWidget {
                 title: Text(l10n.shareEngine),
                 subtitle: Text(l10n.shareEngineHint),
                 value: settings.share,
-                onChanged: busy
+                onChanged: manager.state == LocalEngineState.starting
                     ? null
                     : (value) {
-                        setState(() => settings.share = value);
+                        settings.share = value;
+                        (context as Element).markNeedsBuild();
                         settings.save();
                       },
               ),
@@ -335,7 +344,16 @@ class _LocalEngineSection extends StatelessWidget {
           spacing: 8,
           runSpacing: 8,
           children: [
-            if (manager.state == LocalEngineState.running && settings.share && manager.port != null)
+            if (changed)
+              FilledButton.icon(
+                key: const ValueKey('local-engine-restart'),
+                onPressed: () => startLocalEngine(manager, EngineScope.of(context), settings),
+                icon: const Icon(Icons.restart_alt),
+                label: Text(l10n.restartEngine),
+              ),
+            if (manager.state == LocalEngineState.running &&
+                (manager.startedWith?.share ?? false) &&
+                manager.port != null)
               TextButton.icon(
                 key: const ValueKey('show-engine-qr'),
                 onPressed: () => showDialog<void>(

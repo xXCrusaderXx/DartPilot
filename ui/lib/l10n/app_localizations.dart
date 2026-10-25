@@ -2425,6 +2425,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter the address or scan a QR code'**
   String get enterAddressManually;
+
+  /// No description provided for @restartEngine.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart the engine'**
+  String get restartEngine;
+
+  /// No description provided for @engineSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Engine'**
+  String get engineSettings;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
