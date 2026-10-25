@@ -68,9 +68,9 @@ void main() {
     await start(tester, sets: dartSets());
     await openMyDarts(tester);
     expect(find.text('Annas Darts'), findsOneWidget);
-    expect(find.textContaining('Gesamt 151.0 mm'), findsOneWidget);
+    expect(find.textContaining('Gesamtlänge 151.0 mm'), findsOneWidget);
     // The point length is not measured yet and not shown.
-    expect(tester.widget<Text>(find.textContaining('Gesamt 151.0 mm')).data, isNot(contains('Spitze')));
+    expect(tester.widget<Text>(find.textContaining('Gesamtlänge 151.0 mm')).data, isNot(contains('Spitze')));
     expect(sent.where((r) => r['type'] == 'get_dart_set_image').map((r) => r['camera']).toSet(), {'usb-1', 'usb-2'});
 
     await tester.tap(find.byKey(const ValueKey('link-set-1-Anna')));
@@ -88,6 +88,8 @@ void main() {
     await start(tester, sets: dartSets(withSet: false));
     await openMyDarts(tester);
     await tester.tap(find.byKey(const ValueKey('add-dart-set')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('add-set-measure')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const ValueKey('dart-set-name')), 'Bens Darts');
     await tester.tap(find.byKey(const ValueKey('dart-set-name-ok')));
@@ -170,5 +172,63 @@ void main() {
     }
     // Ben has no set: generic detection.
     expect(sent.where((r) => r['type'] == 'set_active_darts').last, {'type': 'set_active_darts', 'id': null});
+  });
+
+  testWidgets('dimensions are typed in for a new set, and corrected or given back to the measurement', (tester) async {
+    await start(tester, sets: dartSets(withSet: false));
+    await openMyDarts(tester);
+    await tester.tap(find.byKey(const ValueKey('add-dart-set')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('add-set-enter')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('dart-set-name')), 'Target');
+    await tester.tap(find.byKey(const ValueKey('dart-set-name-ok')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('dim-total_mm')), '150');
+    await tester.enterText(find.byKey(const ValueKey('dim-barrel_diameter_mm')), '7,2');
+    await tester.tap(find.byKey(const ValueKey('dims-save')));
+    await tester.pumpAndSettle();
+    expect(sent.last, {
+      'type': 'create_dart_set',
+      'name': 'Target',
+      'dims': {'total_mm': 150.0, 'barrel_diameter_mm': 7.2},
+    });
+
+    // A measured set whose barrel was typed in: the entry shows as such, and clearing it gives the measurement back.
+    engine.receiveForTest(
+      jsonEncode({
+        'type': 'dart_sets',
+        'sets': [
+          {
+            'id': 'set-1',
+            'name': 'Target',
+            'dims': {'total_mm': 141.0, 'barrel_mm': 45.0},
+            'dims_source': {'total_mm': 'measured', 'barrel_mm': 'entered'},
+            'measured': {'total_mm': 141.0, 'barrel_mm': 11.0},
+            'images': <Object>[],
+          },
+        ],
+        'active': null,
+      }),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<Text>(find.byKey(const ValueKey('dart-set-dims-set-1'))).data,
+      'Gesamtlänge 141.0 mm  ·  Barrel 45.0 mm (eingegeben)',
+    );
+    await tester.tap(find.byKey(const ValueKey('dart-set-menu-set-1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('edit-dims-set-1')));
+    await tester.pumpAndSettle();
+    expect(find.text('gemessen: 11.0 mm'), findsOneWidget);
+    await tester.enterText(find.byKey(const ValueKey('dim-barrel_mm')), '');
+    await tester.enterText(find.byKey(const ValueKey('dim-weight_g')), '22');
+    await tester.tap(find.byKey(const ValueKey('dims-save')));
+    await tester.pumpAndSettle();
+    expect(sent.last, {
+      'type': 'update_dart_set',
+      'id': 'set-1',
+      'dims': {'barrel_mm': null, 'weight_g': 22.0},
+    });
   });
 }

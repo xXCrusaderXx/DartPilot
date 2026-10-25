@@ -1606,4 +1606,60 @@ class AppLocalizationsDe extends AppLocalizations {
   String cameraAssignFailed(String error) {
     return 'Zuordnung nicht gespeichert: $error';
   }
+
+  @override
+  String get addSetMeasure => 'Im Board vermessen';
+
+  @override
+  String get addSetMeasureHint => 'Einen Dart an vier Stellen stecken – die Kameras messen ihn';
+
+  @override
+  String get addSetEnter => 'Maße eintippen';
+
+  @override
+  String get addSetEnterHint => 'Zum Beispiel von der Verpackung';
+
+  @override
+  String get enterDims => 'Maße eingeben';
+
+  @override
+  String get dimsHint => 'Werte z. B. von der Verpackung. Ein leeres Feld lässt den gemessenen Wert gelten.';
+
+  @override
+  String get dimTotal => 'Gesamtlänge';
+
+  @override
+  String get dimPoint => 'Spitze';
+
+  @override
+  String get dimBarrel => 'Barrel';
+
+  @override
+  String get dimBarrelDiameter => 'Barrel-Durchmesser';
+
+  @override
+  String get dimShaft => 'Schaft';
+
+  @override
+  String get dimFlight => 'Flight';
+
+  @override
+  String get dimWeight => 'Gewicht';
+
+  @override
+  String get dimEntered => 'eingegeben';
+
+  @override
+  String get dimPhoto => 'Foto';
+
+  @override
+  String dimMeasuredValue(String value) {
+    return 'gemessen: $value';
+  }
+
+  @override
+  String get dimsSave => 'Speichern';
+
+  @override
+  String get dimsImplausible => 'Ein Wert liegt außerhalb dessen, was ein Dart haben kann.';
 }

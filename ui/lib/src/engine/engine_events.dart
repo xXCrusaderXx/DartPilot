@@ -865,13 +865,28 @@ class CameraMoved extends EngineEvent {
 
 /// A measured set of the player's darts (#120): its dimensions and where reference images exist
 class DartSet {
-  const DartSet({required this.id, required this.name, this.dims = const {}, this.cameras = const [], this.created});
+  const DartSet({
+    required this.id,
+    required this.name,
+    this.dims = const {},
+    this.dimsSource = const {},
+    this.measured = const {},
+    this.cameras = const [],
+    this.created,
+  });
 
   final String id;
   final String name;
 
-  /// total_mm, barrel_mm, barrel_diameter_mm, flight_mm (later point_mm), as far as the engine measured them
+  /// total_mm, point_mm, barrel_mm, barrel_diameter_mm, shaft_mm, flight_mm, weight_g: per dimension the value of the
+  /// first source that has it, entered before photo before measured
   final Map<String, double> dims;
+
+  /// Where each value of [dims] comes from: entered, photo or measured
+  final Map<String, String> dimsSource;
+
+  /// The values measured in the board, which count again when an entered value is removed
+  final Map<String, double> measured;
 
   /// Cameras with a reference image of the dart
   final List<String> cameras;
@@ -880,10 +895,12 @@ class DartSet {
   factory DartSet.fromJson(Map<String, dynamic> json) => DartSet(
     id: json['id'] as String,
     name: json['name'] as String? ?? '',
-    dims: {
-      for (final MapEntry(:key, :value) in (json['dims'] as Map<String, dynamic>? ?? const {}).entries)
-        if (value is num) key: value.toDouble(),
+    dims: _dims(json['dims']),
+    dimsSource: {
+      for (final MapEntry(:key, :value) in (json['dims_source'] as Map<String, dynamic>? ?? const {}).entries)
+        if (value is String) key: value,
     },
+    measured: _dims(json['measured']),
     cameras: [
       for (final i in json['images'] as List<dynamic>? ?? const [])
         if (i is Map<String, dynamic> && i['camera'] is String) i['camera'] as String,
@@ -1037,3 +1054,9 @@ class CameraAssignment extends EngineEvent {
       if (c is Map<String, dynamic>) AssignedCamera.fromJson(c),
   ]);
 }
+
+Map<String, double> _dims(Object? json) => {
+  if (json is Map<String, dynamic>)
+    for (final MapEntry(:key, :value) in json.entries)
+      if (value is num) key: value.toDouble(),
+};

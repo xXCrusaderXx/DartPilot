@@ -360,6 +360,14 @@ class EngineConnection extends ChangeNotifier {
 
   void cancelDartSet() => _send({'type': 'cancel_dart_set'});
 
+  /// A set from dimensions the player typed in, e.g. from the packaging, without measuring
+  Future<String?> createDartSet(String name, Map<String, double> dims) =>
+      _request({'type': 'create_dart_set', 'name': name, 'dims': dims});
+
+  /// Enters or corrects dimensions of a set; null removes an entered value, so the measured one counts again
+  Future<String?> updateDartSet(String id, Map<String, double?> dims) =>
+      _request({'type': 'update_dart_set', 'id': id, 'dims': dims});
+
   Future<String?> renameDartSet(String id, String name) =>
       _request({'type': 'rename_dart_set', 'id': id, 'name': name});
 

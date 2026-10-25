@@ -2887,6 +2887,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Assignment not stored: {error}'**
   String cameraAssignFailed(String error);
+
+  /// No description provided for @addSetMeasure.
+  ///
+  /// In en, this message translates to:
+  /// **'Measure in the board'**
+  String get addSetMeasure;
+
+  /// No description provided for @addSetMeasureHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Put one dart in at four places – the cameras measure it'**
+  String get addSetMeasureHint;
+
+  /// No description provided for @addSetEnter.
+  ///
+  /// In en, this message translates to:
+  /// **'Type in the dimensions'**
+  String get addSetEnter;
+
+  /// No description provided for @addSetEnterHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For example from the packaging'**
+  String get addSetEnterHint;
+
+  /// No description provided for @enterDims.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter dimensions'**
+  String get enterDims;
+
+  /// No description provided for @dimsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Values e.g. from the packaging. An empty field keeps the measured value.'**
+  String get dimsHint;
+
+  /// No description provided for @dimTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total length'**
+  String get dimTotal;
+
+  /// No description provided for @dimPoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Point'**
+  String get dimPoint;
+
+  /// No description provided for @dimBarrel.
+  ///
+  /// In en, this message translates to:
+  /// **'Barrel'**
+  String get dimBarrel;
+
+  /// No description provided for @dimBarrelDiameter.
+  ///
+  /// In en, this message translates to:
+  /// **'Barrel diameter'**
+  String get dimBarrelDiameter;
+
+  /// No description provided for @dimShaft.
+  ///
+  /// In en, this message translates to:
+  /// **'Shaft'**
+  String get dimShaft;
+
+  /// No description provided for @dimFlight.
+  ///
+  /// In en, this message translates to:
+  /// **'Flight'**
+  String get dimFlight;
+
+  /// No description provided for @dimWeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight'**
+  String get dimWeight;
+
+  /// No description provided for @dimEntered.
+  ///
+  /// In en, this message translates to:
+  /// **'entered'**
+  String get dimEntered;
+
+  /// No description provided for @dimPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'photo'**
+  String get dimPhoto;
+
+  /// No description provided for @dimMeasuredValue.
+  ///
+  /// In en, this message translates to:
+  /// **'measured: {value}'**
+  String dimMeasuredValue(String value);
+
+  /// No description provided for @dimsSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get dimsSave;
+
+  /// No description provided for @dimsImplausible.
+  ///
+  /// In en, this message translates to:
+  /// **'A value lies outside what a dart can have.'**
+  String get dimsImplausible;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

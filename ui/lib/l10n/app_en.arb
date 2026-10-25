@@ -1056,5 +1056,30 @@
         "type": "String"
       }
     }
+  },
+  "addSetMeasure": "Measure in the board",
+  "addSetMeasureHint": "Put one dart in at four places – the cameras measure it",
+  "addSetEnter": "Type in the dimensions",
+  "addSetEnterHint": "For example from the packaging",
+  "enterDims": "Enter dimensions",
+  "dimsHint": "Values e.g. from the packaging. An empty field keeps the measured value.",
+  "dimTotal": "Total length",
+  "dimPoint": "Point",
+  "dimBarrel": "Barrel",
+  "dimBarrelDiameter": "Barrel diameter",
+  "dimShaft": "Shaft",
+  "dimFlight": "Flight",
+  "dimWeight": "Weight",
+  "dimEntered": "entered",
+  "dimPhoto": "photo",
+  "dimMeasuredValue": "measured: {value}",
+  "dimsSave": "Save",
+  "dimsImplausible": "A value lies outside what a dart can have.",
+  "@dimMeasuredValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
   }
 }
