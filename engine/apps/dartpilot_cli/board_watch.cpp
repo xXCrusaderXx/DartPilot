@@ -7,24 +7,28 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 
+#include "dartpilot/event_detection/event_detection.hpp"
+#include "dartpilot/tip_candidates/dart_observation.hpp"
+
 namespace dartpilot::cli
 {
 namespace
 {
 // Sampling rate of the check; the board state need not follow faster
 constexpr auto kSampleInterval = std::chrono::milliseconds(100);
-// As on the validation page: mean brightness change at a quarter of the size; image noise gives about 1.
-constexpr double kStillMotion = 2.5;
 // Samples without motion before averaging starts, and samples per average (one second each)
 constexpr int kStillSamples = 10;
 constexpr int kSamplesToAverage = 10;
+// How long an object must stay before it is reported; a knocked camera sways for about three seconds
+constexpr auto kOccupiedConfirm = std::chrono::seconds(4);
 }  // namespace
 
-BoardWatch::BoardWatch (api::Server& server, const CameraPreviews& previews, std::vector<capture::CameraDevice> devices,
-                        std::filesystem::path calibration_directory)
+BoardWatch::BoardWatch (api::Server& server, const FrameFeed& previews, std::vector<capture::CameraDevice> devices,
+                        std::filesystem::path calibration_directory, bool stored_references)
     : server_(server)
     , previews_(previews)
     , calibration_directory_(std::move(calibration_directory))
+    , stored_references_(stored_references)
 {
     const auto extrinsics = geometry::loadExtrinsics((calibration_directory_ / "extrinsics.yml").string());
     if(extrinsics)
@@ -35,7 +39,10 @@ BoardWatch::BoardWatch (api::Server& server, const CameraPreviews& previews, std
     {
         Camera camera;
         camera.usb_port = device.usb_port;
-        camera.reference = geometry::loadEmptyReference((calibration_directory_ / geometry::emptyReferenceFileName(device.usb_port)).string());
+        if(stored_references)
+        {
+            camera.reference = geometry::loadEmptyReference((calibration_directory_ / geometry::emptyReferenceFileName(device.usb_port)).string());
+        }
         if(extrinsics)
         {
             for(const auto& refined : extrinsics->refinement.cameras)
@@ -47,6 +54,7 @@ BoardWatch::BoardWatch (api::Server& server, const CameraPreviews& previews, std
             }
         }
         camera.check.reason = "Waiting for a still image.";
+        camera.reported = camera.check;
         cameras_.push_back(std::move(camera));
     }
 }
@@ -124,8 +132,7 @@ bool BoardWatch::sample (Camera& camera, std::size_t index)
     cv::resize(frame, small, cv::Size(), 0.25, 0.25, cv::INTER_AREA);
     cv::cvtColor(small, small, cv::COLOR_BGR2GRAY);
     small.convertTo(small, CV_32F);
-    const bool moving = camera.previous_small.empty() || camera.previous_small.size() != small.size() ||
-                        cv::mean(cv::abs(small - camera.previous_small))[0] > kStillMotion;
+    const bool moving = event_detection::moved(camera.previous_small, small);
     camera.previous_small = small;
     if(moving)
     {
@@ -149,11 +156,33 @@ bool BoardWatch::sample (Camera& camera, std::size_t index)
     {
         return false;
     }
+    const cv::Mat previous = camera.mean;
     camera.mean = camera.sum / camera.summed;
     camera.sum.release();
     camera.summed = 0;
+    // A knocked camera that sways changes its whole view for a moment; that is no object in the board. The state stays
+    // until a still view without such a change; the calibration check tells whether the camera moved for good.
+    if(!previous.empty() && tip_candidates::viewChange(previous, camera.mean))
+    {
+        return false;
+    }
     camera.check = geometry::checkBoard(camera.mean, camera.reference.empty() ? nullptr : &camera.reference,
                                         camera.calibration ? &*camera.calibration : nullptr, board_);
+    if(camera.check.state != geometry::BoardState::Occupied || camera.reported.state == geometry::BoardState::Occupied)
+    {
+        camera.occupied_since.reset();
+        camera.reported = camera.check;
+        return true;
+    }
+    const auto now = std::chrono::steady_clock::now();
+    if(!camera.occupied_since)
+    {
+        camera.occupied_since = now;
+    }
+    if(now - *camera.occupied_since >= kOccupiedConfirm)
+    {
+        camera.reported = camera.check;
+    }
     return true;
 }
 
@@ -165,12 +194,13 @@ api::BoardStateInfo BoardWatch::info () const
     {
         api::CameraBoardState state;
         state.camera = "usb-" + camera.usb_port;
-        state.state = std::string(geometry::toString(camera.check.state));
-        state.reason = camera.check.reason;
-        if(camera.check.image_point_px)
+        state.state = std::string(geometry::toString(camera.reported.state));
+        state.reason = camera.reported.reason;
+        if(camera.reported.image_point_px)
         {
             // Whole pixels, so a still object does not send a new state with every average
-            state.image_point_px = std::array<double, 2>{std::round(camera.check.image_point_px->x), std::round(camera.check.image_point_px->y)};
+            state.image_point_px =
+                std::array<double, 2>{std::round(camera.reported.image_point_px->x), std::round(camera.reported.image_point_px->y)};
         }
         if(!camera.mean.empty())
         {
@@ -185,6 +215,10 @@ api::BoardStateInfo BoardWatch::info () const
 
 std::optional<std::string> BoardWatch::storeReferences (bool force)
 {
+    if(!stored_references_)
+    {
+        return "not_available";
+    }
     std::lock_guard lock(mutex_);
     for(const auto& camera : cameras_)
     {
@@ -209,6 +243,8 @@ std::optional<std::string> BoardWatch::storeReferences (bool force)
         }
         camera.reference = geometry::loadEmptyReference(path.string());
         camera.check = geometry::checkBoard(camera.mean, &camera.reference, camera.calibration ? &*camera.calibration : nullptr, board_);
+        camera.reported = camera.check;
+        camera.occupied_since.reset();
     }
     server_.setBoardState(info());
     return std::nullopt;

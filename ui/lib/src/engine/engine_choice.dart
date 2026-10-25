@@ -9,36 +9,54 @@ enum EngineMode { thisDevice, network }
 
 /// The player's last choice, stored on the device
 class EngineSettings {
-  EngineSettings({this.mode = EngineMode.network, this.url = EngineConnection.defaultUrl, this.cameras = true});
+  EngineSettings({
+    this.mode = EngineMode.network,
+    this.url = EngineConnection.defaultUrl,
+    this.simulate = false,
+    this.cameras = true,
+  });
 
   EngineMode mode;
   String url;
 
-  /// The local engine streams the real cameras; off for trying the app without them
+  /// The local engine plays generated darts instead of detecting them, for trying the app
+  bool simulate;
+
+  /// With simulated darts: stream the real cameras all the same; off for trying the app without them
   bool cameras;
+
+  /// The engine on this device listens on the home network, for phones and tablets to connect to
+  bool share = false;
 
   /// Path of the engine program when the player chose one; found automatically otherwise
   String? executable;
 
   static const _mode = 'engine.mode';
   static const _url = 'engine.url';
+  static const _simulate = 'engine.simulate';
   static const _cameras = 'engine.cameras';
+  static const _share = 'engine.share';
   static const _executable = 'engine.executable';
 
   static Future<EngineSettings> load() async {
     final prefs = await SharedPreferences.getInstance();
     return EngineSettings(
-      mode: prefs.getString(_mode) == EngineMode.thisDevice.name ? EngineMode.thisDevice : EngineMode.network,
-      url: prefs.getString(_url) ?? EngineConnection.defaultUrl,
-      cameras: prefs.getBool(_cameras) ?? true,
-    )..executable = prefs.getString(_executable);
+        mode: prefs.getString(_mode) == EngineMode.thisDevice.name ? EngineMode.thisDevice : EngineMode.network,
+        url: prefs.getString(_url) ?? EngineConnection.defaultUrl,
+        simulate: prefs.getBool(_simulate) ?? false,
+        cameras: prefs.getBool(_cameras) ?? true,
+      )
+      ..executable = prefs.getString(_executable)
+      ..share = prefs.getBool(_share) ?? false;
   }
 
   Future<void> save() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_mode, mode.name);
     await prefs.setString(_url, url);
+    await prefs.setBool(_simulate, simulate);
     await prefs.setBool(_cameras, cameras);
+    await prefs.setBool(_share, share);
     final program = executable;
     program == null ? await prefs.remove(_executable) : await prefs.setString(_executable, program);
   }
@@ -48,7 +66,7 @@ class EngineSettings {
 Future<void> startLocalEngine(EngineManager manager, EngineConnection connection, EngineSettings settings) async {
   await connection.disconnect();
   manager.executable = settings.executable;
-  final url = await manager.start(cameras: settings.cameras);
+  final url = await manager.start(simulate: settings.simulate, cameras: settings.cameras, share: settings.share);
   if (url != null) await connection.connect(url);
 }
 

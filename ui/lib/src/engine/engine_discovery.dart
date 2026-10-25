@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/services.dart';
 import 'package:multicast_dns/multicast_dns.dart';
 
 /// An engine that answered a search
@@ -70,12 +71,19 @@ class FoundEngine {
 typedef DiscoverySource = Stream<FoundEngine> Function(Duration timeout);
 
 class EngineDiscovery {
-  EngineDiscovery(this.sources);
+  EngineDiscovery(this.sources, {this.multicastLock});
 
-  /// mDNS and UDP broadcast; no sources where dart:io sockets are missing (web)
-  factory EngineDiscovery.network() => EngineDiscovery(kIsWeb ? const [] : [mdnsSearch, broadcastSearch()]);
+  /// mDNS and UDP broadcast; no sources where dart:io sockets are missing (web), and none under `flutter test`, where
+  /// widget tests that build the app without a test connection would otherwise open sockets.
+  factory EngineDiscovery.network() => EngineDiscovery(
+    kIsWeb || Platform.environment.containsKey('FLUTTER_TEST') ? const [] : [mdnsSearch, broadcastSearch()],
+    multicastLock: !kIsWeb && Platform.isAndroid ? androidMulticastLock : null,
+  );
 
   final List<DiscoverySource> sources;
+
+  /// Held while searching: Android drops multicast packets (mDNS) for apps that hold no multicast lock
+  final Future<void> Function(bool hold)? multicastLock;
 
   bool get available => sources.isNotEmpty;
 
@@ -88,6 +96,8 @@ class EngineDiscovery {
       controller.close();
       return controller.stream;
     }
+    final lock = multicastLock;
+    lock?.call(true).catchError((Object _) {});
     for (final source in sources) {
       source(timeout).listen(
         (engine) {
@@ -99,13 +109,21 @@ class EngineDiscovery {
         // A source that cannot search (no network, port in use) leaves the others searching.
         onError: (Object _) {},
         onDone: () {
-          if (--running == 0) controller.close();
+          if (--running == 0) {
+            lock?.call(false).catchError((Object _) {});
+            controller.close();
+          }
         },
       );
     }
     return controller.stream;
   }
 }
+
+const MethodChannel _multicastChannel = MethodChannel('dartpilot/multicast');
+
+/// Acquires or releases the Wi-Fi multicast lock of the Android app (MainActivity.kt)
+Future<void> androidMulticastLock(bool hold) => _multicastChannel.invokeMethod<void>(hold ? 'acquire' : 'release');
 
 const int discoveryPort = 8485;
 const String serviceType = '_dartpilot._tcp';

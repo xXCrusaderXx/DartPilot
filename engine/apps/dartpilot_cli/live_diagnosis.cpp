@@ -3,13 +3,13 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 
+#include "dartpilot/event_detection/event_detection.hpp"
+
 namespace dartpilot::cli
 {
 namespace
 {
 constexpr auto kSampleInterval = std::chrono::milliseconds(100);
-// As in the recorded diagnosis: mean brightness change at a quarter of the size; image noise gives about 1.
-constexpr double kStillMotion = 2.5;
 // Samples every camera must be still before averaging starts (1.5 s, the shortest still period of a recording), and
 // samples per average
 constexpr int kSettleSamples = 15;
@@ -21,7 +21,7 @@ constexpr auto kRepeat = std::chrono::seconds(20);
 double seconds (std::chrono::steady_clock::duration duration) { return std::chrono::duration<double>(duration).count(); }
 }  // namespace
 
-LiveDiagnosis::LiveDiagnosis (api::Server& server, const CameraPreviews& previews, const std::vector<capture::CameraDevice>& devices,
+LiveDiagnosis::LiveDiagnosis (api::Server& server, const FrameFeed& previews, const std::vector<capture::CameraDevice>& devices,
                               const std::filesystem::path& calibration_directory, std::chrono::steady_clock::time_point started)
     : server_(server)
     , previews_(previews)
@@ -217,8 +217,7 @@ bool LiveDiagnosis::sample (Camera& camera, std::size_t index)
     cv::resize(frame, small, cv::Size(), 0.25, 0.25, cv::INTER_AREA);
     cv::cvtColor(small, small, cv::COLOR_BGR2GRAY);
     small.convertTo(small, CV_32F);
-    camera.moving = camera.previous_small.empty() || camera.previous_small.size() != small.size() ||
-                    cv::mean(cv::abs(small - camera.previous_small))[0] > kStillMotion;
+    camera.moving = event_detection::moved(camera.previous_small, small);
     camera.previous_small = small;
     camera.latest = frame;
     camera.fresh = true;

@@ -10,28 +10,49 @@ import '../board/dart_throw.dart';
 import '../board/scoring.dart';
 import 'engine_discovery.dart';
 import 'engine_events.dart';
+import 'pairing_tokens.dart';
 
 enum EngineConnectionState { disconnected, connecting, connected, failed }
 
 /// The app's connection to an engine (docs/engine-api.md). One per app; screens listen to [events].
 class EngineConnection extends ChangeNotifier {
-  EngineConnection({WebSocketChannel Function(Uri uri)? connector, EngineDiscovery? discovery})
+  EngineConnection({WebSocketChannel Function(Uri uri)? connector, EngineDiscovery? discovery, PairingTokens? tokens})
     : _connector = connector ?? WebSocketChannel.connect,
       discovery = discovery ?? EngineDiscovery.network(),
+      tokens = tokens ?? MemoryPairingTokens(),
       clientName = 'dartpilot-app-${math.Random().nextInt(0x7fffffff).toRadixString(16)}';
 
   /// For tests: requests go to `onSend` instead of a socket
   @visibleForTesting
-  EngineConnection.forTest(void Function(Map<String, dynamic>) onSend, {EngineDiscovery? discovery})
-    : _connector = WebSocketChannel.connect,
-      discovery = discovery ?? EngineDiscovery(const []),
-      clientName = 'test',
-      _testSink = onSend;
+  EngineConnection.forTest(
+    void Function(Map<String, dynamic>) onSend, {
+    EngineDiscovery? discovery,
+    PairingTokens? tokens,
+  }) : _connector = WebSocketChannel.connect,
+       discovery = discovery ?? EngineDiscovery(const []),
+       tokens = tokens ?? MemoryPairingTokens(),
+       clientName = 'test',
+       _testSink = onSend;
 
   final WebSocketChannel Function(Uri uri) _connector;
 
   /// Finds engines in the network for the engine card
   final EngineDiscovery discovery;
+
+  /// Tokens from pairing with network engines (#110)
+  final PairingTokens tokens;
+
+  /// The engine asks this device to pair before anything else; the app asks for the PIN
+  bool pairingRequired = false;
+
+  /// A PIN that came with the address (QR code), tried as soon as the engine asks for pairing
+  String? _pendingPin;
+
+  /// The PIN of the engine on this device, for other devices to pair with; null until asked for
+  PairingPin? pairingPin;
+
+  /// The devices paired with the engine on this device; null until asked for
+  PairedClients? pairedClients;
   void Function(Map<String, dynamic>)? _testSink;
 
   /// Sent in hello, so the app recognises its own corrections in throw_corrected
@@ -46,6 +67,25 @@ class EngineConnection extends ChangeNotifier {
   /// Latest board check of the engine; null when it has none
   EngineBoardState? boardState;
 
+  /// The real board from the front, shown instead of the drawn one; null where the engine has none (simulator, not
+  /// calibrated)
+  BoardImage? boardImage;
+
+  /// Latest state of the reference measurement; null before it ran
+  ReferenceRun? referenceRun;
+
+  /// The measured dart sets and the active one (#120); null with engines that have none
+  DartSets? dartSets;
+
+  /// Progress of measuring a new dart set; null when none is measured
+  DartSetCapture? dartSetCapture;
+
+  /// Reference images by set id and camera, as far as asked for
+  final Map<(String, String), DartSetImage> dartSetImages = {};
+
+  /// The game an app shares through the engine, this app's own included; null when none is shared
+  SharedGame? sharedGame;
+
   /// Latest state of the setup diagnosis; null before it ran
   EngineDiagnosis? diagnosis;
 
@@ -57,6 +97,14 @@ class EngineConnection extends ChangeNotifier {
   final Map<String, BoardDetection> boardDetections = {};
   final Map<String, BoardPlaneResult> boardPlanes = {};
   RefinementResult? refinement;
+
+  /// Detailed checks while someone watches them, per camera
+  final Map<String, CalibrationCheck> calibrationChecks = {};
+  int _checkWatchers = 0;
+
+  /// Whether the engine detects darts now (running, paused, unavailable), and why not (not_calibrated, …)
+  String detection = 'running';
+  String? detectionReason;
   String? error;
 
   WebSocketChannel? _channel;
@@ -84,9 +132,12 @@ class EngineConnection extends ChangeNotifier {
   /// The board geometry the engine scores with, nominal without an engine
   BoardGeometry get geometry => hello?.geometry ?? const BoardGeometry();
 
+  /// Connects to `newUrl`. A `pin` in its query (from a QR code) pairs this device right away.
   Future<void> connect(String newUrl) async {
     await disconnect();
-    url = newUrl;
+    final (address, pin) = splitPairingPin(newUrl);
+    _pendingPin = pin;
+    url = newUrl = address;
     state = EngineConnectionState.connecting;
     error = null;
     notifyListeners();
@@ -114,6 +165,15 @@ class EngineConnection extends ChangeNotifier {
     await _closeChannel();
     hello = null;
     boardState = null;
+    dartSets = null;
+    dartSetCapture = null;
+    dartSetImages.clear();
+    pairingRequired = false;
+    pairingPin = null;
+    pairedClients = null;
+    boardImage = null;
+    referenceRun = null;
+    sharedGame = null;
     diagnosis = null;
     _clearCalibration();
     if (state != EngineConnectionState.disconnected) {
@@ -150,6 +210,10 @@ class EngineConnection extends ChangeNotifier {
     if (event is EngineHello) {
       hello = event;
       boardState = event.boardState;
+      // Taken from the current frames, so only from an empty board
+      if (boardState?.state == 'empty') requestBoardImage();
+      detection = event.detection;
+      detectionReason = event.detectionReason;
       diagnosis = null;
       _clearCalibration();
       calibration = event.calibration;
@@ -157,6 +221,24 @@ class EngineConnection extends ChangeNotifier {
         ..clear()
         ..addAll({for (final c in event.cameras) c: EngineCameraStatus(c, 'ok')});
       state = EngineConnectionState.connected;
+      pairingRequired = event.pairing == 'required';
+      if (pairingRequired) _pairOnConnect(event.engineId);
+      notifyListeners();
+    }
+    if (event is Paired) {
+      pairingRequired = false;
+      _pendingPin = null;
+      final id = event.engineId.isNotEmpty ? event.engineId : hello?.engineId;
+      if (id != null) tokens.store(id, event.token);
+      if (boardState?.state == 'empty') requestBoardImage();
+      notifyListeners();
+    }
+    if (event is PairingPin) {
+      pairingPin = event;
+      notifyListeners();
+    }
+    if (event is PairedClients) {
+      pairedClients = event;
       notifyListeners();
     }
     switch (event) {
@@ -171,6 +253,8 @@ class EngineConnection extends ChangeNotifier {
         boardPlanes[event.camera] = event;
       case RefinementResult():
         refinement = event;
+      case CalibrationCheck():
+        calibrationChecks[event.camera] = event;
       default:
         break;
     }
@@ -178,7 +262,40 @@ class EngineConnection extends ChangeNotifier {
         event is WhiteBalanceState ||
         event is BoardDetection ||
         event is BoardPlaneResult ||
-        event is RefinementResult) {
+        event is RefinementResult ||
+        event is CalibrationCheck) {
+      notifyListeners();
+    }
+    if (event is SharedGame) {
+      sharedGame = event.game == null ? null : event;
+      notifyListeners();
+    }
+    if (event is ReferenceRun) {
+      referenceRun = event;
+      notifyListeners();
+    }
+    if (event is BoardImage) {
+      boardImage = event;
+      notifyListeners();
+    }
+    // After a takeout the board is empty: the image follows changes of light without a dart in it.
+    if (event is EngineTakeout) requestBoardImage();
+    if (event is EngineStatus) {
+      detection = event.detection;
+      // The message carries the reason code (docs/engine-api.md, engine_status).
+      detectionReason = event.message.isEmpty ? null : event.message;
+      notifyListeners();
+    }
+    if (event is DartSets) {
+      dartSets = event;
+      notifyListeners();
+    }
+    if (event is DartSetCapture) {
+      dartSetCapture = event;
+      notifyListeners();
+    }
+    if (event is DartSetImage) {
+      dartSetImages[(event.id, event.camera)] = event;
       notifyListeners();
     }
     if (event is EngineDiagnosis) {
@@ -186,6 +303,7 @@ class EngineConnection extends ChangeNotifier {
       notifyListeners();
     }
     if (event is EngineBoardState) {
+      if (event.state == 'empty' && boardState?.state != 'empty' && boardImage == null) requestBoardImage();
       boardState = event;
       notifyListeners();
     }
@@ -222,6 +340,61 @@ class EngineConnection extends ChangeNotifier {
 
   void rejectThrow(String throwId, String reason) =>
       _send({'type': 'reject_throw', 'throw_id': throwId, 'reason': reason});
+
+  /// Starts measuring a new dart set; progress arrives as [dartSetCapture], the new set in [dartSets].
+  Future<String?> startDartSet(String name) => _request({'type': 'start_dart_set', 'name': name});
+
+  void cancelDartSet() => _send({'type': 'cancel_dart_set'});
+
+  Future<String?> renameDartSet(String id, String name) =>
+      _request({'type': 'rename_dart_set', 'id': id, 'name': name});
+
+  Future<String?> deleteDartSet(String id) => _request({'type': 'delete_dart_set', 'id': id});
+
+  /// Asks for a set's reference image from one camera; it arrives in [dartSetImages].
+  void requestDartSetImage(String id, String camera) =>
+      _send({'type': 'get_dart_set_image', 'id': id, 'camera': camera});
+
+  /// The darts the player at the board throws; null for generic detection. Sent only when it changes.
+  void useDarts(String? id) {
+    final sets = dartSets;
+    if (sets == null || sets.active == id) return;
+    if (id != null && !sets.sets.any((s) => s.id == id)) return;
+    dartSets = DartSets(sets.sets, id);
+    _send({'type': 'set_active_darts', 'id': id});
+  }
+
+  /// After an engine's hello that asks for pairing: the stored token, else the PIN from the QR code
+  Future<void> _pairOnConnect(String? engineId) async {
+    final token = engineId == null ? null : await tokens.tokenFor(engineId);
+    if (token != null) {
+      final error = await _request({'type': 'pair', 'token': token});
+      if (error == null) return;
+      // The engine forgot this device (unpaired, or reinstalled): the PIN is needed again.
+      if (error == 'unknown_token') await tokens.forget(engineId!);
+    }
+    final pin = _pendingPin;
+    if (pin != null) await pairWithPin(pin);
+  }
+
+  /// Pairs this device with the PIN the engine shows; completes with the error code (wrong_pin, too_many_attempts)
+  /// or null. The token arrives as `paired` and is stored for later connections.
+  Future<String?> pairWithPin(String pin) {
+    _pendingPin = null;
+    return _request({'type': 'pair', 'pin': pin});
+  }
+
+  /// For the engine on this device: its PIN arrives as [pairingPin].
+  void requestPairingPin() => _send({'type': 'get_pairing_pin'});
+
+  /// For the engine on this device: the paired devices arrive as [pairedClients].
+  void requestPairedClients() => _send({'type': 'list_paired_clients'});
+
+  Future<String?> unpair(String id) async {
+    final error = await _request({'type': 'unpair', 'id': id});
+    if (error == null) requestPairedClients();
+    return error;
+  }
 
   /// Starts or changes the preview of a camera. Several widgets may watch the same camera; the engine gets the
   /// highest rate and width any of them asked for, and the preview stops when the last handle is released.
@@ -278,6 +451,7 @@ class EngineConnection extends ChangeNotifier {
     boardDetections.clear();
     boardPlanes.clear();
     refinement = null;
+    calibrationChecks.clear();
   }
 
   /// The calibration steps (docs/engine-api.md, "Calibration"); each completes with an error code, or null. Their
@@ -293,6 +467,29 @@ class EngineConnection extends ChangeNotifier {
   });
 
   Future<String?> refineCameras() => _request({'type': 'refine_cameras'});
+
+  /// Detailed calibration checks every 2 s while at least one caller watches; the engine counts subscribers, so call
+  /// [unwatchCalibrationCheck] once for every call.
+  void watchCalibrationCheck() {
+    if (_checkWatchers++ == 0) _send({'type': 'subscribe_calibration_check'});
+  }
+
+  void unwatchCalibrationCheck() {
+    if (_checkWatchers > 0 && --_checkWatchers == 0) _send({'type': 'unsubscribe_calibration_check'});
+  }
+
+  /// Shares the game this app leads, for other displays to follow (#116)
+  void shareGame(Map<String, dynamic> game) => _send({'type': 'share_game', 'game': game});
+
+  void endSharedGame() => _send({'type': 'end_shared_game'});
+
+  /// Starts the reference measurement afresh, or stops it; its state arrives as [referenceRun].
+  Future<String?> startReferenceRun() => _request({'type': 'start_reference_run'});
+
+  Future<String?> stopReferenceRun() => _request({'type': 'stop_reference_run'});
+
+  /// Asks for the real board's image; it arrives as [boardImage]. Engines without one answer with an error.
+  void requestBoardImage() => _send({'type': 'get_board_image'});
 
   /// A dart the engine missed, entered by hand
   void addThrow(BoardPoint point) => _send({'type': 'add_throw', 'board_point': _pointJson(point)});
@@ -343,4 +540,20 @@ class PreviewHandle {
   final int maxWidth;
 
   void release() => _connection._releasePreview(this);
+}
+
+/// The engine address and the PIN that a QR code adds to it (`ws://host:8484/?pin=123456`); the PIN is null without one
+(String, String?) splitPairingPin(String url) {
+  final uri = Uri.tryParse(url);
+  final pin = uri?.queryParameters['pin'];
+  if (uri == null || pin == null) return (url, null);
+  final rest = Map.of(uri.queryParameters)..remove('pin');
+  final address = Uri(
+    scheme: uri.scheme,
+    host: uri.host,
+    port: uri.hasPort ? uri.port : null,
+    path: uri.path,
+    queryParameters: rest.isEmpty ? null : rest,
+  );
+  return (address.toString(), pin);
 }

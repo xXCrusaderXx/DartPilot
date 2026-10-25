@@ -6,19 +6,34 @@ import '../games/cricket.dart';
 import '../bots/bot_turns.dart';
 import '../games/dart_game.dart';
 import '../input/game_input.dart';
+import '../input/takeout_gate.dart';
 import '../stats/game_record.dart';
 import '../stats/statistics.dart';
 import '../widgets/winner_dialog.dart';
+import 'my_darts_screen.dart';
+import 'watched_board.dart';
 import 'game_layout.dart';
 import 'players_setup_screen.dart';
 
 class CricketScreen extends StatefulWidget {
-  const CricketScreen({super.key, required this.names, this.bots = const {}});
+  const CricketScreen({
+    super.key,
+    required this.names,
+    this.bots = const {},
+    this.replay = const [],
+    this.watching = false,
+  });
 
   final List<String> names;
 
   /// Bot level per player index; the others are people
   final Map<int, int> bots;
+
+  /// Darts already thrown, for a game rebuilt from a shared record
+  final List<DartThrow> replay;
+
+  /// Only shows another app's game: no input, nothing kept or shared (#116)
+  final bool watching;
 
   static Widget setup(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -33,7 +48,14 @@ class CricketScreen extends StatefulWidget {
 }
 
 class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurns {
-  late final CricketGame _game = CricketGame(widget.names);
+  @override
+  bool get watching => widget.watching;
+
+  late final CricketGame _game = replayed(CricketGame(widget.names), widget.replay);
+  final TakeoutGate _takeout = TakeoutGate();
+
+  @override
+  bool get waitsForTakeout => _takeout.isClosed(_game);
 
   @override
   GameRecord buildRecord(String id, DateTime started, DateTime ended) => GameRecord(
@@ -58,14 +80,10 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
   void _add(DartThrow dart) {
     setState(() => _game.add(dart));
     if (!_game.isFinished) return;
-    final l10n = AppLocalizations.of(context);
     showWinnerDialog(
       context,
       winner: _game.players[_game.winner!].name,
-      lines: [
-        for (final p in _game.players)
-          '${p.name}: ${p.points} ${l10n.points}, ${l10n.marksPerRound} ${p.marksPerRound.toStringAsFixed(2)}',
-      ],
+      record: currentRecord,
       onUndo: () => setState(_game.undo),
       newGame: CricketScreen.setup,
     );
@@ -80,9 +98,18 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
 
   @override
   Widget build(BuildContext context) {
-    WidgetsBinding.instance.addPostFrameCallback((_) => scheduleBotTurn());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.watching) return;
+      scheduleBotTurn();
+      shareGame();
+      if (mounted && !_game.isFinished) useDartsOf(context, _game.players[_game.current].name);
+    });
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    // While its darts are in the board, the visit that ended stays on the scoreboard with its player.
+    final atOche = _takeout.isClosed(_game)
+        ? (_game.current + _game.players.length - 1) % _game.players.length
+        : _game.current;
     final players = _game.players;
 
     TableRow row(String label, List<String> cells, {TextStyle? style}) => TableRow(
@@ -93,7 +120,7 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
         ),
         for (var i = 0; i < cells.length; ++i)
           Container(
-            color: i == _game.current ? theme.colorScheme.secondaryContainer : null,
+            color: i == atOche ? theme.colorScheme.secondaryContainer : null,
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Text(cells[i], textAlign: TextAlign.center, style: style ?? theme.textTheme.titleLarge),
           ),
@@ -116,7 +143,7 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
         VisitDarts([for (final d in _game.currentVisit) d.dart.score.label]),
         const Spacer(),
         OutlinedButton.icon(
-          onPressed: _game.canUndo ? () => setState(_game.undo) : null,
+          onPressed: _game.canUndo && !widget.watching ? () => setState(_game.undo) : null,
           icon: const Icon(Icons.undo),
           label: Text(l10n.undo),
         ),
@@ -125,15 +152,18 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
     return Scaffold(
       appBar: AppBar(title: Text(l10n.modeCricket)),
       body: GameLayout(
-        input: GameInput(
-          game: _game,
-          shownThrows: [for (final d in _game.currentVisit) d.dart],
-          onDart: (dart) {
-            // While a bot is at the oche, its darts are its own.
-            if (!isBotTurn) _add(dart);
-          },
-          onChanged: () => setState(() {}),
-        ),
+        input: widget.watching
+            ? WatchedBoard(throws: [for (final d in _game.currentVisit) d.dart])
+            : GameInput(
+                game: _game,
+                takeout: _takeout,
+                shownThrows: [for (final d in _game.currentVisit) d.dart],
+                onDart: (dart) {
+                  // While a bot is at the oche, its darts are its own.
+                  if (!isBotTurn) _add(dart);
+                },
+                onChanged: () => setState(() {}),
+              ),
         panel: panel,
         panelWidth: 120.0 + 90.0 * players.length.clamp(2, 4),
       ),

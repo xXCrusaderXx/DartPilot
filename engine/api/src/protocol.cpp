@@ -135,15 +135,20 @@ json helloMessage (const Hello& hello)
     }
     return {{"type", "hello"},
             {"protocol", kProtocol},
-            {"engine", {{"version", std::string(kVersion)}, {"commit", std::string(kGitCommit)}}},
+            {"engine", {{"version", std::string(kVersion)}, {"commit", std::string(kGitCommit)}, {"id", hello.engine_id}}},
             {"mode", hello.mode},
             {"session_id", hello.session_id.empty() ? json(nullptr) : json(hello.session_id)},
             {"board_geometry", toJson(hello.board_geometry, hello.board_geometry_source)},
             {"cameras", cameras},
             {"detection", hello.detection},
+            {"detection_reason", hello.detection_reason.empty() ? json(nullptr) : json(hello.detection_reason)},
             {"board_state", toJson(hello.board_state)},
-            {"calibration_status", hello.calibration_status}};
+            {"calibration_status", hello.calibration_status},
+            {"pairing", hello.pairing},
+            {"pairing_pin_digits", 6}};
 }
+
+json sharedGameMessage (const std::string& client, const json& game) { return {{"type", "shared_game"}, {"client", client}, {"game", game}}; }
 
 json calibrationStatusMessage (const json& status)
 {
@@ -173,6 +178,14 @@ json throwMessage (const Throw& dart, const scoring::BoardGeometry& geometry)
                 {"confidence", dart.confidence},
                 {"cameras", cameras},
                 {"processing_latency_ms", dart.processing_latency_ms}};
+    if(dart.detection_latency_ms)
+    {
+        out["detection_latency_ms"] = *dart.detection_latency_ms;
+    }
+    if(dart.params_revision)
+    {
+        out["params_revision"] = *dart.params_revision;
+    }
     if(dart.board_point)
     {
         out["board_point"] = toJson(*dart.board_point);
@@ -183,6 +196,61 @@ json throwMessage (const Throw& dart, const scoring::BoardGeometry& geometry)
         out["reason"] = dart.reason;
     }
     return out;
+}
+
+json throwRecord (const Throw& dart, const scoring::BoardGeometry& geometry)
+{
+    json cameras = json::array();
+    for(const auto& camera : dart.cameras)
+    {
+        json measurement = {{"camera", camera.camera}, {"frames", {{"after", camera.frames}}}, {"used", camera.used}};
+        if(!camera.reason.empty())
+        {
+            measurement["reason"] = camera.reason;
+        }
+        cameras.push_back(measurement);
+    }
+    json out = {{"throw_id", dart.throw_id},
+                {"accepted", dart.accepted},
+                {"board_point", nullptr},
+                {"score", nullptr},
+                {"confidence", dart.confidence},
+                {"camera_measurements", cameras},
+                {"diagnostics", {{"event_ns", dart.event_ns}}},
+                {"processing_latency_ms", dart.processing_latency_ms}};
+    if(dart.detection_latency_ms)
+    {
+        out["diagnostics"]["detection_latency_ms"] = *dart.detection_latency_ms;
+    }
+    if(dart.params_revision)
+    {
+        out["diagnostics"]["params_revision"] = *dart.params_revision;
+    }
+    if(dart.board_point)
+    {
+        out["board_point"] = toJson(*dart.board_point);
+        out["score"] = toJson(scoring::score(dart.board_point->x_mm, dart.board_point->y_mm, geometry));
+    }
+    if(!dart.reason.empty())
+    {
+        out["diagnostics"]["reason"] = dart.reason;
+    }
+    return out;
+}
+
+json correctionRecord (const std::string& throw_id, const std::string& action, const std::optional<BoardPoint>& point, const std::string& client,
+                       const std::string& reason, std::int64_t event_ns)
+{
+    json correction = {{"action", action}, {"board_point", point ? toJson(*point) : json(nullptr)}, {"client", client}};
+    if(!reason.empty())
+    {
+        correction["reason"] = reason;
+    }
+    if(action == "added")
+    {
+        correction["event_ns"] = event_ns;
+    }
+    return {{"throw_id", throw_id}, {"correction", correction}};
 }
 
 json throwCorrectedMessage (const std::string& throw_id, const std::string& action, const std::optional<BoardPoint>& point,
@@ -198,9 +266,14 @@ json throwCorrectedMessage (const std::string& throw_id, const std::string& acti
     return out;
 }
 
-json takeoutMessage (std::int64_t event_ns, int darts_removed)
+json takeoutMessage (std::int64_t event_ns, int darts_removed, std::optional<double> detection_latency_ms)
 {
-    return {{"type", "takeout"}, {"event_ns", event_ns}, {"darts_removed", darts_removed}};
+    json out = {{"type", "takeout"}, {"event_ns", event_ns}, {"darts_removed", darts_removed}};
+    if(detection_latency_ms)
+    {
+        out["detection_latency_ms"] = *detection_latency_ms;
+    }
+    return out;
 }
 
 json cameraStatusMessage (const CameraStatus& status)
@@ -278,6 +351,14 @@ std::variant<Request, ParseError> parseRequest (const std::string& text)
         {
             request.body = ClientHello{message.value("client", std::string())};
         }
+        else if(type == "pair")
+        {
+            request.body = Pair{message.value("pin", std::string()), message.value("token", std::string())};
+        }
+        else if(type == "get_pairing_pin" || type == "list_paired_clients" || type == "unpair")
+        {
+            request.body = PairingAdmin{type, message.value("id", std::string())};
+        }
         else if(type == "correct_throw")
         {
             request.body = CorrectThrow{message.at("throw_id").get<std::string>(), parseBoardPoint(message.at("board_point"))};
@@ -298,7 +379,12 @@ std::variant<Request, ParseError> parseRequest (const std::string& text)
         {
             request.body = CheckBoard{};
         }
-        else if(type == "detect_board" || type == "set_sector_20" || type == "refine_cameras" || type == "tune_white_balance")
+        else if(type == "detect_board" || type == "set_sector_20" || type == "refine_cameras" || type == "tune_white_balance" ||
+                type == "subscribe_calibration_check" || type == "unsubscribe_calibration_check" || type == "get_board_image" ||
+                type == "start_reference_run" || type == "stop_reference_run" || type == "get_detection_params" || type == "set_detection_params" ||
+                type == "list_dart_sets" || type == "start_dart_set" || type == "create_dart_set" || type == "update_dart_set" ||
+                type == "cancel_dart_set" || type == "get_dart_set_image" || type == "rename_dart_set" || type == "delete_dart_set" ||
+                type == "set_active_darts")
         {
             request.body = CalibrationRequest{type, message};
         }
@@ -309,6 +395,19 @@ std::variant<Request, ParseError> parseRequest (const std::string& text)
         else if(type == "store_empty_reference")
         {
             request.body = StoreEmptyReference{message.value("force", false)};
+        }
+        else if(type == "share_game")
+        {
+            const auto& game = message.at("game");
+            if(!game.is_object())
+            {
+                return ParseError{request_id, "bad_request", "share_game needs the game as an object"};
+            }
+            request.body = ShareGame{game};
+        }
+        else if(type == "end_shared_game")
+        {
+            request.body = ShareGame{nullptr};
         }
         else if(type == "subscribe_status" || type == "unsubscribe_status")
         {

@@ -143,7 +143,8 @@ nlohmann::json Simulator::exampleCalibrationStatus ()
                            {"intrinsics", c == 2 ? "none" : "valid"},
                            {"board_plane_mm", c == 1 ? 0.62 : 0.41},
                            {"refined", true},
-                           {"white_balance_kelvin", 3000}});
+                           {"white_balance_kelvin", 3000},
+                           {"check", {{"state", c == 1 ? "moved" : "ok"}, {"mm", c == 1 ? 4.2 : 0.6}, {"checked_at", "2026-10-25T10:00:00Z"}}}});
     }
     return {{"cameras", cameras}, {"refinement_stale", false}, {"extrinsics_created", "2026-10-24T17:41:00Z"}};
 }
@@ -164,7 +165,32 @@ std::vector<nlohmann::json> Simulator::exampleCalibrationEvents (const Calibrati
     };
     const scoring::BoardGeometry geometry;
     std::vector<json> events;
-    if(request.type == "detect_board")
+    if(request.type == "subscribe_calibration_check")
+    {
+        // One camera that moved: its wire points all shifted the same way
+        for(std::size_t c = 0; c < kCameras.size(); ++c)
+        {
+            const bool moved = c == 1;
+            json expected = json::array(), found = json::array();
+            for(int k = 0; k < 20; ++k)
+            {
+                const double phi = (9.0 + 18.0 * k) * kPi / 180.0;
+                const json p = project(166.0 * std::cos(phi), 166.0 * std::sin(phi));
+                expected.push_back(p);
+                found.push_back({p[0].get<double>() + (moved ? 6.0 : 0.3), p[1].get<double>() + (moved ? -3.0 : 0.2)});
+            }
+            events.push_back({{"type", "calibration_check"},
+                              {"camera", kCameras[c]},
+                              {"state", moved ? "moved" : "ok"},
+                              {"mm", moved ? 4.2 : 0.6},
+                              {"shift_px", {moved ? 6.0 : 0.3, moved ? -3.0 : 0.2}},
+                              {"count", 20},
+                              {"expected_px", expected},
+                              {"found_px", found},
+                              {"image_size_px", {640, 360}}});
+        }
+    }
+    else if(request.type == "detect_board")
     {
         json ellipses = json::array(), wires = json::array(), points = json::array();
         const double outer_bull = geometry.outer_bull_radius_mm;
@@ -335,6 +361,10 @@ void Simulator::start ()
             [this] (const CalibrationRequest& request) -> std::optional<Server::CalibrationError>
             {
                 const std::string camera = request.body.value("camera", std::string());
+                if(request.type == "get_board_image")
+                {
+                    return Server::CalibrationError{"not_available", "Simulated cameras have no board image; draw the board"};
+                }
                 const bool needs_camera = request.type == "detect_board" || request.type == "set_sector_20";
                 if(needs_camera && std::find(kCameras.begin(), kCameras.end(), camera) == kCameras.end())
                 {

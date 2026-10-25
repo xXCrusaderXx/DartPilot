@@ -17,13 +17,27 @@ sealed class EngineEvent {
     'takeout' => EngineTakeout(json['darts_removed'] as int? ?? 0),
     'camera_status' => EngineCameraStatus.fromJson(json),
     'board_state' => EngineBoardState.fromJson(json),
+    'board_image' => BoardImage.fromJson(json),
+    'reference_run' => ReferenceRun.fromJson(json),
+    'shared_game' => SharedGame(json['client'] as String? ?? '', json['game'] as Map<String, dynamic>?),
     'diagnosis' => EngineDiagnosis.fromJson(json),
     'calibration_status' => CalibrationStatus.fromJson(json),
     'white_balance' => WhiteBalanceState.fromJson(json),
     'board_detection' => BoardDetection.fromJson(json),
     'board_plane' => BoardPlaneResult.fromJson(json),
     'refinement' => RefinementResult.fromJson(json),
-    'engine_status' => EngineStatus(json['detection'] as String, json['message'] as String? ?? ''),
+    'calibration_check' => CalibrationCheck.fromJson(json),
+    'camera_moved' => CameraMoved(json['camera'] as String),
+    'dart_sets' => DartSets.fromJson(json),
+    'dart_set_capture' => DartSetCapture.fromJson(json),
+    'dart_set_image' => DartSetImage.fromJson(json),
+    'paired' => Paired(json['token'] as String, json['engine_id'] as String? ?? ''),
+    'pairing_pin' => PairingPin(json['pin'] as String, DateTime.tryParse(json['expires_utc'] as String? ?? '')),
+    'paired_clients' => PairedClients([
+      for (final c in json['clients'] as List<dynamic>? ?? const [])
+        if (c is Map<String, dynamic>) PairedClient.fromJson(c),
+    ]),
+    'engine_status' => EngineStatus(json['detection'] as String? ?? 'running', json['message'] as String? ?? ''),
     _ => null,
   };
 }
@@ -41,6 +55,11 @@ class EngineHello extends EngineEvent {
     required this.cameras,
     this.boardState,
     this.calibration,
+    this.detection = 'running',
+    this.detectionReason,
+    this.engineId,
+    this.pairing,
+    this.pinDigits = 6,
   });
 
   final String protocol;
@@ -53,6 +72,17 @@ class EngineHello extends EngineEvent {
 
   /// Missing without cameras and with engines before the calibration wizard
   final CalibrationStatus? calibration;
+
+  /// running, paused or unavailable; [detectionReason] says why: not_calibrated, no_empty_reference
+  final String detection;
+  final String? detectionReason;
+
+  /// The engine installation's id; tokens from pairing are kept per id
+  final String? engineId;
+
+  /// required (pair before anything else), paired, or local (this device, no pairing); null with engines before #110
+  final String? pairing;
+  final int pinDigits;
 
   factory EngineHello.fromJson(Map<String, dynamic> json) {
     final g = json['board_geometry'] as Map<String, dynamic>;
@@ -73,6 +103,11 @@ class EngineHello extends EngineEvent {
       calibration: json['calibration_status'] is Map<String, dynamic>
           ? CalibrationStatus.fromJson(json['calibration_status'] as Map<String, dynamic>)
           : null,
+      detection: json['detection'] as String? ?? 'running',
+      detectionReason: json['detection_reason'] as String?,
+      engineId: (json['engine'] as Map<String, dynamic>?)?['id'] as String?,
+      pairing: json['pairing'] as String?,
+      pinDigits: json['pairing_pin_digits'] as int? ?? 6,
       boardState: json['board_state'] is Map<String, dynamic>
           ? EngineBoardState.fromJson(json['board_state'] as Map<String, dynamic>)
           : null,
@@ -437,6 +472,7 @@ class CameraCalibration {
     this.boardPlaneMm,
     this.refined = false,
     this.whiteBalanceKelvin,
+    this.check,
   });
 
   final String camera;
@@ -447,12 +483,18 @@ class CameraCalibration {
   final bool refined;
   final int? whiteBalanceKelvin;
 
+  /// Latest background check against the calibration; null before the first one
+  final CalibrationCheck? check;
+
   factory CameraCalibration.fromJson(Map<String, dynamic> json) => CameraCalibration(
     camera: json['camera'] as String,
     intrinsics: json['intrinsics'] as String? ?? 'none',
     boardPlaneMm: _number(json['board_plane_mm']),
     refined: json['refined'] == true,
     whiteBalanceKelvin: (json['white_balance_kelvin'] as num?)?.round(),
+    check: json['check'] is Map<String, dynamic>
+        ? CalibrationCheck.fromJson({'camera': json['camera'], ...json['check'] as Map<String, dynamic>})
+        : null,
   );
 }
 
@@ -632,4 +674,328 @@ class CameraRefinement {
     lensFrom: json['lens_from'] as String?,
     advice: json['advice'] as String?,
   );
+}
+
+/// The real board seen from the front, in board coordinates (docs/engine-api.md, "Board image"): the point (x, y) mm
+/// lies at column (x + radiusMm) / mmPerPx and row (radiusMm - y) / mmPerPx.
+class BoardImage extends EngineEvent {
+  const BoardImage({required this.jpeg, required this.radiusMm, required this.mmPerPx});
+
+  final Uint8List jpeg;
+  final double radiusMm;
+  final double mmPerPx;
+
+  factory BoardImage.fromJson(Map<String, dynamic> json) => BoardImage(
+    jpeg: base64Decode(json['jpeg_base64'] as String),
+    radiusMm: (json['radius_mm'] as num).toDouble(),
+    mmPerPx: (json['mm_per_px'] as num).toDouble(),
+  );
+}
+
+/// One camera against its calibration (docs/engine-api.md, "Calibration check"): has it moved? The background check
+/// carries only [state] and [mm]; a subscription adds where the board is expected and where it is found.
+class CalibrationCheck extends EngineEvent {
+  const CalibrationCheck({
+    required this.camera,
+    required this.state,
+    this.mm,
+    this.shiftPx,
+    this.count = 0,
+    this.expectedPx = const [],
+    this.foundPx = const [],
+    this.imageSizePx,
+    this.fitsCamera,
+  });
+
+  final String camera;
+
+  /// checking, ok, off, moved, wrong_port, no_board or not_calibrated
+  final String state;
+  final double? mm;
+  final Offset? shiftPx;
+  final int count;
+
+  /// Pairs in the same order: where the calibration expects a point, and where it is found now
+  final List<Offset> expectedPx;
+  final List<Offset> foundPx;
+  final Size? imageSizePx;
+
+  /// With wrong_port: the camera whose calibration fits this image
+  final String? fitsCamera;
+
+  /// The camera has to be measured again
+  bool get needsCalibration => state == 'moved' || state == 'wrong_port';
+
+  factory CalibrationCheck.fromJson(Map<String, dynamic> json) => CalibrationCheck(
+    camera: json['camera'] as String,
+    state: json['state'] as String? ?? 'checking',
+    mm: _number(json['mm']),
+    shiftPx: json['shift_px'] is List ? _offset(json['shift_px']) : null,
+    count: (json['count'] as num? ?? 0).toInt(),
+    expectedPx: [for (final p in json['expected_px'] as List<dynamic>? ?? const []) _offset(p)],
+    foundPx: [for (final p in json['found_px'] as List<dynamic>? ?? const []) _offset(p)],
+    imageSizePx: _size(json['image_size_px']),
+    fitsCamera: json['fits_camera'] as String?,
+  );
+}
+
+BoardPoint? _mmPoint(Object? json) =>
+    json is List && json.length >= 2 ? BoardPoint((json[0] as num).toDouble(), (json[1] as num).toDouble()) : null;
+
+/// The guided reference measurement (docs/engine-api.md, "reference_run"): darts pushed into known positions, and how
+/// far the engine located them from there
+class ReferenceRun extends EngineEvent {
+  const ReferenceRun({required this.running, required this.step, this.target, this.results = const [], this.summary});
+
+  final bool running;
+
+  /// empty_board, insert_dart, remove_dart or done
+  final String step;
+  final ReferenceTarget? target;
+  final List<ReferenceResult> results;
+  final ReferenceSummary? summary;
+
+  factory ReferenceRun.fromJson(Map<String, dynamic> json) {
+    final target = json['target'] as Map<String, dynamic>?;
+    final summary = json['summary'] as Map<String, dynamic>?;
+    return ReferenceRun(
+      running: json['running'] == true,
+      step: json['step'] as String? ?? '',
+      target: target == null
+          ? null
+          : ReferenceTarget(
+              index: (target['index'] as num).toInt(),
+              total: (target['total'] as num).toInt(),
+              boardMm: _mmPoint(target['board_mm']) ?? const BoardPoint(0, 0),
+              field: target['field'] as String? ?? '',
+              wires: [for (final w in target['wires'] as List<dynamic>? ?? const []) (w as num).toInt()],
+              hintCode: target['hint_code'] as String? ?? '',
+            ),
+      results: [
+        for (final r in json['results'] as List<dynamic>? ?? const [])
+          ReferenceResult(
+            index: ((r as Map)['index'] as num).toInt(),
+            boardMm: _mmPoint(r['board_mm']) ?? const BoardPoint(0, 0),
+            locatedMm: _mmPoint(r['located_mm']),
+            errorMm: _number(r['error_mm']),
+            camerasUsed: (r['cameras_used'] as num? ?? 0).toInt(),
+            reason: r['reason'] as String?,
+          ),
+      ],
+      summary: summary == null
+          ? null
+          : ReferenceSummary(
+              located: (summary['located'] as num? ?? 0).toInt(),
+              abstained: (summary['abstained'] as num? ?? 0).toInt(),
+              medianErrorMm: _number(summary['median_error_mm']),
+              p90ErrorMm: _number(summary['p90_error_mm']),
+              maxErrorMm: _number(summary['max_error_mm']),
+            ),
+    );
+  }
+}
+
+class ReferenceTarget {
+  const ReferenceTarget({
+    required this.index,
+    required this.total,
+    required this.boardMm,
+    required this.field,
+    required this.wires,
+    required this.hintCode,
+  });
+
+  final int index;
+  final int total;
+  final BoardPoint boardMm;
+
+  /// D20, S6, Bull …
+  final String field;
+
+  /// The sector numbers on either side of the corner's radial wire; empty for the bull centre
+  final List<int> wires;
+
+  /// bull_centre or corner
+  final String hintCode;
+}
+
+class ReferenceResult {
+  const ReferenceResult({
+    required this.index,
+    required this.boardMm,
+    this.locatedMm,
+    this.errorMm,
+    this.camerasUsed = 0,
+    this.reason,
+  });
+
+  final int index;
+  final BoardPoint boardMm;
+
+  /// null when the engine abstained, with [reason]
+  final BoardPoint? locatedMm;
+  final double? errorMm;
+  final int camerasUsed;
+  final String? reason;
+}
+
+class ReferenceSummary {
+  const ReferenceSummary({
+    required this.located,
+    required this.abstained,
+    this.medianErrorMm,
+    this.p90ErrorMm,
+    this.maxErrorMm,
+  });
+
+  final int located;
+  final int abstained;
+  final double? medianErrorMm;
+  final double? p90ErrorMm;
+  final double? maxErrorMm;
+}
+
+/// A camera's whole image shifted, e.g. it was knocked; the engine checks its calibration next and sends no throw.
+class CameraMoved extends EngineEvent {
+  const CameraMoved(this.camera);
+
+  final String camera;
+}
+
+/// A measured set of the player's darts (#120): its dimensions and where reference images exist
+class DartSet {
+  const DartSet({required this.id, required this.name, this.dims = const {}, this.cameras = const [], this.created});
+
+  final String id;
+  final String name;
+
+  /// total_mm, barrel_mm, barrel_diameter_mm, flight_mm (later point_mm), as far as the engine measured them
+  final Map<String, double> dims;
+
+  /// Cameras with a reference image of the dart
+  final List<String> cameras;
+  final DateTime? created;
+
+  factory DartSet.fromJson(Map<String, dynamic> json) => DartSet(
+    id: json['id'] as String,
+    name: json['name'] as String? ?? '',
+    dims: {
+      for (final MapEntry(:key, :value) in (json['dims'] as Map<String, dynamic>? ?? const {}).entries)
+        if (value is num) key: value.toDouble(),
+    },
+    cameras: [
+      for (final i in json['images'] as List<dynamic>? ?? const [])
+        if (i is Map<String, dynamic> && i['camera'] is String) i['camera'] as String,
+    ],
+    created: DateTime.tryParse(json['created_utc'] as String? ?? ''),
+  );
+}
+
+/// The dart sets of the engine and the one it detects with; null: generic detection
+class DartSets extends EngineEvent {
+  const DartSets(this.sets, this.active);
+
+  final List<DartSet> sets;
+  final String? active;
+
+  factory DartSets.fromJson(Map<String, dynamic> json) => DartSets([
+    for (final s in json['sets'] as List<dynamic>? ?? const [])
+      if (s is Map<String, dynamic>) DartSet.fromJson(s),
+  ], json['active'] as String?);
+}
+
+/// Progress of measuring a new dart set: the player puts one dart at several places, each with the hand away
+class DartSetCapture extends EngineEvent {
+  const DartSetCapture({
+    required this.state,
+    this.placed = 0,
+    this.needed = 4,
+    this.reason,
+    this.set,
+    this.cameraStates = const {},
+  });
+
+  /// waiting (for the dart), measuring, placed (pull it and put it elsewhere), done, failed, cancelled
+  final String state;
+  final int placed;
+  final int needed;
+  final String? reason;
+
+  /// The new set, once done
+  final DartSet? set;
+
+  /// How each camera saw the dart at the current place (seen, cut, not_seen), to tell why a place failed
+  final Map<String, String> cameraStates;
+
+  factory DartSetCapture.fromJson(Map<String, dynamic> json) => DartSetCapture(
+    state: json['state'] as String? ?? 'waiting',
+    placed: json['placed'] as int? ?? 0,
+    needed: json['needed'] as int? ?? 4,
+    reason: json['reason'] as String?,
+    set: json['set'] is Map<String, dynamic> ? DartSet.fromJson(json['set'] as Map<String, dynamic>) : null,
+    cameraStates: {
+      for (final c in json['camera_states'] as List<dynamic>? ?? const [])
+        if (c is Map<String, dynamic> && c['camera'] is String) c['camera'] as String: c['state'] as String? ?? '',
+    },
+  );
+}
+
+/// A reference image of a dart set: the dart as one camera sees it
+class DartSetImage extends EngineEvent {
+  const DartSetImage(this.id, this.camera, this.jpeg);
+
+  final String id;
+  final String camera;
+  final Uint8List jpeg;
+
+  factory DartSetImage.fromJson(Map<String, dynamic> json) =>
+      DartSetImage(json['id'] as String, json['camera'] as String, base64Decode(json['jpeg_base64'] as String? ?? ''));
+}
+
+/// Pairing succeeded (#110): the token for later connections to this engine
+class Paired extends EngineEvent {
+  const Paired(this.token, this.engineId);
+
+  final String token;
+  final String engineId;
+}
+
+/// The engine's current PIN, for the device that shares it to show
+class PairingPin extends EngineEvent {
+  const PairingPin(this.pin, this.expires);
+
+  final String pin;
+  final DateTime? expires;
+}
+
+class PairedClient {
+  const PairedClient({required this.id, required this.client, this.created, this.lastSeen});
+
+  final String id;
+  final String client;
+  final DateTime? created;
+  final DateTime? lastSeen;
+
+  factory PairedClient.fromJson(Map<String, dynamic> json) => PairedClient(
+    id: json['id'] as String,
+    client: json['client'] as String? ?? '',
+    created: DateTime.tryParse(json['created_utc'] as String? ?? ''),
+    lastSeen: DateTime.tryParse(json['last_seen_utc'] as String? ?? ''),
+  );
+}
+
+/// The devices paired with the engine on this device
+class PairedClients extends EngineEvent {
+  const PairedClients(this.clients);
+
+  final List<PairedClient> clients;
+}
+
+/// The game another app leads and shares through the engine (#116); [game] is that app's game record, null once it
+/// has ended
+class SharedGame extends EngineEvent {
+  const SharedGame(this.client, this.game);
+
+  final String client;
+  final Map<String, dynamic>? game;
 }

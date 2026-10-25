@@ -1,0 +1,202 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+
+import '../../l10n/app_localizations.dart';
+import '../engine/camera_order.dart';
+import '../engine/engine_connection.dart';
+import '../engine/engine_events.dart';
+
+/// All cameras of the engine with a live image, to put them in the player's order and name them: once when new
+/// cameras appear, and whenever two should swap places.
+class CameraAssignScreen extends StatefulWidget {
+  const CameraAssignScreen({super.key});
+
+  @override
+  State<CameraAssignScreen> createState() => _CameraAssignScreenState();
+}
+
+class _CameraAssignScreenState extends State<CameraAssignScreen> {
+  List<String>? _order;
+  final Map<String, TextEditingController> _names = {};
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final order = CameraOrderScope.of(context);
+    _order ??= orderedCameras(context);
+    for (final id in _order!) {
+      _names.putIfAbsent(id, () => TextEditingController(text: order.nameOf(id) ?? ''));
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final c in _names.values) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  void _swap(int a, int b) => setState(() {
+    final order = _order!;
+    final id = order[a];
+    order[a] = order[b];
+    order[b] = id;
+  });
+
+  Future<void> _save() async {
+    await CameraOrderScope.of(context)
+        .assign(_order!, {for (final MapEntry(:key, :value) in _names.entries) key: value.text});
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final order = _order!;
+    return Scaffold(
+      appBar: AppBar(title: Text(l10n.assignCameras)),
+      body: order.isEmpty
+          ? Center(child: Text(l10n.noCameras))
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                Text(l10n.assignCamerasHint, style: theme.textTheme.bodyMedium),
+                const SizedBox(height: 12),
+                for (final (i, id) in order.indexed)
+                  Card(
+                    key: ValueKey('assign-$id'),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final narrow = constraints.maxWidth < 560;
+                          final thumbnail = SizedBox(
+                            width: narrow ? double.infinity : 240,
+                            child: CameraThumbnail(camera: id),
+                          );
+                          final row = Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              CircleAvatar(child: Text('${i + 1}', key: ValueKey('assign-number-$id'))),
+                              const SizedBox(width: 12),
+                              if (!narrow) ...[thumbnail, const SizedBox(width: 12)],
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    TextField(
+                                      key: ValueKey('assign-name-$id'),
+                                      controller: _names[id],
+                                      decoration: InputDecoration(
+                                        labelText: l10n.cameraNameLabel,
+                                        hintText: l10n.cameraNumber(i + 1),
+                                        isDense: true,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(id, style: theme.textTheme.bodySmall),
+                                  ],
+                                ),
+                              ),
+                              Column(
+                                children: [
+                                  IconButton(
+                                    key: ValueKey('assign-up-$id'),
+                                    tooltip: l10n.moveCameraUp,
+                                    onPressed: i == 0 ? null : () => _swap(i, i - 1),
+                                    icon: const Icon(Icons.arrow_upward),
+                                  ),
+                                  IconButton(
+                                    key: ValueKey('assign-down-$id'),
+                                    tooltip: l10n.moveCameraDown,
+                                    onPressed: i == order.length - 1 ? null : () => _swap(i, i + 1),
+                                    icon: const Icon(Icons.arrow_downward),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          );
+                          return narrow ? Column(children: [thumbnail, const SizedBox(height: 8), row]) : row;
+                        },
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: FilledButton.icon(
+                    key: const ValueKey('assign-save'),
+                    onPressed: _save,
+                    icon: const Icon(Icons.check),
+                    label: Text(l10n.saveCameraOrder),
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+}
+
+/// A small live image of a camera, for telling the cameras apart
+class CameraThumbnail extends StatefulWidget {
+  const CameraThumbnail({super.key, required this.camera});
+
+  final String camera;
+
+  @override
+  State<CameraThumbnail> createState() => _CameraThumbnailState();
+}
+
+class _CameraThumbnailState extends State<CameraThumbnail> {
+  EngineConnection? _engine;
+  PreviewHandle? _handle;
+  StreamSubscription<PreviewFrame>? _frames;
+  PreviewFrame? _frame;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final engine = EngineScope.of(context);
+    if (identical(engine, _engine)) return;
+    _stop();
+    _engine = engine;
+    _handle = engine.watchPreview(widget.camera, maxFps: 5, maxWidth: 320);
+    _frames = engine.previews.where((f) => f.camera == widget.camera).listen((f) => setState(() => _frame = f));
+  }
+
+  void _stop() {
+    _frames?.cancel();
+    _handle?.release();
+  }
+
+  @override
+  void dispose() {
+    _stop();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final frame = _frame;
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: ColoredBox(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          child: frame == null
+              ? Center(child: Text(AppLocalizations.of(context).waitingForImage))
+              : Image.memory(
+                  frame.jpeg,
+                  key: ValueKey('thumbnail-${widget.camera}'),
+                  fit: BoxFit.contain,
+                  gaplessPlayback: true,
+                ),
+        ),
+      ),
+    );
+  }
+}

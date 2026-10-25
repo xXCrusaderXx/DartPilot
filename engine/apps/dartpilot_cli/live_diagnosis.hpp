@@ -26,7 +26,7 @@ class LiveDiagnosis
 {
    public:
     // started: when the cameras started, for the exposure check
-    LiveDiagnosis (api::Server& server, const CameraPreviews& previews, const std::vector<capture::CameraDevice>& devices,
+    LiveDiagnosis (api::Server& server, const FrameFeed& previews, const std::vector<capture::CameraDevice>& devices,
                    const std::filesystem::path& calibration_directory, std::chrono::steady_clock::time_point started);
     ~LiveDiagnosis ();
 
@@ -53,7 +53,7 @@ class LiveDiagnosis
     void publish (bool running);
 
     api::Server& server_;
-    const CameraPreviews& previews_;
+    const FrameFeed& previews_;
     std::chrono::steady_clock::time_point cameras_started_;
     std::optional<geometry::StoredExtrinsics> extrinsics_;
     std::vector<replay::DiagnosisBuilder::Camera> setup_;

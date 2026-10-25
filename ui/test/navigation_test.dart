@@ -32,6 +32,17 @@ void main() {
     await tester.scrollUntilVisible(find.text('Zusammen spielen'), 200);
     expect(find.text('Lokal oder solo spielen'), findsOneWidget);
 
+    // A live engine that is not calibrated says so on home.
+    engine.receiveForTest(
+      jsonEncode({'type': 'engine_status', 'detection': 'unavailable', 'message': 'not_calibrated'}),
+    );
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.byKey(const ValueKey('detection-state')), -200);
+    expect(find.textContaining('Noch nicht kalibriert'), findsOneWidget);
+    engine.receiveForTest(jsonEncode({'type': 'engine_status', 'detection': 'running', 'message': ''}));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('detection-state')), findsNothing);
+
     await openSettings(tester);
     expect(find.text('Verbunden mit einer Engine im Netzwerk'), findsOneWidget);
     expect(tester.widget<ListTile>(find.byKey(const ValueKey('settings-cameras'))).enabled, isTrue);
@@ -59,5 +70,36 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Connect'));
     await tester.pumpAndSettle();
     expect(find.text('Connect an engine'), findsOneWidget);
+  });
+
+  testWidgets('back leads home while connected, and from home to the connection page only without an engine', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final engine = EngineConnection.forTest((_) {});
+    addTearDown(engine.dispose);
+    engine.receiveForTest(jsonEncode(hello));
+    await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
+    await openSettings(tester);
+    expect(find.byKey(const ValueKey('settings-connection')), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex, 0);
+    // Home with an engine: back stays on home.
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex, 0);
+    expect(find.text('Engine verbinden'), findsNothing);
+  });
+
+  testWidgets('without an engine, back from home leads to the connection page', (tester) async {
+    await tester.pumpWidget(const DartPilotApp(locale: Locale('de')));
+    await playOffline(tester);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('Engine verbinden'), findsOneWidget);
   });
 }

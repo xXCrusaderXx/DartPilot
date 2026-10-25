@@ -8,21 +8,11 @@ namespace dartpilot::geometry
 {
 namespace
 {
-// A cut-off object shorter than this shows too little of its axis to fix its direction.
-constexpr double kMinCutAxis_px = 120.0;
-// The planes of agreeing views pass within this distance of their common point on the board.
-constexpr double kMaxPlaneDistance_mm = 1.5;
-// Two views alone must cross at least at this angle on the board, or their crossing slides along both lines.
-constexpr double kMinCrossing_deg = 15.0;
-// The point's image lies at most this far from a visible end; the entry may hide a few pixels behind the visible end.
-constexpr double kMaxEndDistance_px = 12.0;
-constexpr double kPlaneSigma_mm = 0.5;
-
 // The axis plane of a view as a line on the board, a x + b y = c with a^2 + b^2 = 1
-std::optional<cv::Vec3d> boardLine (const DartView& view)
+std::optional<cv::Vec3d> boardLine (const DartView& view, const LocateSettings& s)
 {
     const auto& observation = view.observation;
-    if(!view.camera || observation.axis_px.size() < 2 || (observation.cut && observation.axis_length_px < kMinCutAxis_px))
+    if(!view.camera || observation.axis_px.size() < 2 || (observation.cut && observation.axis_length_px < s.min_cut_axis_px))
     {
         return std::nullopt;
     }
@@ -48,13 +38,13 @@ std::optional<cv::Vec3d> boardLine (const DartView& view)
 }
 }  // namespace
 
-std::optional<DartLocation> locateDart (const std::vector<DartView>& views)
+std::optional<DartLocation> locateDart (const std::vector<DartView>& views, const LocateSettings& s)
 {
     std::vector<int> usable;
     std::vector<cv::Vec3d> lines;
     for(std::size_t i = 0; i < views.size(); ++i)
     {
-        if(const auto line = boardLine(views[i]))
+        if(const auto line = boardLine(views[i], s))
         {
             usable.push_back(static_cast<int>(i));
             lines.push_back(*line);
@@ -96,7 +86,7 @@ std::optional<DartLocation> locateDart (const std::vector<DartView>& views)
                 min_crossing_deg = std::min(min_crossing_deg, std::asin(std::min(1.0, sine)) * 180.0 / CV_PI);
             }
         }
-        if(members.size() == 2 && min_crossing_deg < kMinCrossing_deg)
+        if(members.size() == 2 && min_crossing_deg < s.min_crossing_deg)
         {
             continue;
         }
@@ -108,7 +98,7 @@ std::optional<DartLocation> locateDart (const std::vector<DartView>& views)
 
         DartLocation location;
         location.board_mm = cv::Point2f(static_cast<float>(point[0]), static_cast<float>(point[1]));
-        location.covariance_mm2 = information.inv() * (kPlaneSigma_mm * kPlaneSigma_mm);
+        location.covariance_mm2 = information.inv() * (s.plane_sigma_mm * s.plane_sigma_mm);
         double worst_mm = 0.0;
         bool agree = true;
         for(const int m : members)
@@ -122,7 +112,7 @@ std::optional<DartLocation> locateDart (const std::vector<DartView>& views)
             {
                 nearest_px = std::min(nearest_px, static_cast<double>(cv::norm(end - image)));
             }
-            agree = agree && std::abs(distance_mm) <= kMaxPlaneDistance_mm && nearest_px <= kMaxEndDistance_px;
+            agree = agree && std::abs(distance_mm) <= s.max_plane_distance_mm && nearest_px <= s.max_end_distance_px;
             location.views.push_back(usable[m]);
             location.plane_distance_mm.push_back(distance_mm);
             location.end_distance_px.push_back(nearest_px);

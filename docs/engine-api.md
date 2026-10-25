@@ -1,6 +1,6 @@
 # Engine API
 
-- **Protocol version:** `dartpilot/1.0`
+- **Protocol version:** `dartpilot/1.1` (1.1 adds pairing, #110)
 - **Status:** proposed ([ADR 0007](adr/0007-engine-api.md), issue #37)
 
 The engine reports darts, takeouts and its state to clients over a WebSocket; clients can correct darts and watch the cameras. The engine knows no games: turns, game scores and statistics belong to the client.
@@ -9,13 +9,14 @@ The engine reports darts, takeouts and its state to clients over a WebSocket; cl
 
 - `ws://<host>:8484/` by default. `dartpilot serve` listens on localhost; `--listen 0.0.0.0` makes it reachable from other devices in the network, `--port` changes the port.
 - Text messages are UTF-8 JSON objects with a `type` field. Binary messages are camera previews (see [Previews](#previews)).
+- In the network, a client must pair with the engine first (see [Pairing](#pairing)); on the engine's own computer it never has to.
 - Any number of clients may connect. Every event goes to every client; corrections made by one client are announced to all.
 - Times (`*_ns`) are on the engine's `CLOCK_MONOTONIC`, the time base of the recorded sessions. Clients use them for ordering and differences, not as wall-clock time.
 - Fields follow [board-coordinates.md](board-coordinates.md) and [replay-format.md](replay-format.md): a **board point** is `{ "x_mm", "y_mm", "covariance_mm2": { "xx", "xy", "yy" } }`, a **score** has the fields of the deterministic scorer (#12).
 
 ## Versioning
 
-The engine's first message is `hello` with `"protocol": "dartpilot/1.0"`. Within major version 1, minor versions only add message types and fields; clients ignore unknown types and fields. A client that does not support the major version closes the connection.
+The engine's first message is `hello` with `"protocol": "dartpilot/1.1"`. Within major version 1, minor versions only add message types and fields; clients ignore unknown types and fields. A client that does not support the major version closes the connection.
 
 ## Engine → client
 
@@ -26,7 +27,7 @@ Sent once after the connection opens.
 ```json
 {
   "type": "hello",
-  "protocol": "dartpilot/1.0",
+  "protocol": "dartpilot/1.1",
   "engine": { "version": "0.4.0", "commit": "0b299b1" },
   "mode": "live",
   "session_id": "20261024T190000Z-7c1e",
@@ -46,7 +47,7 @@ Sent once after the connection opens.
 - `mode`: `live` (cameras), `replay` (a recorded session) or `simulate` (no cameras, generated darts).
 - `session_id`: the session being recorded or replayed, if any, so client and recording can be matched.
 - `board_geometry`: the boundaries the engine's scorer uses. `source` is `nominal` (tournament dimensions) or `measured` (derived from the calibration's board model, #13/#47). A client that scores or draws the board uses these values, so it agrees with the engine.
-- `detection`: `running`, `paused` or `unavailable` (e.g. not calibrated); see `engine_status`.
+- `detection`: `running`, `paused` or `unavailable`; see `engine_status`. With `unavailable`, `detection_reason` says why: `not_calibrated` (no refinement of the cameras: the app sends the user to the calibration) or `no_empty_reference` (live detection waits for a still, empty board to compare darts with; it starts by itself once it sees one). `null` otherwise.
 - `board_state`: whether the board is empty; see `board_state`.
 
 ### throw
@@ -124,7 +125,7 @@ Sent when a camera's state changes and once per second while a client watches st
 
 ### board_state
 
-Sent to every client when the board state changes (#121). The engine compares each camera's image of the still board with the stored image of the empty board. It first aligns the stored image with the current one, including the slight zoom of a camera that warmed up since, and counts an object only if it still stands out when every pixel may be off by 2 px, so that the traces a warmer, softer image leaves along the wires do not count.
+Sent to every client when the board state changes (#121). The engine compares each camera's image of the still board with the stored image of the empty board. An object is reported once it has stayed for 4 s, so that a knocked, swaying camera does not raise the warning; an empty board is reported at once. It first aligns the stored image with the current one, including the slight zoom of a camera that warmed up since, and counts an object only if it still stands out when every pixel may be off by 2 px, so that the traces a warmer, softer image leaves along the wires do not count.
 
 ```json
 {
@@ -177,6 +178,7 @@ The calibration wizard of the app runs on the engine's cameras (`serve --cameras
 ```
 
 - `intrinsics`: `valid` (a lens calibration in the reference mode), `invalid` (one of another capture mode, `intrinsics_reason`: `other_capture_mode`) or `none`.
+- `check`: the latest calibration check of the camera, `{state, mm, checked_at}` or `null` before the first one (see "Calibration check" below); a home screen warns from it when a camera moved.
 - `board_plane_mm`: error of the measured board plane, `null` before the board was measured. `refined`: the camera is part of the stored refinement. `refinement_stale`: a board was measured or a lens calibrated after the refinement, so it should run again.
 
 The steps, in the order of the wizard:
@@ -216,7 +218,111 @@ The steps, in the order of the wizard:
 
    `state`: `running`, `done`, `failed` (`code`: `no_board_planes`, `pose_failed`, `save_failed`). `quality` from the error on held-out wires: `good` up to 0.5 mm, `fair` up to 1 mm, else `poor`; `advice` then says what helps: `detect_again` (measure the board again in even light) or `lens_calibration` (the camera has no lens calibration of its own). `lens_from`: `own`, `model` (borrowed from a camera of the same model) or `board`.
 
+**Calibration check** (`subscribe_calibration_check` / `unsubscribe_calibration_check`). Each camera's board is compared with its calibration, as the calibration check of the setup GUI (#92) does: the detected wire points against where the calibration puts them. In the background the engine does this every minute and puts the verdict into `calibration_status` (`cameras[].check`); while darts hide the board, the previous verdict stays. While a client is subscribed it checks every 2 s and sends the details per camera:
+
+```json
+{ "type": "calibration_check", "camera": "usb-2.4.3.1.3", "state": "moved", "mm": 4.2, "shift_px": [ 6.0, -3.0 ], "count": 60,
+  "expected_px": [ [ 652.1, 254.3 ] ], "found_px": [ [ 658.0, 251.2 ] ], "image_size_px": [ 1280, 720 ] }
+```
+
+- `state`: `ok` (up to 1 mm), `off` (up to 2.5 mm: other light, or the camera moved a little), `moved` (more: calibrate the camera again and refine), `wrong_port` (another camera's calibration fits at least three times better and within 2.5 mm, named in `fits_camera`: the cameras were plugged into other ports), `no_board` (darts in the board, a hand, or no light), `not_calibrated`.
+- `mm`: how far the wire points lie from the calibration on the board; `shift_px`: their mean displacement in the image, the same for all points when the camera moved. `expected_px` and `found_px` pair up for drawing.
+- `--simulate` answers with one camera `moved`.
+
+**Board image** (`get_board_image`, optional `size_px`, default 600, and `radius_mm`, default 250). The real board seen from the front, put together from the refined cameras: each pixel comes mostly from the camera that sees that part with the most pixels per millimetre, with soft transitions between cameras of matched brightness. Outside the number ring (222 mm) the surround is blurred and darkened. A client shows it instead of a drawn board and places hits by their board point: board point (x, y) mm lies at column `(x + radius_mm) / mm_per_px` and row `(radius_mm - y) / mm_per_px`. Taken from the current frames, so ask for it with the board empty, e.g. after a takeout.
+
+```json
+{ "type": "board_image", "image_size_px": [ 600, 600 ], "mm_per_px": 0.8333, "radius_mm": 250.0, "jpeg_base64": "/9j/4AAQ..." }
+```
+
+Fails with `not_calibrated` before the refinement; `not_available` with `--simulate` alone, where a client draws its board.
+
 Long steps run one at a time; a request while one runs fails with `busy`. Events may arrive before the request's `result`.
+
+### reference_run
+
+The guided reference measurement (#14), started with `start_reference_run` and stopped with `stop_reference_run`, with `serve --cameras` (`--simulate` alone plays a fixed example run). The user pushes one dart by hand into one known position after the other: the centre of the bull, then corners where a radial wire meets a ring wire, with the point against both wires, so its centre lies 1.8 mm from each wire (about ±0.5 mm). The live detection locates it, and the distance from the target is the error of the whole chain from calibration to tip. While a run is active its darts are not sent as `throw`. Sent on every change, and the latest one after `hello`:
+
+```json
+{ "type": "reference_run", "running": true, "step": "insert_dart",
+  "target": { "index": 1, "total": 10, "board_mm": [ 24.55, 166.40 ], "field": "D20", "wires": [ 20, 1 ], "hint_code": "corner",
+              "label": "D20, corner of the 20/1 wire and the outer double wire" },
+  "results": [ { "index": 0, "board_mm": [ 0.0, 0.0 ], "located_mm": [ 0.31, -0.22 ], "error_mm": 0.38, "cameras_used": 3 } ],
+  "summary": { "located": 1, "abstained": 0, "median_error_mm": 0.38, "p90_error_mm": 0.38, "max_error_mm": 0.38 } }
+```
+
+- `step`: `empty_board` (waiting for a still empty board), `insert_dart`, `remove_dart`, and `done` once the last dart is pulled.
+- `target`: the next position; `wires` are the sector numbers on either side of the corner's radial wire (empty for the bull centre), `field` the field the point sits in. `null` when done.
+- `results`: per placed dart, `located_mm` and `error_mm`, or `null` with `reason` when the engine abstained.
+- `saved_session`: once a run is done, the id of the session it was stored as in the sessions directory, `null` before. It holds the targets as the annotation set `reference_corners` and the located darts as the run `reference`, without frames, so the benchmark scores it: `python -m dartpilot_tools.benchmark <sessions>/<id>... --run reference --annotations reference_corners` (docs/benchmark.md). Several runs together give the spread of the method for #14.
+- Errors of `start_reference_run`: `not_calibrated`.
+
+### detection_params
+
+Every value of the live detection (docs/detection-params.md), sent after `hello`, as the answer to `get_detection_params`, and to every client after each `set_detection_params`. A client builds its controls from `ranges` and `info`, so values can be added without a client change. `revision` counts the changes since the engine started; every `throw` names the `params_revision` it was made with.
+
+```json
+{ "type": "detection_params", "revision": 2,
+  "params": { "settle_samples": 6, "average_frames": 4, "...": "..." },
+  "ranges": { "settle_samples": { "min": 1, "max": 60, "step": 1, "unit": "" } },
+  "info": { "settle_samples": { "group": "event_detection", "description": "Samples in which every camera must be still ...", "default": 6 } } }
+```
+
+`set_detection_params {"params": {"name": value}}` changes values from the next sample on; `null` sets one back to its default. Values with a `step` of 1 or more are rounded. An unknown name or a value out of range gives `bad_request` and changes nothing. Values are not kept when the engine stops.
+
+`throw` and `takeout` from live detection also carry `detection_latency_ms`: from the last sample in which a camera moved (the dart landing, the hand leaving) to sending.
+
+### Dart sets
+
+The player's darts (#120). A set is measured by putting one dart of it into the board at four places, taking the hand away each time and pulling the dart before the next. From the cameras that agree on the dart, the engine reconstructs its axis in 3D and measures it along the axis. Sets are stored in `calibration/dart-sets/` with a picture of the dart from every camera. The app names the set the player at the board throws; detection does not use it yet.
+
+`dart_sets` is sent after `hello`, to every client after each change, and in answer to `list_dart_sets`:
+
+```json
+{ "type": "dart_sets", "active": "3f9a01c2",
+  "sets": [ { "id": "3f9a01c2", "name": "Anna's darts", "created_utc": "2026-10-25T13:02:11Z",
+              "dims": { "total_mm": 142.0, "barrel_mm": 46.0, "barrel_diameter_mm": 7.1, "flight_mm": 38.0 },
+              "images": [ { "camera": "usb-2.4.3.1.2" } ] } ] }
+```
+
+`dims` holds, per dimension, the value from the first source that has it: entered by the user, from a photo, measured in the board. `dims_source` names the source per dimension, and `measured`, `photo` and `entered` hold each source's values. Dimensions: `total_mm`, `point_mm`, `barrel_mm`, `barrel_diameter_mm`, `shaft_mm`, `flight_mm`, `weight_g`. An entered value must lie in a plausible range (e.g. 50–250 mm total, 3–15 mm barrel diameter), or `bad_request`. Measured values are medians over the placements, in mm. `barrel_diameter_mm` and the barrel's length come from the dart's outline and are less certain than its total length.
+
+`dart_set_capture` follows a running measurement; the latest one is sent after `hello` too:
+
+```json
+{ "type": "dart_set_capture", "state": "placed", "waiting_for": "pull", "placed": 2, "needed": 4,
+  "camera_states": [ { "camera": "usb-2.4.3.1.2", "state": "seen" } ] }
+```
+
+`waiting_for` says what the measurement waits for: `dart` (put it in) or `pull` (pull it out). The dart counts as pulled when the board looks as it did before the dart was put in, in all but one camera. Neither the stored empty board nor the live detection's takeout is needed for that.
+
+`state`:
+- `waiting`: put the dart in;
+- `placed`: measured, pull it;
+- `failed`: this placement was not measured, `reason` (`cameras_disagree`, `seen_by_one_camera`, `not_measured`, `placements_disagree`, `save_failed`); pull it and try again;
+- `measuring`: the last placement is being combined;
+- `done`: with the stored `set`;
+- `cancelled`.
+
+| Request | Fields | Effect |
+| - | - | - |
+| `list_dart_sets` | – | Sends `dart_sets` |
+| `create_dart_set` | `name`, `dims` | A set from entered dimensions only, without measuring |
+| `update_dart_set` | `id`, `dims` | Enters or corrects dimensions; `null` removes an entered value, so the measured one counts again |
+| `start_dart_set` | `name` | Starts measuring a new set; `not_calibrated`, `busy` (a reference run or another measurement runs) |
+| `cancel_dart_set` | – | Stops it; `dart_set_capture` with `cancelled` |
+| `get_dart_set_image` | `id`, `camera` | Answered with `{type: "dart_set_image", id, camera, jpeg_base64}` |
+| `rename_dart_set` | `id`, `name` | `unknown_set` |
+| `delete_dart_set` | `id` | `unknown_set` |
+| `set_active_darts` | `id` or `null` | The set the player at the board throws; `dart_sets` goes to every client |
+
+### shared_game
+
+One game on several displays (#116, ADR 0010): the app that leads the game shares it with `share_game`, and the engine sends it to every client, the sender included, as the confirmation that it arrived. A client that connects later gets the latest one after `hello`. The engine keeps it when the sharing app disconnects, whose Wi-Fi may only blip, until the next `share_game` or `end_shared_game`, which sends `game: null`. `game` is the app's own record of the game; the engine never reads it, so game rules stay in the app.
+
+```json
+{ "type": "shared_game", "client": "kitchen-tablet", "game": { "mode": "x01", "current_player": 1, "...": "..." } }
+```
 
 ### engine_status
 
@@ -232,7 +338,7 @@ The answer to every client request that has a `request_id`.
 { "type": "result", "request_id": "7", "ok": false, "error": { "code": "unknown_throw", "message": "No throw 20261024T190000Z-7c1e/99" } }
 ```
 
-Error codes: `bad_request`, `unknown_type`, `unknown_throw`, `unknown_camera`, `not_available`, `board_not_empty`, `not_still` (the image has not been still long enough to store the empty board), `save_failed`, and those of the calibration steps (`busy`, `no_detection`, `outside_board`, `fit_failed`, `no_board_planes`).
+Error codes: `bad_request`, `unknown_type`, `unknown_throw`, `unknown_camera`, `not_available`, `board_not_empty`, `not_still` (the image has not been still long enough to store the empty board), `save_failed`, `too_large` (a shared game over 256 KB), and those of the calibration steps (`busy`, `no_detection`, `outside_board`, `fit_failed`, `no_board_planes`).
 
 ## Client → engine
 
@@ -241,6 +347,8 @@ Every request carries a `request_id` chosen by the client and is answered with `
 | `type` | Fields | Effect |
 | ------ | ------ | ------ |
 | `hello` | `client`, `protocol` | Names the client for logs and corrections; optional |
+| `pair` | `pin` or `token` | Pairs a client in the network; see [Pairing](#pairing) |
+| `get_pairing_pin`, `list_paired_clients`, `unpair` | –, –, `id` | Only on the engine's computer; see [Pairing](#pairing) |
 | `correct_throw` | `throw_id`, `board_point` | Replaces the board point of a throw; broadcast as `throw_corrected` |
 | `reject_throw` | `throw_id`, `reason` | Marks a throw as not having happened |
 | `add_throw` | `board_point` | Adds a dart the engine missed |
@@ -253,6 +361,13 @@ Every request carries a `request_id` chosen by the client and is answered with `
 | `detect_board` | `camera` | Measures the board of a camera; answered with `board_detection` |
 | `set_sector_20` | `camera`, `point_px` | Orients and stores the board plane; answered with `board_plane` |
 | `refine_cameras` | – | Refines all cameras together; answered with `refinement` |
+| `start_reference_run` / `stop_reference_run` | – | The guided reference measurement; its state comes as `reference_run` |
+| `subscribe_calibration_check` / `unsubscribe_calibration_check` | – | Detailed calibration checks every 2 s as `calibration_check` |
+| `get_board_image` | `size_px`, `radius_mm` (optional) | The real board from the front; answered with `board_image` |
+| `get_detection_params` | – | The detection values; answered with `detection_params` |
+| `set_detection_params` | `params` (name → number or `null`) | Changes detection values; `detection_params` goes to every client |
+| `share_game` | `game` (an object of up to 256 KB) | Shares the game with every display; sent on as `shared_game` |
+| `end_shared_game` | – | Ends sharing; `shared_game` with `game: null` |
 | `subscribe_preview` | `camera`, `max_fps`, `max_width` | Starts preview frames of a camera |
 | `unsubscribe_preview` | `camera` | Stops them |
 
@@ -275,6 +390,27 @@ Preview frames are binary messages:
 
 The engine sends the camera's own JPEG when it fits `max_width`, otherwise a scaled copy, and drops frames rather than queueing them when a client is slow.
 
+## Pairing
+
+An engine that listens in the network (`--listen` other than localhost) accepts clients from other computers only after they paired (#110). Clients on the engine's computer (127.0.0.1, ::1) never pair, and an engine that listens only on localhost asks nobody.
+
+- `hello` tells each client its state in `pairing`: `local`, `paired` or `required`, and `pairing_pin_digits` (6).
+- Until a client has paired, the engine answers every request except `hello` and `pair` with `not_paired`, and sends it nothing but `hello` and results: no state, previews, throws or other events.
+- `pair {"pin": "123456"}` pairs with the engine's current PIN. `pair {"token": "…"}` pairs with the token of an earlier pairing, which the client stores per `engine.id` of `hello`. On success, `result` ok follows `{ "type": "paired", "token": "…", "engine_id": "…" }`, then the state messages the client could not see before. A token login keeps its token.
+- Errors: `wrong_pin`, `unknown_token`, `too_many_attempts` (more than 5 failures within a minute from one address; then even the right PIN waits), `not_available` (this engine needs no pairing).
+- The **PIN** has 6 digits. It changes after every successful pairing and every 10 minutes, and the engine prints each new one in its log.
+- The engine stores per paired client an id, the client's name, `created_utc`, `last_seen_utc` and a **SHA-256 of the token**, never the token itself, in `paired-clients.json` in its data directory, readable only by the user. A token is 256 random bits.
+
+Only for clients on the engine's computer, e.g. the PC app that started or shares the engine; others get `not_allowed`:
+
+| Request | Answer |
+| - | - |
+| `get_pairing_pin` | `{ "type": "pairing_pin", "pin": "123456", "expires_utc": "…" }`, for showing the PIN and putting it into the QR code |
+| `list_paired_clients` | `{ "type": "paired_clients", "clients": [ { "id", "client", "created_utc", "last_seen_utc" } ] }` |
+| `unpair` `{ "id" }` | Forgets that client; its token no longer pairs. `unknown_client` for an unknown id |
+
+The connection itself is not encrypted (`ws://`): pairing keeps strangers in the network out, but someone who can read the network traffic can read the token. Use it in a home network you trust.
+
 ## Typical flow
 
 1. The client connects and receives `hello`; it sets up its scorer and board drawing from `board_geometry`.
@@ -282,10 +418,29 @@ The engine sends the camera's own JPEG when it fits `max_width`, otherwise a sca
 3. `takeout` ends the visit. If the client expected three darts and received fewer, it asks the player for the missing ones and sends them with `add_throw`.
 4. The player corrects a wrong dart on the board; the client sends `correct_throw`, and every client updates on `throw_corrected`.
 
+## Discovery
+
+An engine that listens beyond localhost (`serve --listen 0.0.0.0`) can be found in the home network without typing an address (#109, ADR 0008):
+
+- **mDNS/DNS-SD:** service `_dartpilot._tcp` on the engine port, with TXT `protocol`, `name` (the host name), `mode` (`live` or `simulate`), `id` and `version`. It is published through the Avahi daemon where its client library is installed at build time; where it is not, only the UDP answers run.
+- **UDP on port 8485**, for networks that block multicast between Wi-Fi and LAN: a client sends `{"type":"discover","protocol":"dartpilot/1.0"}` (broadcast or unicast) and gets `{"type":"engine","name","port","protocol","mode","id","version"}` back from the engine, at most once per second per asker. A request of another protocol major is answered too, with the engine's own protocol, so the app can tell the user.
+- `id` is a random id of the engine installation, kept in the data directory (`engine-id`); `hello` carries it as `engine.id`. Neither carries anything secret.
+
+Avahi also announces the engine on virtual interfaces (Docker, libvirt bridges); the app tries the addresses in the order of its own networks.
+
 ## Implementation status
 
-`dartpilot serve --simulate` implements the protocol with simulated darts, takeouts and camera states (`engine/api`), and the player app connects to it (`ui/lib/src/engine/`). Previews work for simulated cameras (drawn board with the darts of the visit) and, with `--simulate --cameras`, for the real cameras, which then also report their status. The simulator reports an empty board, occupied while darts are in it (`--occupied`: darts in the board at start, pulled out after the takeout delay); with `--cameras` the real cameras check the board: each camera's frames are averaged once its image has been still for a second and compared with its empty-board reference (`empty-usb-<port>.png` in the calibration directory). `start_diagnosis` runs the setup diagnosis on the real cameras with `--cameras`; without, the simulator answers with a fixed example. Not implemented yet: live detection (needs the detection pipeline), `--replay`, and storing corrections in a recorded session.
+`dartpilot serve --cameras` detects live darts (#121, #128, `fusion::DartTracker`). Whenever all cameras have been still for 1.5 s, it averages a second of frames and compares the board with its last still state:
+
+- A new dart is located from the cameras whose axis planes meet (`locateDart`) and sent as `throw`. If the cameras do not agree it abstains: `accepted: false`, no `board_point`, and `reason` `cameras_disagree` or `seen_by_one_camera`, so the player confirms or corrects it. `cameras[].reason` gives each camera's part: `not_seen`, `cut` (by the image border), `disagrees`.
+- When the board matches the empty board again after darts, it sends `takeout` with the number of darts that were in it, and the empty board, as it is now, becomes the reference for the next visit. A dart pulled and the next one put in without a still board in between are told apart by where the image is the empty board again.
+- A camera whose whole image shifted since the last still moment was knocked or has loosened: its change is no dart. The engine sends `{ "type": "camera_moved", "camera": "usb-2.4.3.1.3", "shift_px": [ 12.0, -7.1 ] }`, takes the view as the new still state, and the next calibration check (within a minute, or at once on the subscribed page) tells whether the camera must be calibrated again.
+- Detection waits for a still, empty board at the start (`detection: unavailable`, `no_empty_reference`), and is unavailable without a refinement (`not_calibrated`).
+
+On the reference recordings, replayed through the tracker, all located darts were right: 9 of 10 type-1 darts located and 1 missed; 6 of 9 type-2 darts located and the others abstained, some of them twice when the hand was still in view. The engine sets no visit logic: the app decides how many darts a turn has.
+
+`dartpilot serve --simulate` implements the protocol with simulated darts, takeouts and camera states (`engine/api`), and the player app connects to it (`ui/lib/src/engine/`). Previews work for simulated cameras (drawn board with the darts of the visit) and, with `--simulate --cameras`, for the real cameras, which then also report their status. The simulator reports an empty board, occupied while darts are in it (`--occupied`: darts in the board at start, pulled out after the takeout delay); with `--cameras` the real cameras check the board: each camera's frames are averaged once its image has been still for a second and compared with its empty-board reference (`empty-usb-<port>.png` in the calibration directory). `start_diagnosis` runs the setup diagnosis on the real cameras with `--cameras`; without, the simulator answers with a fixed example. `serve --cameras --record` records the game as a session (#115): every frame, the capture health, and in `results/live/throws.jsonl` every throw as the engine sent it and every correction, rejection and added dart as a line `{"throw_id", "correction": {"action", "board_point", "client", "reason"}}`, with `throws.csv` giving each throw's event window. `hello.session_id` names the session, and throw ids are `<session id>/<n>`. `serve --replay <session>` plays a recorded session in real time as if its cameras were connected (`mode: "replay"`): previews, live detection, board check and diagnosis run on its frames; it learns its empty board from its own first still moment instead of today's stored images, and never stores an empty board. On the type-1 dart recording the replay located all ten darts.
 
 ## Not in version 1
 
-Authentication and encryption (use it in a trusted network only), discovery of engines in the network, several boards per engine, and engine-side game logic.
+Encryption (use it in a trusted network only; pairing is the only protection), several boards per engine, and engine-side game logic.

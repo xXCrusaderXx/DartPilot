@@ -44,6 +44,17 @@ void main() {
     await dart('Triple', 'keypad-15');
     await dart('Double', 'keypad-8');
     expect(find.text('Anna gewinnt!'), findsOneWidget);
+    // The summary of this game: 301 in six darts with a 180 and a 121 finish
+    Finder chip(String text) =>
+        find.descendant(of: find.byKey(const ValueKey('summary-Anna')), matching: find.text(text));
+    expect(chip('Darts 6'), findsOneWidget);
+    // Average and first-9 average are the same over six darts.
+    expect(
+      find.descendant(of: find.byKey(const ValueKey('summary-Anna')), matching: find.textContaining('150.5')),
+      findsNWidgets(2),
+    );
+    expect(chip('180 1'), findsOneWidget);
+    expect(chip('Höchstes Finish 121'), findsOneWidget);
 
     // Undo from the dialog takes the winning dart back.
     await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text('Rückgängig')));

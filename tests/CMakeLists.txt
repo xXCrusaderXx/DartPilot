@@ -16,6 +16,11 @@ add_executable(SmokeTest SmokeTest.cpp)
 target_link_libraries(SmokeTest PRIVATE dartpilot::replay dartpilot_version GTest::gtest_main)
 gtest_discover_tests(SmokeTest)
 
+add_executable(VersionTest VersionTest.cpp)
+target_link_libraries(VersionTest PRIVATE dartpilot_version GTest::gtest_main)
+target_compile_definitions(VersionTest PRIVATE DARTPILOT_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+gtest_discover_tests(VersionTest)
+
 add_executable(FocusTest FocusTest.cpp)
 target_link_libraries(FocusTest PRIVATE dartpilot::capture GTest::gtest_main)
 gtest_discover_tests(FocusTest)
@@ -34,7 +39,8 @@ target_link_libraries(CaptureTest PRIVATE dartpilot::capture GTest::gtest_main)
 gtest_discover_tests(CaptureTest)
 
 add_executable(ScoringTest ScoringTest.cpp)
-target_link_libraries(ScoringTest PRIVATE dartpilot::scoring GTest::gtest_main)
+target_link_libraries(ScoringTest PRIVATE dartpilot::scoring nlohmann_json::nlohmann_json GTest::gtest_main)
+target_compile_definitions(ScoringTest PRIVATE DARTPILOT_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 gtest_discover_tests(ScoringTest)
 
 add_executable(SessionTest SessionTest.cpp)
@@ -67,7 +73,7 @@ target_link_libraries(ApiTest PRIVATE dartpilot::api GTest::gtest_main)
 gtest_discover_tests(ApiTest)
 
 add_executable(DartLocationTest DartLocationTest.cpp)
-target_link_libraries(DartLocationTest PRIVATE dartpilot::geometry GTest::gtest_main)
+target_link_libraries(DartLocationTest PRIVATE dartpilot::fusion dartpilot::geometry GTest::gtest_main)
 gtest_discover_tests(DartLocationTest)
 
 add_executable(BoardStateTest BoardStateTest.cpp)

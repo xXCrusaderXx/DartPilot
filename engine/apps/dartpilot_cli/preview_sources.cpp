@@ -8,6 +8,7 @@
 #include <opencv2/imgproc.hpp>
 
 #include "dartpilot/capture/v4l2_frame_source.hpp"
+#include "dartpilot/replay/replay.hpp"
 #include "dartpilot/scoring/score.hpp"
 #include "paths.hpp"
 
@@ -107,6 +108,10 @@ void CameraPreviews::run ()
             while(auto frame = captures_[i]->frames().tryPop())
             {
                 any = true;
+                if(auto* writer = writer_.load())
+                {
+                    writer->writeFrame(i, *frame);
+                }
                 {
                     std::lock_guard lock(latest_mutex_);
                     latest_[i] = frame->data;
@@ -138,6 +143,10 @@ void CameraPreviews::run ()
                 }
                 server_.publishCameraStatus({"usb-" + devices_[i].usb_port, state, stats.effective_fps, stats.lost_frames, stats.overflow_drops,
                                              brightness, stats.latency_ms});
+                if(auto* writer = writer_.load())
+                {
+                    writer->writeHealth(i, capture::monotonicNowNs(), stats, brightness);
+                }
             }
             next_status += kStatusInterval;
         }
@@ -234,4 +243,111 @@ void SimulatedPreviews::run ()
         std::this_thread::sleep_until(next);
     }
 }
+SessionPlayback::SessionPlayback (api::Server& server, session::RecordedSession session)
+    : server_(server)
+    , session_(std::move(session))
+    , latest_(session_.cameras.size())
+    , latest_sequence_(session_.cameras.size(), 0)
+    , played_(session_.cameras.size(), 0)
+{
+}
+
+SessionPlayback::~SessionPlayback () { stop(); }
+
+std::vector<capture::CameraDevice> SessionPlayback::devices () const
+{
+    std::vector<capture::CameraDevice> devices;
+    for(const auto& camera : session_.cameras)
+    {
+        capture::CameraDevice device;
+        device.usb_port = camera.usb_port;
+        device.name = camera.name;
+        devices.push_back(device);
+    }
+    return devices;
+}
+
+void SessionPlayback::start ()
+{
+    stop();
+    stop_ = false;
+    finished_ = false;
+    thread_ = std::thread([this] { run(); });
+}
+
+void SessionPlayback::stop ()
+{
+    stop_ = true;
+    if(thread_.joinable())
+    {
+        thread_.join();
+    }
+}
+
+bool SessionPlayback::latest (std::size_t camera, std::vector<std::uint8_t>& jpeg, std::uint32_t& sequence) const
+{
+    std::lock_guard lock(mutex_);
+    if(camera >= latest_.size() || latest_[camera].empty())
+    {
+        return false;
+    }
+    jpeg = latest_[camera];
+    sequence = latest_sequence_[camera];
+    return true;
+}
+
+capture::CaptureStats SessionPlayback::stats (std::size_t camera) const
+{
+    std::lock_guard lock(mutex_);
+    capture::CaptureStats stats;
+    stats.frames = camera < played_.size() ? played_[camera] : 0;
+    stats.running = !finished_;
+    stats.effective_fps = camera < session_.cameras.size() ? session_.cameras[camera].fps : 0;
+    return stats;
+}
+
+void SessionPlayback::run ()
+{
+    const auto order = replay::replayOrder(session_);
+    std::vector<session::FrameReader> readers;
+    for(std::size_t c = 0; c < session_.cameras.size(); ++c)
+    {
+        readers.emplace_back(session_, c);
+    }
+    if(order.empty())
+    {
+        finished_ = true;
+        return;
+    }
+    const std::int64_t first_ns = session_.cameras[order.front().camera].frames[order.front().frame].exposure_ns;
+    const auto started = std::chrono::steady_clock::now();
+    for(const auto& item : order)
+    {
+        if(stop_)
+        {
+            return;
+        }
+        const auto& frame = session_.cameras[item.camera].frames[item.frame];
+        // Played on the recording's own clock, so motion and still moments last as long as they did
+        std::this_thread::sleep_until(started + std::chrono::nanoseconds(frame.exposure_ns - first_ns));
+        auto jpeg = readers[item.camera].read(item.frame);
+        if(jpeg.empty())
+        {
+            continue;
+        }
+        const std::string id = session_.cameras[item.camera].id;
+        if(server_.wantsPreview(id))
+        {
+            api::PreviewHeader header{id, frame.sequence, frame.exposure_ns, session_.cameras[item.camera].width,
+                                      session_.cameras[item.camera].height};
+            server_.publishPreview(header, jpeg);
+        }
+        std::lock_guard lock(mutex_);
+        latest_[item.camera] = std::move(jpeg);
+        latest_sequence_[item.camera] = frame.sequence;
+        ++played_[item.camera];
+    }
+    finished_ = true;
+}
+
 }  // namespace dartpilot::cli

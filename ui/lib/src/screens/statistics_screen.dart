@@ -1,12 +1,19 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../theme.dart';
 import '../../l10n/app_localizations.dart';
 import '../board/scoring.dart';
+import '../engine/engine_connection.dart';
+import '../stats/export.dart';
 import '../stats/game_record.dart';
 import '../stats/player_stats.dart';
 import '../stats/statistics.dart';
+import '../widgets/average_trend.dart';
+import '../widgets/hit_heatmap.dart';
 import '../widgets/player_picker.dart';
 
 /// The player profiles of this device with their statistics; profiles are created and deleted here.
@@ -29,13 +36,52 @@ class StatisticsScreen extends StatelessWidget {
     if (confirmed == true) await statistics.removeProfile(player);
   }
 
+  Future<void> _export(BuildContext context, Statistics statistics, String kind) async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final stamp = DateFormat('yyyyMMdd-HHmm').format(DateTime.now());
+    try {
+      final file = kind == 'csv'
+          ? await writeExport('dartpilot-darts-$stamp.csv', dartsCsv(statistics.games))
+          : await writeExport('dartpilot-games-$stamp.json', gamesJson(statistics.games, statistics.players));
+      messenger.showSnackBar(
+        SnackBar(
+          key: const ValueKey('export-done'),
+          content: Text(l10n.exportSaved(file.path)),
+          duration: const Duration(seconds: 8),
+          action: SnackBarAction(
+            label: l10n.copyPath,
+            onPressed: () => Clipboard.setData(ClipboardData(text: file.path)),
+          ),
+        ),
+      );
+    } on FileSystemException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.exportFailed(e.message))));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final statistics = StatisticsScope.maybeOf(context);
     final players = statistics?.players ?? const <String>[];
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.navStatistics)),
+      appBar: AppBar(
+        title: Text(l10n.navStatistics),
+        actions: [
+          if (statistics != null && statistics.games.isNotEmpty)
+            PopupMenuButton<String>(
+              key: const ValueKey('stats-export'),
+              icon: const Icon(Icons.file_download_outlined),
+              tooltip: l10n.statsExport,
+              onSelected: (kind) => _export(context, statistics, kind),
+              itemBuilder: (_) => [
+                PopupMenuItem(value: 'csv', key: const ValueKey('export-csv'), child: Text(l10n.exportDartsCsv)),
+                PopupMenuItem(value: 'json', key: const ValueKey('export-json'), child: Text(l10n.exportGamesJson)),
+              ],
+            ),
+        ],
+      ),
       floatingActionButton: statistics == null
           ? null
           : FloatingActionButton.extended(
@@ -137,6 +183,9 @@ class _PlayerStatsScreenState extends State<PlayerStatsScreen> {
     final stats = computePlayerStats(games, widget.player, since: _since(games));
     String n(double? v, [int decimals = 1]) => v == null ? '–' : _number(l10n, v, decimals);
     String percent(double? v) => v == null ? '–' : '${_number(l10n, 100 * v, 0)} %';
+    // X01 games, oldest first, the last 30
+    final averages = [for (final g in stats.history.reversed) ?g.average];
+    if (averages.length > 30) averages.removeRange(0, averages.length - 30);
 
     final figures = <(String, String)>[
       (l10n.statsGames, '${stats.games} (${l10n.statsWon(stats.gamesWon)})'),
@@ -203,6 +252,27 @@ class _PlayerStatsScreenState extends State<PlayerStatsScreen> {
                       ),
                   ],
                 ),
+                if (averages.length >= 2) ...[
+                  const SizedBox(height: 24),
+                  Text(l10n.statsAverageTrend, style: theme.textTheme.titleMedium),
+                  const SizedBox(height: 8),
+                  AverageTrend(key: const ValueKey('average-trend'), averages: averages),
+                ],
+                const SizedBox(height: 24),
+                Text(l10n.statsHitBoard, style: theme.textTheme.titleMedium),
+                const SizedBox(height: 8),
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: HitHeatmap(
+                      key: const ValueKey('hit-heatmap'),
+                      hits: stats.hits,
+                      geometry: EngineScope.of(context).geometry,
+                    ),
+                  ),
+                ),
+                if (stats.rings[Ring.miss]! > 0)
+                  Center(child: Text(l10n.statsMisses(stats.rings[Ring.miss]!), style: theme.textTheme.bodySmall)),
                 const SizedBox(height: 24),
                 Text(l10n.statsHits, style: theme.textTheme.titleMedium),
                 const SizedBox(height: 8),

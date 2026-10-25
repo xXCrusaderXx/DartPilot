@@ -178,7 +178,9 @@ Every detection run over a session gets its own directory `results/<run id>/`, s
 - `score` is **derived output** of this run: the deterministic scorer (#12) applied to `board_point`. Its fields are those of `scoring::Score` (`ring` as snake_case enum, `sector` 1–20 or 0 for the bulls and a miss, `multiplier` 0–3, `points`, `label` such as `T20`), and `board_geometry` names the board geometry it was scored with: `nominal` or the id of a measured board model (#47). `sector_boundary_distance_mm` is `null` where there are no radial wires (bulls, miss). When the scorer or the board geometry changes, the score is recomputed from `board_point`; it is never the primary result.
 - `frames` lists the `sequence` numbers of the frames each camera contributed, so a result points back to exact frames.
 - A rejected throw has `"accepted": false`, keeps its measurements and diagnostics, and may leave `board_point` and `score` as `null`.
-- `processing_latency_ms` is measured live; in a replay it is the processing time of the replay and is not compared between runs.
+- `processing_latency_ms` is measured live; a replay writes `null`, so its files stay byte-identical.
+- A replay's `diagnostics` hold `pipeline`, the throw's `event_ns`, `window_start_ns` and `window_end_ns`, `cameras_agreeing` and, if it abstained, `reason`; each camera measurement adds the camera's `state` (`seen`, `cut`, `not_seen`, `disagrees`, `not_calibrated`) and whether it was `used`.
+- A run recorded live by `dartpilot serve --record` (`results/live/`) also holds the players' corrections, each as a line of its own after the throw: `{"throw_id": "…/17", "correction": {"action": "corrected", "board_point": {…}, "client": "app"}}`, with `rejected` (and `reason`) or `added` (a dart the engine missed, with `event_ns`) as other actions. `python -m dartpilot_tools.corrections <session>` turns them into the annotation set `corrections`: ground-truth candidates with about 3 mm uncertainty for the benchmark.
 
 ## Calibration checks
 
@@ -195,14 +197,38 @@ While replaying, every camera with a board refinement is checked against it (#49
 
 ## Annotations
 
-Ground truth lives in `annotations/<annotation set>.jsonl`, one line per throw, keyed by `throw_id`. It carries the board point (`x_mm`, `y_mm`, `covariance_mm2`, `source`, `frames`, see [board-coordinates.md](board-coordinates.md)) and **never a score**: benchmarks score the result and the ground truth with the same scorer and geometry. Its other fields (tip pixel per camera, annotator, uncertainty, flags such as "near wire" or "occluded") are defined with the ground-truth method (#14) and the annotation tool (#15).
+Ground truth lives in `annotations/<annotation set>.jsonl`, one line per throw, keyed by `throw_id`. It carries the board point (`x_mm`, `y_mm`, `covariance_mm2`, `source`, `frames`, see [board-coordinates.md](board-coordinates.md)) and **never a score**: benchmarks score the result and the ground truth with the same scorer and geometry.
+
+How ground truth is made is decided in [ADR 0011](adr/0011-ground-truth.md). There is no separate annotation tool (#15): the sets come from what the reference run, play and the detection test already record.
+
+| Set | Made by | Truth | Uncertainty |
+| - | - | - | - |
+| `reference_corners` | the guided reference run in the app (#167, #181), stored as a session without frames | darts pushed into known wire corners | 0.5 mm along the wire, 1.0 mm across it (1 σ) |
+| `corrections` | `python -m dartpilot_tools.corrections <session>` from a run recorded with `serve --record` (#115) | the points players set when they corrected a dart or added a missed one; rejected darts with `"no_dart": true` | about 3 mm (a tap) |
+| `confirmed` | the same command | darts the engine placed and the player left alone, at the engine's point, with `"field_only": true` | the field only |
+| `ratings` | `python -m dartpilot_tools.detection_test <log>` from a detection test of the setup GUI (#197), stored as a session without frames with the run `detection-test` | darts rated right (`field_only`), moved to another field, given a point after an abstention, or added as missed; `"no_dart"` for false alarms | about 3 mm, or the field only |
+
+A `field_only` truth counts for the field and the ring (segment and multiplier accuracy, abstention, false acceptance), never for millimetre errors. The benchmark takes several sets at once: `--annotations corrections,confirmed`.
+
+Every entry carries `flags`, derived from the run that detected the throw and from the truth:
+
+- `cut`: a camera saw the dart cut off by the image border;
+- `occluded`: a camera did not see it, or its axis disagreed with the others (an earlier dart in the way);
+- `near_wire`: the true point is within 2 mm of a ring or sector wire;
+- `darts_in_board`: darts already in the board when it landed. From the takeouts a live run records (`{"takeout": {"event_ns", "darts_removed"}}` lines in its `throws.jsonl`), or from the dart's place in its round in the detection test; `null` for runs recorded before takeouts were logged.
+
+A live run records the states of the cameras it did not use (`reason`); a used camera may have seen a cut dart without the run saying so, so `cut` is complete only for replays and detection tests. The benchmark reports its groups by these flags, including first, second and third dart.
 
 ## Replay and determinism
 
 - A replay reads the frames of all cameras merged in the order of `exposure_ns`; frames with equal `exposure_ns` are ordered by camera id. It does not depend on the order in which frames arrived.
 - The same session, configuration and software version give byte-identical `throws.jsonl` files, apart from `processing_latency_ms` (#9 checks this in CI).
 - The replay uses only the times stored in the session; it never reads the wall clock.
-- `dartpilot replay <session> [--run-id ID] [--extrinsics FILE] [--check-every SECONDS] [--no-checks]` writes `results/<run id>/` (`replay` by default) and never overwrites an existing run. The board refinement is the one the manifest references, provided the file in the calibration directory still has the recorded SHA-256; `--extrinsics` names another one. Throw detection does not exist yet (#18), so `throws.jsonl` stays empty for now.
+- `dartpilot replay <session> [--pipeline tracker|baseline|none] [--run-id ID] [--extrinsics FILE] [--check-every SECONDS] [--no-checks]` writes `results/<run id>/` (`replay` by default) and never overwrites an existing run. The board refinement is the one the manifest references, provided the file in the calibration directory still has the recorded SHA-256; `--extrinsics` names another one.
+- Throw detection (#18) looks at the board at the still moments live detection waits for, found in the recorded times: every camera's latest frame is sampled every 100 ms, and once all cameras have been still for 1.5 s, ten frames per camera are averaged. The settings are part of `run.json`. Two pipelines compare these still images with the one before:
+  - `tracker` (default) is the live detection (`fusion::DartTracker`): the dart's axis per camera, the cameras that agree, abstention otherwise. Without the stored empty-board images, which need not match an old recording, it checks the board for darts by its wires before it starts.
+  - `baseline` is plain frame differencing, the method the others are measured against: the largest region that changed is the dart, its tip the point of that region furthest towards the board, projected onto the board per camera; the board points of all cameras that saw a change are averaged, and a dart seen by one camera only is an abstention. All darts are taken out when at most one camera still sees a change against the empty board.
+- A detected throw takes the throw id of the session's throw (`throws.csv`) whose event window holds its event time, so live results, replays and annotations of one session refer to the same throws; a throw no recorded window holds gets `<session id>/unmatched-<n>`. A session without `throws.csv` gets one from its first replay that finds throws, with `source` `replay:<run id>`.
 
 ## Reading sessions
 

@@ -6,25 +6,47 @@ import '../games/x01.dart';
 import '../bots/bot_turns.dart';
 import '../games/dart_game.dart';
 import '../input/game_input.dart';
+import '../input/takeout_gate.dart';
 import '../stats/game_record.dart';
 import '../stats/statistics.dart';
 import '../widgets/winner_dialog.dart';
+import 'my_darts_screen.dart';
+import 'watched_board.dart';
 import 'x01_setup_screen.dart';
 
 class X01Screen extends StatefulWidget {
-  const X01Screen({super.key, required this.settings, this.bots = const {}});
+  const X01Screen({
+    super.key,
+    required this.settings,
+    this.bots = const {},
+    this.replay = const [],
+    this.watching = false,
+  });
 
   final X01Settings settings;
 
   /// Bot level per player index; the others are people
   final Map<int, int> bots;
 
+  /// Darts already thrown, for a game rebuilt from a shared record
+  final List<DartThrow> replay;
+
+  /// Only shows another app's game: no input, nothing kept or shared (#116)
+  final bool watching;
+
   @override
   State<X01Screen> createState() => _X01ScreenState();
 }
 
 class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
-  late final X01Game _game = X01Game(widget.settings);
+  @override
+  bool get watching => widget.watching;
+
+  late final X01Game _game = replayed(X01Game(widget.settings), widget.replay);
+  final TakeoutGate _takeout = TakeoutGate();
+
+  @override
+  bool get waitsForTakeout => _takeout.isClosed(_game);
 
   @override
   GameRecord buildRecord(String id, DateTime started, DateTime ended) => GameRecord(
@@ -61,14 +83,10 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
   }
 
   Future<void> _showWinner() {
-    final l10n = AppLocalizations.of(context);
     return showWinnerDialog(
       context,
       winner: _game.players[_game.winner!].name,
-      lines: [
-        for (final p in _game.players)
-          '${p.name}: ${l10n.legs} ${p.legsWon}, ${l10n.average} ${p.threeDartAverage.toStringAsFixed(1)}',
-      ],
+      record: currentRecord,
       onUndo: () => setState(_game.undo),
       newGame: (_) => const X01SetupScreen(),
     );
@@ -76,18 +94,25 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
 
   @override
   Widget build(BuildContext context) {
-    WidgetsBinding.instance.addPostFrameCallback((_) => scheduleBotTurn());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.watching) return;
+      scheduleBotTurn();
+      shareGame();
+      if (mounted && !_game.isFinished) useDartsOf(context, _game.players[_game.current].name);
+    });
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final visit = _game.currentVisit;
-    final checkout = _game.checkoutSuggestion;
+    // While its darts are in the board, the visit that ended stays on the scoreboard with its player.
+    final waiting = _takeout.isClosed(_game);
+    final visit = waiting ? _game.visits[_game.visits.length - 2] : _game.currentVisit;
+    final checkout = waiting ? null : _game.checkoutSuggestion;
 
     final scoreboard = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(l10n.leg(_game.legNumber), style: theme.textTheme.titleMedium),
         const SizedBox(height: 8),
-        for (var i = 0; i < _game.players.length; ++i) _PlayerCard(_game.players[i], active: i == _game.current),
+        for (var i = 0; i < _game.players.length; ++i) _PlayerCard(_game.players[i], active: i == visit.player),
         const SizedBox(height: 12),
         Row(
           children: [
@@ -119,21 +144,24 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
           ),
         const Spacer(),
         OutlinedButton.icon(
-          onPressed: _game.canUndo ? () => setState(_game.undo) : null,
+          onPressed: _game.canUndo && !widget.watching ? () => setState(_game.undo) : null,
           icon: const Icon(Icons.undo),
           label: Text(l10n.undo),
         ),
       ],
     );
-    final input = GameInput(
-      game: _game,
-      shownThrows: [for (final d in visit.darts) d.dart],
-      onDart: (dart) {
-        // While a bot is at the oche, its darts are its own.
-        if (!isBotTurn) _add(dart);
-      },
-      onChanged: () => setState(() {}),
-    );
+    final input = widget.watching
+        ? WatchedBoard(throws: [for (final d in visit.darts) d.dart])
+        : GameInput(
+            game: _game,
+            takeout: _takeout,
+            shownThrows: [for (final d in visit.darts) d.dart],
+            onDart: (dart) {
+              // While a bot is at the oche, its darts are its own.
+              if (!isBotTurn) _add(dart);
+            },
+            onChanged: () => setState(() {}),
+          );
 
     return Scaffold(
       appBar: AppBar(title: Text('${widget.settings.startScore}')),

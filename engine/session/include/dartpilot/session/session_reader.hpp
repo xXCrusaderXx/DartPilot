@@ -41,6 +41,16 @@ struct RecordedCamera
     std::vector<FrameIndex> frames;
 };
 
+// One line of throws.csv
+struct RecordedThrow
+{
+    std::string throw_id;
+    std::int64_t event_ns = 0;
+    std::int64_t window_start_ns = 0;
+    std::int64_t window_end_ns = 0;
+    std::string source;
+};
+
 struct RecordedSession
 {
     std::filesystem::path directory;
@@ -49,6 +59,8 @@ struct RecordedSession
     std::string software_version;
     std::string software_commit;
     std::vector<RecordedCamera> cameras;
+    // Empty if the session has no throws.csv
+    std::vector<RecordedThrow> throws;
 };
 
 // Reads the manifest and the frame indexes; nothing and an error message if the session cannot be read or has a

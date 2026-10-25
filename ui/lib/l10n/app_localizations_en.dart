@@ -234,6 +234,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get countAsMiss => 'Count as miss';
 
   @override
+  String get removeDarts => 'Remove the darts';
+
+  @override
+  String get removeDartsHint => 'The next visit starts once the darts are out of the board.';
+
+  @override
+  String get dartsRemoved => 'Darts are out';
+
+  @override
   String get enterManually => 'Enter them';
 
   @override
@@ -1164,4 +1173,416 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get botLevel10 => 'Pro';
+
+  @override
+  String get calibrationCheck => 'Calibration check';
+
+  @override
+  String get calibrationCheckHint => 'Has a camera moved? Every camera against its calibration';
+
+  @override
+  String get calibrationCheckIntro =>
+      'Keep the board empty. Blue rings show where the calibration expects the board\'s points, green dots where they are now; long amber lines mean the camera or the board has moved. The engine also checks this in the background whenever the board is empty.';
+
+  @override
+  String checkOk(String mm) {
+    return 'Matches the calibration ($mm mm).';
+  }
+
+  @override
+  String checkOff(String mm) {
+    return 'Slightly off ($mm mm), e.g. other light. Detection still works.';
+  }
+
+  @override
+  String checkMoved(String mm) {
+    return 'The camera or the board has moved ($mm mm). Measure this camera again.';
+  }
+
+  @override
+  String checkWrongPort(String camera) {
+    return 'Wrong USB port? This image fits the calibration of camera $camera.';
+  }
+
+  @override
+  String get checkNoBoard => 'No board found – darts in the board or a hand in view?';
+
+  @override
+  String get checkNotCalibrated => 'Not calibrated yet.';
+
+  @override
+  String get checkChecking => 'Checking …';
+
+  @override
+  String homeCameraMoved(String camera) {
+    return '$camera has moved – measure it again.';
+  }
+
+  @override
+  String homeCameraWrongPort(String camera) {
+    return '$camera is on another USB port than when it was calibrated.';
+  }
+
+  @override
+  String get referenceRun => 'Reference measurement';
+
+  @override
+  String get settingsReferenceHint => 'How accurate is the detection? Darts in known positions show it in millimetres';
+
+  @override
+  String get referenceIntro =>
+      'You push one dart after the other by hand into a known position: the centre of the bull, then corners where a radial wire meets a ring wire. The engine locates every dart, and the distance from the position is the error of the whole system, from calibration to tip. Ten darts take about five minutes; the board must be calibrated.';
+
+  @override
+  String get referenceNotCalibrated => 'Calibrate the cameras first (Settings → Calibration).';
+
+  @override
+  String referenceProgress(int number, int total) {
+    return 'Dart $number of $total';
+  }
+
+  @override
+  String get referenceBullCentre => 'Push a dart into the very centre of the bull, then take your hand away.';
+
+  @override
+  String referenceCorner(String field, int a, int b) {
+    return 'Push a dart into $field, into the corner at the wire between $a and $b, then take your hand away.';
+  }
+
+  @override
+  String get referenceCornerHint =>
+      'The point touches both wires: the radial wire and the ring wire. Push it in by hand, do not throw.';
+
+  @override
+  String get referenceResults => 'Measured darts';
+
+  @override
+  String get referenceAbstained => 'Not located';
+
+  @override
+  String referenceError(String mm) {
+    return '$mm mm off';
+  }
+
+  @override
+  String referenceCamerasUsed(int count) {
+    return '$count cameras';
+  }
+
+  @override
+  String get referenceLocated => 'Located';
+
+  @override
+  String get referenceMedian => 'Median error';
+
+  @override
+  String get referenceP90 => '90 % within';
+
+  @override
+  String get referenceMax => 'Worst';
+
+  @override
+  String get referenceGood => 'The detection is accurate.';
+
+  @override
+  String get referenceNotGood => 'The detection is not accurate enough yet.';
+
+  @override
+  String get referenceNotGoodHint =>
+      'Run the setup diagnosis to see where the error comes from, then calibrate the cameras it names again.';
+
+  @override
+  String get referenceCamerasDisagree => 'The cameras disagree about where it is';
+
+  @override
+  String get referenceSeenByOneCamera => 'Only one camera saw it';
+
+  @override
+  String cameraMovedNotice(String camera) {
+    return '$camera was moved – its calibration is being checked.';
+  }
+
+  @override
+  String get rigKnockedNotice => 'The rig was knocked – the calibration is being checked.';
+
+  @override
+  String get simulateDarts => 'Simulate darts';
+
+  @override
+  String get simulateDartsHint => 'For trying the app: the engine plays generated darts instead of detecting them.';
+
+  @override
+  String get localEngineLiveUnavailable =>
+      'This engine cannot detect darts yet. Switch on \"Simulate darts\", or update the engine.';
+
+  @override
+  String get detectionNotCalibrated =>
+      'Not calibrated yet – darts are not detected. Calibrate the cameras under Settings.';
+
+  @override
+  String get detectionWaitingForEmptyBoard => 'Waiting for an empty, still board before detecting darts.';
+
+  @override
+  String get detectionPaused => 'Detection paused';
+
+  @override
+  String get detectionUnavailable => 'Darts are not detected right now.';
+
+  @override
+  String get shareEngine => 'Share in the network';
+
+  @override
+  String get shareEngineHint =>
+      'Phones and tablets in your home network can connect to this engine. Only in a network you trust: there is no PIN yet.';
+
+  @override
+  String get showEngineQr => 'QR code';
+
+  @override
+  String get engineQrTitle => 'Connect another device';
+
+  @override
+  String get engineQrHint =>
+      'Scan this code with the DartPilot app on your phone or tablet (Engine → In the network → scan).';
+
+  @override
+  String get engineQrNoNetwork => 'This device has no address in a home network.';
+
+  @override
+  String get scanEngineQr => 'Scan QR code';
+
+  @override
+  String get scanEngineQrHint => 'Point the camera at the QR code that the engine\'s device shows.';
+
+  @override
+  String get enterAddressManually => 'Enter the address or scan a QR code';
+
+  @override
+  String get restartEngine => 'Restart the engine';
+
+  @override
+  String get engineSettings => 'Engine';
+
+  @override
+  String get assignCameras => 'Assign cameras';
+
+  @override
+  String get assignCamerasHint =>
+      'Each camera gets its place: camera 1, 2, 3. The live image shows which is which. The arrows swap two cameras, and a name helps to find one again.';
+
+  @override
+  String get cameraNameLabel => 'Name (optional)';
+
+  @override
+  String get moveCameraUp => 'Move up';
+
+  @override
+  String get moveCameraDown => 'Move down';
+
+  @override
+  String get saveCameraOrder => 'Apply';
+
+  @override
+  String get newCamerasTitle => 'New cameras found';
+
+  @override
+  String get newCamerasText => 'Assign them once, so that camera 1, 2 and 3 are always the same.';
+
+  @override
+  String get statsAverageTrend => 'Average over games (X01)';
+
+  @override
+  String get statsHitBoard => 'Hit board';
+
+  @override
+  String statsMisses(int count) {
+    return 'Misses: $count';
+  }
+
+  @override
+  String get statsExport => 'Export';
+
+  @override
+  String get exportDartsCsv => 'All darts as CSV';
+
+  @override
+  String get exportGamesJson => 'Games and figures as JSON';
+
+  @override
+  String exportSaved(String path) {
+    return 'Saved: $path';
+  }
+
+  @override
+  String exportFailed(String error) {
+    return 'Export failed: $error';
+  }
+
+  @override
+  String get copyPath => 'Copy path';
+
+  @override
+  String get myDarts => 'My darts';
+
+  @override
+  String get myDartsHint => 'Measure your darts so that detection finds them better';
+
+  @override
+  String get myDartsIntro =>
+      'Optional: the engine measures a dart set (point, barrel, length, appearance). It then finds the point more precisely and tells new darts from those in the board. Without a set it detects any dart as before.';
+
+  @override
+  String get dartSetsUnavailable => 'This engine cannot measure darts yet.';
+
+  @override
+  String get noDartSets => 'No dart set measured yet.';
+
+  @override
+  String get addDartSet => 'Add dart set';
+
+  @override
+  String get renameDartSet => 'Rename';
+
+  @override
+  String get dartSetName => 'Name of the set';
+
+  @override
+  String get dartSetNameHint => 'e.g. Anna\'s darts';
+
+  @override
+  String get dartSetStart => 'Next';
+
+  @override
+  String get dartSetInUse => 'in use';
+
+  @override
+  String get dartSetThrownBy => 'Thrown by:';
+
+  @override
+  String get dartPoint => 'Point';
+
+  @override
+  String get dartBarrel => 'Barrel';
+
+  @override
+  String get dartTotal => 'Total';
+
+  @override
+  String get dartSetPutIn => 'Put one dart of the set into the board and take your hand away.';
+
+  @override
+  String get dartSetMeasuring => 'Measuring …';
+
+  @override
+  String get dartSetPlaced => 'Measured. Pull the dart and put it in somewhere else.';
+
+  @override
+  String get dartSetDone => 'Done – the set is measured.';
+
+  @override
+  String dartSetProgress(int placed, int needed) {
+    return '$placed of $needed places';
+  }
+
+  @override
+  String get dartSetClose => 'Close';
+
+  @override
+  String get dartSetNotCalibrated => 'The cameras are not calibrated yet.';
+
+  @override
+  String get dartSetBoardNotEmpty => 'Please pull all darts out of the board first.';
+
+  @override
+  String get dartSetBusy => 'The engine is busy. Try again in a moment.';
+
+  @override
+  String dartSetFailed(String reason) {
+    return 'Measuring failed: $reason';
+  }
+
+  @override
+  String get dartFlight => 'Flight';
+
+  @override
+  String dartSetPlacementFailed(String reason) {
+    return '$reason Pull the dart and put it in somewhere else.';
+  }
+
+  @override
+  String get dartSetCamerasDisagree => 'The cameras did not agree.';
+
+  @override
+  String get dartSetSeenByOne => 'Only one camera saw the dart.';
+
+  @override
+  String get dartSetPlacementsDisagree => 'This place does not fit the other measurements.';
+
+  @override
+  String get dartSetNotMeasured => 'The dart could not be measured here.';
+
+  @override
+  String get dartSetSaveFailed => 'The set could not be saved.';
+
+  @override
+  String get dartSetBoardStillOccupied =>
+      'The engine still sees something in the board. If it is empty, store the empty board again – otherwise the measurement cannot go on.';
+
+  @override
+  String get dartMeasureUncertain => 'uncertain';
+
+  @override
+  String get pairTitle => 'Pair with the engine';
+
+  @override
+  String pairText(String address) {
+    return 'The engine at $address only accepts paired devices. Enter the PIN its device shows – this is needed only once.';
+  }
+
+  @override
+  String get pairPin => 'PIN';
+
+  @override
+  String get pairButton => 'Pair';
+
+  @override
+  String get pairWrongPin => 'The PIN is wrong. Look at the engine\'s device again.';
+
+  @override
+  String get pairTooManyAttempts => 'Too many wrong attempts. Wait a minute.';
+
+  @override
+  String pairFailed(String error) {
+    return 'Pairing failed: $error';
+  }
+
+  @override
+  String engineQrPin(String pin) {
+    return 'PIN for other devices: $pin';
+  }
+
+  @override
+  String get pairedDevices => 'Paired devices';
+
+  @override
+  String get noPairedDevices => 'No device paired yet.';
+
+  @override
+  String pairedDeviceSeen(String when) {
+    return 'last $when';
+  }
+
+  @override
+  String get unpairDevice => 'Unpair';
+
+  @override
+  String get watchGame => 'Watching';
+
+  @override
+  String get sharedGameEnded => 'The game on the other display has ended.';
+
+  @override
+  String watchGameTitle(String mode) {
+    return 'Watch the running game: $mode';
+  }
 }

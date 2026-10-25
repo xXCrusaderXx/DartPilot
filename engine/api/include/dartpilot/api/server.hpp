@@ -11,6 +11,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include "dartpilot/api/pairing.hpp"
 #include "dartpilot/api/protocol.hpp"
 #include "dartpilot/api/throw_log.hpp"
 
@@ -28,6 +29,10 @@ class Server
 {
    public:
     Server (int port, std::string host, Hello hello);
+
+    // Clients from other computers must pair first (#110); without this, every client is trusted, as when the engine
+    // listens only on this computer. trust_local false treats this computer like any other, for tests.
+    void requirePairing (std::shared_ptr<Pairing> pairing, bool trust_local = true);
     ~Server ();
     Server (const Server&) = delete;
     Server& operator=(const Server&) = delete;
@@ -40,7 +45,7 @@ class Server
 
     // Assigns the throw ID, sends the throw to every client and returns it with its ID
     Throw publishThrow (Throw dart);
-    void publishTakeout (std::int64_t event_ns, int darts_removed);
+    void publishTakeout (std::int64_t event_ns, int darts_removed, std::optional<double> detection_latency_ms = std::nullopt);
     // Sent to clients that subscribed to status; a changed state goes to every client
     void publishCameraStatus (const CameraStatus& status);
     void publishEngineStatus (const std::string& detection, const std::string& message);
@@ -74,12 +79,20 @@ class Server
         std::string message;
     };
     void onCalibration (std::function<std::optional<CalibrationError>(const CalibrationRequest&)> handler);
+    // A handler for one request type, ahead of the general one (e.g. start_reference_run)
+    void onCalibrationRequest (const std::string& type, std::function<std::optional<CalibrationError>(const CalibrationRequest&)> handler);
     void setCalibrationStatus (const nlohmann::json& status);
     // Sends an event message to every client
     void publishEvent (const nlohmann::json& message);
+    // Sends an event to every client and keeps the latest one of its type for clients that connect later, after hello:
+    // the state of a run that a client may join in the middle (diagnosis, reference_run)
+    void publishState (const nlohmann::json& message);
 
     // Board points of the darts since the last takeout, e.g. for a simulated camera image
     std::vector<BoardPoint> visitPoints () const;
+
+    // Every throw and every correction as a record of a session's throws.jsonl, e.g. to write it into the recording
+    void onLogged (std::function<void(const nlohmann::json& record)> handler);
 
     // Called when a client pauses or resumes detection
     void onDetectionChanged (std::function<void(bool running)> handler);
@@ -94,6 +107,10 @@ class Server
         // Valid from the open to the close callback of its connection; only used under mutex_
         ix::WebSocket* socket = nullptr;
         std::string name;
+        std::string address;
+        // local, paired or required, as in hello
+        std::string pairing = "local";
+        bool trusted () const { return pairing != "required"; }
         bool status = false;
         struct Preview
         {
@@ -111,15 +128,20 @@ class Server
     ThrowLog log_;
     std::unique_ptr<ix::WebSocketServer> server_;
     mutable std::mutex mutex_;
+    std::shared_ptr<Pairing> pairing_;
+    bool trust_local_ = true;
     std::map<std::string, Client> clients_;
     std::map<std::string, std::string> camera_states_;
     std::function<void(bool)> detection_handler_;
+    std::function<void(const nlohmann::json&)> logged_handler_;
+    void logged (const nlohmann::json& record);
     PreviewScaler preview_scaler_;
     std::function<void()> check_board_handler_;
     std::function<std::optional<std::string>(bool)> store_reference_handler_;
     std::vector<BoardPoint> visit_points_;
     std::function<void(bool)> diagnosis_handler_;
     std::function<std::optional<CalibrationError>(const CalibrationRequest&)> calibration_handler_;
-    nlohmann::json last_diagnosis_;
+    std::map<std::string, std::function<std::optional<CalibrationError>(const CalibrationRequest&)>> calibration_handlers_;
+    std::map<std::string, nlohmann::json> last_states_;
 };
 }  // namespace dartpilot::api

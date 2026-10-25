@@ -58,6 +58,9 @@ ThemeData dartPilotTheme() {
     onSecondaryContainer: AppColors.accentLight,
     tertiary: AppColors.warning,
     onTertiary: AppColors.background,
+    // Notices that need the player (an uncertain dart, a correction): dark and amber-tinted, so text stays readable
+    tertiaryContainer: Color(0xFF3B3117),
+    onTertiaryContainer: AppColors.text,
     error: AppColors.bad,
     onError: AppColors.background,
     surface: AppColors.surface,

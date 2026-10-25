@@ -100,10 +100,11 @@ void main() {
     );
     addTearDown(engine.dispose);
 
+    // The search starts by itself; the address field is offered only on request while it finds something.
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
-    await tester.tap(find.byKey(const ValueKey('engine-search')));
     await tester.pump();
     expect(find.text('Suche im Netzwerk…'), findsOneWidget);
+    expect(find.byKey(const ValueKey('engine-address')), findsNothing);
 
     searches
       ..add(living)
@@ -127,6 +128,34 @@ void main() {
     await tester.pumpAndSettle();
   });
 
+  testWidgets('when the search finds nothing, the address field and scanning are offered', (tester) async {
+    final engine = EngineConnection(
+      connector: (uri) => throw const SocketException('no engine in tests'),
+      discovery: EngineDiscovery([fixed(const [])]),
+    );
+    addTearDown(engine.dispose);
+    await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Keine Engine gefunden'), findsOneWidget);
+    expect(find.byKey(const ValueKey('engine-address')), findsOneWidget);
+  });
+
+  testWidgets('the address field can be asked for while engines are found', (tester) async {
+    final engine = EngineConnection(
+      connector: (uri) => throw const SocketException('no engine in tests'),
+      discovery: EngineDiscovery([
+        fixed(const [living]),
+      ]),
+    );
+    addTearDown(engine.dispose);
+    await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('engine-address')), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('engine-manual')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('engine-address')), findsOneWidget);
+  });
+
   testWidgets('an empty search says why it may find nothing', (tester) async {
     final engine = EngineConnection(
       connector: (uri) => WebSocketChannel.connect(uri),
@@ -134,8 +163,20 @@ void main() {
     );
     addTearDown(engine.dispose);
     await tester.pumpWidget(DartPilotApp(locale: const Locale('en'), engine: engine));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('No engine found'), findsOneWidget);
+    // Searching again
     await tester.tap(find.byKey(const ValueKey('engine-search')));
     await tester.pumpAndSettle();
     expect(find.textContaining('No engine found'), findsOneWidget);
+  });
+
+  test('holds the multicast lock while searching and releases it afterwards', () async {
+    final calls = <bool>[];
+    final discovery = EngineDiscovery([
+      fixed(const [living]),
+    ], multicastLock: (hold) async => calls.add(hold));
+    await discovery.search().toList();
+    expect(calls, [true, false]);
   });
 }

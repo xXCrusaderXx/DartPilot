@@ -4,6 +4,7 @@ import '../../l10n/app_localizations.dart';
 import '../engine/engine_connection.dart';
 import 'connect_screen.dart';
 import 'home_screen.dart';
+import 'pairing_screen.dart';
 import 'settings_screen.dart';
 import 'statistics_screen.dart';
 
@@ -21,8 +22,10 @@ class _RootScreenState extends State<RootScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final connected = EngineScope.of(context).isConnected;
+    final engine = EngineScope.of(context);
+    final connected = engine.isConnected;
     if (!connected && !_offline) return ConnectScreen(onPlayOffline: () => setState(() => _offline = true));
+    if (connected && engine.pairingRequired) return const PairingScreen();
     return MainShell(onConnect: () => setState(() => _offline = false));
   }
 }
@@ -50,65 +53,79 @@ class _MainShellState extends State<MainShell> {
       SettingsScreen(onConnect: widget.onConnect),
     ];
     final body = IndexedStack(index: _index, children: pages);
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth >= 800) {
+    final connected = EngineScope.of(context).isConnected;
+    // Back always leads home; from home it leads to the connection page only while no engine is connected, and
+    // never out of the app.
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        if (_index != 0) {
+          setState(() => _index = 0);
+        } else if (!connected) {
+          widget.onConnect();
+        }
+      },
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth >= 800) {
+            return Scaffold(
+              body: Row(
+                children: [
+                  NavigationRail(
+                    selectedIndex: _index,
+                    onDestinationSelected: (i) => setState(() => _index = i),
+                    labelType: NavigationRailLabelType.all,
+                    destinations: [
+                      NavigationRailDestination(
+                        icon: const Icon(Icons.home_outlined),
+                        selectedIcon: const Icon(Icons.home),
+                        label: Text(l10n.navHome),
+                      ),
+                      NavigationRailDestination(
+                        icon: const Icon(Icons.insights_outlined),
+                        selectedIcon: const Icon(Icons.insights),
+                        label: Text(l10n.navStatistics),
+                      ),
+                      NavigationRailDestination(
+                        icon: const Icon(Icons.settings_outlined),
+                        selectedIcon: const Icon(Icons.settings),
+                        label: Text(l10n.navSettings),
+                      ),
+                    ],
+                  ),
+                  const VerticalDivider(width: 1),
+                  Expanded(child: body),
+                ],
+              ),
+            );
+          }
           return Scaffold(
-            body: Row(
-              children: [
-                NavigationRail(
-                  selectedIndex: _index,
-                  onDestinationSelected: (i) => setState(() => _index = i),
-                  labelType: NavigationRailLabelType.all,
-                  destinations: [
-                    NavigationRailDestination(
-                      icon: const Icon(Icons.home_outlined),
-                      selectedIcon: const Icon(Icons.home),
-                      label: Text(l10n.navHome),
-                    ),
-                    NavigationRailDestination(
-                      icon: const Icon(Icons.insights_outlined),
-                      selectedIcon: const Icon(Icons.insights),
-                      label: Text(l10n.navStatistics),
-                    ),
-                    NavigationRailDestination(
-                      icon: const Icon(Icons.settings_outlined),
-                      selectedIcon: const Icon(Icons.settings),
-                      label: Text(l10n.navSettings),
-                    ),
-                  ],
+            body: body,
+            bottomNavigationBar: NavigationBar(
+              selectedIndex: _index,
+              onDestinationSelected: (i) => setState(() => _index = i),
+              destinations: [
+                NavigationDestination(
+                  icon: const Icon(Icons.home_outlined),
+                  selectedIcon: const Icon(Icons.home),
+                  label: l10n.navHome,
                 ),
-                const VerticalDivider(width: 1),
-                Expanded(child: body),
+                NavigationDestination(
+                  icon: const Icon(Icons.insights_outlined),
+                  selectedIcon: const Icon(Icons.insights),
+                  label: l10n.navStatistics,
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.settings_outlined),
+                  selectedIcon: const Icon(Icons.settings),
+                  label: l10n.navSettings,
+                ),
               ],
             ),
           );
-        }
-        return Scaffold(
-          body: body,
-          bottomNavigationBar: NavigationBar(
-            selectedIndex: _index,
-            onDestinationSelected: (i) => setState(() => _index = i),
-            destinations: [
-              NavigationDestination(
-                icon: const Icon(Icons.home_outlined),
-                selectedIcon: const Icon(Icons.home),
-                label: l10n.navHome,
-              ),
-              NavigationDestination(
-                icon: const Icon(Icons.insights_outlined),
-                selectedIcon: const Icon(Icons.insights),
-                label: l10n.navStatistics,
-              ),
-              NavigationDestination(
-                icon: const Icon(Icons.settings_outlined),
-                selectedIcon: const Icon(Icons.settings),
-                label: l10n.navSettings,
-              ),
-            ],
-          ),
-        );
-      },
+        },
+      ),
     );
   }
 }

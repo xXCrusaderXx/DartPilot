@@ -1,18 +1,32 @@
+import 'dart:async';
 import 'dart:ui' show AppExitResponse;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import '../l10n/app_localizations.dart';
+import 'engine/camera_order.dart';
 import 'engine/engine_choice.dart';
 import 'engine/engine_connection.dart';
+import 'engine/engine_events.dart';
 import 'engine/engine_manager.dart';
+import 'engine/pairing_tokens.dart';
+import 'stats/dart_links.dart';
 import 'stats/statistics.dart';
 import 'theme.dart';
 import 'screens/main_shell.dart';
 
 class DartPilotApp extends StatefulWidget {
-  const DartPilotApp({super.key, this.locale, this.engine, this.manager, this.settings, this.statistics});
+  const DartPilotApp({
+    super.key,
+    this.locale,
+    this.engine,
+    this.manager,
+    this.settings,
+    this.statistics,
+    this.cameraOrder,
+    this.dartLinks,
+  });
 
   /// Fixed locale for tests; the system language otherwise
   final Locale? locale;
@@ -28,21 +42,68 @@ class DartPilotApp extends StatefulWidget {
   /// Played games for the statistics; kept in memory only when none is given (tests), main() gives the stored ones
   final Statistics? statistics;
 
+  /// The player's order and names of the cameras; kept in memory only when none is given (tests)
+  final CameraOrder? cameraOrder;
+
+  /// Which dart set each player throws; kept in memory only when none is given (tests)
+  final DartLinks? dartLinks;
+
   @override
   State<DartPilotApp> createState() => _DartPilotAppState();
 }
 
 class _DartPilotAppState extends State<DartPilotApp> {
-  late final EngineConnection _engine = widget.engine ?? EngineConnection();
+  late final EngineConnection _engine = widget.engine ?? EngineConnection(tokens: PrefsPairingTokens());
   late final EngineManager? _manager =
       widget.manager ?? (widget.engine == null && EngineManager.supported ? EngineManager() : null);
   late EngineSettings _settings = widget.settings ?? EngineSettings();
   late final AppLifecycleListener _lifecycle;
   late final Statistics _statistics = widget.statistics ?? Statistics(MemoryGameStore());
+  late final CameraOrder _cameraOrder = widget.cameraOrder ?? CameraOrder();
+  late final DartLinks _dartLinks = widget.dartLinks ?? DartLinks();
+  final GlobalKey<ScaffoldMessengerState> _messenger = GlobalKey();
+  StreamSubscription<EngineEvent>? _events;
+  final Set<String> _movedCameras = {};
+  Timer? _movedTimer;
+  Timer? _movedQuiet;
+
+  /// Cameras reported within this time are one knock; another notice comes only after [movedQuiet].
+  static const Duration movedGather = Duration(seconds: 1);
+  static const Duration movedQuiet = Duration(seconds: 15);
+
+  void _showMovedNotice() {
+    _movedTimer = null;
+    final moved = Set.of(_movedCameras);
+    _movedCameras.clear();
+    final context = _messenger.currentContext;
+    if (moved.isEmpty || context == null || !context.mounted) return;
+    _movedQuiet = Timer(movedQuiet, () => _movedQuiet = null);
+    final l10n = AppLocalizations.of(context);
+    final cameras = _engine.hello?.cameras ?? const <String>[];
+    _messenger.currentState?.showSnackBar(
+      SnackBar(
+        key: const ValueKey('camera-moved'),
+        content: Text(
+          moved.length > 1
+              ? l10n.rigKnockedNotice
+              : l10n.cameraMovedNotice(_cameraOrder.label(l10n, cameras, moved.first)),
+        ),
+        duration: const Duration(seconds: 8),
+      ),
+    );
+  }
 
   @override
   void initState() {
     super.initState();
+    // Shown on whatever page is open: a knocked camera matters during a game as much as in the settings.
+    _events = _engine.events.listen((event) {
+      if (event is! CameraMoved) return;
+      // A knock moves several cameras at once and they sway back a few seconds later: one notice for all of it.
+      if (_movedQuiet != null) return;
+      _movedCameras.add(event.camera);
+      _movedTimer ??= Timer(movedGather, _showMovedNotice);
+    });
     // The engine this app started must not outlive it.
     _lifecycle = AppLifecycleListener(
       onExitRequested: () async {
@@ -68,6 +129,9 @@ class _DartPilotAppState extends State<DartPilotApp> {
   @override
   void dispose() {
     _lifecycle.dispose();
+    _events?.cancel();
+    _movedTimer?.cancel();
+    _movedQuiet?.cancel();
     if (widget.manager == null) _manager?.dispose();
     if (widget.engine == null) _engine.dispose();
     super.dispose();
@@ -77,6 +141,7 @@ class _DartPilotAppState extends State<DartPilotApp> {
   Widget build(BuildContext context) {
     final manager = _manager;
     final app = MaterialApp(
+      scaffoldMessengerKey: _messenger,
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       locale: widget.locale,
       localizationsDelegates: const [
@@ -93,7 +158,13 @@ class _DartPilotAppState extends State<DartPilotApp> {
       connection: _engine,
       child: StatisticsScope(
         statistics: _statistics,
-        child: manager == null ? app : LocalEngineScope(manager: manager, settings: _settings, child: app),
+        child: CameraOrderScope(
+          order: _cameraOrder,
+          child: DartLinksScope(
+            links: _dartLinks,
+            child: manager == null ? app : LocalEngineScope(manager: manager, settings: _settings, child: app),
+          ),
+        ),
       ),
     );
   }

@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 
 import '../theme.dart';
 import '../../l10n/app_localizations.dart';
+import '../engine/camera_order.dart';
 import '../engine/engine_connection.dart';
 import '../stats/statistics.dart';
 import '../widgets/board_check.dart';
 import '../widgets/player_picker.dart';
 import 'around_the_clock_screen.dart';
+import 'calibration_screen.dart';
+import 'camera_assign_screen.dart';
 import 'cricket_screen.dart';
 import 'training_screen.dart';
+import 'watch_game_screen.dart';
 import 'x01_setup_screen.dart';
 
 /// The hub once the app is set up: the engine's state, the games to play locally or solo, and playing together.
@@ -60,6 +64,7 @@ class HomeScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             children: [
               _StatusCard(onConnect: onConnect),
+              const SharedGameCard(),
               if (StatisticsScope.maybeOf(context)?.profiles.isEmpty ?? false) ...[
                 const SizedBox(height: 16),
                 Card(
@@ -69,6 +74,24 @@ class HomeScreen extends StatelessWidget {
                     title: Text(l10n.firstProfileTitle),
                     subtitle: Text(l10n.firstProfileText),
                     trailing: FilledButton(onPressed: () => createProfile(context), child: Text(l10n.newProfile)),
+                  ),
+                ),
+              ],
+              if (EngineScope.of(context).isConnected &&
+                  CameraOrderScope.of(context).needsAssignment(EngineScope.of(context).hello?.cameras ?? const [])) ...[
+                const SizedBox(height: 16),
+                Card(
+                  key: const ValueKey('assign-cameras-prompt'),
+                  child: ListTile(
+                    leading: const Icon(Icons.videocam_outlined, size: 32),
+                    title: Text(l10n.newCamerasTitle),
+                    subtitle: Text(l10n.newCamerasText),
+                    trailing: FilledButton(
+                      onPressed: () =>
+                          Navigator.of(context)
+                              .push(MaterialPageRoute<void>(builder: (_) => const CameraAssignScreen())),
+                      child: Text(l10n.assignCameras),
+                    ),
                   ),
                 ),
               ],
@@ -144,7 +167,54 @@ class _StatusCard extends StatelessWidget {
                 if (!connected) TextButton(onPressed: onConnect, child: Text(l10n.connect)),
               ],
             ),
+            if (connected && engine.detection != 'running')
+              Padding(
+                key: const ValueKey('detection-state'),
+                padding: const EdgeInsets.only(top: 8, right: 8),
+                child: Row(
+                  children: [
+                    Icon(
+                      engine.detection == 'paused' ? Icons.pause_circle_outline : Icons.visibility_off_outlined,
+                      color: StatusColors.of(context).warning,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(switch ((engine.detection, engine.detectionReason)) {
+                        (_, 'not_calibrated') => l10n.detectionNotCalibrated,
+                        (_, 'no_empty_reference') => l10n.detectionWaitingForEmptyBoard,
+                        ('paused', _) => l10n.detectionPaused,
+                        _ => l10n.detectionUnavailable,
+                      }),
+                    ),
+                  ],
+                ),
+              ),
             if (connected) const BoardStateRow(),
+            if (connected)
+              for (final camera in orderedCameras(context))
+                if (engine.calibration?.of(camera)?.check?.needsCalibration ?? false)
+                  Padding(
+                    key: ValueKey('calibration-warning-$camera'),
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Row(
+                      children: [
+                        Icon(Icons.warning_amber, color: StatusColors.of(context).bad),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            engine.calibration!.of(camera)!.check!.state == 'wrong_port'
+                                ? l10n.homeCameraWrongPort(cameraLabel(context, camera))
+                                : l10n.homeCameraMoved(cameraLabel(context, camera)),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(context)
+                              .push(MaterialPageRoute<void>(builder: (_) => CalibrationScreen(startCamera: camera))),
+                          child: Text(l10n.calibMeasureAgain),
+                        ),
+                      ],
+                    ),
+                  ),
           ],
         ),
       ),

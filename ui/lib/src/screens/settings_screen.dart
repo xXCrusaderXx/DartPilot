@@ -4,9 +4,14 @@ import '../../l10n/app_localizations.dart';
 import '../engine/engine_choice.dart';
 import '../engine/engine_connection.dart';
 import '../widgets/board_check.dart';
+import '../widgets/engine_card.dart';
+import '../widgets/paired_devices.dart';
+import 'calibration_check_screen.dart';
 import 'calibration_screen.dart';
 import 'cameras_screen.dart';
 import 'diagnosis_screen.dart';
+import 'my_darts_screen.dart';
+import 'reference_run_screen.dart';
 
 /// Everything that is set up rather than played: the connection, the cameras, the setup diagnosis and calibration.
 class SettingsScreen extends StatelessWidget {
@@ -47,6 +52,7 @@ class SettingsScreen extends StatelessWidget {
                       : l10n.playingWithoutEngine,
                 ),
                 subtitle: Text(connected ? engine.url : l10n.playingWithoutEngineHint),
+                onTap: () => open(const EngineSettingsScreen()),
                 trailing: connected
                     ? OutlinedButton(
                         key: const ValueKey('settings-disconnect'),
@@ -70,6 +76,15 @@ class SettingsScreen extends StatelessWidget {
                 onTap: () => open(const CamerasScreen()),
               ),
               ListTile(
+                key: const ValueKey('open-my-darts'),
+                enabled: connected,
+                leading: const Icon(Icons.straighten_outlined),
+                title: Text(l10n.myDarts),
+                subtitle: Text(l10n.myDartsHint),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => open(const MyDartsScreen()),
+              ),
+              ListTile(
                 key: const ValueKey('open-diagnosis'),
                 enabled: connected,
                 leading: const Icon(Icons.troubleshoot),
@@ -77,6 +92,15 @@ class SettingsScreen extends StatelessWidget {
                 subtitle: Text(l10n.settingsDiagnosisHint),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => open(const DiagnosisScreen()),
+              ),
+              ListTile(
+                key: const ValueKey('open-reference-run'),
+                enabled: connected,
+                leading: const Icon(Icons.my_location),
+                title: Text(l10n.referenceRun),
+                subtitle: Text(l10n.settingsReferenceHint),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => open(const ReferenceRunScreen()),
               ),
               ListTile(
                 key: const ValueKey('settings-empty-board'),
@@ -96,10 +120,36 @@ class SettingsScreen extends StatelessWidget {
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => open(const CalibrationScreen()),
               ),
+              ListTile(
+                key: const ValueKey('settings-calibration-check'),
+                enabled: connected && engine.calibration != null,
+                leading: const Icon(Icons.verified_outlined),
+                title: Text(l10n.calibrationCheck),
+                subtitle: Text(l10n.calibrationCheckHint),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => open(const CalibrationCheckScreen()),
+              ),
             ],
           ),
         ),
       ),
     );
   }
+}
+
+/// The engine itself, reachable while connected: where it runs, its options (simulated darts, cameras, sharing in
+/// the network with its QR code), start, stop and its log.
+class EngineSettingsScreen extends StatelessWidget {
+  const EngineSettingsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: Text(AppLocalizations.of(context).engineSettings)),
+    body: Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 600),
+        child: ListView(padding: const EdgeInsets.all(16), children: const [EngineCard(), PairedDevicesCard()]),
+      ),
+    ),
+  );
 }

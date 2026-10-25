@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <chrono>
 #include <filesystem>
 #include <mutex>
 #include <optional>
@@ -22,8 +23,9 @@ namespace dartpilot::cli
 class BoardWatch
 {
    public:
-    BoardWatch (api::Server& server, const CameraPreviews& previews, std::vector<capture::CameraDevice> devices,
-                std::filesystem::path calibration_directory);
+    // stored_references: off for a replayed session, which is neither compared with nor stored as today's empty board
+    BoardWatch (api::Server& server, const FrameFeed& previews, std::vector<capture::CameraDevice> devices,
+                std::filesystem::path calibration_directory, bool stored_references = true);
     ~BoardWatch ();
 
     void start ();
@@ -44,6 +46,10 @@ class BoardWatch
         // Latest still average and its check; empty until the image was still once
         cv::Mat mean;
         geometry::BoardCheck check;
+        // What is reported: an object only once it has been seen for kOccupiedConfirm, so that a swaying camera does
+        // not raise the warning; an empty board at once.
+        geometry::BoardCheck reported;
+        std::optional<std::chrono::steady_clock::time_point> occupied_since;
     };
 
     void run ();
@@ -53,8 +59,9 @@ class BoardWatch
     std::optional<std::string> storeReferences (bool force);
 
     api::Server& server_;
-    const CameraPreviews& previews_;
+    const FrameFeed& previews_;
     std::filesystem::path calibration_directory_;
+    bool stored_references_ = true;
     geometry::BoardModel board_;
     std::vector<Camera> cameras_;
     mutable std::mutex mutex_;

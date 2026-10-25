@@ -500,6 +500,24 @@ abstract class AppLocalizations {
   /// **'Count as miss'**
   String get countAsMiss;
 
+  /// No description provided for @removeDarts.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove the darts'**
+  String get removeDarts;
+
+  /// No description provided for @removeDartsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The next visit starts once the darts are out of the board.'**
+  String get removeDartsHint;
+
+  /// No description provided for @dartsRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Darts are out'**
+  String get dartsRemoved;
+
   /// No description provided for @enterManually.
   ///
   /// In en, this message translates to:
@@ -2119,6 +2137,720 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pro'**
   String get botLevel10;
+
+  /// No description provided for @calibrationCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Calibration check'**
+  String get calibrationCheck;
+
+  /// No description provided for @calibrationCheckHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Has a camera moved? Every camera against its calibration'**
+  String get calibrationCheckHint;
+
+  /// No description provided for @calibrationCheckIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep the board empty. Blue rings show where the calibration expects the board\'s points, green dots where they are now; long amber lines mean the camera or the board has moved. The engine also checks this in the background whenever the board is empty.'**
+  String get calibrationCheckIntro;
+
+  /// No description provided for @checkOk.
+  ///
+  /// In en, this message translates to:
+  /// **'Matches the calibration ({mm} mm).'**
+  String checkOk(String mm);
+
+  /// No description provided for @checkOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Slightly off ({mm} mm), e.g. other light. Detection still works.'**
+  String checkOff(String mm);
+
+  /// No description provided for @checkMoved.
+  ///
+  /// In en, this message translates to:
+  /// **'The camera or the board has moved ({mm} mm). Measure this camera again.'**
+  String checkMoved(String mm);
+
+  /// No description provided for @checkWrongPort.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong USB port? This image fits the calibration of camera {camera}.'**
+  String checkWrongPort(String camera);
+
+  /// No description provided for @checkNoBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'No board found – darts in the board or a hand in view?'**
+  String get checkNoBoard;
+
+  /// No description provided for @checkNotCalibrated.
+  ///
+  /// In en, this message translates to:
+  /// **'Not calibrated yet.'**
+  String get checkNotCalibrated;
+
+  /// No description provided for @checkChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking …'**
+  String get checkChecking;
+
+  /// No description provided for @homeCameraMoved.
+  ///
+  /// In en, this message translates to:
+  /// **'{camera} has moved – measure it again.'**
+  String homeCameraMoved(String camera);
+
+  /// No description provided for @homeCameraWrongPort.
+  ///
+  /// In en, this message translates to:
+  /// **'{camera} is on another USB port than when it was calibrated.'**
+  String homeCameraWrongPort(String camera);
+
+  /// No description provided for @referenceRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference measurement'**
+  String get referenceRun;
+
+  /// No description provided for @settingsReferenceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'How accurate is the detection? Darts in known positions show it in millimetres'**
+  String get settingsReferenceHint;
+
+  /// No description provided for @referenceIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'You push one dart after the other by hand into a known position: the centre of the bull, then corners where a radial wire meets a ring wire. The engine locates every dart, and the distance from the position is the error of the whole system, from calibration to tip. Ten darts take about five minutes; the board must be calibrated.'**
+  String get referenceIntro;
+
+  /// No description provided for @referenceNotCalibrated.
+  ///
+  /// In en, this message translates to:
+  /// **'Calibrate the cameras first (Settings → Calibration).'**
+  String get referenceNotCalibrated;
+
+  /// No description provided for @referenceProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Dart {number} of {total}'**
+  String referenceProgress(int number, int total);
+
+  /// No description provided for @referenceBullCentre.
+  ///
+  /// In en, this message translates to:
+  /// **'Push a dart into the very centre of the bull, then take your hand away.'**
+  String get referenceBullCentre;
+
+  /// No description provided for @referenceCorner.
+  ///
+  /// In en, this message translates to:
+  /// **'Push a dart into {field}, into the corner at the wire between {a} and {b}, then take your hand away.'**
+  String referenceCorner(String field, int a, int b);
+
+  /// No description provided for @referenceCornerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The point touches both wires: the radial wire and the ring wire. Push it in by hand, do not throw.'**
+  String get referenceCornerHint;
+
+  /// No description provided for @referenceResults.
+  ///
+  /// In en, this message translates to:
+  /// **'Measured darts'**
+  String get referenceResults;
+
+  /// No description provided for @referenceAbstained.
+  ///
+  /// In en, this message translates to:
+  /// **'Not located'**
+  String get referenceAbstained;
+
+  /// No description provided for @referenceError.
+  ///
+  /// In en, this message translates to:
+  /// **'{mm} mm off'**
+  String referenceError(String mm);
+
+  /// No description provided for @referenceCamerasUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} cameras'**
+  String referenceCamerasUsed(int count);
+
+  /// No description provided for @referenceLocated.
+  ///
+  /// In en, this message translates to:
+  /// **'Located'**
+  String get referenceLocated;
+
+  /// No description provided for @referenceMedian.
+  ///
+  /// In en, this message translates to:
+  /// **'Median error'**
+  String get referenceMedian;
+
+  /// No description provided for @referenceP90.
+  ///
+  /// In en, this message translates to:
+  /// **'90 % within'**
+  String get referenceP90;
+
+  /// No description provided for @referenceMax.
+  ///
+  /// In en, this message translates to:
+  /// **'Worst'**
+  String get referenceMax;
+
+  /// No description provided for @referenceGood.
+  ///
+  /// In en, this message translates to:
+  /// **'The detection is accurate.'**
+  String get referenceGood;
+
+  /// No description provided for @referenceNotGood.
+  ///
+  /// In en, this message translates to:
+  /// **'The detection is not accurate enough yet.'**
+  String get referenceNotGood;
+
+  /// No description provided for @referenceNotGoodHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Run the setup diagnosis to see where the error comes from, then calibrate the cameras it names again.'**
+  String get referenceNotGoodHint;
+
+  /// No description provided for @referenceCamerasDisagree.
+  ///
+  /// In en, this message translates to:
+  /// **'The cameras disagree about where it is'**
+  String get referenceCamerasDisagree;
+
+  /// No description provided for @referenceSeenByOneCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Only one camera saw it'**
+  String get referenceSeenByOneCamera;
+
+  /// No description provided for @cameraMovedNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'{camera} was moved – its calibration is being checked.'**
+  String cameraMovedNotice(String camera);
+
+  /// No description provided for @rigKnockedNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'The rig was knocked – the calibration is being checked.'**
+  String get rigKnockedNotice;
+
+  /// No description provided for @simulateDarts.
+  ///
+  /// In en, this message translates to:
+  /// **'Simulate darts'**
+  String get simulateDarts;
+
+  /// No description provided for @simulateDartsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For trying the app: the engine plays generated darts instead of detecting them.'**
+  String get simulateDartsHint;
+
+  /// No description provided for @localEngineLiveUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This engine cannot detect darts yet. Switch on \"Simulate darts\", or update the engine.'**
+  String get localEngineLiveUnavailable;
+
+  /// No description provided for @detectionNotCalibrated.
+  ///
+  /// In en, this message translates to:
+  /// **'Not calibrated yet – darts are not detected. Calibrate the cameras under Settings.'**
+  String get detectionNotCalibrated;
+
+  /// No description provided for @detectionWaitingForEmptyBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for an empty, still board before detecting darts.'**
+  String get detectionWaitingForEmptyBoard;
+
+  /// No description provided for @detectionPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Detection paused'**
+  String get detectionPaused;
+
+  /// No description provided for @detectionUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Darts are not detected right now.'**
+  String get detectionUnavailable;
+
+  /// No description provided for @shareEngine.
+  ///
+  /// In en, this message translates to:
+  /// **'Share in the network'**
+  String get shareEngine;
+
+  /// No description provided for @shareEngineHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Phones and tablets in your home network can connect to this engine. Only in a network you trust: there is no PIN yet.'**
+  String get shareEngineHint;
+
+  /// No description provided for @showEngineQr.
+  ///
+  /// In en, this message translates to:
+  /// **'QR code'**
+  String get showEngineQr;
+
+  /// No description provided for @engineQrTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect another device'**
+  String get engineQrTitle;
+
+  /// No description provided for @engineQrHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan this code with the DartPilot app on your phone or tablet (Engine → In the network → scan).'**
+  String get engineQrHint;
+
+  /// No description provided for @engineQrNoNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'This device has no address in a home network.'**
+  String get engineQrNoNetwork;
+
+  /// No description provided for @scanEngineQr.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan QR code'**
+  String get scanEngineQr;
+
+  /// No description provided for @scanEngineQrHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Point the camera at the QR code that the engine\'s device shows.'**
+  String get scanEngineQrHint;
+
+  /// No description provided for @enterAddressManually.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the address or scan a QR code'**
+  String get enterAddressManually;
+
+  /// No description provided for @restartEngine.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart the engine'**
+  String get restartEngine;
+
+  /// No description provided for @engineSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Engine'**
+  String get engineSettings;
+
+  /// No description provided for @assignCameras.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign cameras'**
+  String get assignCameras;
+
+  /// No description provided for @assignCamerasHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Each camera gets its place: camera 1, 2, 3. The live image shows which is which. The arrows swap two cameras, and a name helps to find one again.'**
+  String get assignCamerasHint;
+
+  /// No description provided for @cameraNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Name (optional)'**
+  String get cameraNameLabel;
+
+  /// No description provided for @moveCameraUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Move up'**
+  String get moveCameraUp;
+
+  /// No description provided for @moveCameraDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Move down'**
+  String get moveCameraDown;
+
+  /// No description provided for @saveCameraOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get saveCameraOrder;
+
+  /// No description provided for @newCamerasTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New cameras found'**
+  String get newCamerasTitle;
+
+  /// No description provided for @newCamerasText.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign them once, so that camera 1, 2 and 3 are always the same.'**
+  String get newCamerasText;
+
+  /// No description provided for @statsAverageTrend.
+  ///
+  /// In en, this message translates to:
+  /// **'Average over games (X01)'**
+  String get statsAverageTrend;
+
+  /// No description provided for @statsHitBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'Hit board'**
+  String get statsHitBoard;
+
+  /// No description provided for @statsMisses.
+  ///
+  /// In en, this message translates to:
+  /// **'Misses: {count}'**
+  String statsMisses(int count);
+
+  /// No description provided for @statsExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export'**
+  String get statsExport;
+
+  /// No description provided for @exportDartsCsv.
+  ///
+  /// In en, this message translates to:
+  /// **'All darts as CSV'**
+  String get exportDartsCsv;
+
+  /// No description provided for @exportGamesJson.
+  ///
+  /// In en, this message translates to:
+  /// **'Games and figures as JSON'**
+  String get exportGamesJson;
+
+  /// No description provided for @exportSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved: {path}'**
+  String exportSaved(String path);
+
+  /// No description provided for @exportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Export failed: {error}'**
+  String exportFailed(String error);
+
+  /// No description provided for @copyPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy path'**
+  String get copyPath;
+
+  /// No description provided for @myDarts.
+  ///
+  /// In en, this message translates to:
+  /// **'My darts'**
+  String get myDarts;
+
+  /// No description provided for @myDartsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Measure your darts so that detection finds them better'**
+  String get myDartsHint;
+
+  /// No description provided for @myDartsIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional: the engine measures a dart set (point, barrel, length, appearance). It then finds the point more precisely and tells new darts from those in the board. Without a set it detects any dart as before.'**
+  String get myDartsIntro;
+
+  /// No description provided for @dartSetsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This engine cannot measure darts yet.'**
+  String get dartSetsUnavailable;
+
+  /// No description provided for @noDartSets.
+  ///
+  /// In en, this message translates to:
+  /// **'No dart set measured yet.'**
+  String get noDartSets;
+
+  /// No description provided for @addDartSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Add dart set'**
+  String get addDartSet;
+
+  /// No description provided for @renameDartSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get renameDartSet;
+
+  /// No description provided for @dartSetName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name of the set'**
+  String get dartSetName;
+
+  /// No description provided for @dartSetNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Anna\'s darts'**
+  String get dartSetNameHint;
+
+  /// No description provided for @dartSetStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get dartSetStart;
+
+  /// No description provided for @dartSetInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'in use'**
+  String get dartSetInUse;
+
+  /// No description provided for @dartSetThrownBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Thrown by:'**
+  String get dartSetThrownBy;
+
+  /// No description provided for @dartPoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Point'**
+  String get dartPoint;
+
+  /// No description provided for @dartBarrel.
+  ///
+  /// In en, this message translates to:
+  /// **'Barrel'**
+  String get dartBarrel;
+
+  /// No description provided for @dartTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get dartTotal;
+
+  /// No description provided for @dartSetPutIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Put one dart of the set into the board and take your hand away.'**
+  String get dartSetPutIn;
+
+  /// No description provided for @dartSetMeasuring.
+  ///
+  /// In en, this message translates to:
+  /// **'Measuring …'**
+  String get dartSetMeasuring;
+
+  /// No description provided for @dartSetPlaced.
+  ///
+  /// In en, this message translates to:
+  /// **'Measured. Pull the dart and put it in somewhere else.'**
+  String get dartSetPlaced;
+
+  /// No description provided for @dartSetDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done – the set is measured.'**
+  String get dartSetDone;
+
+  /// No description provided for @dartSetProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{placed} of {needed} places'**
+  String dartSetProgress(int placed, int needed);
+
+  /// No description provided for @dartSetClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get dartSetClose;
+
+  /// No description provided for @dartSetNotCalibrated.
+  ///
+  /// In en, this message translates to:
+  /// **'The cameras are not calibrated yet.'**
+  String get dartSetNotCalibrated;
+
+  /// No description provided for @dartSetBoardNotEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Please pull all darts out of the board first.'**
+  String get dartSetBoardNotEmpty;
+
+  /// No description provided for @dartSetBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'The engine is busy. Try again in a moment.'**
+  String get dartSetBusy;
+
+  /// No description provided for @dartSetFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Measuring failed: {reason}'**
+  String dartSetFailed(String reason);
+
+  /// No description provided for @dartFlight.
+  ///
+  /// In en, this message translates to:
+  /// **'Flight'**
+  String get dartFlight;
+
+  /// No description provided for @dartSetPlacementFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'{reason} Pull the dart and put it in somewhere else.'**
+  String dartSetPlacementFailed(String reason);
+
+  /// No description provided for @dartSetCamerasDisagree.
+  ///
+  /// In en, this message translates to:
+  /// **'The cameras did not agree.'**
+  String get dartSetCamerasDisagree;
+
+  /// No description provided for @dartSetSeenByOne.
+  ///
+  /// In en, this message translates to:
+  /// **'Only one camera saw the dart.'**
+  String get dartSetSeenByOne;
+
+  /// No description provided for @dartSetPlacementsDisagree.
+  ///
+  /// In en, this message translates to:
+  /// **'This place does not fit the other measurements.'**
+  String get dartSetPlacementsDisagree;
+
+  /// No description provided for @dartSetNotMeasured.
+  ///
+  /// In en, this message translates to:
+  /// **'The dart could not be measured here.'**
+  String get dartSetNotMeasured;
+
+  /// No description provided for @dartSetSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The set could not be saved.'**
+  String get dartSetSaveFailed;
+
+  /// No description provided for @dartSetBoardStillOccupied.
+  ///
+  /// In en, this message translates to:
+  /// **'The engine still sees something in the board. If it is empty, store the empty board again – otherwise the measurement cannot go on.'**
+  String get dartSetBoardStillOccupied;
+
+  /// No description provided for @dartMeasureUncertain.
+  ///
+  /// In en, this message translates to:
+  /// **'uncertain'**
+  String get dartMeasureUncertain;
+
+  /// No description provided for @pairTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pair with the engine'**
+  String get pairTitle;
+
+  /// No description provided for @pairText.
+  ///
+  /// In en, this message translates to:
+  /// **'The engine at {address} only accepts paired devices. Enter the PIN its device shows – this is needed only once.'**
+  String pairText(String address);
+
+  /// No description provided for @pairPin.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN'**
+  String get pairPin;
+
+  /// No description provided for @pairButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Pair'**
+  String get pairButton;
+
+  /// No description provided for @pairWrongPin.
+  ///
+  /// In en, this message translates to:
+  /// **'The PIN is wrong. Look at the engine\'s device again.'**
+  String get pairWrongPin;
+
+  /// No description provided for @pairTooManyAttempts.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many wrong attempts. Wait a minute.'**
+  String get pairTooManyAttempts;
+
+  /// No description provided for @pairFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Pairing failed: {error}'**
+  String pairFailed(String error);
+
+  /// No description provided for @engineQrPin.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN for other devices: {pin}'**
+  String engineQrPin(String pin);
+
+  /// No description provided for @pairedDevices.
+  ///
+  /// In en, this message translates to:
+  /// **'Paired devices'**
+  String get pairedDevices;
+
+  /// No description provided for @noPairedDevices.
+  ///
+  /// In en, this message translates to:
+  /// **'No device paired yet.'**
+  String get noPairedDevices;
+
+  /// No description provided for @pairedDeviceSeen.
+  ///
+  /// In en, this message translates to:
+  /// **'last {when}'**
+  String pairedDeviceSeen(String when);
+
+  /// No description provided for @unpairDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpair'**
+  String get unpairDevice;
+
+  /// No description provided for @watchGame.
+  ///
+  /// In en, this message translates to:
+  /// **'Watching'**
+  String get watchGame;
+
+  /// No description provided for @sharedGameEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'The game on the other display has ended.'**
+  String get sharedGameEnded;
+
+  /// No description provided for @watchGameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch the running game: {mode}'**
+  String watchGameTitle(String mode);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../engine/engine_connection.dart';
 import 'game_record.dart';
 
 /// Where played games are kept
@@ -202,16 +203,40 @@ mixin RecordsGame<T extends StatefulWidget> on State<T> {
 
   GameRecord buildRecord(String id, DateTime started, DateTime ended);
 
+  /// The game so far as a record, for its summary at the end
+  GameRecord get currentRecord => buildRecord('current', _started, DateTime.now());
+
+  /// A screen that only shows another app's game keeps nothing and shares nothing.
+  bool get watching => false;
+
+  EngineConnection? _engine;
+  final String _shareId = Statistics.newId();
+  int? _sharedSignature;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _statistics = StatisticsScope.read(context);
+    _engine = context.getInheritedWidgetOfExactType<EngineScope>()?.notifier;
+  }
+
+  /// Call after every build: shares the game with other displays through the engine when it changed (#116).
+  void shareGame() {
+    final engine = _engine;
+    if (watching || engine == null || !engine.isConnected) return;
+    final record = buildRecord(_shareId, _started, DateTime.now());
+    // Corrections replace a dart without changing the count; the last dart's point tells them apart.
+    final signature = Object.hashAll([record.throws.length, for (final t in record.throws) t.point]);
+    if (signature == _sharedSignature) return;
+    _sharedSignature = signature;
+    engine.shareGame(record.toJson());
   }
 
   @override
   void dispose() {
+    if (!watching && _sharedSignature != null) _engine?.endSharedGame();
     final statistics = _statistics;
-    if (statistics != null) {
+    if (statistics != null && !watching) {
       final record = buildRecord(Statistics.newId(), _started, DateTime.now());
       // Listeners may not rebuild while the tree is being torn down.
       scheduleMicrotask(() => statistics.record(record));

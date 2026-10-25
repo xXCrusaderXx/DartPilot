@@ -11,10 +11,10 @@
 
 #include "dartpilot/scoring/score.hpp"
 
-// Messages of the engine API, protocol dartpilot/1.0 (docs/engine-api.md). Pure functions, no network.
+// Messages of the engine API, protocol dartpilot/1.1 (docs/engine-api.md). Pure functions, no network.
 namespace dartpilot::api
 {
-inline constexpr const char* kProtocol = "dartpilot/1.0";
+inline constexpr const char* kProtocol = "dartpilot/1.1";
 
 struct BoardPoint
 {
@@ -61,14 +61,21 @@ std::string combineBoardState (const std::vector<CameraBoardState>& cameras);
 struct Hello
 {
     std::string mode;  // live, replay, simulate
+    // Stable per engine installation, as in discovery (#109)
+    std::string engine_id;
     std::string session_id;
     scoring::BoardGeometry board_geometry;
     std::string board_geometry_source = "nominal";
     std::vector<CameraInfo> cameras;
+    // running, paused or unavailable; for unavailable, detection_reason says why (not_calibrated, no_empty_reference)
     std::string detection = "running";
+    std::string detection_reason;
     BoardStateInfo board_state;
     // What is calibrated per camera (calibration_status), for the calibration wizard; null without real cameras
     nlohmann::json calibration_status;
+    // Per client (#110): local (on this computer, or the engine listens only there), paired, or required (only pair
+    // is allowed until the client paired)
+    std::string pairing = "local";
 };
 
 struct CameraContribution
@@ -89,6 +96,10 @@ struct Throw
     std::string reason;
     std::vector<CameraContribution> cameras;
     double processing_latency_ms = 0.0;
+    // From the last motion the engine saw (the dart landed, the hand left) to sending; live only
+    std::optional<double> detection_latency_ms;
+    // The revision of the detection values it was made with (detection_params, params.jsonl); live only
+    std::optional<int> params_revision;
 };
 
 struct CameraStatus
@@ -115,17 +126,36 @@ nlohmann::json throwMessage (const Throw& dart, const scoring::BoardGeometry& ge
 // action: corrected, rejected or added
 nlohmann::json throwCorrectedMessage (const std::string& throw_id, const std::string& action, const std::optional<BoardPoint>& point,
                                       const scoring::BoardGeometry& geometry, const std::string& client);
-nlohmann::json takeoutMessage (std::int64_t event_ns, int darts_removed);
+// The records of a recorded session's results/<run>/throws.jsonl (docs/replay-format.md): a throw as the engine sent it,
+// and a client's correction of it (action corrected, rejected or added) as a line of its own
+nlohmann::json throwRecord (const Throw& dart, const scoring::BoardGeometry& geometry);
+nlohmann::json correctionRecord (const std::string& throw_id, const std::string& action, const std::optional<BoardPoint>& point,
+                                 const std::string& client, const std::string& reason, std::int64_t event_ns);
+nlohmann::json takeoutMessage (std::int64_t event_ns, int darts_removed, std::optional<double> detection_latency_ms = std::nullopt);
 nlohmann::json cameraStatusMessage (const CameraStatus& status);
 nlohmann::json engineStatusMessage (const std::string& detection, const std::string& message);
 // calibration_status with the status's fields
 nlohmann::json calibrationStatusMessage (const nlohmann::json& status);
+// The shared game (#116) and the client that shared it; a null game ends sharing
+nlohmann::json sharedGameMessage (const std::string& client, const nlohmann::json& game);
 nlohmann::json resultMessage (const std::string& request_id, bool ok, const std::string& error_code = {}, const std::string& error_message = {});
 
 // Requests from clients
 struct ClientHello
 {
     std::string client;
+};
+// pair (#110): with the engine's PIN, or with the token of an earlier pairing
+struct Pair
+{
+    std::string pin;
+    std::string token;
+};
+// get_pairing_pin, list_paired_clients, unpair: only for clients on this computer
+struct PairingAdmin
+{
+    std::string type;
+    std::string id;
 };
 struct CorrectThrow
 {
@@ -148,8 +178,8 @@ struct SetDetection
 struct CheckBoard
 {
 };
-// Requests of the calibration wizard (detect_board, set_sector_20, refine_cameras, tune_white_balance): passed on with
-// their fields to the source behind Server::onCalibration
+// Requests of the calibration wizard (detect_board, set_sector_20, refine_cameras, tune_white_balance) and for the
+// calibrated board's image (get_board_image): passed on with their fields to the source behind Server::onCalibration
 struct CalibrationRequest
 {
     std::string type;
@@ -165,6 +195,12 @@ struct StoreEmptyReference
     // Store even while a camera sees an object, after the user confirmed that the board is empty
     bool force = false;
 };
+// share_game and end_shared_game (#116): the game the leading app shares with the other displays, opaque to the engine;
+// null to end sharing
+struct ShareGame
+{
+    nlohmann::json game;
+};
 struct Subscription
 {
     std::string topic;  // status or preview
@@ -175,7 +211,7 @@ struct Subscription
     int max_width = 0;
 };
 using RequestBody = std::variant<ClientHello, CorrectThrow, RejectThrow, AddThrow, SetDetection, Subscription, CheckBoard, StoreEmptyReference,
-                                 SetDiagnosis, CalibrationRequest>;
+                                 SetDiagnosis, CalibrationRequest, ShareGame, Pair, PairingAdmin>;
 
 struct Request
 {

@@ -229,6 +229,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get countAsMiss => 'Als Daneben zählen';
 
   @override
+  String get removeDarts => 'Darts entfernen';
+
+  @override
+  String get removeDartsHint => 'Die nächste Aufnahme beginnt, sobald die Darts aus dem Board sind.';
+
+  @override
+  String get dartsRemoved => 'Darts sind raus';
+
+  @override
   String get enterManually => 'Selbst eingeben';
 
   @override
@@ -1163,4 +1172,417 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get botLevel10 => 'Profi';
+
+  @override
+  String get calibrationCheck => 'Kalibriercheck';
+
+  @override
+  String get calibrationCheckHint => 'Hat sich eine Kamera bewegt? Jede Kamera gegen ihre Kalibrierung';
+
+  @override
+  String get calibrationCheckIntro =>
+      'Lass die Scheibe leer. Blaue Ringe zeigen, wo die Kalibrierung die Punkte der Scheibe erwartet, grüne Punkte, wo sie gerade liegen; lange gelbe Linien heißen, dass sich Kamera oder Scheibe bewegt haben. Die Engine prüft das auch im Hintergrund, immer wenn die Scheibe leer ist.';
+
+  @override
+  String checkOk(String mm) {
+    return 'Passt zur Kalibrierung ($mm mm).';
+  }
+
+  @override
+  String checkOff(String mm) {
+    return 'Leicht daneben ($mm mm), z. B. anderes Licht. Die Erkennung funktioniert noch.';
+  }
+
+  @override
+  String checkMoved(String mm) {
+    return 'Kamera oder Scheibe hat sich bewegt ($mm mm). Miss diese Kamera neu ein.';
+  }
+
+  @override
+  String checkWrongPort(String camera) {
+    return 'Falscher USB-Port? Dieses Bild passt zur Kalibrierung von Kamera $camera.';
+  }
+
+  @override
+  String get checkNoBoard => 'Keine Scheibe gefunden – Darts in der Scheibe oder eine Hand im Bild?';
+
+  @override
+  String get checkNotCalibrated => 'Noch nicht kalibriert.';
+
+  @override
+  String get checkChecking => 'Prüfe …';
+
+  @override
+  String homeCameraMoved(String camera) {
+    return '$camera hat sich bewegt – miss sie neu ein.';
+  }
+
+  @override
+  String homeCameraWrongPort(String camera) {
+    return '$camera steckt an einem anderen USB-Port als beim Kalibrieren.';
+  }
+
+  @override
+  String get referenceRun => 'Referenzmessung';
+
+  @override
+  String get settingsReferenceHint =>
+      'Wie genau ist die Erkennung? Darts an bekannten Stellen zeigen es in Millimetern';
+
+  @override
+  String get referenceIntro =>
+      'Du steckst einen Dart nach dem anderen von Hand an eine bekannte Stelle: in die Mitte des Bulls, dann in Ecken, wo ein Radialdraht auf einen Ringdraht trifft. Die Engine ortet jeden Dart, und der Abstand zur Stelle ist der Fehler des ganzen Systems, von der Kalibrierung bis zur Spitze. Zehn Darts dauern etwa fünf Minuten; die Scheibe muss kalibriert sein.';
+
+  @override
+  String get referenceNotCalibrated => 'Kalibriere zuerst die Kameras (Einstellungen → Kalibrierung).';
+
+  @override
+  String referenceProgress(int number, int total) {
+    return 'Dart $number von $total';
+  }
+
+  @override
+  String get referenceBullCentre => 'Steck einen Dart genau in die Mitte des Bulls und nimm die Hand weg.';
+
+  @override
+  String referenceCorner(String field, int a, int b) {
+    return 'Steck einen Dart in $field, in die Ecke am Draht zwischen $a und $b, und nimm die Hand weg.';
+  }
+
+  @override
+  String get referenceCornerHint =>
+      'Die Spitze berührt beide Drähte: den Radialdraht und den Ringdraht. Von Hand stecken, nicht werfen.';
+
+  @override
+  String get referenceResults => 'Gemessene Darts';
+
+  @override
+  String get referenceAbstained => 'Nicht geortet';
+
+  @override
+  String referenceError(String mm) {
+    return '$mm mm daneben';
+  }
+
+  @override
+  String referenceCamerasUsed(int count) {
+    return '$count Kameras';
+  }
+
+  @override
+  String get referenceLocated => 'Geortet';
+
+  @override
+  String get referenceMedian => 'Median-Fehler';
+
+  @override
+  String get referenceP90 => '90 % innerhalb';
+
+  @override
+  String get referenceMax => 'Schlechtester';
+
+  @override
+  String get referenceGood => 'Die Erkennung ist genau.';
+
+  @override
+  String get referenceNotGood => 'Die Erkennung ist noch nicht genau genug.';
+
+  @override
+  String get referenceNotGoodHint =>
+      'Lass die Einrichtungsdiagnose laufen, um zu sehen, woher der Fehler kommt, und kalibriere die genannten Kameras neu.';
+
+  @override
+  String get referenceCamerasDisagree => 'Die Kameras sind sich nicht einig, wo er steckt';
+
+  @override
+  String get referenceSeenByOneCamera => 'Nur eine Kamera hat ihn gesehen';
+
+  @override
+  String cameraMovedNotice(String camera) {
+    return '$camera wurde verschoben – die Kalibrierung wird geprüft.';
+  }
+
+  @override
+  String get rigKnockedNotice => 'Das Gestell wurde angestoßen – die Kalibrierung wird geprüft.';
+
+  @override
+  String get simulateDarts => 'Darts simulieren';
+
+  @override
+  String get simulateDartsHint => 'Zum Ausprobieren: Die Engine spielt erzeugte Darts, statt sie zu erkennen.';
+
+  @override
+  String get localEngineLiveUnavailable =>
+      'Diese Engine kann noch keine Darts erkennen. Schalte „Darts simulieren“ ein oder aktualisiere die Engine.';
+
+  @override
+  String get detectionNotCalibrated =>
+      'Noch nicht kalibriert – Darts werden nicht erkannt. Kalibriere die Kameras unter Einstellungen.';
+
+  @override
+  String get detectionWaitingForEmptyBoard => 'Warte auf eine leere, ruhige Scheibe, bevor Darts erkannt werden.';
+
+  @override
+  String get detectionPaused => 'Erkennung pausiert';
+
+  @override
+  String get detectionUnavailable => 'Darts werden gerade nicht erkannt.';
+
+  @override
+  String get shareEngine => 'Im Netzwerk freigeben';
+
+  @override
+  String get shareEngineHint =>
+      'Handys und Tablets im Heimnetz können sich mit dieser Engine verbinden. Nur in einem Netz, dem du vertraust: Es gibt noch keinen PIN.';
+
+  @override
+  String get showEngineQr => 'QR-Code';
+
+  @override
+  String get engineQrTitle => 'Anderes Gerät verbinden';
+
+  @override
+  String get engineQrHint =>
+      'Scanne diesen Code mit der DartPilot-App auf Handy oder Tablet (Engine → Im Netzwerk → Scannen).';
+
+  @override
+  String get engineQrNoNetwork => 'Dieses Gerät hat keine Adresse in einem Heimnetz.';
+
+  @override
+  String get scanEngineQr => 'QR-Code scannen';
+
+  @override
+  String get scanEngineQrHint => 'Richte die Kamera auf den QR-Code, den das Gerät mit der Engine anzeigt.';
+
+  @override
+  String get enterAddressManually => 'Adresse eingeben oder QR-Code scannen';
+
+  @override
+  String get restartEngine => 'Engine neu starten';
+
+  @override
+  String get engineSettings => 'Engine';
+
+  @override
+  String get assignCameras => 'Kameras zuordnen';
+
+  @override
+  String get assignCamerasHint =>
+      'Jede Kamera bekommt ihren Platz: Kamera 1, 2, 3. Am Livebild erkennst du, welche welche ist. Mit den Pfeilen tauschst du zwei Kameras, ein Name hilft beim Wiederfinden.';
+
+  @override
+  String get cameraNameLabel => 'Name (optional)';
+
+  @override
+  String get moveCameraUp => 'Nach oben';
+
+  @override
+  String get moveCameraDown => 'Nach unten';
+
+  @override
+  String get saveCameraOrder => 'Übernehmen';
+
+  @override
+  String get newCamerasTitle => 'Neue Kameras gefunden';
+
+  @override
+  String get newCamerasText => 'Ordne sie einmal zu, damit Kamera 1, 2 und 3 immer dieselben sind.';
+
+  @override
+  String get statsAverageTrend => 'Average-Verlauf (X01)';
+
+  @override
+  String get statsHitBoard => 'Trefferbild';
+
+  @override
+  String statsMisses(int count) {
+    return 'Daneben: $count';
+  }
+
+  @override
+  String get statsExport => 'Exportieren';
+
+  @override
+  String get exportDartsCsv => 'Alle Darts als CSV';
+
+  @override
+  String get exportGamesJson => 'Spiele und Kennzahlen als JSON';
+
+  @override
+  String exportSaved(String path) {
+    return 'Gespeichert: $path';
+  }
+
+  @override
+  String exportFailed(String error) {
+    return 'Export fehlgeschlagen: $error';
+  }
+
+  @override
+  String get copyPath => 'Pfad kopieren';
+
+  @override
+  String get myDarts => 'Meine Darts';
+
+  @override
+  String get myDartsHint => 'Deine Darts vermessen, damit die Erkennung sie besser findet';
+
+  @override
+  String get myDartsIntro =>
+      'Optional: Die Engine vermisst ein Dart-Set (Spitze, Barrel, Länge, Aussehen). Damit findet sie die Spitze genauer und hält neue Darts von steckenden auseinander. Ohne Set erkennt sie jeden Dart wie bisher.';
+
+  @override
+  String get dartSetsUnavailable => 'Diese Engine kann noch keine Darts vermessen.';
+
+  @override
+  String get noDartSets => 'Noch kein Dart-Set vermessen.';
+
+  @override
+  String get addDartSet => 'Dart-Set hinzufügen';
+
+  @override
+  String get renameDartSet => 'Umbenennen';
+
+  @override
+  String get dartSetName => 'Name des Sets';
+
+  @override
+  String get dartSetNameHint => 'z. B. Annas Darts';
+
+  @override
+  String get dartSetStart => 'Weiter';
+
+  @override
+  String get dartSetInUse => 'im Einsatz';
+
+  @override
+  String get dartSetThrownBy => 'Geworfen von:';
+
+  @override
+  String get dartPoint => 'Spitze';
+
+  @override
+  String get dartBarrel => 'Barrel';
+
+  @override
+  String get dartTotal => 'Gesamt';
+
+  @override
+  String get dartSetPutIn => 'Steck einen Dart des Sets ins Board und nimm die Hand weg.';
+
+  @override
+  String get dartSetMeasuring => 'Wird vermessen …';
+
+  @override
+  String get dartSetPlaced => 'Gemessen. Zieh den Dart und steck ihn an eine andere Stelle.';
+
+  @override
+  String get dartSetDone => 'Fertig – das Set ist vermessen.';
+
+  @override
+  String dartSetProgress(int placed, int needed) {
+    return '$placed von $needed Stellen';
+  }
+
+  @override
+  String get dartSetClose => 'Schließen';
+
+  @override
+  String get dartSetNotCalibrated => 'Die Kameras sind noch nicht kalibriert.';
+
+  @override
+  String get dartSetBoardNotEmpty => 'Bitte erst alle Darts aus dem Board ziehen.';
+
+  @override
+  String get dartSetBusy => 'Die Engine ist gerade beschäftigt. Versuch es gleich noch einmal.';
+
+  @override
+  String dartSetFailed(String reason) {
+    return 'Vermessen fehlgeschlagen: $reason';
+  }
+
+  @override
+  String get dartFlight => 'Flight';
+
+  @override
+  String dartSetPlacementFailed(String reason) {
+    return '$reason Zieh den Dart und steck ihn an eine andere Stelle.';
+  }
+
+  @override
+  String get dartSetCamerasDisagree => 'Die Kameras waren sich nicht einig.';
+
+  @override
+  String get dartSetSeenByOne => 'Nur eine Kamera hat den Dart gesehen.';
+
+  @override
+  String get dartSetPlacementsDisagree => 'Diese Stelle passt nicht zu den anderen Messungen.';
+
+  @override
+  String get dartSetNotMeasured => 'Der Dart ließ sich hier nicht vermessen.';
+
+  @override
+  String get dartSetSaveFailed => 'Das Set konnte nicht gespeichert werden.';
+
+  @override
+  String get dartSetBoardStillOccupied =>
+      'Die Engine sieht noch etwas im Board. Ist es leer, speichere das leere Board neu – sonst geht es nicht weiter.';
+
+  @override
+  String get dartMeasureUncertain => 'unsicher';
+
+  @override
+  String get pairTitle => 'Mit der Engine koppeln';
+
+  @override
+  String pairText(String address) {
+    return 'Die Engine unter $address lässt nur gekoppelte Geräte zu. Gib die PIN ein, die auf ihrem Gerät angezeigt wird – das ist nur einmal nötig.';
+  }
+
+  @override
+  String get pairPin => 'PIN';
+
+  @override
+  String get pairButton => 'Koppeln';
+
+  @override
+  String get pairWrongPin => 'Die PIN stimmt nicht. Schau noch einmal auf das Gerät der Engine.';
+
+  @override
+  String get pairTooManyAttempts => 'Zu viele falsche Versuche. Warte eine Minute.';
+
+  @override
+  String pairFailed(String error) {
+    return 'Koppeln fehlgeschlagen: $error';
+  }
+
+  @override
+  String engineQrPin(String pin) {
+    return 'PIN für andere Geräte: $pin';
+  }
+
+  @override
+  String get pairedDevices => 'Gekoppelte Geräte';
+
+  @override
+  String get noPairedDevices => 'Noch kein Gerät gekoppelt.';
+
+  @override
+  String pairedDeviceSeen(String when) {
+    return 'zuletzt $when';
+  }
+
+  @override
+  String get unpairDevice => 'Entkoppeln';
+
+  @override
+  String get watchGame => 'Zuschauen';
+
+  @override
+  String get sharedGameEnded => 'Das Spiel auf dem anderen Gerät ist beendet.';
+
+  @override
+  String watchGameTitle(String mode) {
+    return 'Laufendes Spiel ansehen: $mode';
+  }
 }

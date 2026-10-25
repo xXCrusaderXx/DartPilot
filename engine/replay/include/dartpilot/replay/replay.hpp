@@ -7,6 +7,7 @@
 #include <string_view>
 #include <vector>
 
+#include "dartpilot/fusion/detection_params.hpp"
 #include "dartpilot/geometry/board_refinement.hpp"
 #include "dartpilot/session/session_reader.hpp"
 
@@ -40,6 +41,11 @@ struct ReplayConfig
     std::int64_t check_interval_ns = 10'000'000'000;
     // Frames averaged for one check, as in the setup GUI
     int check_frames = 10;
+    // Throw detection (#18): "tracker" (the live detection), "baseline" (frame differencing) or "none". Both need the
+    // board refinement and look at the board at the still moments live detection waits for.
+    std::string pipeline = "none";
+    // Every value of the detection (fusion::detectionParams), recorded in run.json
+    fusion::DetectionSettings detection;
 };
 
 struct ReplaySummary
@@ -48,9 +54,17 @@ struct ReplaySummary
     std::size_t frames = 0;
     std::size_t undecodable_frames = 0;
     std::size_t calibration_checks = 0;
+    std::size_t throws = 0;
+    std::size_t abstained = 0;
+    std::size_t takeouts = 0;
+    // Throws that match none of the session's recorded throws
+    std::size_t unmatched_throws = 0;
+    // throws.csv was written, because the session had none
+    bool wrote_session_throws = false;
 };
 
 // Writes run.json, throws.jsonl and calibration_checks.jsonl into a new results/<run id>/; nothing and an error
-// message if the run directory exists already or a file cannot be written.
+// message if the run directory exists already or a file cannot be written. A detected throw takes the throw id of the
+// session's recorded throw whose event window holds it; a session without throws.csv gets one with the run's throws.
 std::optional<ReplaySummary> replaySession (const session::RecordedSession& session, const ReplayConfig& config, std::string& error);
 }  // namespace dartpilot::replay

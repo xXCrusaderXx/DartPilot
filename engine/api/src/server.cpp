@@ -1,6 +1,7 @@
 #include "dartpilot/api/server.hpp"
 
 #include <chrono>
+#include <cmath>
 #include <ctime>
 
 #include <ixwebsocket/IXNetSystem.h>
@@ -15,6 +16,36 @@ std::int64_t monotonicNowNs ()
     timespec now{};
     ::clock_gettime(CLOCK_MONOTONIC, &now);
     return static_cast<std::int64_t>(now.tv_sec) * 1'000'000'000 + now.tv_nsec;
+}
+
+constexpr std::size_t kMaxSharedGameBytes = 256 * 1024;
+
+// An object found again at almost the same place is no news: the averaged images of a still board differ by noise, which
+// moves the found point by a few pixels each time.
+constexpr double kSameObject_px = 10.0;
+
+bool sameForClients (const BoardStateInfo& a, const BoardStateInfo& b)
+{
+    if(a.state != b.state || a.reference_stored != b.reference_stored || a.cameras.size() != b.cameras.size())
+    {
+        return false;
+    }
+    for(std::size_t i = 0; i < a.cameras.size(); ++i)
+    {
+        const auto& x = a.cameras[i];
+        const auto& y = b.cameras[i];
+        if(x.camera != y.camera || x.state != y.state || x.reason != y.reason || x.image_size_px != y.image_size_px ||
+           x.image_point_px.has_value() != y.image_point_px.has_value())
+        {
+            return false;
+        }
+        if(x.image_point_px &&
+           std::hypot((*x.image_point_px)[0] - (*y.image_point_px)[0], (*x.image_point_px)[1] - (*y.image_point_px)[1]) > kSameObject_px)
+        {
+            return false;
+        }
+    }
+    return true;
 }
 
 template <typename... Ts>
@@ -41,16 +72,24 @@ Server::Server (int port, std::string host, Hello hello)
                 {
                     // hello first, then the client is registered for events, so it never sees an event before hello.
                     std::unique_lock lock(mutex_);
-                    const Hello hello = hello_;
-                    const nlohmann::json diagnosis = last_diagnosis_;
+                    Client client{&socket, {}, state->getRemoteIp()};
+                    const bool local = trust_local_ && isLocalAddress(client.address);
+                    client.pairing = pairing_ && !local ? "required" : "local";
+                    Hello hello = hello_;
+                    hello.pairing = client.pairing;
+                    const auto states = last_states_;
                     lock.unlock();
                     socket.sendText(helloMessage(hello).dump());
-                    if(!diagnosis.is_null())
+                    // A client that has not paired sees nothing of the board until it does.
+                    if(client.trusted())
                     {
-                        socket.sendText(diagnosis.dump());
+                        for(const auto& [type, state] : states)
+                        {
+                            socket.sendText(state.dump());
+                        }
                     }
                     lock.lock();
-                    clients_[connection] = Client{&socket, {}, false};
+                    clients_[connection] = std::move(client);
                     break;
                 }
                 case ix::WebSocketMessageType::Close:
@@ -114,7 +153,7 @@ void Server::broadcast (const nlohmann::json& message, bool status_only)
     std::lock_guard lock(mutex_);
     for(const auto& [id, client] : clients_)
     {
-        if(client.socket && (!status_only || client.status))
+        if(client.socket && client.trusted() && (!status_only || client.status))
         {
             client.socket->sendText(text);
         }
@@ -130,23 +169,26 @@ Throw Server::publishThrow (Throw dart)
         visit_points_.push_back(*recorded.board_point);
     }
     broadcast(throwMessage(recorded, hello_.board_geometry));
+    logged(throwRecord(recorded, hello_.board_geometry));
     return recorded;
 }
 
-void Server::publishTakeout (std::int64_t event_ns, int darts_removed)
+void Server::publishTakeout (std::int64_t event_ns, int darts_removed, std::optional<double> detection_latency_ms)
 {
     {
         std::lock_guard lock(mutex_);
         visit_points_.clear();
     }
-    broadcast(takeoutMessage(event_ns, darts_removed));
+    broadcast(takeoutMessage(event_ns, darts_removed, detection_latency_ms));
+    // Recorded too, so the annotations can tell which dart of a visit a throw was
+    logged({{"takeout", {{"event_ns", event_ns}, {"darts_removed", darts_removed}}}});
 }
 
 void Server::setBoardState (BoardStateInfo board)
 {
     {
         std::lock_guard lock(mutex_);
-        if(hello_.board_state == board)
+        if(sameForClients(hello_.board_state, board))
         {
             return;
         }
@@ -200,13 +242,28 @@ void Server::setCalibrationStatus (const nlohmann::json& status)
 
 void Server::publishEvent (const nlohmann::json& message) { broadcast(message); }
 
-void Server::publishDiagnosis (const nlohmann::json& message)
+void Server::publishDiagnosis (const nlohmann::json& message) { publishState(message); }
+
+void Server::publishState (const nlohmann::json& message)
 {
     {
         std::lock_guard lock(mutex_);
-        last_diagnosis_ = message;
+        last_states_[message.value("type", std::string())] = message;
     }
     broadcast(message);
+}
+
+void Server::onCalibrationRequest (const std::string& type, std::function<std::optional<CalibrationError>(const CalibrationRequest&)> handler)
+{
+    std::lock_guard lock(mutex_);
+    if(handler)
+    {
+        calibration_handlers_[type] = std::move(handler);
+    }
+    else
+    {
+        calibration_handlers_.erase(type);
+    }
 }
 
 std::vector<BoardPoint> Server::visitPoints () const
@@ -304,8 +361,28 @@ void Server::publishEngineStatus (const std::string& detection, const std::strin
     {
         std::lock_guard lock(mutex_);
         hello_.detection = detection;
+        hello_.detection_reason = detection == "unavailable" ? message : std::string();
     }
     broadcast(engineStatusMessage(detection, message));
+}
+
+void Server::onLogged (std::function<void(const nlohmann::json&)> handler)
+{
+    std::lock_guard lock(mutex_);
+    logged_handler_ = std::move(handler);
+}
+
+void Server::logged (const nlohmann::json& record)
+{
+    std::function<void(const nlohmann::json&)> handler;
+    {
+        std::lock_guard lock(mutex_);
+        handler = logged_handler_;
+    }
+    if(handler)
+    {
+        handler(record);
+    }
 }
 
 void Server::onDetectionChanged (std::function<void(bool)> handler)
@@ -320,15 +397,117 @@ std::size_t Server::clientCount () const
     return clients_.size();
 }
 
+void Server::requirePairing (std::shared_ptr<Pairing> pairing, bool trust_local)
+{
+    std::lock_guard lock(mutex_);
+    pairing_ = std::move(pairing);
+    trust_local_ = trust_local;
+}
+
 nlohmann::json Server::handle (const std::string& connection, const Request& request)
 {
-    std::string client;
+    std::string client, address, pairing;
+    std::shared_ptr<Pairing> pairer;
     {
         std::lock_guard lock(mutex_);
-        client = clients_[connection].name;
+        const Client& known = clients_[connection];
+        client = known.name;
+        address = known.address;
+        pairing = known.pairing;
+        pairer = pairing_;
     }
+    if(pairing == "required" && !std::holds_alternative<ClientHello>(request.body) && !std::holds_alternative<Pair>(request.body))
+    {
+        return resultMessage(request.request_id, false, "not_paired", "Pair with the engine's PIN first");
+    }
+    const auto now_s = [] { return static_cast<std::int64_t>(std::time(nullptr)); };
     return std::visit(
         Overloaded{
+            [&] (const Pair& pair)
+            {
+                if(!pairer)
+                {
+                    return resultMessage(request.request_id, false, "not_available", "This engine needs no pairing");
+                }
+                const auto result = pair.token.empty() ? pairer->pairWithPin(pair.pin, client, address, now_s())
+                                                       : pairer->pairWithToken(pair.token, client, address, now_s());
+                if(!result.token)
+                {
+                    const std::string message = result.error == "too_many_attempts" ? "Too many wrong attempts; wait a minute"
+                                                : result.error == "unknown_token"   ? "This engine does not know the token; pair with its PIN"
+                                                                                    : "Wrong PIN";
+                    return resultMessage(request.request_id, false, result.error, message);
+                }
+                nlohmann::json states;
+                {
+                    std::lock_guard lock(mutex_);
+                    auto& known = clients_[connection];
+                    // A client on this computer stays local; it may pair to get a token for other connections.
+                    if(known.pairing == "required")
+                    {
+                        known.pairing = "paired";
+                    }
+                    if(known.socket)
+                    {
+                        known.socket->sendText(nlohmann::json{{"type", "paired"}, {"token", *result.token}, {"engine_id", hello_.engine_id}}.dump());
+                        // What it could not see before pairing
+                        if(pairing == "required")
+                        {
+                            for(const auto& [type, state] : last_states_)
+                            {
+                                known.socket->sendText(state.dump());
+                            }
+                        }
+                    }
+                }
+                return resultMessage(request.request_id, true);
+            },
+            [&] (const PairingAdmin& admin)
+            {
+                if(!isLocalAddress(address) || pairing != "local")
+                {
+                    return resultMessage(request.request_id, false, "not_allowed", "Only a client on the engine's computer may do this");
+                }
+                if(!pairer)
+                {
+                    return resultMessage(request.request_id, false, "not_available", "This engine needs no pairing");
+                }
+                std::lock_guard lock(mutex_);
+                auto* socket = clients_[connection].socket;
+                if(admin.type == "get_pairing_pin")
+                {
+                    const auto pin = pairer->pin(now_s());
+                    char expires[32];
+                    const std::time_t t = static_cast<std::time_t>(pin.expires_s);
+                    std::tm tm{};
+                    ::gmtime_r(&t, &tm);
+                    std::strftime(expires, sizeof(expires), "%Y-%m-%dT%H:%M:%SZ", &tm);
+                    if(socket)
+                    {
+                        socket->sendText(nlohmann::json{{"type", "pairing_pin"}, {"pin", pin.pin}, {"expires_utc", expires}}.dump());
+                    }
+                }
+                else if(admin.type == "list_paired_clients")
+                {
+                    nlohmann::json list = nlohmann::json::array();
+                    for(const auto& paired : pairer->paired())
+                    {
+                        list.push_back({{"id", paired.id},
+                                        {"client", paired.client},
+                                        {"created_utc", paired.created_utc},
+                                        {"last_seen_utc", paired.last_seen_utc}});
+                    }
+                    if(socket)
+                    {
+                        socket->sendText(nlohmann::json{{"type", "paired_clients"}, {"clients", list}}.dump());
+                    }
+                }
+                else if(!pairer->unpair(admin.id))
+                {
+                    return resultMessage(request.request_id, false, "unknown_client", "No paired client " + admin.id);
+                }
+                return resultMessage(request.request_id, true);
+            },
             [&] (const ClientHello& hello)
             {
                 std::lock_guard lock(mutex_);
@@ -342,6 +521,7 @@ nlohmann::json Server::handle (const std::string& connection, const Request& req
                     return resultMessage(request.request_id, false, *error, "No throw " + correction.throw_id);
                 }
                 broadcast(throwCorrectedMessage(correction.throw_id, "corrected", correction.board_point, hello_.board_geometry, client));
+                logged(correctionRecord(correction.throw_id, "corrected", correction.board_point, client, "", 0));
                 return resultMessage(request.request_id, true);
             },
             [&] (const RejectThrow& rejection)
@@ -351,15 +531,37 @@ nlohmann::json Server::handle (const std::string& connection, const Request& req
                     return resultMessage(request.request_id, false, *error, "No throw " + rejection.throw_id);
                 }
                 broadcast(throwCorrectedMessage(rejection.throw_id, "rejected", std::nullopt, hello_.board_geometry, client));
+                logged(correctionRecord(rejection.throw_id, "rejected", std::nullopt, client, rejection.reason, 0));
                 return resultMessage(request.request_id, true);
             },
             [&] (const AddThrow& addition)
             {
-                const std::string id = log_.add(addition.board_point, monotonicNowNs(), client);
+                const std::int64_t event_ns = monotonicNowNs();
+                const std::string id = log_.add(addition.board_point, event_ns, client);
                 broadcast(throwCorrectedMessage(id, "added", addition.board_point, hello_.board_geometry, client));
+                logged(correctionRecord(id, "added", addition.board_point, client, "", event_ns));
                 auto result = resultMessage(request.request_id, true);
                 result["throw_id"] = id;
                 return result;
+            },
+            [&] (const ShareGame& share)
+            {
+                if(share.game.is_null())
+                {
+                    {
+                        std::lock_guard lock(mutex_);
+                        last_states_.erase("shared_game");
+                    }
+                    broadcast(sharedGameMessage(client, nullptr));
+                    return resultMessage(request.request_id, true);
+                }
+                if(share.game.dump().size() > kMaxSharedGameBytes)
+                {
+                    return resultMessage(request.request_id, false, "too_large", "A shared game may have up to 256 KB");
+                }
+                // Kept when the sharing app disconnects, whose Wi-Fi may only blip; the next share or end replaces it.
+                publishState(sharedGameMessage(client, share.game));
+                return resultMessage(request.request_id, true);
             },
             [&] (const SetDetection& detection)
             {
@@ -427,7 +629,8 @@ nlohmann::json Server::handle (const std::string& connection, const Request& req
                 std::function<std::optional<CalibrationError>(const CalibrationRequest&)> handler;
                 {
                     std::lock_guard lock(mutex_);
-                    handler = calibration_handler_;
+                    const auto specific = calibration_handlers_.find(calibration.type);
+                    handler = specific != calibration_handlers_.end() ? specific->second : calibration_handler_;
                 }
                 if(!handler)
                 {

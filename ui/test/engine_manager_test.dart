@@ -68,7 +68,8 @@ void main() {
     final started = manager.start();
     await Future<void>.delayed(Duration.zero);
     expect(manager.state, LocalEngineState.starting);
-    expect(calls.single, [program, 'serve', '--simulate', '--cameras', '--port', '8500']);
+    // Live detection on the cameras by default
+    expect(calls.single, [program, 'serve', '--cameras', '--port', '8500']);
 
     process.out('Engine API (simulated darts, real cameras) on ws://127.0.0.1:8500/ - Ctrl+C to stop');
     expect(await started, 'ws://127.0.0.1:8500/');
@@ -101,6 +102,50 @@ void main() {
     expect(manager.state, LocalEngineState.failed);
     expect(manager.error, LocalEngineError.noCameras);
     expect(manager.log.last, 'Engine exited with code 1');
+  });
+
+  test(
+    'simulated darts are an option, with or without the cameras; an engine without live detection says so',
+    () async {
+      final calls = <List<String>>[];
+      final process = FakeProcess();
+      final manager = EngineManager(
+        start: (_, args) async {
+          calls.add(args);
+          return process;
+        },
+        findEngine: () => program,
+        freePort: () async => 8484,
+      );
+      final first = manager.start(simulate: true, cameras: false);
+      await Future<void>.delayed(Duration.zero);
+      expect(calls.last, ['serve', '--simulate', '--port', '8484']);
+      process.err('Live detection is not available yet; use --simulate.');
+      await Future<void>.delayed(Duration.zero);
+      process.exit(2);
+      expect(await first, isNull);
+      expect(manager.error, LocalEngineError.liveUnavailable);
+    },
+  );
+
+  test('shared, the engine listens on the network and the app connects through the loopback address', () async {
+    final calls = <List<String>>[];
+    final process = FakeProcess();
+    final manager = EngineManager(
+      start: (_, args) async {
+        calls.add(args);
+        return process;
+      },
+      findEngine: () => program,
+      freePort: () async => 8484,
+    );
+    final started = manager.start(share: true);
+    await Future<void>.delayed(Duration.zero);
+    expect(calls.single, ['serve', '--cameras', '--listen', '0.0.0.0', '--port', '8484']);
+    process.out('Engine API (live) on ws://0.0.0.0:8484/ - Ctrl+C to stop');
+    expect(await started, 'ws://127.0.0.1:8484/');
+    expect(manager.port, 8484);
+    await manager.stop();
   });
 
   test('never starts the app itself, which would start the app again and again', () async {
@@ -149,6 +194,9 @@ void main() {
   });
 
   testWidgets('the engine card starts the engine on this device and connects to it', (tester) async {
+    tester.view.physicalSize = const Size(1000, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
     SharedPreferences.setMockInitialValues({});
     final process = FakeProcess();
     final manager = EngineManager(
@@ -204,5 +252,47 @@ void main() {
     expect(loaded.url, 'ws://10.0.0.5:8484/');
     expect(loaded.cameras, isFalse);
     expect(loaded.executable, '/opt/dartpilot/dartpilot');
+  });
+
+  testWidgets('while the engine runs, its options are in the settings and a change offers a restart', (tester) async {
+    tester.view.physicalSize = const Size(1000, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    SharedPreferences.setMockInitialValues({});
+    final processes = <FakeProcess>[];
+    final starts = <List<String>>[];
+    final manager = EngineManager(
+      start: (_, args) async {
+        starts.add(args);
+        return (processes..add(FakeProcess())).last;
+      },
+      findEngine: () => program,
+      freePort: () async => 8500,
+    );
+    final engine = EngineConnection(
+      connector: (uri) => throw const SocketException('no engine in tests'),
+      discovery: EngineDiscovery(const []),
+    );
+    addTearDown(engine.dispose);
+    addTearDown(manager.dispose);
+    final settings = EngineSettings(mode: EngineMode.thisDevice);
+    await tester.pumpWidget(
+      DartPilotApp(locale: const Locale('de'), engine: engine, manager: manager, settings: settings),
+    );
+    await tester.tap(find.byKey(const ValueKey('local-engine-start')));
+    await tester.pump();
+    processes.last.out('Engine API (live) on ws://127.0.0.1:8500/ - Ctrl+C to stop');
+    await tester.pump();
+    expect(find.byKey(const ValueKey('local-engine-restart')), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('share-engine')));
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('local-engine-restart')));
+    await tester.pump();
+    processes.last.out('Engine API (live) on ws://0.0.0.0:8500/ - Ctrl+C to stop');
+    await tester.pump();
+    expect(starts.last, contains('--listen'));
+    expect(find.byKey(const ValueKey('local-engine-restart')), findsNothing);
+    expect(find.byKey(const ValueKey('show-engine-qr')), findsOneWidget);
   });
 }

@@ -25,7 +25,7 @@ class CalibrationService
 {
    public:
     // started: when the cameras started, so the white balance tuning waits for their exposure to settle
-    CalibrationService (api::Server& server, const CameraPreviews& previews, std::vector<capture::CameraDevice> devices,
+    CalibrationService (api::Server& server, const FrameFeed& previews, std::vector<capture::CameraDevice> devices,
                         std::filesystem::path calibration_directory, std::chrono::steady_clock::time_point started);
     ~CalibrationService ();
 
@@ -40,16 +40,28 @@ class CalibrationService
     std::optional<api::Server::CalibrationError> setSectorTwenty (std::size_t camera, const cv::Point2f& point_px);
     nlohmann::json refine ();
     nlohmann::json tuneWhiteBalance ();
+    nlohmann::json boardImage (int size_px, double radius_mm);
 
     // Mean of `count` new frames of a camera; empty if stopped or the camera delivers none
     cv::Mat averageFrames (std::size_t camera, int count);
     void waitInterruptibly (std::chrono::steady_clock::duration duration);
     std::vector<geometry::SetupCamera> setupCameras () const;
+    // Calibration monitoring: every camera's board against its calibration, often while a client subscribed to the
+    // details, else now and then while the board is empty, for calibration_status
+    struct CameraCheck
+    {
+        std::string state;
+        std::optional<double> mm;
+        std::string checked_at;
+    };
+    void runChecks ();
+    nlohmann::json checkCamera (std::size_t camera, const geometry::StoredExtrinsics* extrinsics, CameraCheck& summary);
+
     nlohmann::json status () const;
     void publishStatus ();
 
     api::Server& server_;
-    const CameraPreviews& previews_;
+    const FrameFeed& previews_;
     std::vector<capture::CameraDevice> devices_;
     std::filesystem::path directory_;
     std::chrono::steady_clock::time_point cameras_started_;
@@ -61,5 +73,9 @@ class CalibrationService
     std::thread worker_;
     std::atomic<bool> busy_{false};
     std::atomic<bool> stop_{false};
+    std::thread checker_;
+    std::atomic<int> subscribers_{0};
+    mutable std::mutex checks_mutex_;
+    std::vector<CameraCheck> checks_;
 };
 }  // namespace dartpilot::cli

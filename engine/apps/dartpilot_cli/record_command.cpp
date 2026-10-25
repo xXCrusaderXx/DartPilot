@@ -107,6 +107,27 @@ struct Recorder
 };
 }  // namespace
 
+session::CameraInfo recordedCamera (const capture::CameraDevice& device, const capture::StreamSettings& stream)
+{
+    session::CameraInfo camera{
+        "usb-" + device.usb_port, device.usb_port, device.path, device.name, stream, !device.metadata_path.empty(), {}, {}, {}};
+    const capture::CameraControls controls(device.path);
+    for(const auto& [name, id] : {std::pair<const char*, std::uint32_t>{"auto_exposure", V4L2_CID_EXPOSURE_AUTO},
+                                  {"exposure_dynamic_framerate", V4L2_CID_EXPOSURE_AUTO_PRIORITY},
+                                  {"power_line_frequency", V4L2_CID_POWER_LINE_FREQUENCY},
+                                  {"white_balance_automatic", V4L2_CID_AUTO_WHITE_BALANCE},
+                                  {"white_balance_temperature", V4L2_CID_WHITE_BALANCE_TEMPERATURE}})
+    {
+        if(const auto value = controls.get(id))
+        {
+            camera.controls.emplace_back(name, *value);
+        }
+    }
+    camera.intrinsics = intrinsicsReference(device, stream);
+    camera.extrinsics = extrinsicsReference(device);
+    return camera;
+}
+
 int runRecord (int argc, char* argv[])
 {
     int seconds = 0;
@@ -151,22 +172,7 @@ int runRecord (int argc, char* argv[])
             std::fprintf(stderr, "%s: %s\n", device.usb_port.c_str(), recorder->capture->stats().error.c_str());
             continue;
         }
-        session::CameraInfo camera{
-            "usb-" + device.usb_port, device.usb_port, device.path, device.name, stream, !device.metadata_path.empty(), {}, {}, {}};
-        const capture::CameraControls controls(device.path);
-        for(const auto& [name, id] : {std::pair<const char*, std::uint32_t>{"auto_exposure", V4L2_CID_EXPOSURE_AUTO},
-                                      {"exposure_dynamic_framerate", V4L2_CID_EXPOSURE_AUTO_PRIORITY},
-                                      {"power_line_frequency", V4L2_CID_POWER_LINE_FREQUENCY},
-                                      {"white_balance_automatic", V4L2_CID_AUTO_WHITE_BALANCE},
-                                      {"white_balance_temperature", V4L2_CID_WHITE_BALANCE_TEMPERATURE}})
-        {
-            if(const auto value = controls.get(id))
-            {
-                camera.controls.emplace_back(name, *value);
-            }
-        }
-        camera.intrinsics = intrinsicsReference(device, stream);
-        camera.extrinsics = extrinsicsReference(device);
+        const session::CameraInfo camera = recordedCamera(device, stream);
         info.cameras.push_back(camera);
         recorders.push_back(std::move(recorder));
     }
