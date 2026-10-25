@@ -2851,6 +2851,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Watch the running game: {mode}'**
   String watchGameTitle(String mode);
+
+  /// No description provided for @scoreCaller.
+  ///
+  /// In en, this message translates to:
+  /// **'Score caller'**
+  String get scoreCaller;
+
+  /// No description provided for @scoreCallerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Announces each visit\'s score, like a caller'**
+  String get scoreCallerHint;
+
+  /// No description provided for @callerVolume.
+  ///
+  /// In en, this message translates to:
+  /// **'Caller volume'**
+  String get callerVolume;
+
+  /// No description provided for @callerTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Test'**
+  String get callerTest;
+
+  /// No description provided for @callerNoVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'This device has no speech output. On Linux: install speech-dispatcher (spd-say).'**
+  String get callerNoVoice;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

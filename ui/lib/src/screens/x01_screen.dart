@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../board/dart_throw.dart';
 import '../games/x01.dart';
+import '../sound/caller.dart';
+import '../sound/x01_calls.dart';
 import '../bots/bot_turns.dart';
 import '../games/dart_game.dart';
 import '../input/game_input.dart';
@@ -72,8 +74,12 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
   void _add(DartThrow dart) {
     final legBefore = _game.legNumber;
     final playerBefore = _game.current;
+    final visitsBefore = _game.visits.length;
     setState(() => _game.add(dart));
     final l10n = AppLocalizations.of(context);
+    if (!widget.watching) {
+      CallerScope.read(context).call(x01Calls(_game, visitsBefore: visitsBefore, legBefore: legBefore), callLanguage);
+    }
     if (_game.isFinished) {
       _showWinner();
     } else if (_game.legNumber != legBefore) {

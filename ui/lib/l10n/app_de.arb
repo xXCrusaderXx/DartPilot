@@ -459,5 +459,10 @@
   "unpairDevice": "Entkoppeln",
   "watchGame": "Zuschauen",
   "sharedGameEnded": "Das Spiel auf dem anderen Gerät ist beendet.",
-  "watchGameTitle": "Laufendes Spiel ansehen: {mode}"
+  "watchGameTitle": "Laufendes Spiel ansehen: {mode}",
+  "scoreCaller": "Score-Ansage",
+  "scoreCallerHint": "Sagt die Punkte jeder Aufnahme an, wie ein Caller",
+  "callerVolume": "Lautstärke der Ansage",
+  "callerTest": "Probe",
+  "callerNoVoice": "Auf diesem Gerät gibt es keine Sprachausgabe. Unter Linux: speech-dispatcher installieren (spd-say)."
 }
