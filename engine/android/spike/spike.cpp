@@ -79,12 +79,13 @@ void onFrame (uvc_frame_t* frame, void* user)
             }
         }
     }
-    // The stream handle of this device holds the PTS and SCR of the frame just completed.
+    // The stream handle of this device holds the PTS and SCR of the frame just completed; libuvc does not set
+    // frame->source, so it is reached through the camera's own handle.
     uint32_t pts = 0, scr = 0;
-    if(frame->source && frame->source->streams)
+    if(camera.handle && camera.handle->streams)
     {
-        pts = frame->source->streams->hold_pts;
-        scr = frame->source->streams->hold_last_scr;
+        pts = camera.handle->streams->hold_pts;
+        scr = camera.handle->streams->hold_last_scr;
     }
     std::lock_guard lock(camera.mutex);
     if(camera.frames == 0)
