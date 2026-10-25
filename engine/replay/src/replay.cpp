@@ -155,12 +155,23 @@ std::string throwLine (const session::RecordedSession& session, const ReplayConf
         }
         line << "], \"selected_candidate\": " << (camera.tip_px ? "0" : "null")
              << ", \"board_point\": " << (camera.board_mm ? boardPoint(*camera.board_mm, std::nullopt) : "null")
+             << ", \"reprojection_error_px\": " << (camera.reprojection_px ? number(*camera.reprojection_px, 2) : "null")
              << ", \"state\": " << jsonString(camera.state) << ", \"used\": " << (camera.used ? "true" : "false") << "}";
     }
     line << "], \"diagnostics\": {\"pipeline\": " << jsonString(config.pipeline) << ", \"event_ns\": " << event.event_ns
          << ", \"window_start_ns\": " << event.window_start_ns << ", \"window_end_ns\": " << event.window_end_ns
          << ", \"cameras_agreeing\": " << dart.cameras_agreeing << ", \"reason\": " << (dart.reason.empty() ? "null" : jsonString(dart.reason))
-         << "}, \"processing_latency_ms\": null}\n";
+         << ", \"tip_triangulation\": ";
+    if(dart.tip_mm)
+    {
+        line << "{\"x_mm\": " << number(dart.tip_mm->x) << ", \"y_mm\": " << number(dart.tip_mm->y)
+             << ", \"plane_distance_mm\": " << number(dart.tip_mm->z) << ", \"views\": " << dart.tip_views << "}";
+    }
+    else
+    {
+        line << "null";
+    }
+    line << "}, \"processing_latency_ms\": null}\n";
     return line.str();
 }
 

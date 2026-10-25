@@ -23,6 +23,8 @@ struct CameraResult
     // Only where the pipeline locates the dart per camera
     std::optional<cv::Point2f> tip_px;
     std::optional<cv::Point2f> board_mm;
+    // How far the triangulated tip lies from tip_px in this camera's image (#23)
+    std::optional<double> reprojection_px;
 };
 
 struct DetectedDart
@@ -31,6 +33,9 @@ struct DetectedDart
     std::optional<cv::Point2f> board_mm;
     cv::Matx22d covariance_mm2 = cv::Matx22d::zeros();
     int cameras_agreeing = 0;
+    // The tip in 3D from the tips of the agreeing cameras (#23); z is its distance from the board plane
+    std::optional<cv::Point3d> tip_mm;
+    int tip_views = 0;
     std::vector<CameraResult> cameras;
     std::string reason;
 };

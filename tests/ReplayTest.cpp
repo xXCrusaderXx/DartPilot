@@ -14,6 +14,7 @@
 #include "dartpilot/geometry/board_plane.hpp"
 #include "dartpilot/geometry/board_refinement.hpp"
 #include "dartpilot/geometry/dart_shape.hpp"
+#include "dartpilot/geometry/tip_triangulation.hpp"
 #include "dartpilot/replay/replay.hpp"
 #include "dartpilot/session/json.hpp"
 #include "dartpilot/session/session_reader.hpp"
@@ -564,4 +565,40 @@ TEST(DartShape, MeasuresLengthFlightAndBarrelOfASyntheticDart)
     EXPECT_LT(shape->point_mm, 40.0);
     EXPECT_NEAR(std::acos(std::abs(shape->direction[2])) * 180.0 / CV_PI, 15.0, 3.0);
     EXPECT_GE(shape->cameras, 2);
+}
+
+TEST(TipTriangulation, TheTipsOfAllCamerasMeetAtTheEntryPoint)
+{
+    const auto views = aroundTheBoard();
+    const auto extrinsics = fixtureExtrinsics(views);
+    const cv::Point2f tip_mm(-40.0f, 25.0f);
+    std::vector<geometry::DartView> dart_views;
+    for(std::size_t c = 0; c < views.size(); ++c)
+    {
+        const cv::Mat board = synthetic_board::renderCameraImage(views[c], 1.0, 90);
+        cv::Mat with_dart = board.clone();
+        drawDart(with_dart, extrinsics.refinement.cameras[c], tip_mm, 60.0);
+        if(const auto observation = tip_candidates::observeDart(with_dart, board))
+        {
+            dart_views.push_back({&extrinsics.refinement.cameras[c], *observation});
+        }
+    }
+    ASSERT_GE(dart_views.size(), 2u);
+    const auto location = geometry::locateDart(dart_views);
+    ASSERT_TRUE(location);
+    const auto tips = geometry::triangulateTips(dart_views, *location);
+    ASSERT_TRUE(tips.point_mm);
+    EXPECT_GE(tips.views_used, 2);
+    EXPECT_LT(cv::norm(cv::Point2d(tips.point_mm->x, tips.point_mm->y) - cv::Point2d(tip_mm)), 2.0);
+    // The drawn point ends in a rounded cap a pixel or two beyond its tip, which the axis carries out of the board a little.
+    EXPECT_LT(std::abs(tips.point_mm->z), 4.0);
+    for(std::size_t v = 0; v < dart_views.size(); ++v)
+    {
+        if(tips.tip_px[v])
+        {
+            ASSERT_TRUE(tips.board_mm[v]);
+            EXPECT_LT(cv::norm(*tips.board_mm[v] - tip_mm), 4.0) << "view " << v;
+            EXPECT_LT(*tips.reprojection_px[v], 3.0) << "view " << v;
+        }
+    }
 }

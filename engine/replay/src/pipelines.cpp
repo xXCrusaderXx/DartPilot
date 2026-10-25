@@ -8,6 +8,7 @@
 #include "dartpilot/event_detection/event_detection.hpp"
 #include "dartpilot/fusion/dart_tracker.hpp"
 #include "dartpilot/geometry/board_state.hpp"
+#include "dartpilot/geometry/tip_triangulation.hpp"
 #include "dartpilot/tip_candidates/tip_candidates.hpp"
 
 namespace dartpilot::replay
@@ -20,6 +21,7 @@ class TrackerPipeline : public Pipeline
     TrackerPipeline (const std::vector<const geometry::RefinedCamera*>& cameras, const geometry::BoardModel& board,
                      const fusion::TrackerSettings& settings)
         : tracker_(trackerCameras(cameras), board, settings)
+        , cameras_(cameras)
     {
     }
 
@@ -45,7 +47,31 @@ class TrackerPipeline : public Pipeline
             }
             for(const auto& view : update.dart->cameras)
             {
-                dart.cameras.push_back({view.state, view.used, std::nullopt, std::nullopt});
+                dart.cameras.push_back({view.state, view.used, std::nullopt, std::nullopt, std::nullopt});
+            }
+            if(update.dart->location)
+            {
+                // The views as the tracker gave them to locateDart: the cameras with an observation and a calibration
+                std::vector<geometry::DartView> views;
+                std::vector<std::size_t> camera_of;
+                for(std::size_t c = 0; c < update.dart->cameras.size() && c < cameras_.size(); ++c)
+                {
+                    if(update.dart->cameras[c].observation && cameras_[c])
+                    {
+                        views.push_back({cameras_[c], *update.dart->cameras[c].observation});
+                        camera_of.push_back(c);
+                    }
+                }
+                const auto tips = geometry::triangulateTips(views, *update.dart->location);
+                for(std::size_t v = 0; v < views.size(); ++v)
+                {
+                    auto& camera = dart.cameras[camera_of[v]];
+                    camera.tip_px = tips.tip_px[v];
+                    camera.board_mm = tips.board_mm[v];
+                    camera.reprojection_px = tips.reprojection_px[v];
+                }
+                dart.tip_mm = tips.point_mm;
+                dart.tip_views = tips.views_used;
             }
             result.dart = dart;
         }
@@ -67,6 +93,7 @@ class TrackerPipeline : public Pipeline
     }
 
     fusion::DartTracker tracker_;
+    std::vector<const geometry::RefinedCamera*> cameras_;
 };
 
 // Frame differencing as the first detection did it: what changed since the last still moment is the dart, its tip the
