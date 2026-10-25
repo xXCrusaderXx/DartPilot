@@ -52,3 +52,25 @@ python -m dartpilot_tools.timeline ~/.local/share/dartpilot/sessions/<session> -
 ```
 
 It writes one PNG per throw, into `results/<run id>/timeline/` by default, every throw of `throws.csv` without `--throw`. The top panel shows the whole event window: a row per camera with every frame at its exposure time, frames lost in between (red ×), the frames the run took the board from before the dart (blue) and with the dart (orange), the event time, and how the run saw the dart in that camera (`seen`, `cut`, …, ✓ when its measurement counted). The bottom panel is ±150 ms around the event: there the cameras' offsets against each other show, and each frame's delivery to the host from exposure to arrival.
+
+## Projection error per camera
+
+How well each camera on its own puts a dart on the board (#22): every camera's own board point, its tip pixel's ray on the board plane, against the ground truth.
+
+```sh
+cd tools
+python -m dartpilot_tools.projection_error ~/.local/share/dartpilot/sessions/<session>... --run <run id> --annotations <set> [--calibration <dir>] --out <dir>
+```
+
+It writes `report.md` (per camera: count, median, P95 and maximum error, mean radial and tangential error as a bias; and the median error by region of the true point), `cameras.csv` (one row per throw and camera), `error_maps.png` (a board per camera, each true point coloured by its error, with the error as an enlarged arrow) and `error_angle.png` (error over the viewing angle to the board normal). The viewing angle comes from the camera poses of the board refinement, `extrinsics.yml` in the calibration directory (by default `~/.local/share/dartpilot/calibration`). It needs a run whose `camera_measurements` carry each camera's `board_point`. With `--annotations fused` it compares each camera with the run's own fused point instead: how far a camera lies from the cameras' agreement, a consistency check until ground truth with frames exists, not an accuracy.
+
+## Comparing runs
+
+To compare variants of the detection or geometry on exactly the same throws (#25):
+
+```sh
+cd tools
+python -m dartpilot_tools.compare ~/.local/share/dartpilot/sessions/<session>... --run <name>=<run id> --run <name>=<run id>... --annotations <set> --out <dir>
+```
+
+Only throws with ground truth that every run has a result for count, so a variant that abstains more is not compared on easier throws. It writes `comparison.md` with median and P95 error, segment and multiplier accuracy, false acceptance and abstention per run, `comparison.csv`, and `comparison_error.png` with the error of each run's accepted throws.

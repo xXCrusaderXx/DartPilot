@@ -11,6 +11,7 @@ import 'engine/engine_connection.dart';
 import 'engine/engine_events.dart';
 import 'engine/engine_manager.dart';
 import 'engine/pairing_tokens.dart';
+import 'sound/caller.dart';
 import 'stats/dart_links.dart';
 import 'stats/statistics.dart';
 import 'theme.dart';
@@ -26,6 +27,7 @@ class DartPilotApp extends StatefulWidget {
     this.statistics,
     this.cameraOrder,
     this.dartLinks,
+    this.caller,
   });
 
   /// Fixed locale for tests; the system language otherwise
@@ -48,6 +50,9 @@ class DartPilotApp extends StatefulWidget {
   /// Which dart set each player throws; kept in memory only when none is given (tests)
   final DartLinks? dartLinks;
 
+  /// The score caller; a silent one when none is given (tests)
+  final Caller? caller;
+
   @override
   State<DartPilotApp> createState() => _DartPilotAppState();
 }
@@ -59,8 +64,9 @@ class _DartPilotAppState extends State<DartPilotApp> {
   late EngineSettings _settings = widget.settings ?? EngineSettings();
   late final AppLifecycleListener _lifecycle;
   late final Statistics _statistics = widget.statistics ?? Statistics(MemoryGameStore());
-  late final CameraOrder _cameraOrder = widget.cameraOrder ?? CameraOrder();
+  late final CameraOrder _cameraOrder = (widget.cameraOrder ?? CameraOrder())..attach(_engine);
   late final DartLinks _dartLinks = widget.dartLinks ?? DartLinks();
+  late final Caller _caller = widget.caller ?? Caller(RecordingVoice(), store: false);
   final GlobalKey<ScaffoldMessengerState> _messenger = GlobalKey();
   StreamSubscription<EngineEvent>? _events;
   final Set<String> _movedCameras = {};
@@ -162,7 +168,10 @@ class _DartPilotAppState extends State<DartPilotApp> {
           order: _cameraOrder,
           child: DartLinksScope(
             links: _dartLinks,
-            child: manager == null ? app : LocalEngineScope(manager: manager, settings: _settings, child: app),
+            child: CallerScope(
+              caller: _caller,
+              child: manager == null ? app : LocalEngineScope(manager: manager, settings: _settings, child: app),
+            ),
           ),
         ),
       ),

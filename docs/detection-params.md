@@ -73,6 +73,7 @@ Regenerate the table with `dartpilot detection-params`; `DetectionParams.Documen
 | `hidden_board_mm` | geometry | 2.5 | 0.5–10 | mm | Without a stored empty board: wires further than this from the calibration mean the board is partly hidden. |
 | `edge_tolerance_px` | geometry | 2 | 0–10 | px | An object against the empty board must stand out even when every pixel may match within this distance. |
 | `confirm_level` | geometry | 30 | 5–100 | grey | A pixel stands out from the empty board by more than this in some colour channel. |
+| `board_check_radius_mm` | geometry | 175 | 0–300 | mm | Only pixels on the board within this radius make it occupied, not the number ring, the surround or a hand at the edge. 0 counts the whole image. |
 | `min_confirmed_px` | geometry | 150 | 10–2000 | px | An object on the board needs this many pixels that stand out. |
 | `takeout_max_cameras` | fusion | 1 | 0–3 |  | All darts are pulled when at most this many cameras still see something against the empty board. |
 | `max_changes` | fusion | 3 | 1–6 |  | Changes looked at in one still moment: a dart pulled and another put in, and one more. |

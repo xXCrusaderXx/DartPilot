@@ -1585,4 +1585,105 @@ class AppLocalizationsEn extends AppLocalizations {
   String watchGameTitle(String mode) {
     return 'Watch the running game: $mode';
   }
+
+  @override
+  String get scoreCaller => 'Score caller';
+
+  @override
+  String get scoreCallerHint => 'Announces each visit\'s score, like a caller';
+
+  @override
+  String get callerVolume => 'Caller volume';
+
+  @override
+  String get callerTest => 'Test';
+
+  @override
+  String get callerNoVoice => 'This device has no speech output. On Linux: install speech-dispatcher (spd-say).';
+
+  @override
+  String cameraAssignFailed(String error) {
+    return 'Assignment not stored: $error';
+  }
+
+  @override
+  String get addSetMeasure => 'Measure in the board';
+
+  @override
+  String get addSetMeasureHint => 'Put one dart in at four places – the cameras measure it';
+
+  @override
+  String get addSetEnter => 'Type in the dimensions';
+
+  @override
+  String get addSetEnterHint => 'For example from the packaging';
+
+  @override
+  String get enterDims => 'Enter dimensions';
+
+  @override
+  String get dimsHint => 'Values e.g. from the packaging. An empty field keeps the measured value.';
+
+  @override
+  String get dimTotal => 'Total length';
+
+  @override
+  String get dimPoint => 'Point';
+
+  @override
+  String get dimBarrel => 'Barrel';
+
+  @override
+  String get dimBarrelDiameter => 'Barrel diameter';
+
+  @override
+  String get dimShaft => 'Shaft';
+
+  @override
+  String get dimFlight => 'Flight';
+
+  @override
+  String get dimWeight => 'Weight';
+
+  @override
+  String get dimEntered => 'entered';
+
+  @override
+  String get dimPhoto => 'photo';
+
+  @override
+  String dimMeasuredValue(String value) {
+    return 'measured: $value';
+  }
+
+  @override
+  String get dimsSave => 'Save';
+
+  @override
+  String get dimsImplausible => 'A value lies outside what a dart can have.';
+
+  @override
+  String get addSetPhoto => 'Measure by photo';
+
+  @override
+  String get addSetPhotoHint => 'Lay the dart on the printed sheet and take a photo';
+
+  @override
+  String get dartPhotoHowTo =>
+      'Print the dart sheet (docs/calibration/dart-sheet-A4.png) at 100 % on A4 and lay it flat. Put one dart of the set in the middle of the sheet. Take the photo from above, with all four corner markers fully in view.';
+
+  @override
+  String get dartPhotoTake => 'Take photo';
+
+  @override
+  String get dartPhotoMeasuring => 'Measuring the photo …';
+
+  @override
+  String get dartPhotoDone => 'Photo measured – the dimensions are with the set.';
+
+  @override
+  String get dartPhotoNoSheet => 'The sheet was not found. All four markers must be fully in the picture.';
+
+  @override
+  String get dartPhotoNoDart => 'No dart was found on the sheet. Put it in the middle, without shadow.';
 }

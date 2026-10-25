@@ -101,6 +101,26 @@ The page "Calibration check" watches every camera: every few seconds each camera
 
 On the stills of the reference cameras, a fresh detection matched its own refinement within 0.4 to 1.0 mm in the light it was made in and within 1.1 to 1.6 mm under evening light, while the calibration of another camera was off by 27 to 61 mm. The thresholds follow the error budget of [ADR 0009](adr/0009-board-calibration-validated.md). Darts in the board pause the check ("No board").
 
+### When a camera or the board moves
+
+The engine watches for movement in two ways (#49) and reacts by these rules:
+
+| What happens | What the engine sees | Reaction |
+| - | - | - |
+| A camera drifts by a few pixels (warmth, a loose mount) | Tip candidates measure the shift between image and board, up to `max_drift_px` (5 px) | Compensated per still moment; nothing to do. |
+| A camera is knocked | Between two still moments the whole image outside the board (`view_ignore_inside_mm`) shifted by more than `view_moved_camera_px` (3 px) | `camera_moved` event; the view becomes the new still state, so the change is no dart. The next calibration check decides. |
+| The check stays green (up to 1 mm) | The calibration still holds | Nothing to do. |
+| The check is yellow (up to 2.5 mm) | Other light, or a small move | Warn; calibrate again if it stays yellow. |
+| The check is red (above 2.5 mm) for one camera | That camera moved | Ask the user to calibrate that camera again. |
+| The check is red for all cameras at once | The board turned or was replaced; the cameras did not | Ask the user to calibrate the board again (extrinsic page). |
+| A dart moves the board or its number ring | Change only inside `view_ignore_inside_mm` | No `camera_moved`; the board check and the calibration check go on as before. |
+
+The engine never recalibrates by itself: a new calibration needs the empty board and the user's confirmation of the sector 20.
+
+`dartpilot replay --check-every SECONDS` runs the calibration check over a recording and writes `calibration_checks.jsonl`, so a move can be found afterwards. In the session `20261025T225514Z-0009` a camera was knocked lightly and the board turned slightly. Neither move lasted. The knocked camera's check went from 0.51 to 0.44 mm, and its shift changed by 0.1 px. While the board was turned, all three cameras jumped together for about three seconds and then went back to their values from before (0.41, 0.91 and 0.63 mm). A reference run right after it still had a median error of 0.97 mm. Small moves like these stay green, and the rules above let them through.
+
+Stronger moves are tested on the same recording with the replay's synthetic moves: `--move-camera ID=DX,DY@SECONDS` shifts one camera's image, as a knocked camera, and `--turn-board DEG@SECONDS` turns the board about its centre in every camera's image. With `--move-camera usb-2.4.3.1.2=6,-3@120 --turn-board 1.5@240`, every check of that camera after 120 s was red: the median went from 0.53 to 4.76 mm, and the shift was (+6.0, −2.8) px. The other two cameras stayed green, at 0.92 and 0.70 mm. After 240 s every check of all three cameras was red (5.47, 3.30 and 2.95 mm). The turn moved no camera's mean shift, so the check error alone reveals it. The test `Replay.AKnockedCameraAndATurnedBoardFailTheirChecks` covers both cases.
+
 ## Pin check
 
 The calibration check compares each camera with itself; the page "Pin check" compares the cameras with each other (#13, #48), with nothing but a pin. Put a pin or a dart into the board and click, in every camera, exactly where it enters the board; a magnifier follows the pointer. Each camera's calibration maps its click onto the playing surface, and the page shows the board point of every camera, the score it would give, and the **spread**, the largest distance between two cameras. A dart's tip will be located with the same calibrations, so the spread is the calibration error as a dart sees it, plus the click error.

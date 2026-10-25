@@ -54,6 +54,23 @@ These errors bound the uncertainty of the method from above, since they also con
 
 Until then, millimetre results of the benchmark are stated with the method's radial uncertainty next to them.
 
+## Repeated runs (#205)
+
+The same ten corners were located in three stored runs: `20261025T074057Z-4ebd`, `20261025T225744Z-7387` and `20261025T230032Z-42a7`. The last two were made during the recording `20261025T225514Z-0009`, so their frames exist too. In 7387 the user placed two darts wrongly. The table shows each run's error against the targets:
+
+| Run | Located | Median | Max | Radial median | Tangential median |
+| - | - | - | - | - | - |
+| 4ebd | 9/10 | 1.33 mm | 1.64 mm | 0.61 mm | 0.34 mm |
+| 7387 | 8/10 | 1.02 mm | 2.91 mm | 1.08 mm | 0.36 mm |
+| 42a7 | 9/10 | 0.97 mm | 1.84 mm | 1.05 mm | 0.38 mm |
+
+The error of a corner splits into a part that repeats from run to run and a scatter around it. Over the eight corners off the bull, with 15 degrees of freedom:
+
+- **Scatter between runs:** 0.75 mm radial and 0.71 mm tangential (pooled standard deviation). This includes the engine's own noise, so it is an upper bound for how repeatably a dart is placed. Without the two misplaced darts of 7387, most corners repeat within 0.1 to 0.5 mm.
+- **Repeating part:** each corner keeps its offset from run to run. All outer double corners come out outward, by +0.8 to +1.7 mm (D3 at +1.68 mm with a scatter of 0.06 mm). The inner treble corners come out inward, by −0.6 to −1.0 mm. Over the corners this part has an RMS of 0.94 mm radially and 0.52 mm tangentially. Repeated runs cannot tell whether the offset comes from the assumed distance of the point inside the field or from the engine's geometry: both repeat in the same way.
+
+So the random radial uncertainty of the method is measured, and it is clearly below 1.5 mm: at most 0.75 mm. The done-when of #205 is met. The annotations keep 1.0 mm (1 σ) radial, because the repeating offset is not yet assigned to the method or to the engine. Wire targets or a close-up photo (above) would settle that, and the ADR on the geometry variants (#25) is where the engine's share gets examined.
+
 ## Consequences
 
 - The reference run stays the source of millimetre truth. It needs about ten minutes per run at the board, which the user experienced as tedious. Wire targets would also reduce the number of runs needed.

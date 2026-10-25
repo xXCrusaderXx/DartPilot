@@ -2851,6 +2851,198 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Watch the running game: {mode}'**
   String watchGameTitle(String mode);
+
+  /// No description provided for @scoreCaller.
+  ///
+  /// In en, this message translates to:
+  /// **'Score caller'**
+  String get scoreCaller;
+
+  /// No description provided for @scoreCallerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Announces each visit\'s score, like a caller'**
+  String get scoreCallerHint;
+
+  /// No description provided for @callerVolume.
+  ///
+  /// In en, this message translates to:
+  /// **'Caller volume'**
+  String get callerVolume;
+
+  /// No description provided for @callerTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Test'**
+  String get callerTest;
+
+  /// No description provided for @callerNoVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'This device has no speech output. On Linux: install speech-dispatcher (spd-say).'**
+  String get callerNoVoice;
+
+  /// No description provided for @cameraAssignFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Assignment not stored: {error}'**
+  String cameraAssignFailed(String error);
+
+  /// No description provided for @addSetMeasure.
+  ///
+  /// In en, this message translates to:
+  /// **'Measure in the board'**
+  String get addSetMeasure;
+
+  /// No description provided for @addSetMeasureHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Put one dart in at four places – the cameras measure it'**
+  String get addSetMeasureHint;
+
+  /// No description provided for @addSetEnter.
+  ///
+  /// In en, this message translates to:
+  /// **'Type in the dimensions'**
+  String get addSetEnter;
+
+  /// No description provided for @addSetEnterHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For example from the packaging'**
+  String get addSetEnterHint;
+
+  /// No description provided for @enterDims.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter dimensions'**
+  String get enterDims;
+
+  /// No description provided for @dimsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Values e.g. from the packaging. An empty field keeps the measured value.'**
+  String get dimsHint;
+
+  /// No description provided for @dimTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total length'**
+  String get dimTotal;
+
+  /// No description provided for @dimPoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Point'**
+  String get dimPoint;
+
+  /// No description provided for @dimBarrel.
+  ///
+  /// In en, this message translates to:
+  /// **'Barrel'**
+  String get dimBarrel;
+
+  /// No description provided for @dimBarrelDiameter.
+  ///
+  /// In en, this message translates to:
+  /// **'Barrel diameter'**
+  String get dimBarrelDiameter;
+
+  /// No description provided for @dimShaft.
+  ///
+  /// In en, this message translates to:
+  /// **'Shaft'**
+  String get dimShaft;
+
+  /// No description provided for @dimFlight.
+  ///
+  /// In en, this message translates to:
+  /// **'Flight'**
+  String get dimFlight;
+
+  /// No description provided for @dimWeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight'**
+  String get dimWeight;
+
+  /// No description provided for @dimEntered.
+  ///
+  /// In en, this message translates to:
+  /// **'entered'**
+  String get dimEntered;
+
+  /// No description provided for @dimPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'photo'**
+  String get dimPhoto;
+
+  /// No description provided for @dimMeasuredValue.
+  ///
+  /// In en, this message translates to:
+  /// **'measured: {value}'**
+  String dimMeasuredValue(String value);
+
+  /// No description provided for @dimsSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get dimsSave;
+
+  /// No description provided for @dimsImplausible.
+  ///
+  /// In en, this message translates to:
+  /// **'A value lies outside what a dart can have.'**
+  String get dimsImplausible;
+
+  /// No description provided for @addSetPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Measure by photo'**
+  String get addSetPhoto;
+
+  /// No description provided for @addSetPhotoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Lay the dart on the printed sheet and take a photo'**
+  String get addSetPhotoHint;
+
+  /// No description provided for @dartPhotoHowTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Print the dart sheet (docs/calibration/dart-sheet-A4.png) at 100 % on A4 and lay it flat. Put one dart of the set in the middle of the sheet. Take the photo from above, with all four corner markers fully in view.'**
+  String get dartPhotoHowTo;
+
+  /// No description provided for @dartPhotoTake.
+  ///
+  /// In en, this message translates to:
+  /// **'Take photo'**
+  String get dartPhotoTake;
+
+  /// No description provided for @dartPhotoMeasuring.
+  ///
+  /// In en, this message translates to:
+  /// **'Measuring the photo …'**
+  String get dartPhotoMeasuring;
+
+  /// No description provided for @dartPhotoDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo measured – the dimensions are with the set.'**
+  String get dartPhotoDone;
+
+  /// No description provided for @dartPhotoNoSheet.
+  ///
+  /// In en, this message translates to:
+  /// **'The sheet was not found. All four markers must be fully in the picture.'**
+  String get dartPhotoNoSheet;
+
+  /// No description provided for @dartPhotoNoDart.
+  ///
+  /// In en, this message translates to:
+  /// **'No dart was found on the sheet. Put it in the middle, without shadow.'**
+  String get dartPhotoNoDart;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

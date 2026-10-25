@@ -10,6 +10,7 @@
 #include "dartpilot/fusion/detection_params.hpp"
 #include "dartpilot/fusion/fusion.hpp"
 #include "dartpilot/geometry/charuco.hpp"
+#include "dartpilot/geometry/dart_sheet.hpp"
 #include "dartpilot/geometry/geometry.hpp"
 #include "dartpilot/replay/replay.hpp"
 #include "dartpilot/scoring/scoring.hpp"
@@ -51,6 +52,17 @@ int main (int argc, char* argv[])
     {
         return dartpilot::cli::runAnalyse(argc - 2, argv + 2);
     }
+    if(arg == "dart-sheet" && argc == 3)
+    {
+        // The A4 sheet for measuring a dart from a photo, e.g. docs/calibration/dart-sheet-A4.png
+        const cv::Mat sheet = dartpilot::geometry::dartSheetImage();
+        if(sheet.empty() || !cv::imwrite(argv[2], sheet))
+        {
+            std::cerr << "Cannot write the dart sheet to " << argv[2] << '\n';
+            return 1;
+        }
+        return 0;
+    }
     if(arg == "detection-params")
     {
         // The table of docs/detection-params.md
@@ -88,7 +100,8 @@ int main (int argc, char* argv[])
         }
         return 0;
     }
-    std::cerr << "Usage: dartpilot --version | --modules | detection-params | serve --simulate [--listen ADDRESS] [--port N] | record [--seconds N] "
+    std::cerr << "Usage: dartpilot --version | --modules | dart-sheet <file.png> | detection-params | serve --simulate [--listen ADDRESS] [--port N] "
+                 "| record [--seconds N] "
                  "[--root DIR] [--notes TEXT] | replay <session> [--run-id ID] [--extrinsics FILE] [--check-every SECONDS] "
                  "[--no-checks] | capture-check [seconds] | white-balance | focus "
                  "--camera <device> [--exposure <value>] | pattern "

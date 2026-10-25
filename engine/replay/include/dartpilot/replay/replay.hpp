@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <map>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -27,7 +28,9 @@ struct ReplayFrame
 };
 
 // The order of docs/replay-format.md: by exposure_ns, frames with the same time by camera id
-std::vector<ReplayFrame> replayOrder (const session::RecordedSession& session);
+// offsets_ns, per camera in the session's order (or empty): added to its exposure times, for testing how a wrong time
+// association between the cameras affects the results (#24)
+std::vector<ReplayFrame> replayOrder (const session::RecordedSession& session, const std::vector<std::int64_t>& offsets_ns = {});
 
 struct ReplayConfig
 {
@@ -46,6 +49,19 @@ struct ReplayConfig
     std::string pipeline = "none";
     // Every value of the detection (fusion::detectionParams), recorded in run.json
     fusion::DetectionSettings detection;
+    // Shifts a camera's frames in time by this much, by camera id; for the association experiment of #24 only
+    std::map<std::string, std::int64_t> camera_offset_ns;
+    // Moves the image from a time on, counted from the session's first frame, to test the calibration check and the
+    // detection of a moved camera (#49): a knocked camera's image shifted, or the board turned about its centre in
+    // every camera's image
+    struct Move
+    {
+        std::int64_t from_ns = 0;
+        std::string camera;  // empty: the board turns
+        cv::Point2d shift_px;
+        double board_turn_deg = 0.0;
+    };
+    std::vector<Move> moves;
 };
 
 struct ReplaySummary

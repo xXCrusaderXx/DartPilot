@@ -1,26 +1,93 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../l10n/app_localizations.dart';
 import 'engine_connection.dart';
+import 'engine_events.dart';
 
 /// The player's order and names of the engine's cameras: "Kamera 1" is the camera the player made first, whatever
 /// order the engine reports them in, and a swap of two cameras is a swap here. Cameras are identified by the engine's
-/// id, which follows the USB port.
+/// id, which follows the USB port. An engine that keeps the assignment itself is the source for every display; this
+/// device's own store only serves engines that keep none.
 class CameraOrder extends ChangeNotifier {
   CameraOrder([CameraOrderStore? store]) : _store = store ?? MemoryCameraOrderStore();
 
   final CameraOrderStore _store;
   List<String> _order = [];
   Map<String, String> _names = {};
+  List<String> _localOrder = [];
+  Map<String, String> _localNames = {};
+  EngineConnection? _engine;
+  bool _offered = false;
 
-  Future<void> load() async {
-    final (order, names) = await _store.load();
+  /// Follows the engine's assignment while it keeps one
+  void attach(EngineConnection engine) {
+    _engine = engine;
+    engine.addListener(_follow);
+    _follow();
+  }
+
+  bool get _fromEngine => _engine?.cameraAssignment != null;
+
+  void _follow() {
+    final assignment = _engine?.cameraAssignment;
+    if (assignment == null) {
+      _offered = false;
+      if (!listEquals(_order, _localOrder) || !mapEquals(_names, _localNames)) {
+        _order = _localOrder;
+        _names = _localNames;
+        notifyListeners();
+      }
+      return;
+    }
+    final placed = assignment.cameras.where((c) => c.order != null).toList()
+      ..sort((a, b) => a.order!.compareTo(b.order!));
+    // An engine that has no assignment yet gets this device's, once: the PC's earlier assignment carries over.
+    if (placed.isEmpty && _localOrder.isNotEmpty && !_offered) {
+      _offered = true;
+      _send(_localOrder, _localNames);
+    }
+    final order = [for (final c in placed) c.id];
+    final names = {
+      for (final c in assignment.cameras)
+        if (c.label != null && c.label!.isNotEmpty) c.id: c.label!,
+    };
+    // The engine notifies often (camera status every second); only a changed assignment rebuilds.
+    if (listEquals(order, _order) && mapEquals(names, _names)) return;
     _order = order;
     _names = names;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _engine?.removeListener(_follow);
+    super.dispose();
+  }
+
+  Future<String?> _send(List<String> order, Map<String, String> names) {
+    final known = {for (final c in _engine!.cameraAssignment!.cameras) c.id};
+    final ids = {...order, ...known};
+    return _engine!.setCameraAssignment([
+      for (final id in ids)
+        AssignedCamera(id, order: order.contains(id) ? order.indexOf(id) + 1 : null, label: names[id]),
+    ]);
+  }
+
+  Future<void> load() async {
+    final (order, names) = await _store.load();
+    _localOrder = order;
+    _localNames = names;
+    if (!_fromEngine) {
+      _order = order;
+      _names = names;
+      notifyListeners();
+    } else {
+      _follow();
+    }
   }
 
   /// `cameras` in the player's order; cameras the player has not placed yet follow in the engine's order
@@ -46,12 +113,16 @@ class CameraOrder extends ChangeNotifier {
 
   /// The order and names the player chose; cameras placed earlier that are not connected now keep their place after
   /// these
-  Future<void> assign(List<String> order, Map<String, String> names) async {
-    _order = [...order, ..._order.where((id) => !order.contains(id))];
-    _names = {..._names, for (final MapEntry(:key, :value) in names.entries) key: value.trim()}
+  Future<String?> assign(List<String> order, Map<String, String> names) async {
+    final merged = [...order, ..._order.where((id) => !order.contains(id))];
+    final trimmed = {..._names, for (final MapEntry(:key, :value) in names.entries) key: value.trim()}
       ..removeWhere((_, name) => name.isEmpty);
+    if (_fromEngine) return _send(merged, trimmed);
+    _order = _localOrder = merged;
+    _names = _localNames = trimmed;
     notifyListeners();
     await _store.save(_order, _names);
+    return null;
   }
 }
 

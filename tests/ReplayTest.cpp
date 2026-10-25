@@ -3,17 +3,22 @@
 #include <cmath>
 #include <filesystem>
 #include <fstream>
+#include <map>
 #include <random>
 #include <set>
 #include <sstream>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "SyntheticBoard.hpp"
 #include "dartpilot/fusion/detection_params.hpp"
 #include "dartpilot/geometry/board_plane.hpp"
 #include "dartpilot/geometry/board_refinement.hpp"
+#include "dartpilot/geometry/board_state.hpp"
 #include "dartpilot/geometry/dart_shape.hpp"
+#include "dartpilot/geometry/dart_sheet.hpp"
+#include "dartpilot/geometry/tip_triangulation.hpp"
 #include "dartpilot/replay/replay.hpp"
 #include "dartpilot/session/json.hpp"
 #include "dartpilot/session/session_reader.hpp"
@@ -270,6 +275,47 @@ TEST(Replay, TwoRunsGiveByteIdenticalResults)
 
     // A run never overwrites another.
     EXPECT_FALSE(replay::replaySession(*recorded, config, error));
+}
+
+TEST(Replay, AKnockedCameraAndATurnedBoardFailTheirChecks)
+{
+    TemporaryDirectory root;
+    std::string error;
+    const auto recorded = session::openSession(writeFixtureSession(root.path()), error);
+    ASSERT_TRUE(recorded) << error;
+    replay::ReplayConfig config;
+    config.extrinsics = fixtureExtrinsics();
+    config.check_interval_ns = 400'000'000;
+    // Per camera the error of its first and its second check, the second after the move
+    const auto checkErrors = [&] (const std::string& run_id)
+    {
+        config.run_id = run_id;
+        const auto summary = replay::replaySession(*recorded, config, error);
+        std::map<std::string, std::vector<double>> errors_mm;
+        for(const auto& line : lines(readFile(summary->run_directory / "calibration_checks.jsonl")))
+        {
+            const auto value = session::parseJson(line, error);
+            errors_mm[value->string("camera")].push_back(value->find("board_found")->boolean ? std::stod(value->find("rms_mm")->text) : 1e9);
+        }
+        return errors_mm;
+    };
+
+    config.moves = {{400'000'000, "usb-1.2", {6.0, -3.0}, 0.0}};
+    auto knocked = checkErrors("knocked");
+    ASSERT_EQ(knocked["usb-1.2"].size(), 2u);
+    ASSERT_EQ(knocked["usb-1.3"].size(), 2u);
+    EXPECT_LT(knocked["usb-1.2"][0], 1.0);
+    EXPECT_GT(knocked["usb-1.2"][1], 2.5);
+    EXPECT_LT(knocked["usb-1.3"][1], 1.0);
+
+    config.moves = {{400'000'000, "", {}, 1.5}};
+    auto turned = checkErrors("turned");
+    for(const char* camera : {"usb-1.2", "usb-1.3"})
+    {
+        ASSERT_EQ(turned[camera].size(), 2u) << camera;
+        EXPECT_LT(turned[camera][0], 1.0) << camera;
+        EXPECT_GT(turned[camera][1], 2.5) << camera;
+    }
 }
 
 TEST(Replay, WithoutARefinementThereAreNoChecks)
@@ -564,4 +610,118 @@ TEST(DartShape, MeasuresLengthFlightAndBarrelOfASyntheticDart)
     EXPECT_LT(shape->point_mm, 40.0);
     EXPECT_NEAR(std::acos(std::abs(shape->direction[2])) * 180.0 / CV_PI, 15.0, 3.0);
     EXPECT_GE(shape->cameras, 2);
+}
+
+TEST(TipTriangulation, TheTipsOfAllCamerasMeetAtTheEntryPoint)
+{
+    const auto views = aroundTheBoard();
+    const auto extrinsics = fixtureExtrinsics(views);
+    const cv::Point2f tip_mm(-40.0f, 25.0f);
+    std::vector<geometry::DartView> dart_views;
+    for(std::size_t c = 0; c < views.size(); ++c)
+    {
+        const cv::Mat board = synthetic_board::renderCameraImage(views[c], 1.0, 90);
+        cv::Mat with_dart = board.clone();
+        drawDart(with_dart, extrinsics.refinement.cameras[c], tip_mm, 60.0);
+        if(const auto observation = tip_candidates::observeDart(with_dart, board))
+        {
+            dart_views.push_back({&extrinsics.refinement.cameras[c], *observation});
+        }
+    }
+    ASSERT_GE(dart_views.size(), 2u);
+    const auto location = geometry::locateDart(dart_views);
+    ASSERT_TRUE(location);
+    const auto tips = geometry::triangulateTips(dart_views, *location);
+    ASSERT_TRUE(tips.point_mm);
+    EXPECT_GE(tips.views_used, 2);
+    EXPECT_LT(cv::norm(cv::Point2d(tips.point_mm->x, tips.point_mm->y) - cv::Point2d(tip_mm)), 2.0);
+    // The drawn point ends in a rounded cap a pixel or two beyond its tip, which the axis carries out of the board a little.
+    EXPECT_LT(std::abs(tips.point_mm->z), 4.0);
+    for(std::size_t v = 0; v < dart_views.size(); ++v)
+    {
+        if(tips.tip_px[v])
+        {
+            ASSERT_TRUE(tips.board_mm[v]);
+            EXPECT_LT(cv::norm(*tips.board_mm[v] - tip_mm), 4.0) << "view " << v;
+            EXPECT_LT(*tips.reprojection_px[v], 3.0) << "view " << v;
+        }
+    }
+}
+
+TEST(DartSheet, MeasuresTheDartOnAPhotoOfTheSheet)
+{
+    constexpr double kPx_per_mm = 8.0;
+    cv::Mat sheet = geometry::dartSheetImage(kPx_per_mm);
+    if(sheet.empty())
+    {
+        GTEST_SKIP() << "built without ArUco support";
+    }
+    // A dart lying at an angle: point 25 mm × 2.2, barrel 45 × 7, shaft 35 × 4.5, flight 38 × 30
+    const cv::Point2d start_mm(40.0, 110.0), direction(std::cos(0.5), std::sin(0.5));
+    const cv::Point2d normal(-direction.y, direction.x);
+    double along = 0.0;
+    for(const auto& [length, width, grey] : std::vector<std::tuple<double, double, int>>{{25, 2.2, 150}, {45, 7.0, 60}, {35, 4.5, 30}, {38, 30.0, 0}})
+    {
+        const cv::Point2d a = start_mm + direction * along, b = start_mm + direction * (along + length);
+        std::vector<cv::Point> quad;
+        for(const auto& p : {a + normal * (width / 2), b + normal * (width / 2), b - normal * (width / 2), a - normal * (width / 2)})
+        {
+            quad.emplace_back(cvRound(p.x * kPx_per_mm), cvRound(p.y * kPx_per_mm));
+        }
+        cv::fillConvexPoly(sheet, quad, grey == 0 ? cv::Scalar(40, 200, 60) : cv::Scalar(grey, grey, grey));
+        along += length;
+    }
+    // A phone photo: tilted, smaller, a little blurred, through JPEG
+    const std::vector<cv::Point2f> from{{0, 0},
+                                        {static_cast<float>(sheet.cols), 0},
+                                        {static_cast<float>(sheet.cols), static_cast<float>(sheet.rows)},
+                                        {0, static_cast<float>(sheet.rows)}};
+    const std::vector<cv::Point2f> to{{120, 80}, {1480, 140}, {1540, 2080}, {60, 2010}};
+    cv::Mat photo;
+    cv::warpPerspective(sheet, photo, cv::getPerspectiveTransform(from, to), cv::Size(1600, 2160), cv::INTER_AREA, cv::BORDER_CONSTANT,
+                        cv::Scalar(70, 70, 70));
+    cv::GaussianBlur(photo, photo, cv::Size(), 0.8);
+    std::vector<std::uint8_t> jpeg;
+    cv::imencode(".jpg", photo, jpeg, {cv::IMWRITE_JPEG_QUALITY, 90});
+    photo = cv::imdecode(jpeg, cv::IMREAD_COLOR);
+
+    std::string why;
+    const auto measure = geometry::measureDartPhoto(photo, &why);
+    ASSERT_TRUE(measure) << why;
+    EXPECT_NEAR(measure->total_mm, 143.0, 2.0);
+    EXPECT_NEAR(measure->point_mm, 25.0, 2.5);
+    EXPECT_NEAR(measure->barrel_mm, 45.0, 3.0);
+    EXPECT_NEAR(measure->barrel_diameter_mm, 7.0, 1.0);
+    EXPECT_NEAR(measure->shaft_mm, 35.0, 3.0);
+    EXPECT_NEAR(measure->flight_mm, 38.0, 3.0);
+    EXPECT_FALSE(measure->image.empty());
+
+    const cv::Mat blank(2000, 1500, CV_8UC3, cv::Scalar(255, 255, 255));
+    EXPECT_FALSE(geometry::measureDartPhoto(blank, &why));
+    EXPECT_EQ(why, "sheet_not_found");
+}
+
+TEST(BoardCheck, OnlyWhatLiesOnTheBoardMakesItOccupied)
+{
+    const auto views = aroundTheBoard();
+    const auto extrinsics = fixtureExtrinsics(views);
+    const auto& camera = extrinsics.refinement.cameras[0];
+    const cv::Mat empty = synthetic_board::renderCameraImage(views[0], 1.0, 90);
+
+    // A hand on the number ring and the surround, outside the double ring: not on the board
+    cv::Mat hand = empty.clone();
+    const cv::Point2f outside = geometry::boardToImage(camera, cv::Point3f(0.0f, -205.0f, 0.0f));
+    cv::ellipse(hand, cv::RotatedRect(outside, cv::Size2f(140, 70), 0), cv::Scalar(90, 120, 170), cv::FILLED);
+    EXPECT_EQ(geometry::checkBoard(hand, &empty, &camera, extrinsics.refinement.board).state, geometry::BoardState::Empty);
+    // Without a calibration the whole image counts, as before.
+    EXPECT_EQ(geometry::checkBoard(hand, &empty, nullptr, extrinsics.refinement.board).state, geometry::BoardState::Occupied);
+
+    // A dart in the board, also near the double ring, whose flight reaches beyond it in the image
+    for(const cv::Point2f tip_mm : {cv::Point2f(30.0f, 60.0f), cv::Point2f(0.0f, -160.0f)})
+    {
+        cv::Mat dart = empty.clone();
+        drawDart(dart, camera, tip_mm, 30.0);
+        const auto check = geometry::checkBoard(dart, &empty, &camera, extrinsics.refinement.board);
+        EXPECT_EQ(check.state, geometry::BoardState::Occupied) << tip_mm;
+    }
 }

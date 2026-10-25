@@ -83,6 +83,9 @@ class EngineConnection extends ChangeNotifier {
   /// Reference images by set id and camera, as far as asked for
   final Map<(String, String), DartSetImage> dartSetImages = {};
 
+  /// The cameras' order and names as the engine keeps them; null with engines that keep none
+  CameraAssignment? cameraAssignment;
+
   /// The game an app shares through the engine, this app's own included; null when none is shared
   SharedGame? sharedGame;
 
@@ -165,6 +168,7 @@ class EngineConnection extends ChangeNotifier {
     await _closeChannel();
     hello = null;
     boardState = null;
+    cameraAssignment = null;
     dartSets = null;
     dartSetCapture = null;
     dartSetImages.clear();
@@ -286,6 +290,10 @@ class EngineConnection extends ChangeNotifier {
       detectionReason = event.message.isEmpty ? null : event.message;
       notifyListeners();
     }
+    if (event is CameraAssignment) {
+      cameraAssignment = event;
+      notifyListeners();
+    }
     if (event is DartSets) {
       dartSets = event;
       notifyListeners();
@@ -341,10 +349,29 @@ class EngineConnection extends ChangeNotifier {
   void rejectThrow(String throwId, String reason) =>
       _send({'type': 'reject_throw', 'throw_id': throwId, 'reason': reason});
 
+  /// Stores the cameras' order and names in the engine; every client gets them as [cameraAssignment].
+  Future<String?> setCameraAssignment(List<AssignedCamera> cameras) => _request({
+    'type': 'set_camera_assignment',
+    'cameras': [for (final c in cameras) c.toJson()],
+  });
+
   /// Starts measuring a new dart set; progress arrives as [dartSetCapture], the new set in [dartSets].
   Future<String?> startDartSet(String name) => _request({'type': 'start_dart_set', 'name': name});
 
   void cancelDartSet() => _send({'type': 'cancel_dart_set'});
+
+  /// A set from dimensions the player typed in, e.g. from the packaging, without measuring
+  Future<String?> createDartSet(String name, Map<String, double> dims) =>
+      _request({'type': 'create_dart_set', 'name': name, 'dims': dims});
+
+  /// Measures a set's dart on a photo of the printed dart sheet (#120); the result arrives as the set's photo
+  /// dimensions in [dartSets]
+  Future<String?> measureDartPhoto(String id, Uint8List jpeg) =>
+      _request({'type': 'measure_dart_photo', 'id': id, 'jpeg_base64': base64Encode(jpeg)});
+
+  /// Enters or corrects dimensions of a set; null removes an entered value, so the measured one counts again
+  Future<String?> updateDartSet(String id, Map<String, double?> dims) =>
+      _request({'type': 'update_dart_set', 'id': id, 'dims': dims});
 
   Future<String?> renameDartSet(String id, String name) =>
       _request({'type': 'rename_dart_set', 'id': id, 'name': name});

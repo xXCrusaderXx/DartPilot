@@ -285,6 +285,8 @@ The player's darts (#120). A set is measured by putting one dart of it into the 
               "images": [ { "camera": "usb-2.4.3.1.2" } ] } ] }
 ```
 
+The **dart sheet** ([docs/calibration/dart-sheet-A4.png](calibration/dart-sheet-A4.png), print at 100 %; `dartpilot dart-sheet <file>` writes it) has four ArUco markers in its corners. One dart laid in its middle and photographed from above is measured at about 10 px/mm, far finer than the board cameras see it: total length, point, barrel and its diameter, shaft and flight.
+
 `dims` holds, per dimension, the value from the first source that has it: entered by the user, from a photo, measured in the board. `dims_source` names the source per dimension, and `measured`, `photo` and `entered` hold each source's values. Dimensions: `total_mm`, `point_mm`, `barrel_mm`, `barrel_diameter_mm`, `shaft_mm`, `flight_mm`, `weight_g`. An entered value must lie in a plausible range (e.g. 50–250 mm total, 3–15 mm barrel diameter), or `bad_request`. Measured values are medians over the placements, in mm. `barrel_diameter_mm` and the barrel's length come from the dart's outline and are less certain than its total length.
 
 `dart_set_capture` follows a running measurement; the latest one is sent after `hello` too:
@@ -308,6 +310,7 @@ The player's darts (#120). A set is measured by putting one dart of it into the 
 | - | - | - |
 | `list_dart_sets` | – | Sends `dart_sets` |
 | `create_dart_set` | `name`, `dims` | A set from entered dimensions only, without measuring |
+| `measure_dart_photo` | `id`, `jpeg_base64` | Measures the set's dart on a photo of the dart sheet into its `photo` dimensions, and keeps the picture (`images` gains `photo`); `sheet_not_found`, `dart_not_found`, `unknown_set` |
 | `update_dart_set` | `id`, `dims` | Enters or corrects dimensions; `null` removes an entered value, so the measured one counts again |
 | `start_dart_set` | `name` | Starts measuring a new set; `not_calibrated`, `busy` (a reference run or another measurement runs) |
 | `cancel_dart_set` | – | Stops it; `dart_set_capture` with `cancelled` |
@@ -315,6 +318,17 @@ The player's darts (#120). A set is measured by putting one dart of it into the 
 | `rename_dart_set` | `id`, `name` | `unknown_set` |
 | `delete_dart_set` | `id` | `unknown_set` |
 | `set_active_darts` | `id` or `null` | The set the player at the board throws; `dart_sets` goes to every client |
+
+### camera_assignment
+
+Which camera is first, second, third, and what the user calls it (#198), kept by the engine in `calibration/camera-assignment.json`, so every app shows the same. Sent after `hello` and to every client after each change; cameras that are not connected keep their entry.
+
+```json
+{ "type": "camera_assignment", "cameras": [ { "id": "usb-2.4.3.1.4", "order": 1, "label": "left", "connected": true },
+                                            { "id": "usb-2.4.3.1.2", "order": null, "label": null, "connected": true } ] }
+```
+
+Connected cameras come first, each group by `order`; `order` is 1-based or `null` for a camera not assigned yet. `set_camera_assignment {"cameras": [{id, order, label}]}` replaces the listed cameras' entries and keeps the others. It refuses the whole request with `unknown_camera` for an id the engine never saw, and with `bad_request` for an order used twice or outside 1–16. With simulated cameras, the assignment is kept in memory only.
 
 ### shared_game
 
@@ -368,6 +382,7 @@ Every request carries a `request_id` chosen by the client and is answered with `
 | `set_detection_params` | `params` (name → number or `null`) | Changes detection values; `detection_params` goes to every client |
 | `share_game` | `game` (an object of up to 256 KB) | Shares the game with every display; sent on as `shared_game` |
 | `end_shared_game` | – | Ends sharing; `shared_game` with `game: null` |
+| `set_camera_assignment` | `cameras` | Order and labels of the cameras; see `camera_assignment` |
 | `subscribe_preview` | `camera`, `max_fps`, `max_width` | Starts preview frames of a camera |
 | `unsubscribe_preview` | `camera` | Stops them |
 

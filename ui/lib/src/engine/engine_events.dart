@@ -37,6 +37,7 @@ sealed class EngineEvent {
       for (final c in json['clients'] as List<dynamic>? ?? const [])
         if (c is Map<String, dynamic>) PairedClient.fromJson(c),
     ]),
+    'camera_assignment' => CameraAssignment.fromJson(json),
     'engine_status' => EngineStatus(json['detection'] as String? ?? 'running', json['message'] as String? ?? ''),
     _ => null,
   };
@@ -864,13 +865,28 @@ class CameraMoved extends EngineEvent {
 
 /// A measured set of the player's darts (#120): its dimensions and where reference images exist
 class DartSet {
-  const DartSet({required this.id, required this.name, this.dims = const {}, this.cameras = const [], this.created});
+  const DartSet({
+    required this.id,
+    required this.name,
+    this.dims = const {},
+    this.dimsSource = const {},
+    this.measured = const {},
+    this.cameras = const [],
+    this.created,
+  });
 
   final String id;
   final String name;
 
-  /// total_mm, barrel_mm, barrel_diameter_mm, flight_mm (later point_mm), as far as the engine measured them
+  /// total_mm, point_mm, barrel_mm, barrel_diameter_mm, shaft_mm, flight_mm, weight_g: per dimension the value of the
+  /// first source that has it, entered before photo before measured
   final Map<String, double> dims;
+
+  /// Where each value of [dims] comes from: entered, photo or measured
+  final Map<String, String> dimsSource;
+
+  /// The values measured in the board, which count again when an entered value is removed
+  final Map<String, double> measured;
 
   /// Cameras with a reference image of the dart
   final List<String> cameras;
@@ -879,10 +895,12 @@ class DartSet {
   factory DartSet.fromJson(Map<String, dynamic> json) => DartSet(
     id: json['id'] as String,
     name: json['name'] as String? ?? '',
-    dims: {
-      for (final MapEntry(:key, :value) in (json['dims'] as Map<String, dynamic>? ?? const {}).entries)
-        if (value is num) key: value.toDouble(),
+    dims: _dims(json['dims']),
+    dimsSource: {
+      for (final MapEntry(:key, :value) in (json['dims_source'] as Map<String, dynamic>? ?? const {}).entries)
+        if (value is String) key: value,
     },
+    measured: _dims(json['measured']),
     cameras: [
       for (final i in json['images'] as List<dynamic>? ?? const [])
         if (i is Map<String, dynamic> && i['camera'] is String) i['camera'] as String,
@@ -999,3 +1017,46 @@ class SharedGame extends EngineEvent {
   final String client;
   final Map<String, dynamic>? game;
 }
+
+/// A camera's place and label as the engine keeps them for every client
+class AssignedCamera {
+  const AssignedCamera(this.id, {this.order, this.label, this.connected = true});
+
+  final String id;
+
+  /// 1 for "Kamera 1"; null while the camera has not been assigned
+  final int? order;
+
+  /// The player's name for it, e.g. "Links"; the engine calls it label, as hello's name is the device's
+  final String? label;
+
+  /// Kept cameras that are not plugged in come after the connected ones
+  final bool connected;
+
+  factory AssignedCamera.fromJson(Map<String, dynamic> json) => AssignedCamera(
+    json['id'] as String,
+    order: json['order'] as int?,
+    label: json['label'] as String?,
+    connected: json['connected'] as bool? ?? true,
+  );
+
+  Map<String, Object?> toJson() => {'id': id, 'order': order, 'label': label};
+}
+
+/// The order and names of the cameras, kept by the engine so that every display agrees
+class CameraAssignment extends EngineEvent {
+  const CameraAssignment(this.cameras);
+
+  final List<AssignedCamera> cameras;
+
+  factory CameraAssignment.fromJson(Map<String, dynamic> json) => CameraAssignment([
+    for (final c in json['cameras'] as List<dynamic>? ?? const [])
+      if (c is Map<String, dynamic>) AssignedCamera.fromJson(c),
+  ]);
+}
+
+Map<String, double> _dims(Object? json) => {
+  if (json is Map<String, dynamic>)
+    for (final MapEntry(:key, :value) in json.entries)
+      if (value is num) key: value.toDouble(),
+};
