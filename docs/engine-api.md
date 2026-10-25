@@ -319,6 +319,17 @@ The **dart sheet** ([docs/calibration/dart-sheet-A4.png](calibration/dart-sheet-
 | `delete_dart_set` | `id` | `unknown_set` |
 | `set_active_darts` | `id` or `null` | The set the player at the board throws; `dart_sets` goes to every client |
 
+### camera_assignment
+
+Which camera is first, second, third, and what the user calls it (#198), kept by the engine in `calibration/camera-assignment.json`, so every app shows the same. Sent after `hello` and to every client after each change; cameras that are not connected keep their entry.
+
+```json
+{ "type": "camera_assignment", "cameras": [ { "id": "usb-2.4.3.1.4", "order": 1, "label": "left", "connected": true },
+                                            { "id": "usb-2.4.3.1.2", "order": null, "label": null, "connected": true } ] }
+```
+
+Connected cameras come first, each group by `order`; `order` is 1-based or `null` for a camera not assigned yet. `set_camera_assignment {"cameras": [{id, order, label}]}` replaces the listed cameras' entries and keeps the others. It refuses the whole request with `unknown_camera` for an id the engine never saw, and with `bad_request` for an order used twice or outside 1–16. With simulated cameras, the assignment is kept in memory only.
+
 ### shared_game
 
 One game on several displays (#116, ADR 0010): the app that leads the game shares it with `share_game`, and the engine sends it to every client, the sender included, as the confirmation that it arrived. A client that connects later gets the latest one after `hello`. The engine keeps it when the sharing app disconnects, whose Wi-Fi may only blip, until the next `share_game` or `end_shared_game`, which sends `game: null`. `game` is the app's own record of the game; the engine never reads it, so game rules stay in the app.
@@ -371,6 +382,7 @@ Every request carries a `request_id` chosen by the client and is answered with `
 | `set_detection_params` | `params` (name → number or `null`) | Changes detection values; `detection_params` goes to every client |
 | `share_game` | `game` (an object of up to 256 KB) | Shares the game with every display; sent on as `shared_game` |
 | `end_shared_game` | – | Ends sharing; `shared_game` with `game: null` |
+| `set_camera_assignment` | `cameras` | Order and labels of the cameras; see `camera_assignment` |
 | `subscribe_preview` | `camera`, `max_fps`, `max_width` | Starts preview frames of a camera |
 | `unsubscribe_preview` | `camera` | Stops them |
 

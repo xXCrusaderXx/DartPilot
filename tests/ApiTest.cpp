@@ -21,6 +21,7 @@
 #include <ixwebsocket/IXWebSocket.h>
 #include <nlohmann/json.hpp>
 
+#include "dartpilot/api/camera_assignment.hpp"
 #include "dartpilot/api/discovery.hpp"
 #include "dartpilot/api/pairing.hpp"
 #include "dartpilot/api/protocol.hpp"
@@ -751,4 +752,33 @@ TEST(Protocol, DartSetRequestsReachTheirHandlers)
         ASSERT_TRUE(std::holds_alternative<api::Request>(parsed)) << type;
         EXPECT_EQ(std::get<api::CalibrationRequest>(std::get<api::Request>(parsed).body).type, type);
     }
+}
+
+TEST(CameraAssignment, OrderAndLabelsAreKeptPerCameraAndChecked)
+{
+    const auto store = std::filesystem::temp_directory_path() / ("dartpilot-cameras-" + std::to_string(std::random_device{}()) + ".json");
+    {
+        api::CameraAssignment assignment(store, {"usb-1.2", "usb-1.3", "usb-1.4"});
+        const auto empty = assignment.message();
+        ASSERT_EQ(empty["cameras"].size(), 3u);
+        EXPECT_TRUE(empty["cameras"][0]["order"].is_null());
+        EXPECT_FALSE(assignment.set(
+            json::array({{{"id", "usb-1.4"}, {"order", 1}, {"label", "left"}}, {{"id", "usb-1.2"}, {"order", 2}, {"label", nullptr}}})));
+        EXPECT_EQ(assignment.set(json::array({{{"id", "usb-9.9"}, {"order", 3}}}))->code, "unknown_camera");
+        EXPECT_EQ(assignment.set(json::array({{{"id", "usb-1.3"}, {"order", 1}}}))->code, "bad_request");
+        EXPECT_EQ(assignment.set(json::array({{{"id", "usb-1.3"}, {"order", 0}}}))->code, "bad_request");
+    }
+    // Kept across a restart, also for a camera that is not connected now; connected cameras come first, by order.
+    api::CameraAssignment again(store, {"usb-1.2", "usb-1.3"});
+    const auto cameras = again.message()["cameras"];
+    ASSERT_EQ(cameras.size(), 3u);
+    EXPECT_EQ(cameras[0]["id"], "usb-1.2");
+    EXPECT_EQ(cameras[0]["order"], 2);
+    EXPECT_TRUE(cameras[1]["order"].is_null());
+    EXPECT_EQ(cameras[2]["id"], "usb-1.4");
+    EXPECT_EQ(cameras[2]["label"], "left");
+    EXPECT_FALSE(cameras[2]["connected"]);
+    // A camera that is not connected can still be renamed.
+    EXPECT_FALSE(again.set(json::array({{{"id", "usb-1.4"}, {"order", 1}, {"label", "links"}}})));
+    std::filesystem::remove(store);
 }

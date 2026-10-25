@@ -17,6 +17,7 @@
 #include "board_watch.hpp"
 #include "calibration_service.hpp"
 #include "dart_sets.hpp"
+#include "dartpilot/api/camera_assignment.hpp"
 #include "dartpilot/api/discovery.hpp"
 #include "dartpilot/api/server.hpp"
 #include "dartpilot/api/simulator.hpp"
@@ -251,6 +252,25 @@ int runServe (int argc, char* argv[])
                                         return std::nullopt;
                                     });
     }
+    // The order and names of the cameras, shared by every app (#198); with simulated cameras kept in memory only
+    std::vector<std::string> camera_ids;
+    for(const auto& camera : server.hello().cameras)
+    {
+        camera_ids.push_back(camera.id);
+    }
+    api::CameraAssignment camera_assignment(simulate && !cameras ? std::filesystem::path() : dataHome() / "calibration" / "camera-assignment.json",
+                                            camera_ids);
+    server.publishState(camera_assignment.message());
+    server.onCalibrationRequest("set_camera_assignment",
+                                [&] (const api::CalibrationRequest& request) -> std::optional<api::Server::CalibrationError>
+                                {
+                                    if(const auto error = camera_assignment.set(request.body.value("cameras", nlohmann::json())))
+                                    {
+                                        return api::Server::CalibrationError{error->code, error->message};
+                                    }
+                                    server.publishState(camera_assignment.message());
+                                    return std::nullopt;
+                                });
     if(!server.start(error))
     {
         std::fprintf(stderr, "%s %s:%d\n", error.c_str(), host.c_str(), port);
@@ -324,6 +344,7 @@ int runServe (int argc, char* argv[])
     simulated_previews.stop();
     camera_previews.stop();
     discovery.reset();
+    server.onCalibrationRequest("set_camera_assignment", {});
     server.stop();
     std::printf("%zu throws\n", server.throws().size());
     return 0;
