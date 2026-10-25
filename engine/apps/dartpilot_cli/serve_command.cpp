@@ -126,7 +126,7 @@ int runServe (int argc, char* argv[])
         if(!simulate)
         {
             live_detection = std::make_unique<LiveDetection>(server, camera_previews, devices, dataHome() / "calibration");
-            reference_run = std::make_unique<ReferenceRun>(server, *live_detection, dataHome() / "calibration");
+            reference_run = std::make_unique<ReferenceRun>(server, *live_detection, dataHome() / "calibration", dataHome() / "sessions");
             // Until the first still empty board, darts cannot be told from the board.
             const auto unavailable = live_detection->unavailableReason();
             server.publishEngineStatus("unavailable", unavailable.value_or("no_empty_reference"));

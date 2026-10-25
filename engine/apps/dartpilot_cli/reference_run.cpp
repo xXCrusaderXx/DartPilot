@@ -2,6 +2,10 @@
 
 #include <algorithm>
 #include <cmath>
+#include <fstream>
+
+#include "dartpilot/session/session_writer.hpp"
+#include "dartpilot/version.hpp"
 
 namespace dartpilot::cli
 {
@@ -65,6 +69,63 @@ json referenceRunMessage (bool running, const std::string& step, const std::vect
     return message;
 }
 
+std::optional<std::string> saveReferenceRun (const std::filesystem::path& sessions_directory, const std::vector<fusion::ReferenceTarget>& targets,
+                                             const std::vector<ReferenceResult>& results)
+{
+    const std::string id = session::newSessionId();
+    const auto directory = sessions_directory / id;
+    std::error_code error;
+    std::filesystem::create_directories(directory / "annotations", error);
+    std::filesystem::create_directories(directory / "results" / "reference", error);
+    if(error)
+    {
+        return std::nullopt;
+    }
+    const json manifest = {{"format", "dartpilot-session"},
+                           {"version", 1},
+                           {"session_id", id},
+                           {"created_utc", session::utcNow()},
+                           {"notes", "Reference measurement (#14): darts pushed into known wire corners; no frames"},
+                           {"cameras", json::array()}};
+    std::ofstream(directory / "manifest.json") << manifest.dump(2) << "\n";
+    std::ofstream annotations(directory / "annotations" / "reference_corners.jsonl");
+    std::ofstream throws(directory / "results" / "reference" / "throws.jsonl");
+    // The target's uncertainty: the spread of wire and point thickness and how the point sits, about 0.5 mm
+    constexpr double kTargetVariance_mm2 = 0.25;
+    for(std::size_t i = 0; i < results.size() && i < targets.size(); ++i)
+    {
+        const std::string throw_id = id + "/" + std::to_string(i + 1);
+        annotations << json{{"throw_id", throw_id},
+                            {"x_mm", targets[i].board_mm.x},
+                            {"y_mm", targets[i].board_mm.y},
+                            {"covariance_mm2", {{"xx", kTargetVariance_mm2}, {"xy", 0.0}, {"yy", kTargetVariance_mm2}}},
+                            {"source", "reference_corner"},
+                            {"label", targets[i].label}}
+                           .dump()
+                    << "\n";
+        const auto& r = results[i];
+        json point = nullptr;
+        if(r.located_mm)
+        {
+            point = {{"x_mm", r.located_mm->x},
+                     {"y_mm", r.located_mm->y},
+                     {"covariance_mm2", {{"xx", r.covariance_mm2(0, 0)}, {"xy", r.covariance_mm2(0, 1)}, {"yy", r.covariance_mm2(1, 1)}}}};
+        }
+        throws << json{{"throw_id", throw_id},
+                       {"accepted", r.located_mm.has_value()},
+                       {"board_point", point},
+                       {"score", nullptr},
+                       {"camera_measurements", json::array()},
+                       {"diagnostics", {{"cameras_used", r.cameras_used}, {"reason", r.reason}}},
+                       {"processing_latency_ms", nullptr}}
+                      .dump()
+               << "\n";
+    }
+    std::ofstream(directory / "results" / "reference" / "run.json")
+        << json{{"run_id", "reference"}, {"software", {{"version", std::string(kVersion)}}}, {"config", json::object()}}.dump(2) << "\n";
+    return id;
+}
+
 std::vector<json> exampleReferenceRun ()
 {
     const auto targets = fusion::referenceTargets({});
@@ -93,10 +154,12 @@ std::vector<json> exampleReferenceRun ()
     return messages;
 }
 
-ReferenceRun::ReferenceRun (api::Server& server, LiveDetection& detection, const std::filesystem::path& calibration_directory)
+ReferenceRun::ReferenceRun (api::Server& server, LiveDetection& detection, const std::filesystem::path& calibration_directory,
+                            std::filesystem::path sessions_directory)
     : server_(server)
     , detection_(detection)
     , extrinsics_(geometry::loadExtrinsics((calibration_directory / "extrinsics.yml").string()))
+    , sessions_directory_(std::move(sessions_directory))
 {
     if(extrinsics_)
     {
@@ -161,6 +224,7 @@ void ReferenceRun::onUpdate (const fusion::TrackerUpdate& update)
             {
                 result.located_mm = cv::Point2d(update.dart->location->board_mm.x, update.dart->location->board_mm.y);
                 result.cameras_used = static_cast<int>(update.dart->location->views.size());
+                result.covariance_mm2 = update.dart->location->covariance_mm2;
             }
             else
             {
@@ -180,6 +244,8 @@ void ReferenceRun::onUpdate (const fusion::TrackerUpdate& update)
     if(finished)
     {
         detection_.intercept({});
+        std::lock_guard lock(mutex_);
+        saved_session_ = saveReferenceRun(sessions_directory_, targets_, results_).value_or("");
     }
     publish();
 }
@@ -187,6 +253,8 @@ void ReferenceRun::onUpdate (const fusion::TrackerUpdate& update)
 void ReferenceRun::publish ()
 {
     std::lock_guard lock(mutex_);
-    server_.publishState(referenceRunMessage(running_, step_, targets_, results_));
+    auto message = referenceRunMessage(running_, step_, targets_, results_);
+    message["saved_session"] = saved_session_.empty() ? json(nullptr) : json(saved_session_);
+    server_.publishState(message);
 }
 }  // namespace dartpilot::cli

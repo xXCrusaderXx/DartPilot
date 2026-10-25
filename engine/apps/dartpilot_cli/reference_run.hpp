@@ -19,6 +19,7 @@ namespace dartpilot::cli
 struct ReferenceResult
 {
     std::optional<cv::Point2d> located_mm;
+    cv::Matx22d covariance_mm2 = cv::Matx22d::zeros();
     int cameras_used = 0;
     std::string reason;
 };
@@ -27,13 +28,20 @@ struct ReferenceResult
 nlohmann::json referenceRunMessage (bool running, const std::string& step, const std::vector<fusion::ReferenceTarget>& targets,
                                     const std::vector<ReferenceResult>& results);
 
+// Stores a finished run as a small session in the format of docs/replay-format.md, so the benchmark (#17) can score it:
+// the targets as the annotation set reference_corners, the located darts as the run "reference". Returns the session
+// id, or nothing if it cannot be written.
+std::optional<std::string> saveReferenceRun (const std::filesystem::path& sessions_directory, const std::vector<fusion::ReferenceTarget>& targets,
+                                             const std::vector<ReferenceResult>& results);
+
 // The messages of a whole run on the nominal board with made-up results, for `serve --simulate`
 std::vector<nlohmann::json> exampleReferenceRun ();
 
 class ReferenceRun
 {
    public:
-    ReferenceRun (api::Server& server, LiveDetection& detection, const std::filesystem::path& calibration_directory);
+    ReferenceRun (api::Server& server, LiveDetection& detection, const std::filesystem::path& calibration_directory,
+                  std::filesystem::path sessions_directory);
     ~ReferenceRun ();
 
    private:
@@ -52,5 +60,7 @@ class ReferenceRun
     bool running_ = false;
     std::string step_;
     std::vector<ReferenceResult> results_;
+    std::filesystem::path sessions_directory_;
+    std::string saved_session_;
 };
 }  // namespace dartpilot::cli
