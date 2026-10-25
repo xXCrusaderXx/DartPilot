@@ -67,3 +67,12 @@ def test_the_command_writes_the_report(tmp_path):
     assert (out / "error_maps.png").read_bytes()[:4] == b"\x89PNG"
     assert (out / "error_angle.png").exists()
     assert (out / "cameras.csv").exists()
+
+
+def test_against_the_fused_point():
+    session = load_session(FIXTURE)
+    table = pe.camera_table([session], session.runs()[0], pe.FUSED, {})
+    # The fixture's throw 1 was fused at (12.4, 98.1); usb-1.2 alone put it at (12.1, 98.4).
+    row = table[table["throw_id"] == "20261024T120000Z-fixt/1"].iloc[0]
+    assert row["error_mm"] == pytest.approx(math.hypot(0.3, 0.3))
+    assert "not from the truth" in pe.report(table, "run", pe.FUSED)
