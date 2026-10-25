@@ -898,5 +898,17 @@
   "moveCameraDown": "Move down",
   "saveCameraOrder": "Apply",
   "newCamerasTitle": "New cameras found",
-  "newCamerasText": "Assign them once, so that camera 1, 2 and 3 are always the same."
+  "newCamerasText": "Assign them once, so that camera 1, 2 and 3 are always the same.",
+  "statsAverageTrend": "Average over games (X01)",
+  "statsHitBoard": "Hit board",
+  "statsMisses": "Misses: {count}",
+  "@statsMisses": {"placeholders": {"count": {"type": "int"}}},
+  "statsExport": "Export",
+  "exportDartsCsv": "All darts as CSV",
+  "exportGamesJson": "Games and figures as JSON",
+  "exportSaved": "Saved: {path}",
+  "exportFailed": "Export failed: {error}",
+  "copyPath": "Copy path",
+  "@exportSaved": {"placeholders": {"path": {"type": "String"}}},
+  "@exportFailed": {"placeholders": {"error": {"type": "String"}}}
 }

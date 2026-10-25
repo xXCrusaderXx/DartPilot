@@ -398,5 +398,14 @@
   "moveCameraDown": "Nach unten",
   "saveCameraOrder": "Übernehmen",
   "newCamerasTitle": "Neue Kameras gefunden",
-  "newCamerasText": "Ordne sie einmal zu, damit Kamera 1, 2 und 3 immer dieselben sind."
+  "newCamerasText": "Ordne sie einmal zu, damit Kamera 1, 2 und 3 immer dieselben sind.",
+  "statsAverageTrend": "Average-Verlauf (X01)",
+  "statsHitBoard": "Trefferbild",
+  "statsMisses": "Daneben: {count}",
+  "statsExport": "Exportieren",
+  "exportDartsCsv": "Alle Darts als CSV",
+  "exportGamesJson": "Spiele und Kennzahlen als JSON",
+  "exportSaved": "Gespeichert: {path}",
+  "exportFailed": "Export fehlgeschlagen: {error}",
+  "copyPath": "Pfad kopieren"
 }

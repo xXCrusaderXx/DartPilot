@@ -61,14 +61,10 @@ class _AroundTheClockScreenState extends State<AroundTheClockScreen> with Record
   void _add(DartThrow dart) {
     setState(() => _game.add(dart));
     if (!_game.isFinished) return;
-    final l10n = AppLocalizations.of(context);
     showWinnerDialog(
       context,
       winner: _game.players[_game.winner!].name,
-      lines: [
-        for (final p in _game.players)
-          '${p.name}: ${p.dartsThrown} ${l10n.darts}, ${l10n.hitRate} ${(100 * p.hitRate).toStringAsFixed(0)} %',
-      ],
+      record: currentRecord,
       onUndo: () => setState(_game.undo),
       newGame: AroundTheClockScreen.setup,
     );

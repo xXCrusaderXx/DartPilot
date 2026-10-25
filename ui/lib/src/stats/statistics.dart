@@ -202,6 +202,9 @@ mixin RecordsGame<T extends StatefulWidget> on State<T> {
 
   GameRecord buildRecord(String id, DateTime started, DateTime ended);
 
+  /// The game so far as a record, for its summary at the end
+  GameRecord get currentRecord => buildRecord('current', _started, DateTime.now());
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
