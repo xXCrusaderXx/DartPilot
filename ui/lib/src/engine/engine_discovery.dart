@@ -73,9 +73,10 @@ typedef DiscoverySource = Stream<FoundEngine> Function(Duration timeout);
 class EngineDiscovery {
   EngineDiscovery(this.sources, {this.multicastLock});
 
-  /// mDNS and UDP broadcast; no sources where dart:io sockets are missing (web)
+  /// mDNS and UDP broadcast; no sources where dart:io sockets are missing (web), and none under `flutter test`, where
+  /// widget tests that build the app without a test connection would otherwise open sockets.
   factory EngineDiscovery.network() => EngineDiscovery(
-    kIsWeb ? const [] : [mdnsSearch, broadcastSearch()],
+    kIsWeb || Platform.environment.containsKey('FLUTTER_TEST') ? const [] : [mdnsSearch, broadcastSearch()],
     multicastLock: !kIsWeb && Platform.isAndroid ? androidMulticastLock : null,
   );
 

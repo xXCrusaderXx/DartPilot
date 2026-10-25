@@ -4,6 +4,8 @@
     <!-- Receiving mDNS answers while searching for engines in the network (#109) -->
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <!-- Scanning the QR code of an engine in the network -->
+    <uses-permission android:name="android.permission.CAMERA" />
     <application
         android:label="DartPilot"
         android:name="${applicationName}"

@@ -2371,6 +2371,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Darts are not detected right now.'**
   String get detectionUnavailable;
+
+  /// No description provided for @shareEngine.
+  ///
+  /// In en, this message translates to:
+  /// **'Share in the network'**
+  String get shareEngine;
+
+  /// No description provided for @shareEngineHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Phones and tablets in your home network can connect to this engine. Only in a network you trust: there is no PIN yet.'**
+  String get shareEngineHint;
+
+  /// No description provided for @showEngineQr.
+  ///
+  /// In en, this message translates to:
+  /// **'QR code'**
+  String get showEngineQr;
+
+  /// No description provided for @engineQrTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect another device'**
+  String get engineQrTitle;
+
+  /// No description provided for @engineQrHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan this code with the DartPilot app on your phone or tablet (Engine → In the network → scan).'**
+  String get engineQrHint;
+
+  /// No description provided for @engineQrNoNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'This device has no address in a home network.'**
+  String get engineQrNoNetwork;
+
+  /// No description provided for @scanEngineQr.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan QR code'**
+  String get scanEngineQr;
+
+  /// No description provided for @scanEngineQrHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Point the camera at the QR code that the engine\'s device shows.'**
+  String get scanEngineQrHint;
+
+  /// No description provided for @enterAddressManually.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the address or scan a QR code'**
+  String get enterAddressManually;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

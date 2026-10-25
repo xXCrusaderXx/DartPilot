@@ -52,12 +52,16 @@ class EngineManager extends ChangeNotifier {
   Timer? _readyTimer;
   Completer<String?>? _ready;
 
+  /// Port of the running engine, from [url]
+  int? get port => url == null ? null : Uri.tryParse(url!)?.port;
+
   String? get resolvedExecutable => executable ?? _findEngine();
 
   /// Starts the engine and completes with its address, or null if it could not start ([error] says why).
   /// Live detection on the cameras; [simulate] plays generated darts instead, for trying the app without detection,
   /// where [cameras] still streams the real cameras for previews, status and the board check.
-  Future<String?> start({bool simulate = false, bool cameras = true}) async {
+  /// [share] makes the engine listen on the network, for other devices to connect to (#109).
+  Future<String?> start({bool simulate = false, bool cameras = true, bool share = false}) async {
     await stop();
     final program = resolvedExecutable;
     if (program == null || !File(program).existsSync()) {
@@ -73,7 +77,14 @@ class EngineManager extends ChangeNotifier {
     url = null;
     log.clear();
     notifyListeners();
-    final arguments = ['serve', if (simulate) '--simulate', if (!simulate || cameras) '--cameras', '--port', '$port'];
+    final arguments = [
+      'serve',
+      if (simulate) '--simulate',
+      if (!simulate || cameras) '--cameras',
+      if (share) ...['--listen', '0.0.0.0'],
+      '--port',
+      '$port',
+    ];
     _addLog('\$ $program ${arguments.join(' ')}');
     final ready = _ready = Completer<String?>();
     final Process process;
@@ -105,7 +116,8 @@ class EngineManager extends ChangeNotifier {
     if (match != null && state == LocalEngineState.starting) {
       state = LocalEngineState.running;
       _readyTimer?.cancel();
-      url = match.group(1);
+      // The app itself connects through the loopback address also when the engine listens on all of them.
+      url = match.group(1)!.replaceFirst('://0.0.0.0:', '://127.0.0.1:');
       _ready?.complete(url);
       _ready = null;
     }

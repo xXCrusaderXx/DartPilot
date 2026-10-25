@@ -128,6 +128,26 @@ void main() {
     },
   );
 
+  test('shared, the engine listens on the network and the app connects through the loopback address', () async {
+    final calls = <List<String>>[];
+    final process = FakeProcess();
+    final manager = EngineManager(
+      start: (_, args) async {
+        calls.add(args);
+        return process;
+      },
+      findEngine: () => program,
+      freePort: () async => 8484,
+    );
+    final started = manager.start(share: true);
+    await Future<void>.delayed(Duration.zero);
+    expect(calls.single, ['serve', '--cameras', '--listen', '0.0.0.0', '--port', '8484']);
+    process.out('Engine API (live) on ws://0.0.0.0:8484/ - Ctrl+C to stop');
+    expect(await started, 'ws://127.0.0.1:8484/');
+    expect(manager.port, 8484);
+    await manager.stop();
+  });
+
   test('never starts the app itself, which would start the app again and again', () async {
     var started = 0;
     final manager = EngineManager(
@@ -174,6 +194,9 @@ void main() {
   });
 
   testWidgets('the engine card starts the engine on this device and connects to it', (tester) async {
+    tester.view.physicalSize = const Size(1000, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
     SharedPreferences.setMockInitialValues({});
     final process = FakeProcess();
     final manager = EngineManager(
