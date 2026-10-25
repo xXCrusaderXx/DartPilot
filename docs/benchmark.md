@@ -14,6 +14,8 @@ dartpilot replay ~/.local/share/dartpilot/sessions/<session> --pipeline tracker 
 dartpilot replay ~/.local/share/dartpilot/sessions/<session> --pipeline baseline --run-id baseline
 ```
 
+The sessions of the benchmark, their ground truth and their split are in [dataset.md](dataset.md); the results of 0.3.0 in [reports/baseline-0.3.0.md](reports/baseline-0.3.0.md).
+
 It pairs each throw of `results/<run id>/throws.jsonl` with its ground truth in `annotations/<set>.jsonl` (see [replay-format.md](replay-format.md)), in one or more sessions. It writes four files into `<dir>`:
 
 - `report.md` for people;
