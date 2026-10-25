@@ -182,6 +182,10 @@ json throwMessage (const Throw& dart, const scoring::BoardGeometry& geometry)
     {
         out["detection_latency_ms"] = *dart.detection_latency_ms;
     }
+    if(dart.params_revision)
+    {
+        out["params_revision"] = *dart.params_revision;
+    }
     if(dart.board_point)
     {
         out["board_point"] = toJson(*dart.board_point);
@@ -217,6 +221,10 @@ json throwRecord (const Throw& dart, const scoring::BoardGeometry& geometry)
     if(dart.detection_latency_ms)
     {
         out["diagnostics"]["detection_latency_ms"] = *dart.detection_latency_ms;
+    }
+    if(dart.params_revision)
+    {
+        out["diagnostics"]["params_revision"] = *dart.params_revision;
     }
     if(dart.board_point)
     {

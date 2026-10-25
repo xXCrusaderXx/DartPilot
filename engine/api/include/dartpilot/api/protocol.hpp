@@ -98,6 +98,8 @@ struct Throw
     double processing_latency_ms = 0.0;
     // From the last motion the engine saw (the dart landed, the hand left) to sending; live only
     std::optional<double> detection_latency_ms;
+    // The revision of the detection values it was made with (detection_params, params.jsonl); live only
+    std::optional<int> params_revision;
 };
 
 struct CameraStatus

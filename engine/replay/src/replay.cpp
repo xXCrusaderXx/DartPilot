@@ -67,11 +67,6 @@ std::string checkLine (const std::string& camera, const PendingCheck& pending, c
     return line.str();
 }
 
-// Confidence of a located dart by the number of cameras that agree, and of an abstention, as in live detection (#48)
-constexpr double kConfidenceTwoCameras = 0.8;
-constexpr double kConfidenceThreeCameras = 0.95;
-constexpr double kConfidenceAbstained = 0.3;
-
 const char* ringName (scoring::Ring ring)
 {
     switch(ring)
@@ -143,9 +138,9 @@ std::string throwLine (const session::RecordedSession& session, const ReplayConf
     line << "{\"throw_id\": " << jsonString(event.throw_id) << ", \"accepted\": " << (accepted ? "true" : "false")
          << ", \"board_point\": " << (accepted ? boardPoint(*dart.board_mm, dart.covariance_mm2) : "null")
          << ", \"score\": " << (accepted ? scoreJson(*dart.board_mm) : "null") << ", \"confidence\": "
-         << number(!accepted                    ? kConfidenceAbstained
-                   : dart.cameras_agreeing >= 3 ? kConfidenceThreeCameras
-                                                : kConfidenceTwoCameras,
+         << number(!accepted                    ? config.detection.confidence.abstained
+                   : dart.cameras_agreeing >= 3 ? config.detection.confidence.three_cameras
+                                                : config.detection.confidence.two_cameras,
                    2)
          << ", \"camera_measurements\": [";
     for(std::size_t c = 0; c < session.cameras.size() && c < dart.cameras.size(); ++c)
@@ -171,14 +166,14 @@ std::string throwLine (const session::RecordedSession& session, const ReplayConf
 
 std::string configJson (const ReplayConfig& config)
 {
-    const auto& still = config.still;
+    std::string params;
+    for(const auto& param : fusion::detectionParams())
+    {
+        params += (params.empty() ? "" : ", ") + jsonString(param.name) + ": " + number(param.get(config.detection), 6);
+    }
     return "{\"calibration_check\": {\"interval_ns\": " + std::to_string(config.check_interval_ns) +
-           ", \"frames\": " + std::to_string(config.check_frames) + "}, \"pipeline\": " + jsonString(config.pipeline) +
-           ", \"still\": {\"sample_interval_ns\": " + std::to_string(still.sample_interval_ns) +
-           ", \"motion_span_ns\": " + std::to_string(still.motion_span_ns) + ", \"still_motion\": " + number(still.still_motion, 2) +
-           ", \"local_change\": " + number(still.local_change, 1) + ", \"local_change_px\": " + std::to_string(still.local_change_px) +
-           ", \"settle_samples\": " + std::to_string(still.settle_samples) + ", \"frames_to_average\": " + std::to_string(still.frames_to_average) +
-           ", \"retry_interval_ns\": " + std::to_string(still.retry_interval_ns) + "}}";
+           ", \"frames\": " + std::to_string(config.check_frames) + "}, \"pipeline\": " + jsonString(config.pipeline) + ", \"params\": {" + params +
+           "}}";
 }
 }  // namespace
 
@@ -231,7 +226,7 @@ std::optional<ReplaySummary> replaySession (const session::RecordedSession& sess
             error = "Throw detection needs the board refinement";
             return std::nullopt;
         }
-        pipeline = makePipeline(config.pipeline, calibrations, config.extrinsics->refinement.board);
+        pipeline = makePipeline(config.pipeline, calibrations, config.extrinsics->refinement.board, config.detection.tracker);
         if(!pipeline)
         {
             error = "Unknown pipeline \"" + config.pipeline + "\"; known are tracker, baseline and none";
@@ -298,7 +293,7 @@ std::optional<ReplaySummary> replaySession (const session::RecordedSession& sess
     }
 
     // Throw detection samples every camera's latest frame at fixed steps of recorded time, as live detection does.
-    event_detection::StillDetector still(session.cameras.size(), config.still);
+    event_detection::StillDetector still(session.cameras.size(), config.detection.still);
     std::vector<std::optional<std::size_t>> latest(session.cameras.size()), sampled(session.cameras.size());
     std::optional<std::int64_t> next_sample_ns;
     std::optional<event_detection::StillMoment> previous_moment;
@@ -383,7 +378,7 @@ std::optional<ReplaySummary> replaySession (const session::RecordedSession& sess
             while(*next_sample_ns < index.exposure_ns)
             {
                 sample(*next_sample_ns);
-                *next_sample_ns += config.still.sample_interval_ns;
+                *next_sample_ns += config.detection.still.sample_interval_ns;
             }
             latest[item.camera] = item.frame;
         }

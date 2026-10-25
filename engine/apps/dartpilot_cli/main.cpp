@@ -7,6 +7,7 @@
 #include "capture_check_command.hpp"
 #include "dartpilot/capture/capture.hpp"
 #include "dartpilot/event_detection/event_detection.hpp"
+#include "dartpilot/fusion/detection_params.hpp"
 #include "dartpilot/fusion/fusion.hpp"
 #include "dartpilot/geometry/charuco.hpp"
 #include "dartpilot/geometry/geometry.hpp"
@@ -50,6 +51,12 @@ int main (int argc, char* argv[])
     {
         return dartpilot::cli::runAnalyse(argc - 2, argv + 2);
     }
+    if(arg == "detection-params")
+    {
+        // The table of docs/detection-params.md
+        std::cout << dartpilot::fusion::detectionParamsMarkdown();
+        return 0;
+    }
     if(arg == "replay")
     {
         return dartpilot::cli::runReplay(argc - 2, argv + 2);
@@ -81,7 +88,7 @@ int main (int argc, char* argv[])
         }
         return 0;
     }
-    std::cerr << "Usage: dartpilot --version | --modules | serve --simulate [--listen ADDRESS] [--port N] | record [--seconds N] "
+    std::cerr << "Usage: dartpilot --version | --modules | detection-params | serve --simulate [--listen ADDRESS] [--port N] | record [--seconds N] "
                  "[--root DIR] [--notes TEXT] | replay <session> [--run-id ID] [--extrinsics FILE] [--check-every SECONDS] "
                  "[--no-checks] | capture-check [seconds] | white-balance | focus "
                  "--camera <device> [--exposure <value>] | pattern "

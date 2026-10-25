@@ -3,8 +3,13 @@
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
+#include <fstream>
 #include <optional>
 #include <string>
+#include <utility>
+#include <vector>
+
+#include <nlohmann/json.hpp>
 
 #include "dartpilot/geometry/board_refinement.hpp"
 #include "dartpilot/replay/replay.hpp"
@@ -43,13 +48,64 @@ std::optional<std::filesystem::path> recordedExtrinsics (const session::Recorded
     return std::nullopt;
 }
 
+// Detection values from a file: a JSON object of name and value, a detection_params message, or a session's
+// results/live/params.jsonl, of which the line with the given revision (the last one if none) is taken
+std::optional<std::string> loadParams (const std::filesystem::path& path, std::optional<int> revision, fusion::DetectionSettings& settings)
+{
+    std::ifstream in(path);
+    if(!in)
+    {
+        return "Cannot read " + path.string();
+    }
+    nlohmann::json chosen;
+    std::string line;
+    while(std::getline(in, line))
+    {
+        if(line.find_first_not_of(" \t\r") == std::string::npos)
+        {
+            continue;
+        }
+        const auto value = nlohmann::json::parse(line, nullptr, false);
+        if(value.is_discarded())
+        {
+            // A JSON file over several lines
+            in.clear();
+            in.seekg(0);
+            chosen = nlohmann::json::parse(in, nullptr, false);
+            break;
+        }
+        if(!revision || value.value("revision", -1) == *revision)
+        {
+            chosen = value;
+        }
+    }
+    if(chosen.is_discarded() || !chosen.is_object())
+    {
+        return path.string() + " holds no detection values" + (revision ? " of revision " + std::to_string(*revision) : "");
+    }
+    const auto& params = chosen.contains("params") ? chosen["params"] : chosen;
+    for(const auto& [name, value] : params.items())
+    {
+        if(!value.is_number())
+        {
+            return name + " in " + path.string() + " is not a number";
+        }
+        if(const auto error = fusion::setDetectionParam(settings, name, value.get<double>()))
+        {
+            return error;
+        }
+    }
+    return std::nullopt;
+}
+
 int usage ()
 {
     std::fprintf(stderr,
                  "Usage: dartpilot replay <session directory> [--pipeline tracker|baseline|none] [--run-id ID] [--extrinsics FILE]\n"
-                 "                        [--check-every SECONDS] [--no-checks] [--sample-ms MS] [--settle-samples N] [--average-frames N]\n"
+                 "                        [--check-every SECONDS] [--no-checks] [--params FILE [--params-revision N]] [--param NAME=VALUE]...\n"
                  "  --pipeline     throw detection: tracker (the live detection, default), baseline (frame differencing) or none\n"
-                 "  --sample-ms, --settle-samples, --average-frames   when the board counts as still, to compare settings (run.json)\n");
+                 "  --params       detection values from a file, e.g. a session's results/live/params.jsonl (docs/detection-params.md)\n"
+                 "  --param        one detection value, after --params; all values are recorded in the run's run.json\n");
     return 2;
 }
 }  // namespace
@@ -60,6 +116,9 @@ int runReplay (int argc, char* argv[])
     replay::ReplayConfig config;
     config.pipeline = "tracker";
     bool checks = true;
+    std::optional<std::filesystem::path> params_path;
+    std::optional<int> params_revision;
+    std::vector<std::pair<std::string, double>> single_params;
     for(int i = 0; i < argc; ++i)
     {
         const std::string arg = argv[i];
@@ -75,17 +134,23 @@ int runReplay (int argc, char* argv[])
         {
             config.check_interval_ns = static_cast<std::int64_t>(std::atof(argv[++i]) * 1e9);
         }
-        else if(arg == "--sample-ms" && i + 1 < argc)
+        else if(arg == "--params" && i + 1 < argc)
         {
-            config.still.sample_interval_ns = static_cast<std::int64_t>(std::atof(argv[++i]) * 1e6);
+            params_path = argv[++i];
         }
-        else if(arg == "--settle-samples" && i + 1 < argc)
+        else if(arg == "--params-revision" && i + 1 < argc)
         {
-            config.still.settle_samples = std::atoi(argv[++i]);
+            params_revision = std::atoi(argv[++i]);
         }
-        else if(arg == "--average-frames" && i + 1 < argc)
+        else if(arg == "--param" && i + 1 < argc)
         {
-            config.still.frames_to_average = std::atoi(argv[++i]);
+            const std::string assignment = argv[++i];
+            const auto equals = assignment.find('=');
+            if(equals == std::string::npos)
+            {
+                return usage();
+            }
+            single_params.emplace_back(assignment.substr(0, equals), std::atof(assignment.c_str() + equals + 1));
         }
         else if(arg == "--pipeline" && i + 1 < argc)
         {
@@ -107,6 +172,22 @@ int runReplay (int argc, char* argv[])
     if(!session_dir)
     {
         return usage();
+    }
+    if(params_path)
+    {
+        if(const auto error = loadParams(*params_path, params_revision, config.detection))
+        {
+            std::fprintf(stderr, "%s\n", error->c_str());
+            return 2;
+        }
+    }
+    for(const auto& [name, value] : single_params)
+    {
+        if(const auto error = fusion::setDetectionParam(config.detection, name, value))
+        {
+            std::fprintf(stderr, "%s\n", error->c_str());
+            return 2;
+        }
     }
     std::string error;
     const auto recorded = session::openSession(*session_dir, error);

@@ -7,7 +7,7 @@
 #include <string_view>
 #include <vector>
 
-#include "dartpilot/event_detection/event_detection.hpp"
+#include "dartpilot/fusion/detection_params.hpp"
 #include "dartpilot/geometry/board_refinement.hpp"
 #include "dartpilot/session/session_reader.hpp"
 
@@ -44,7 +44,8 @@ struct ReplayConfig
     // Throw detection (#18): "tracker" (the live detection), "baseline" (frame differencing) or "none". Both need the
     // board refinement and look at the board at the still moments live detection waits for.
     std::string pipeline = "none";
-    event_detection::StillSettings still;
+    // Every value of the detection (fusion::detectionParams), recorded in run.json
+    fusion::DetectionSettings detection;
 };
 
 struct ReplaySummary

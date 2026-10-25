@@ -1,13 +1,16 @@
 #include <gtest/gtest.h>
 
+#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <random>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
 
 #include "SyntheticBoard.hpp"
+#include "dartpilot/fusion/detection_params.hpp"
 #include "dartpilot/geometry/board_plane.hpp"
 #include "dartpilot/geometry/board_refinement.hpp"
 #include "dartpilot/replay/replay.hpp"
@@ -492,4 +495,37 @@ TEST(StillDetector, ADartLandingIsMotionButImageNoiseIsNot)
     EXPECT_TRUE(event_detection::moved(before, dart));
     // A person passing changes everything a little
     EXPECT_TRUE(event_detection::moved(before, before + 10.0f));
+}
+
+TEST(DetectionParams, DocumentedAsInTheRegistry)
+{
+    const std::string doc = readFile(std::filesystem::path(DARTPILOT_SOURCE_DIR) / "docs/detection-params.md");
+    const std::string begin = "<!-- detection-params:begin -->\n", end = "<!-- detection-params:end -->";
+    const auto from = doc.find(begin), to = doc.find(end);
+    ASSERT_NE(from, std::string::npos);
+    ASSERT_NE(to, std::string::npos);
+    EXPECT_EQ(doc.substr(from + begin.size(), to - from - begin.size()), fusion::detectionParamsMarkdown())
+        << "docs/detection-params.md is out of date: regenerate its table with `dartpilot detection-params`.";
+}
+
+TEST(DetectionParams, EveryValueHasItsDefaultWithinRangeAndCanBeSet)
+{
+    std::set<std::string> names;
+    for(const auto& param : fusion::detectionParams())
+    {
+        EXPECT_TRUE(names.insert(param.name).second) << param.name;
+        EXPECT_FALSE(param.description.empty()) << param.name;
+        EXPECT_TRUE(param.group == "event_detection" || param.group == "tip_candidates" || param.group == "geometry" || param.group == "fusion")
+            << param.name;
+        EXPECT_GE(param.defaultValue(), param.min) << param.name;
+        EXPECT_LE(param.defaultValue(), param.max) << param.name;
+        fusion::DetectionSettings settings;
+        ASSERT_FALSE(fusion::setDetectionParam(settings, param.name, param.max)) << param.name;
+        EXPECT_NEAR(param.get(settings), param.step >= 1.0 ? std::round(param.max) : param.max, 1e-6) << param.name;
+    }
+    fusion::DetectionSettings settings;
+    EXPECT_TRUE(fusion::setDetectionParam(settings, "nope", 1.0));
+    EXPECT_TRUE(fusion::setDetectionParam(settings, "settle_samples", 1000.0));
+    ASSERT_FALSE(fusion::setDetectionParam(settings, "settle_samples", 6.4));
+    EXPECT_EQ(settings.still.settle_samples, 6);
 }

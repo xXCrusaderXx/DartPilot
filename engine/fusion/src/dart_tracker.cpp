@@ -14,13 +14,6 @@ namespace dartpilot::fusion
 {
 namespace
 {
-// Half size of the patch around each axis point in which a change is compared with the empty board and the last state
-constexpr int kPatch_px = 2;
-// A still moment holds at most this many changes: a pulled dart and the one put in, and one more for safety
-constexpr int kMaxChanges = 3;
-// How far around the axis of a pulled dart the board is taken as it is now, so that its flight is covered as well
-constexpr int kPulledReach_px = 45;
-
 // Runs work(c) for every camera at once; each call may only write what belongs to its own camera.
 template <typename Work>
 void forEachCamera (std::size_t count, Work work)
@@ -41,14 +34,14 @@ void forEachCamera (std::size_t count, Work work)
 }
 
 // Mean absolute grey difference of two images around the axis points of an observation
-double differenceAlong (const tip_candidates::DartObservation& observation, const cv::Mat& a, const cv::Mat& b)
+double differenceAlong (const tip_candidates::DartObservation& observation, const cv::Mat& a, const cv::Mat& b, int patch_px)
 {
     const cv::Rect image(0, 0, a.cols, a.rows);
     double sum = 0.0;
     int count = 0;
     for(const auto& p : observation.axis_px)
     {
-        const cv::Rect patch = cv::Rect(cvRound(p.x) - kPatch_px, cvRound(p.y) - kPatch_px, 2 * kPatch_px + 1, 2 * kPatch_px + 1) & image;
+        const cv::Rect patch = cv::Rect(cvRound(p.x) - patch_px, cvRound(p.y) - patch_px, 2 * patch_px + 1, 2 * patch_px + 1) & image;
         if(patch.area() > 0)
         {
             cv::Mat a_gray, b_gray;
@@ -64,9 +57,10 @@ double differenceAlong (const tip_candidates::DartObservation& observation, cons
 }
 }  // namespace
 
-DartTracker::DartTracker (std::vector<TrackerCamera> cameras, geometry::BoardModel board)
+DartTracker::DartTracker (std::vector<TrackerCamera> cameras, geometry::BoardModel board, TrackerSettings settings)
     : cameras_(std::move(cameras))
     , board_(std::move(board))
+    , settings_(std::move(settings))
 {
 }
 
@@ -90,7 +84,7 @@ TrackerUpdate DartTracker::addStill (const std::vector<cv::Mat>& images)
         for(std::size_t c = 0; c < count; ++c)
         {
             const cv::Mat& stored = cameras_[c].stored_empty;
-            if(geometry::checkBoard(means[c], stored.empty() ? nullptr : &stored, cameras_[c].calibration, board_).state ==
+            if(geometry::checkBoard(means[c], stored.empty() ? nullptr : &stored, cameras_[c].calibration, board_, settings_.board_check).state ==
                geometry::BoardState::Occupied)
             {
                 return update;
@@ -105,11 +99,10 @@ TrackerUpdate DartTracker::addStill (const std::vector<cv::Mat>& images)
     std::vector<std::optional<tip_candidates::DartObservation>> against_empty(count);
     if(darts_in_board_ > 0)
     {
-        forEachCamera(count, [&] (std::size_t c) { against_empty[c] = tip_candidates::observeDart(means[c], reference_[c]); });
+        forEachCamera(count, [&] (std::size_t c) { against_empty[c] = tip_candidates::observeDart(means[c], reference_[c], settings_.observation); });
     }
-    // Pulled when at most one camera still sees something against the empty board: a dart in the board stands out to
-    // at least two cameras, while a single camera may keep a trace of a pushed-out fibre.
-    if(darts_in_board_ > 0 && std::count_if(against_empty.begin(), against_empty.end(), [] (const auto& o) { return o.has_value(); }) <= 1)
+    if(darts_in_board_ > 0 &&
+       std::count_if(against_empty.begin(), against_empty.end(), [] (const auto& o) { return o.has_value(); }) <= settings_.takeout_max_cameras)
     {
         // All darts pulled: the empty board, as it is now, becomes the reference for the next visit.
         update.takeout = darts_in_board_;
@@ -122,7 +115,7 @@ TrackerUpdate DartTracker::addStill (const std::vector<cv::Mat>& images)
     // A camera whose view changed as a whole was knocked: everything in it differs from before, which is no dart. Checked
     // after the takeout, so that three darts pulled at once are not taken for it.
     std::vector<std::optional<cv::Point2d>> shifts(count);
-    forEachCamera(count, [&] (std::size_t c) { shifts[c] = tip_candidates::viewChange(last_[c], means[c]); });
+    forEachCamera(count, [&] (std::size_t c) { shifts[c] = tip_candidates::viewChange(last_[c], means[c], settings_.view_change); });
     for(std::size_t c = 0; c < count; ++c)
     {
         if(const auto& shift = shifts[c])
@@ -147,13 +140,13 @@ TrackerUpdate DartTracker::addStill (const std::vector<cv::Mat>& images)
     // comparison by copying the current image over it, and the search goes on for the dart that was put in.
     std::vector<cv::Mat> before = last_;
     std::vector<std::optional<tip_candidates::DartObservation>> changes(count);
-    for(int pass = 0; pass < kMaxChanges; ++pass)
+    for(int pass = 0; pass < settings_.max_changes; ++pass)
     {
         // The changed object is the one that stands out from the empty board: in the image before, a pulled dart; in
         // the image now, a dart put in.
         std::vector<int> seen;
         double in_before = 0.0, in_now = 0.0;
-        forEachCamera(count, [&] (std::size_t c) { changes[c] = tip_candidates::observeDart(means[c], before[c]); });
+        forEachCamera(count, [&] (std::size_t c) { changes[c] = tip_candidates::observeDart(means[c], before[c], settings_.observation); });
         for(std::size_t c = 0; c < count; ++c)
         {
             if(!changes[c])
@@ -161,8 +154,8 @@ TrackerUpdate DartTracker::addStill (const std::vector<cv::Mat>& images)
                 continue;
             }
             seen.push_back(static_cast<int>(c));
-            in_before += differenceAlong(*changes[c], before[c], reference_[c]);
-            in_now += differenceAlong(*changes[c], means[c], reference_[c]);
+            in_before += differenceAlong(*changes[c], before[c], reference_[c], settings_.patch_px);
+            in_now += differenceAlong(*changes[c], means[c], reference_[c], settings_.patch_px);
         }
         if(seen.empty() || darts_in_board_ == 0 || in_before <= in_now)
         {
@@ -175,11 +168,11 @@ TrackerUpdate DartTracker::addStill (const std::vector<cv::Mat>& images)
             const auto& ends = changes[c]->ends_px;
             if(ends.size() >= 2)
             {
-                cv::line(mask, ends.front(), ends.back(), cv::Scalar(255), 2 * kPulledReach_px + 1);
+                cv::line(mask, ends.front(), ends.back(), cv::Scalar(255), 2 * settings_.pulled_reach_px + 1);
             }
             for(const auto& p : changes[c]->axis_px)
             {
-                cv::circle(mask, p, kPulledReach_px, cv::Scalar(255), cv::FILLED);
+                cv::circle(mask, p, settings_.pulled_reach_px, cv::Scalar(255), cv::FILLED);
             }
             before[c] = before[c].clone();
             means[c].copyTo(before[c], mask);
@@ -211,7 +204,7 @@ TrackerUpdate DartTracker::addStill (const std::vector<cv::Mat>& images)
             view_camera.push_back(c);
         }
     }
-    dart.location = views.size() >= 2 ? geometry::locateDart(views) : std::nullopt;
+    dart.location = views.size() >= 2 ? geometry::locateDart(views, settings_.locate) : std::nullopt;
     if(dart.location)
     {
         for(const int v : dart.location->views)

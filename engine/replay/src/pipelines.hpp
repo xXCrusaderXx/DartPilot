@@ -8,6 +8,7 @@
 
 #include <opencv2/core.hpp>
 
+#include "dartpilot/fusion/dart_tracker.hpp"
 #include "dartpilot/geometry/board_refinement.hpp"
 
 // The throw detections a replay can run (#18) on the still moments of the board: "tracker", the live detection
@@ -54,5 +55,5 @@ class Pipeline
 
 // cameras holds the calibration of each camera, null where there is none. Nothing for an unknown name.
 std::unique_ptr<Pipeline> makePipeline (std::string_view name, const std::vector<const geometry::RefinedCamera*>& cameras,
-                                        const geometry::BoardModel& board);
+                                        const geometry::BoardModel& board, const fusion::TrackerSettings& settings = {});
 }  // namespace dartpilot::replay
