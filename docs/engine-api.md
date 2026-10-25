@@ -323,6 +323,16 @@ The engine sends the camera's own JPEG when it fits `max_width`, otherwise a sca
 3. `takeout` ends the visit. If the client expected three darts and received fewer, it asks the player for the missing ones and sends them with `add_throw`.
 4. The player corrects a wrong dart on the board; the client sends `correct_throw`, and every client updates on `throw_corrected`.
 
+## Discovery
+
+An engine that listens beyond localhost (`serve --listen 0.0.0.0`) can be found in the home network without typing an address (#109, ADR 0008):
+
+- **mDNS/DNS-SD:** service `_dartpilot._tcp` on the engine port, with TXT `protocol`, `name` (the host name), `mode` (`live` or `simulate`), `id` and `version`. It is published through the Avahi daemon where its client library is installed at build time; where it is not, only the UDP answers run.
+- **UDP on port 8485**, for networks that block multicast between Wi-Fi and LAN: a client sends `{"type":"discover","protocol":"dartpilot/1.0"}` (broadcast or unicast) and gets `{"type":"engine","name","port","protocol","mode","id","version"}` back from the engine, at most once per second per asker. A request of another protocol major is answered too, with the engine's own protocol, so the app can tell the user.
+- `id` is a random id of the engine installation, kept in the data directory (`engine-id`); `hello` carries it as `engine.id`. Neither carries anything secret.
+
+Avahi also announces the engine on virtual interfaces (Docker, libvirt bridges); the app tries the addresses in the order of its own networks.
+
 ## Implementation status
 
 `dartpilot serve --cameras` detects live darts (#121, #128, `fusion::DartTracker`). Whenever all cameras have been still for 1.5 s, it averages a second of frames and compares the board with its last still state:
@@ -338,4 +348,4 @@ On the reference recordings, replayed through the tracker, all located darts wer
 
 ## Not in version 1
 
-Authentication and encryption (use it in a trusted network only), discovery of engines in the network, several boards per engine, and engine-side game logic.
+Authentication and encryption (use it in a trusted network only), several boards per engine, and engine-side game logic.

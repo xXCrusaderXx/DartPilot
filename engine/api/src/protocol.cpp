@@ -135,7 +135,7 @@ json helloMessage (const Hello& hello)
     }
     return {{"type", "hello"},
             {"protocol", kProtocol},
-            {"engine", {{"version", std::string(kVersion)}, {"commit", std::string(kGitCommit)}}},
+            {"engine", {{"version", std::string(kVersion)}, {"commit", std::string(kGitCommit)}, {"id", hello.engine_id}}},
             {"mode", hello.mode},
             {"session_id", hello.session_id.empty() ? json(nullptr) : json(hello.session_id)},
             {"board_geometry", toJson(hello.board_geometry, hello.board_geometry_source)},

@@ -1,5 +1,11 @@
 #include <gtest/gtest.h>
 
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <poll.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
 #include <chrono>
 #include <condition_variable>
 #include <deque>
@@ -11,6 +17,7 @@
 #include <ixwebsocket/IXWebSocket.h>
 #include <nlohmann/json.hpp>
 
+#include "dartpilot/api/discovery.hpp"
 #include "dartpilot/api/protocol.hpp"
 #include "dartpilot/api/server.hpp"
 #include "dartpilot/api/simulator.hpp"
@@ -471,4 +478,54 @@ TEST(Server, CalibrationRequestsReachTheSourceAndTheStatusIsPartOfHello)
     EXPECT_EQ(status["cameras"][1]["check"]["state"], "moved");
     simulator.stop();
     server.stop();
+}
+
+namespace
+{
+// Sends a datagram to 127.0.0.1:port and returns the answer, or nothing within the wait
+std::optional<std::string> askDiscovery (int port, const std::string& request, int wait_ms)
+{
+    const int s = ::socket(AF_INET, SOCK_DGRAM, 0);
+    sockaddr_in to{};
+    to.sin_family = AF_INET;
+    to.sin_port = htons(static_cast<uint16_t>(port));
+    to.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    ::sendto(s, request.data(), request.size(), 0, reinterpret_cast<sockaddr*>(&to), sizeof(to));
+    pollfd waiting{s, POLLIN, 0};
+    std::optional<std::string> answer;
+    if(::poll(&waiting, 1, wait_ms) > 0)
+    {
+        std::array<char, 1024> buffer{};
+        const auto size = ::recv(s, buffer.data(), buffer.size(), 0);
+        if(size > 0)
+        {
+            answer = std::string(buffer.data(), static_cast<std::size_t>(size));
+        }
+    }
+    ::close(s);
+    return answer;
+}
+}  // namespace
+
+TEST(Discovery, AnswersASearchOncePerSecondWithTheEngineFields)
+{
+    const int port = 30000 + static_cast<int>(std::random_device{}() % 20000);
+    api::Discovery discovery({"board-pc", 8484, "live", "abcdefghijklmnopqrstuvwxyz", "0.2.0"}, port);
+    std::string error;
+    ASSERT_TRUE(discovery.start(error)) << error;
+
+    EXPECT_FALSE(askDiscovery(port, R"({"type":"hello"})", 300));
+    const auto answer = askDiscovery(port, R"({"type":"discover","protocol":"dartpilot/1.0"})", 1000);
+    ASSERT_TRUE(answer);
+    const auto engine = nlohmann::json::parse(*answer);
+    EXPECT_EQ(engine["type"], "engine");
+    EXPECT_EQ(engine["name"], "board-pc");
+    EXPECT_EQ(engine["port"], 8484);
+    EXPECT_EQ(engine["protocol"], api::kProtocol);
+    EXPECT_EQ(engine["id"], "abcdefghijklmnopqrstuvwxyz");
+    // The same asker again within a second gets no answer; an app of another protocol major gets one later.
+    EXPECT_FALSE(askDiscovery(port, R"({"type":"discover","protocol":"dartpilot/1.0"})", 300));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1100));
+    EXPECT_TRUE(askDiscovery(port, R"({"type":"discover","protocol":"dartpilot/2.0"})", 1000));
+    discovery.stop();
 }
