@@ -63,3 +63,14 @@ python -m dartpilot_tools.projection_error ~/.local/share/dartpilot/sessions/<se
 ```
 
 It writes `report.md` (per camera: count, median, P95 and maximum error, mean radial and tangential error as a bias; and the median error by region of the true point), `cameras.csv` (one row per throw and camera), `error_maps.png` (a board per camera, each true point coloured by its error, with the error as an enlarged arrow) and `error_angle.png` (error over the viewing angle to the board normal). The viewing angle comes from the camera poses of the board refinement, `extrinsics.yml` in the calibration directory (by default `~/.local/share/dartpilot/calibration`). It needs a run whose `camera_measurements` carry each camera's `board_point`. With `--annotations fused` it compares each camera with the run's own fused point instead: how far a camera lies from the cameras' agreement, a consistency check until ground truth with frames exists, not an accuracy.
+
+## Comparing runs
+
+To compare variants of the detection or geometry on exactly the same throws (#25):
+
+```sh
+cd tools
+python -m dartpilot_tools.compare ~/.local/share/dartpilot/sessions/<session>... --run <name>=<run id> --run <name>=<run id>... --annotations <set> --out <dir>
+```
+
+Only throws with ground truth that every run has a result for count, so a variant that abstains more is not compared on easier throws. It writes `comparison.md` with median and P95 error, segment and multiplier accuracy, false acceptance and abstention per run, `comparison.csv`, and `comparison_error.png` with the error of each run's accepted throws.
