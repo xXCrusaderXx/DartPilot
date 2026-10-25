@@ -14,6 +14,7 @@
 #include "dartpilot/fusion/detection_params.hpp"
 #include "dartpilot/geometry/board_plane.hpp"
 #include "dartpilot/geometry/board_refinement.hpp"
+#include "dartpilot/geometry/board_state.hpp"
 #include "dartpilot/geometry/dart_shape.hpp"
 #include "dartpilot/geometry/dart_sheet.hpp"
 #include "dartpilot/geometry/tip_triangulation.hpp"
@@ -656,4 +657,29 @@ TEST(DartSheet, MeasuresTheDartOnAPhotoOfTheSheet)
     const cv::Mat blank(2000, 1500, CV_8UC3, cv::Scalar(255, 255, 255));
     EXPECT_FALSE(geometry::measureDartPhoto(blank, &why));
     EXPECT_EQ(why, "sheet_not_found");
+}
+
+TEST(BoardCheck, OnlyWhatLiesOnTheBoardMakesItOccupied)
+{
+    const auto views = aroundTheBoard();
+    const auto extrinsics = fixtureExtrinsics(views);
+    const auto& camera = extrinsics.refinement.cameras[0];
+    const cv::Mat empty = synthetic_board::renderCameraImage(views[0], 1.0, 90);
+
+    // A hand on the number ring and the surround, outside the double ring: not on the board
+    cv::Mat hand = empty.clone();
+    const cv::Point2f outside = geometry::boardToImage(camera, cv::Point3f(0.0f, -205.0f, 0.0f));
+    cv::ellipse(hand, cv::RotatedRect(outside, cv::Size2f(140, 70), 0), cv::Scalar(90, 120, 170), cv::FILLED);
+    EXPECT_EQ(geometry::checkBoard(hand, &empty, &camera, extrinsics.refinement.board).state, geometry::BoardState::Empty);
+    // Without a calibration the whole image counts, as before.
+    EXPECT_EQ(geometry::checkBoard(hand, &empty, nullptr, extrinsics.refinement.board).state, geometry::BoardState::Occupied);
+
+    // A dart in the board, also near the double ring, whose flight reaches beyond it in the image
+    for(const cv::Point2f tip_mm : {cv::Point2f(30.0f, 60.0f), cv::Point2f(0.0f, -160.0f)})
+    {
+        cv::Mat dart = empty.clone();
+        drawDart(dart, camera, tip_mm, 30.0);
+        const auto check = geometry::checkBoard(dart, &empty, &camera, extrinsics.refinement.board);
+        EXPECT_EQ(check.state, geometry::BoardState::Occupied) << tip_mm;
+    }
 }

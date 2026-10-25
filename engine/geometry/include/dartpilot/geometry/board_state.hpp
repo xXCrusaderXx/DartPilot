@@ -44,11 +44,15 @@ struct BoardCheckSettings
     int edge_tolerance_px = 2;
     double confirm_level = 30.0;
     int min_confirmed_px = 150;
+    // With a calibration, only pixels on the board within this radius count (the double ring ends at 170 mm): the
+    // number ring, the surround, the wall and a hand at the edge do not make the board occupied. 0 counts the whole
+    // image.
+    double board_radius_mm = 175.0;
 };
 
 // One camera, on a still, averaged image (8-bit or float BGR):
 // - with an empty-board reference of this camera, the board is occupied if an object stands out from the reference
-//   (tip_candidates::observeDart), else empty;
+//   (tip_candidates::observeDart) on the board itself (within board_radius_mm, with a calibration), else empty;
 // - without one, the board is occupied if its wires cannot be found where the calibration puts them (darts and hands
 //   hide them), else unknown, since a dart in a field may leave every wire visible.
 // reference and calibration may be null.

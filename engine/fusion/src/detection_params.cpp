@@ -138,6 +138,9 @@ std::vector<DetectionParam> makeParams ()
                         "An object against the empty board must stand out even when every pixel may match within this distance."),
         DETECTION_PARAM("confirm_level", "geometry", "grey", 5, 100, 1, tracker.board_check.confirm_level,
                         "A pixel stands out from the empty board by more than this in some colour channel."),
+        DETECTION_PARAM("board_check_radius_mm", "geometry", "mm", 0, 300, 5, tracker.board_check.board_radius_mm,
+                        "Only pixels on the board within this radius make it occupied, not the number ring, the surround or a hand at the edge. 0 "
+                        "counts the whole image."),
         DETECTION_PARAM("min_confirmed_px", "geometry", "px", 10, 2000, 1, tracker.board_check.min_confirmed_px,
                         "An object on the board needs this many pixels that stand out."),
 
