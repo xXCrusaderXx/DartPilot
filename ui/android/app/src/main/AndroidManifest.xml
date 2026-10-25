@@ -1,6 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- The engine runs on another device or behind adb reverse; debug builds get this permission implicitly. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Receiving mDNS answers while searching for engines in the network (#109) -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <application
         android:label="DartPilot"
         android:name="${applicationName}"

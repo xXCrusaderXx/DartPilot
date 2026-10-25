@@ -138,4 +138,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('No engine found'), findsOneWidget);
   });
+
+  test('holds the multicast lock while searching and releases it afterwards', () async {
+    final calls = <bool>[];
+    final discovery = EngineDiscovery([
+      fixed(const [living]),
+    ], multicastLock: (hold) async => calls.add(hold));
+    await discovery.search().toList();
+    expect(calls, [true, false]);
+  });
 }
