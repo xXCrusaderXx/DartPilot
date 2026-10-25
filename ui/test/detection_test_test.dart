@@ -103,6 +103,27 @@ void main() {
     expect(sent.last['type'], 'add_throw');
     expect(find.text('verpasst'), findsOneWidget);
 
+    // One added by mistake: deleted again, also in the engine.
+    await tester.tap(find.byKey(const ValueKey('keypad-1')));
+    await tester.pumpAndSettle();
+    final added = sent.last['board_point'] as Map<String, dynamic>;
+    engine.receiveForTest(
+      jsonEncode({
+        'type': 'throw_corrected',
+        'throw_id': 's/3',
+        'action': 'added',
+        'board_point': added,
+        'client': 'test',
+      }),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('verpasst'), findsNWidgets(2));
+    await tester.tap(find.byKey(const ValueKey('remove-dart-2')));
+    await tester.pumpAndSettle();
+    expect(sent.last['type'], 'reject_throw');
+    expect(sent.last['throw_id'], 's/3');
+    expect(find.text('verpasst'), findsOneWidget);
+
     engine.receiveForTest(jsonEncode({'type': 'takeout', 'darts_removed': 2, 'detection_latency_ms': 650.0}));
     await tester.pumpAndSettle();
     expect(find.text('Runde 2'), findsOneWidget);

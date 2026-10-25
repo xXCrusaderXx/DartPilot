@@ -52,6 +52,21 @@ class _DetectionTestScreenState extends State<DetectionTestScreen> {
     switch (event) {
       case EngineThrow():
         setState(() => log.detected(event));
+      case EngineThrowCorrected(:final throwId, :final action, :final point, :final client):
+        if (client == _engine?.clientName) {
+          if (action == 'added' && point != null) log.addedAs(throwId, point);
+          return;
+        }
+        // Another client (or a tool) changed a dart of this test
+        final dart = log.byId(throwId);
+        if (dart == null) return;
+        setState(() {
+          if (action == 'rejected') {
+            dart.outcome == DartOutcome.missed ? log.remove(dart) : log.reject(dart);
+          } else if (action == 'corrected' && point != null) {
+            log.correct(dart, point);
+          }
+        });
       case EngineTakeout():
         setState(() {
           log.takeout(event);
@@ -91,6 +106,12 @@ class _DetectionTestScreenState extends State<DetectionTestScreen> {
       if (identical(_selected, dart)) _selected = null;
     });
     if (dart.throwId case final id?) _engine!.rejectThrow(id, 'no dart landed (detection test)');
+  }
+
+  /// A missed dart added by mistake
+  void _remove(LoggedDart dart) {
+    setState(() => log.remove(dart));
+    if (dart.throwId case final id?) _engine!.rejectThrow(id, 'added by mistake in the detection test');
   }
 
   @override
@@ -178,6 +199,8 @@ class _DetectionTestScreenState extends State<DetectionTestScreen> {
               TextButton(key: ValueKey('confirm-dart-$index'), onPressed: () => _confirm(d), child: Text(l10n.confirm)),
             if (detection != null && d.outcome != DartOutcome.falseAlarm)
               TextButton(key: ValueKey('reject-dart-$index'), onPressed: () => _reject(d), child: Text(l10n.noDart)),
+            if (d.outcome == DartOutcome.missed)
+              TextButton(key: ValueKey('remove-dart-$index'), onPressed: () => _remove(d), child: Text(l10n.delete)),
           ],
         ),
       ),

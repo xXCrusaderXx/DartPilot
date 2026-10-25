@@ -33,7 +33,10 @@ class LoggedDart {
   /// Where the dart really is; for a dart rated right, the engine's own point
   BoardPoint? truth;
 
-  String? get throwId => detection?.throwId;
+  /// The engine's id of a dart the player added, once the engine confirmed it
+  String? addedId;
+
+  String? get throwId => detection?.throwId ?? addedId;
 
   /// Waits for the player: an abstention without a given field
   bool get open => outcome == DartOutcome.abstained && truth == null;
@@ -109,6 +112,23 @@ class DetectionLog {
     current.darts.add(dart);
     return dart;
   }
+
+  /// A dart that was not there: an addition made by mistake
+  void remove(LoggedDart dart) {
+    for (final r in rounds) {
+      r.darts.remove(dart);
+    }
+  }
+
+  /// The engine's id for the latest dart the player added at `point`
+  void addedAs(String throwId, BoardPoint point) {
+    final dart = darts
+        .where((d) => d.outcome == DartOutcome.missed && d.addedId == null && d.truth == point)
+        .lastOrNull;
+    dart?.addedId = throwId;
+  }
+
+  LoggedDart? byId(String throwId) => darts.where((d) => d.throwId == throwId).firstOrNull;
 
   /// The darts were pulled: the round ends, and the next starts
   void takeout(EngineTakeout event) {
