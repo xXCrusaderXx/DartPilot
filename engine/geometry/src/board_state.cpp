@@ -2,6 +2,8 @@
 
 #include <filesystem>
 
+#include <cmath>
+
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 
@@ -13,7 +15,23 @@ namespace dartpilot::geometry
 namespace
 {
 // Pixels of the image outside the range of the reference's values around them, after matching each channel's mean
-int pixelsStandingOut (const cv::Mat& image, const cv::Mat& reference, const BoardCheckSettings& s)
+// The board within radius_mm as it lies in the camera's image, as an 8-bit mask
+cv::Mat boardRegion (const cv::Size& size, const RefinedCamera& camera, double radius_mm)
+{
+    cv::Mat region(size, CV_8U, cv::Scalar(0));
+    std::vector<cv::Point> outline;
+    for(int i = 0; i < 180; ++i)
+    {
+        const double a = 2.0 * CV_PI * i / 180.0;
+        const cv::Point2f p =
+            boardToImage(camera, cv::Point3f(static_cast<float>(radius_mm * std::cos(a)), static_cast<float>(radius_mm * std::sin(a)), 0.0f));
+        outline.emplace_back(cvRound(p.x), cvRound(p.y));
+    }
+    cv::fillPoly(region, std::vector<std::vector<cv::Point>>{outline}, cv::Scalar(255));
+    return region;
+}
+
+cv::Mat pixelsStandingOut (const cv::Mat& image, const cv::Mat& reference, const BoardCheckSettings& s)
 {
     cv::Mat a, b;
     image.convertTo(a, CV_32FC3);
@@ -33,7 +51,7 @@ int pixelsStandingOut (const cv::Mat& image, const cv::Mat& reference, const Boa
         out |= (a_channels[c] > high + s.confirm_level) | (a_channels[c] < low - s.confirm_level);
     }
     cv::morphologyEx(out, out, cv::MORPH_OPEN, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)));
-    return cv::countNonZero(out);
+    return out;
 }
 }  // namespace
 
@@ -63,15 +81,22 @@ BoardCheck checkBoard (const cv::Mat& image, const cv::Mat* reference, const Ref
     if(reference && !reference->empty() && reference->size() == image.size())
     {
         const auto observation = tip_candidates::observeDart(image, *reference);
-        if(observation && pixelsStandingOut(image, *reference, s) >= s.min_confirmed_px)
+        cv::Mat standing_out = observation ? pixelsStandingOut(image, *reference, s) : cv::Mat();
+        if(!standing_out.empty() && calibration && s.board_radius_mm > 0.0)
         {
+            standing_out &= boardRegion(standing_out.size(), *calibration, s.board_radius_mm);
+        }
+        if(!standing_out.empty() && cv::countNonZero(standing_out) >= s.min_confirmed_px)
+        {
+            std::vector<cv::Point> pixels;
+            cv::findNonZero(standing_out, pixels);
             cv::Point2d sum(0, 0);
-            for(const auto& p : observation->axis_px)
+            for(const auto& p : pixels)
             {
                 sum += cv::Point2d(p.x, p.y);
             }
             check.state = BoardState::Occupied;
-            check.image_point_px = sum / static_cast<double>(observation->axis_px.size());
+            check.image_point_px = sum / static_cast<double>(pixels.size());
             check.reason = "Something stands out from the empty board.";
         }
         else
