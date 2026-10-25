@@ -10,6 +10,7 @@
 #include <condition_variable>
 #include <deque>
 #include <mutex>
+#include <optional>
 #include <random>
 #include <thread>
 
@@ -577,4 +578,46 @@ TEST(Server, ThrowsAndCorrectionsAreLoggedAsSessionRecords)
     EXPECT_EQ(records[1]["correction"]["board_point"]["y_mm"], 60.0);
     EXPECT_EQ(records[2]["correction"]["action"], "added");
     EXPECT_TRUE(records[2]["correction"].contains("event_ns"));
+}
+
+TEST(Server, ASharedGameReachesEveryDisplayAndLaterOnes)
+{
+    ix::initNetSystem();
+    const int port = 20000 + static_cast<int>(std::random_device{}() % 20000);
+    api::Server server(port, "127.0.0.1", api::Hello{});
+    std::string error;
+    ASSERT_TRUE(server.start(error)) << error;
+
+    std::optional<TestClient> leader(std::in_place, port);
+    TestClient watcher(port);
+    leader->next("hello");
+    watcher.next("hello");
+    leader->send({{"type", "hello"}, {"client", "kitchen-tablet"}, {"request_id", "1"}});
+    EXPECT_TRUE(leader->next("result")["ok"]);
+    const json game = {{"mode", "x01"}, {"current_player", 1}, {"throws", {{{"x_mm", 1.5}, {"y_mm", 99.0}}}}};
+    leader->send({{"type", "share_game"}, {"game", game}, {"request_id", "2"}});
+    EXPECT_TRUE(leader->next("result")["ok"]);
+    const auto shared = watcher.next("shared_game");
+    EXPECT_EQ(shared["client"], "kitchen-tablet");
+    EXPECT_EQ(shared["game"], game);
+    EXPECT_EQ(leader->next("shared_game")["game"], game);
+
+    leader->send({{"type", "share_game"}, {"game", {{"padding", std::string(300 * 1024, 'x')}}}, {"request_id", "3"}});
+    EXPECT_EQ(leader->next("result")["error"]["code"], "too_large");
+    leader->send({{"type", "share_game"}, {"game", 5}, {"request_id", "4"}});
+    EXPECT_EQ(leader->next("result")["error"]["code"], "bad_request");
+    // Kept when the leader goes, for a display that comes later
+    leader.reset();
+    {
+        TestClient late(port);
+        late.next("hello");
+        EXPECT_EQ(late.next("shared_game")["game"], game);
+        late.send({{"type", "end_shared_game"}, {"request_id", "5"}});
+        EXPECT_TRUE(late.next("result")["ok"]);
+    }
+    EXPECT_TRUE(watcher.next("shared_game")["game"].is_null());
+    TestClient after(port);
+    after.next("hello");
+    EXPECT_TRUE(after.next("shared_game").is_null());
+    server.stop();
 }

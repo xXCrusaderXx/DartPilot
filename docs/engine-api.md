@@ -256,6 +256,14 @@ The guided reference measurement (#14), started with `start_reference_run` and s
 - `saved_session`: once a run is done, the id of the session it was stored as in the sessions directory, `null` before. It holds the targets as the annotation set `reference_corners` and the located darts as the run `reference`, without frames, so the benchmark scores it: `python -m dartpilot_tools.benchmark <sessions>/<id>... --run reference --annotations reference_corners` (docs/benchmark.md). Several runs together give the spread of the method for #14.
 - Errors of `start_reference_run`: `not_calibrated`.
 
+### shared_game
+
+One game on several displays (#116, ADR 0010): the app that leads the game shares it with `share_game`, and the engine sends it to every client, the sender included, as the confirmation that it arrived. A client that connects later gets the latest one after `hello`. The engine keeps it when the sharing app disconnects, whose Wi-Fi may only blip, until the next `share_game` or `end_shared_game`, which sends `game: null`. `game` is the app's own record of the game; the engine never reads it, so game rules stay in the app.
+
+```json
+{ "type": "shared_game", "client": "kitchen-tablet", "game": { "mode": "x01", "current_player": 1, "...": "..." } }
+```
+
 ### engine_status
 
 ```json
@@ -270,7 +278,7 @@ The answer to every client request that has a `request_id`.
 { "type": "result", "request_id": "7", "ok": false, "error": { "code": "unknown_throw", "message": "No throw 20261024T190000Z-7c1e/99" } }
 ```
 
-Error codes: `bad_request`, `unknown_type`, `unknown_throw`, `unknown_camera`, `not_available`, `board_not_empty`, `not_still` (the image has not been still long enough to store the empty board), `save_failed`, and those of the calibration steps (`busy`, `no_detection`, `outside_board`, `fit_failed`, `no_board_planes`).
+Error codes: `bad_request`, `unknown_type`, `unknown_throw`, `unknown_camera`, `not_available`, `board_not_empty`, `not_still` (the image has not been still long enough to store the empty board), `save_failed`, `too_large` (a shared game over 256 KB), and those of the calibration steps (`busy`, `no_detection`, `outside_board`, `fit_failed`, `no_board_planes`).
 
 ## Client → engine
 
@@ -294,6 +302,8 @@ Every request carries a `request_id` chosen by the client and is answered with `
 | `start_reference_run` / `stop_reference_run` | – | The guided reference measurement; its state comes as `reference_run` |
 | `subscribe_calibration_check` / `unsubscribe_calibration_check` | – | Detailed calibration checks every 2 s as `calibration_check` |
 | `get_board_image` | `size_px`, `radius_mm` (optional) | The real board from the front; answered with `board_image` |
+| `share_game` | `game` (an object of up to 256 KB) | Shares the game with every display; sent on as `shared_game` |
+| `end_shared_game` | – | Ends sharing; `shared_game` with `game: null` |
 | `subscribe_preview` | `camera`, `max_fps`, `max_width` | Starts preview frames of a camera |
 | `unsubscribe_preview` | `camera` | Stops them |
 

@@ -146,6 +146,8 @@ json helloMessage (const Hello& hello)
             {"calibration_status", hello.calibration_status}};
 }
 
+json sharedGameMessage (const std::string& client, const json& game) { return {{"type", "shared_game"}, {"client", client}, {"game", game}}; }
+
 json calibrationStatusMessage (const json& status)
 {
     json message = status;
@@ -359,6 +361,19 @@ std::variant<Request, ParseError> parseRequest (const std::string& text)
         else if(type == "store_empty_reference")
         {
             request.body = StoreEmptyReference{message.value("force", false)};
+        }
+        else if(type == "share_game")
+        {
+            const auto& game = message.at("game");
+            if(!game.is_object())
+            {
+                return ParseError{request_id, "bad_request", "share_game needs the game as an object"};
+            }
+            request.body = ShareGame{game};
+        }
+        else if(type == "end_shared_game")
+        {
+            request.body = ShareGame{nullptr};
         }
         else if(type == "subscribe_status" || type == "unsubscribe_status")
         {
