@@ -21,7 +21,6 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-import cv2
 import numpy as np
 
 from dartpilot_tools.session import Session, load_session
@@ -94,6 +93,8 @@ def pair_offset(a: Grid, b: Grid) -> PairOffset:
 
 
 def _small(session: Session, camera_id: str, row: int) -> np.ndarray:
+    import cv2  # only decoding frames needs OpenCV; the timestamp analysis runs without it
+
     jpeg = session.camera(camera_id).read_frame(row)
     image = cv2.imdecode(np.frombuffer(jpeg, np.uint8), cv2.IMREAD_GRAYSCALE)
     return cv2.resize(image, None, fx=0.25, fy=0.25, interpolation=cv2.INTER_AREA).astype(np.int16)
@@ -134,6 +135,8 @@ def flash_onsets(session: Session, min_flashes: int = 20) -> tuple[list[dict[str
     screen seen by every camera, each camera's first frame on the new side of half brightness (onsets, for
     event_phase), and the time it crossed half brightness, interpolated between its two frames (crossings). Empty if
     the session shows no such flashing."""
+
+    import cv2
 
     def cells_of(camera, rows) -> np.ndarray:
         return np.stack(
