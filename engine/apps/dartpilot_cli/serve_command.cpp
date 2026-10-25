@@ -6,6 +6,7 @@
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
+#include <fstream>
 #include <memory>
 #include <string>
 #include <thread>
@@ -196,6 +197,18 @@ int runServe (int argc, char* argv[])
         {
             live_detection = std::make_unique<LiveDetection>(server, feed, devices, dataHome() / "calibration", !playback);
             reference_run = std::make_unique<ReferenceRun>(server, *live_detection, dataHome() / "calibration", dataHome() / "sessions");
+            if(recording)
+            {
+                // Every value in effect, from the start and after each change, so that a replay can use the same ones
+                const auto params_path = recording->directory() / "results" / "live" / "params.jsonl";
+                const auto write = [params_path] (const nlohmann::json& params)
+                {
+                    std::ofstream(params_path, std::ios::app)
+                        << nlohmann::json{{"t_ns", capture::monotonicNowNs()}, {"params", params}}.dump() << "\n";
+                };
+                write(live_detection->paramsMessage()["params"]);
+                live_detection->onParamsChanged(write);
+            }
             // Until the first still empty board, darts cannot be told from the board.
             const auto unavailable = live_detection->unavailableReason();
             server.publishEngineStatus("unavailable", unavailable.value_or("no_empty_reference"));

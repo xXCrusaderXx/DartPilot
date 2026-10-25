@@ -44,6 +44,8 @@ struct StillMoment
 {
     // When all cameras had settled, and the exposure time of the last frame averaged
     std::int64_t start_ns = 0;
+    // The last sample in which a camera moved, e.g. the dart landing
+    std::int64_t last_motion_ns = 0;
     std::int64_t end_ns = 0;
     // Per camera: the mean image (float BGR) and the sequence numbers of the frames in it
     std::vector<cv::Mat> means;
@@ -87,6 +89,7 @@ class StillDetector
     int still_samples_ = 0;
     bool measured_since_motion_ = false;
     std::int64_t still_since_ns_ = 0;
+    std::int64_t last_motion_ns_ = 0;
     std::int64_t last_measured_ns_ = 0;
 };
 

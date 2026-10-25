@@ -136,13 +136,13 @@ Throw Server::publishThrow (Throw dart)
     return recorded;
 }
 
-void Server::publishTakeout (std::int64_t event_ns, int darts_removed)
+void Server::publishTakeout (std::int64_t event_ns, int darts_removed, std::optional<double> detection_latency_ms)
 {
     {
         std::lock_guard lock(mutex_);
         visit_points_.clear();
     }
-    broadcast(takeoutMessage(event_ns, darts_removed));
+    broadcast(takeoutMessage(event_ns, darts_removed, detection_latency_ms));
 }
 
 void Server::setBoardState (BoardStateInfo board)

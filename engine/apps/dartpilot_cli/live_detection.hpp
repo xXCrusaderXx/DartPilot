@@ -40,6 +40,11 @@ class LiveDetection
     void intercept (std::function<void(const fusion::TrackerUpdate&)> handler);
     bool ready () const { return ready_; }
 
+    // The values of when the board counts as still, changeable while running (get_detection_params and
+    // set_detection_params): from the next still moment on, not kept across restarts. The handler gets every change.
+    nlohmann::json paramsMessage () const;
+    void onParamsChanged (std::function<void(const nlohmann::json& params)> handler);
+
    private:
     struct Camera
     {
@@ -51,7 +56,7 @@ class LiveDetection
     void run ();
     // The camera's latest frame, if it has a new one since the last sample
     std::optional<event_detection::StillSample> sample (Camera& camera, std::size_t index);
-    void publish (const fusion::TrackerUpdate& update, const event_detection::StillMoment& moment, double latency_ms);
+    void publish (const fusion::TrackerUpdate& update, const event_detection::StillMoment& moment, double latency_ms, double detection_latency_ms);
 
     api::Server& server_;
     const FrameFeed& previews_;
@@ -62,6 +67,12 @@ class LiveDetection
     std::atomic<bool> stop_{false};
     std::atomic<bool> running_{true};
     std::atomic<bool> ready_{false};
+    // Unknown names and values out of range are refused as a whole
+    std::optional<std::string> setParams (const nlohmann::json& params);
+    mutable std::mutex settings_mutex_;
+    event_detection::StillSettings settings_;
+    bool settings_changed_ = false;
+    std::function<void(const nlohmann::json&)> params_handler_;
     std::mutex intercept_mutex_;
     std::function<void(const fusion::TrackerUpdate&)> intercept_;
 };
