@@ -47,8 +47,7 @@ std::optional<StillMoment> StillDetector::addSample (std::int64_t time_ns, const
             cv::resize(samples[c]->image, small, cv::Size(), 0.25, 0.25, cv::INTER_AREA);
             cv::cvtColor(small, small, cv::COLOR_BGR2GRAY);
             small.convertTo(small, CV_32F);
-            camera.moving = camera.previous_small.empty() || camera.previous_small.size() != small.size() ||
-                            cv::mean(cv::abs(small - camera.previous_small))[0] > settings_.still_motion;
+            camera.moving = moved(camera.previous_small, small, settings_);
             camera.previous_small = small;
             camera.seen = true;
         }
@@ -109,6 +108,16 @@ std::optional<StillMoment> StillDetector::addSample (std::int64_t time_ns, const
     last_measured_ns_ = time_ns;
     restart();
     return moment;
+}
+
+bool moved (const cv::Mat& before_small, const cv::Mat& after_small, const StillSettings& settings)
+{
+    if(before_small.empty() || before_small.size() != after_small.size())
+    {
+        return true;
+    }
+    const cv::Mat difference = cv::abs(after_small - before_small);
+    return cv::mean(difference)[0] > settings.still_motion || cv::countNonZero(difference > settings.local_change) >= settings.local_change_px;
 }
 
 cv::Mat differenceMask (const cv::Mat& before, const cv::Mat& after, double threshold, int min_area_px)

@@ -7,6 +7,7 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 
+#include "dartpilot/event_detection/event_detection.hpp"
 #include "dartpilot/tip_candidates/dart_observation.hpp"
 
 namespace dartpilot::cli
@@ -15,8 +16,6 @@ namespace
 {
 // Sampling rate of the check; the board state need not follow faster
 constexpr auto kSampleInterval = std::chrono::milliseconds(100);
-// As on the validation page: mean brightness change at a quarter of the size; image noise gives about 1.
-constexpr double kStillMotion = 2.5;
 // Samples without motion before averaging starts, and samples per average (one second each)
 constexpr int kStillSamples = 10;
 constexpr int kSamplesToAverage = 10;
@@ -133,8 +132,7 @@ bool BoardWatch::sample (Camera& camera, std::size_t index)
     cv::resize(frame, small, cv::Size(), 0.25, 0.25, cv::INTER_AREA);
     cv::cvtColor(small, small, cv::COLOR_BGR2GRAY);
     small.convertTo(small, CV_32F);
-    const bool moving = camera.previous_small.empty() || camera.previous_small.size() != small.size() ||
-                        cv::mean(cv::abs(small - camera.previous_small))[0] > kStillMotion;
+    const bool moving = event_detection::moved(camera.previous_small, small);
     camera.previous_small = small;
     if(moving)
     {

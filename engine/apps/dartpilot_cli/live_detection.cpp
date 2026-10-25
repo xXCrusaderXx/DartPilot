@@ -8,6 +8,7 @@
 #include <opencv2/imgproc.hpp>
 
 #include "dartpilot/capture/frame.hpp"
+#include "dartpilot/event_detection/event_detection.hpp"
 #include "dartpilot/geometry/board_state.hpp"
 
 namespace dartpilot::cli
@@ -15,8 +16,6 @@ namespace dartpilot::cli
 namespace
 {
 constexpr auto kSampleInterval = std::chrono::milliseconds(100);
-// As the board check and the diagnosis: mean brightness change at a quarter of the size; image noise gives about 1.
-constexpr double kStillMotion = 2.5;
 // Samples every camera must be still before averaging starts, and samples averaged
 constexpr int kSettleSamples = 15;
 constexpr int kSamplesToAverage = 10;
@@ -111,8 +110,7 @@ void LiveDetection::sample (Camera& camera, std::size_t index)
     cv::resize(frame, small, cv::Size(), 0.25, 0.25, cv::INTER_AREA);
     cv::cvtColor(small, small, cv::COLOR_BGR2GRAY);
     small.convertTo(small, CV_32F);
-    camera.moving = camera.previous_small.empty() || camera.previous_small.size() != small.size() ||
-                    cv::mean(cv::abs(small - camera.previous_small))[0] > kStillMotion;
+    camera.moving = event_detection::moved(camera.previous_small, small);
     camera.previous_small = small;
     camera.latest = frame;
     camera.fresh = true;
