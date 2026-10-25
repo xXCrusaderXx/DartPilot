@@ -478,12 +478,12 @@ class EngineConnection extends ChangeNotifier {
     if (_checkWatchers > 0 && --_checkWatchers == 0) _send({'type': 'unsubscribe_calibration_check'});
   }
 
-  /// Starts the reference measurement afresh, or stops it; its state arrives as [referenceRun].
   /// Shares the game this app leads, for other displays to follow (#116)
   void shareGame(Map<String, dynamic> game) => _send({'type': 'share_game', 'game': game});
 
   void endSharedGame() => _send({'type': 'end_shared_game'});
 
+  /// Starts the reference measurement afresh, or stops it; its state arrives as [referenceRun].
   Future<String?> startReferenceRun() => _request({'type': 'start_reference_run'});
 
   Future<String?> stopReferenceRun() => _request({'type': 'stop_reference_run'});
