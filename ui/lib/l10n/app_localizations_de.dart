@@ -1411,4 +1411,87 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get copyPath => 'Pfad kopieren';
+
+  @override
+  String get myDarts => 'Meine Darts';
+
+  @override
+  String get myDartsHint => 'Deine Darts vermessen, damit die Erkennung sie besser findet';
+
+  @override
+  String get myDartsIntro =>
+      'Optional: Die Engine vermisst ein Dart-Set (Spitze, Barrel, Länge, Aussehen). Damit findet sie die Spitze genauer und hält neue Darts von steckenden auseinander. Ohne Set erkennt sie jeden Dart wie bisher.';
+
+  @override
+  String get dartSetsUnavailable => 'Diese Engine kann noch keine Darts vermessen.';
+
+  @override
+  String get noDartSets => 'Noch kein Dart-Set vermessen.';
+
+  @override
+  String get addDartSet => 'Dart-Set hinzufügen';
+
+  @override
+  String get renameDartSet => 'Umbenennen';
+
+  @override
+  String get dartSetName => 'Name des Sets';
+
+  @override
+  String get dartSetNameHint => 'z. B. Annas Darts';
+
+  @override
+  String get dartSetStart => 'Weiter';
+
+  @override
+  String get dartSetInUse => 'im Einsatz';
+
+  @override
+  String get dartSetThrownBy => 'Geworfen von:';
+
+  @override
+  String get dartPoint => 'Spitze';
+
+  @override
+  String get dartBarrel => 'Barrel';
+
+  @override
+  String get dartTotal => 'Gesamt';
+
+  @override
+  String get dartSetPutIn => 'Steck einen Dart des Sets ins Board und nimm die Hand weg.';
+
+  @override
+  String get dartSetMeasuring => 'Wird vermessen …';
+
+  @override
+  String get dartSetPlaced => 'Gemessen. Zieh den Dart und steck ihn an eine andere Stelle.';
+
+  @override
+  String get dartSetDone => 'Fertig – das Set ist vermessen.';
+
+  @override
+  String dartSetProgress(int placed, int needed) {
+    return '$placed von $needed Stellen';
+  }
+
+  @override
+  String get dartSetClose => 'Schließen';
+
+  @override
+  String get dartSetNotCalibrated => 'Die Kameras sind noch nicht kalibriert.';
+
+  @override
+  String get dartSetBoardNotEmpty => 'Bitte erst alle Darts aus dem Board ziehen.';
+
+  @override
+  String get dartSetBusy => 'Die Engine ist gerade beschäftigt. Versuch es gleich noch einmal.';
+
+  @override
+  String dartSetFailed(String reason) {
+    return 'Vermessen fehlgeschlagen: $reason';
+  }
+
+  @override
+  String get dartFlight => 'Flight';
 }

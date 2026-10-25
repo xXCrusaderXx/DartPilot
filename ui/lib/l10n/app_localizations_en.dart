@@ -1411,4 +1411,87 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get copyPath => 'Copy path';
+
+  @override
+  String get myDarts => 'My darts';
+
+  @override
+  String get myDartsHint => 'Measure your darts so that detection finds them better';
+
+  @override
+  String get myDartsIntro =>
+      'Optional: the engine measures a dart set (point, barrel, length, appearance). It then finds the point more precisely and tells new darts from those in the board. Without a set it detects any dart as before.';
+
+  @override
+  String get dartSetsUnavailable => 'This engine cannot measure darts yet.';
+
+  @override
+  String get noDartSets => 'No dart set measured yet.';
+
+  @override
+  String get addDartSet => 'Add dart set';
+
+  @override
+  String get renameDartSet => 'Rename';
+
+  @override
+  String get dartSetName => 'Name of the set';
+
+  @override
+  String get dartSetNameHint => 'e.g. Anna\'s darts';
+
+  @override
+  String get dartSetStart => 'Next';
+
+  @override
+  String get dartSetInUse => 'in use';
+
+  @override
+  String get dartSetThrownBy => 'Thrown by:';
+
+  @override
+  String get dartPoint => 'Point';
+
+  @override
+  String get dartBarrel => 'Barrel';
+
+  @override
+  String get dartTotal => 'Total';
+
+  @override
+  String get dartSetPutIn => 'Put one dart of the set into the board and take your hand away.';
+
+  @override
+  String get dartSetMeasuring => 'Measuring …';
+
+  @override
+  String get dartSetPlaced => 'Measured. Pull the dart and put it in somewhere else.';
+
+  @override
+  String get dartSetDone => 'Done – the set is measured.';
+
+  @override
+  String dartSetProgress(int placed, int needed) {
+    return '$placed of $needed places';
+  }
+
+  @override
+  String get dartSetClose => 'Close';
+
+  @override
+  String get dartSetNotCalibrated => 'The cameras are not calibrated yet.';
+
+  @override
+  String get dartSetBoardNotEmpty => 'Please pull all darts out of the board first.';
+
+  @override
+  String get dartSetBusy => 'The engine is busy. Try again in a moment.';
+
+  @override
+  String dartSetFailed(String reason) {
+    return 'Measuring failed: $reason';
+  }
+
+  @override
+  String get dartFlight => 'Flight';
 }

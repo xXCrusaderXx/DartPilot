@@ -2539,6 +2539,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Copy path'**
   String get copyPath;
+
+  /// No description provided for @myDarts.
+  ///
+  /// In en, this message translates to:
+  /// **'My darts'**
+  String get myDarts;
+
+  /// No description provided for @myDartsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Measure your darts so that detection finds them better'**
+  String get myDartsHint;
+
+  /// No description provided for @myDartsIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional: the engine measures a dart set (point, barrel, length, appearance). It then finds the point more precisely and tells new darts from those in the board. Without a set it detects any dart as before.'**
+  String get myDartsIntro;
+
+  /// No description provided for @dartSetsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This engine cannot measure darts yet.'**
+  String get dartSetsUnavailable;
+
+  /// No description provided for @noDartSets.
+  ///
+  /// In en, this message translates to:
+  /// **'No dart set measured yet.'**
+  String get noDartSets;
+
+  /// No description provided for @addDartSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Add dart set'**
+  String get addDartSet;
+
+  /// No description provided for @renameDartSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get renameDartSet;
+
+  /// No description provided for @dartSetName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name of the set'**
+  String get dartSetName;
+
+  /// No description provided for @dartSetNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Anna\'s darts'**
+  String get dartSetNameHint;
+
+  /// No description provided for @dartSetStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get dartSetStart;
+
+  /// No description provided for @dartSetInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'in use'**
+  String get dartSetInUse;
+
+  /// No description provided for @dartSetThrownBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Thrown by:'**
+  String get dartSetThrownBy;
+
+  /// No description provided for @dartPoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Point'**
+  String get dartPoint;
+
+  /// No description provided for @dartBarrel.
+  ///
+  /// In en, this message translates to:
+  /// **'Barrel'**
+  String get dartBarrel;
+
+  /// No description provided for @dartTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get dartTotal;
+
+  /// No description provided for @dartSetPutIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Put one dart of the set into the board and take your hand away.'**
+  String get dartSetPutIn;
+
+  /// No description provided for @dartSetMeasuring.
+  ///
+  /// In en, this message translates to:
+  /// **'Measuring …'**
+  String get dartSetMeasuring;
+
+  /// No description provided for @dartSetPlaced.
+  ///
+  /// In en, this message translates to:
+  /// **'Measured. Pull the dart and put it in somewhere else.'**
+  String get dartSetPlaced;
+
+  /// No description provided for @dartSetDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done – the set is measured.'**
+  String get dartSetDone;
+
+  /// No description provided for @dartSetProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{placed} of {needed} places'**
+  String dartSetProgress(int placed, int needed);
+
+  /// No description provided for @dartSetClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get dartSetClose;
+
+  /// No description provided for @dartSetNotCalibrated.
+  ///
+  /// In en, this message translates to:
+  /// **'The cameras are not calibrated yet.'**
+  String get dartSetNotCalibrated;
+
+  /// No description provided for @dartSetBoardNotEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Please pull all darts out of the board first.'**
+  String get dartSetBoardNotEmpty;
+
+  /// No description provided for @dartSetBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'The engine is busy. Try again in a moment.'**
+  String get dartSetBusy;
+
+  /// No description provided for @dartSetFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Measuring failed: {reason}'**
+  String dartSetFailed(String reason);
+
+  /// No description provided for @dartFlight.
+  ///
+  /// In en, this message translates to:
+  /// **'Flight'**
+  String get dartFlight;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
