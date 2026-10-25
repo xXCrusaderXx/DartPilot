@@ -77,8 +77,8 @@ void main() {
       jsonEncode({
         'type': 'camera_assignment',
         'cameras': [
-          {'id': 'usb-1', 'order': null, 'name': null},
-          {'id': 'usb-2', 'order': null, 'name': null},
+          {'id': 'usb-1', 'order': null, 'label': null},
+          {'id': 'usb-2', 'order': null, 'label': null},
         ],
       }),
     );
@@ -86,8 +86,8 @@ void main() {
     expect(
       sent.last['cameras'],
       containsAll([
-        {'id': 'usb-2', 'order': 1, 'name': 'Links'},
-        {'id': 'usb-1', 'order': 2, 'name': null},
+        {'id': 'usb-2', 'order': 1, 'label': 'Links'},
+        {'id': 'usb-1', 'order': 2, 'label': null},
       ]),
     );
 
@@ -96,8 +96,8 @@ void main() {
       jsonEncode({
         'type': 'camera_assignment',
         'cameras': [
-          {'id': 'usb-1', 'order': 1, 'name': 'Oben'},
-          {'id': 'usb-2', 'order': 2, 'name': 'Links'},
+          {'id': 'usb-1', 'order': 1, 'label': 'Oben'},
+          {'id': 'usb-2', 'order': 2, 'label': 'Links'},
         ],
       }),
     );
@@ -111,8 +111,8 @@ void main() {
     expect(
       sent.last['cameras'],
       containsAll([
-        {'id': 'usb-2', 'order': 1, 'name': 'Links'},
-        {'id': 'usb-1', 'order': 2, 'name': 'Oben'},
+        {'id': 'usb-2', 'order': 1, 'label': 'Links'},
+        {'id': 'usb-1', 'order': 2, 'label': 'Oben'},
       ]),
     );
   });

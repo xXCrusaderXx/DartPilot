@@ -53,7 +53,7 @@ class CameraOrder extends ChangeNotifier {
     final order = [for (final c in placed) c.id];
     final names = {
       for (final c in assignment.cameras)
-        if (c.name != null && c.name!.isNotEmpty) c.id: c.name!,
+        if (c.label != null && c.label!.isNotEmpty) c.id: c.label!,
     };
     // The engine notifies often (camera status every second); only a changed assignment rebuilds.
     if (listEquals(order, _order) && mapEquals(names, _names)) return;
@@ -73,7 +73,7 @@ class CameraOrder extends ChangeNotifier {
     final ids = {...order, ...known};
     return _engine!.setCameraAssignment([
       for (final id in ids)
-        AssignedCamera(id, order: order.contains(id) ? order.indexOf(id) + 1 : null, name: names[id]),
+        AssignedCamera(id, order: order.contains(id) ? order.indexOf(id) + 1 : null, label: names[id]),
     ]);
   }
 
