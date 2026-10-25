@@ -354,9 +354,16 @@ TEST(Server, BoardStateGoesToEveryoneAndRequestsReachTheSource)
     api::BoardStateInfo occupied{"occupied", {{"cam", "occupied", std::array<double, 2>{10.0, 20.0}, "object"}}, true};
     server.setBoardState(occupied);
     EXPECT_EQ(client.next("board_state")["cameras"][0]["image_point_px"], json({10.0, 20.0}));
-    // An unchanged state is not sent again.
+    // An unchanged state is not sent again, nor one whose object moved by noise only.
     server.setBoardState(occupied);
+    auto jittered = occupied;
+    jittered.cameras[0].image_point_px = std::array<double, 2>{13.0, 18.0};
+    server.setBoardState(jittered);
     EXPECT_TRUE(client.next("board_state").is_null());
+    auto moved = occupied;
+    moved.cameras[0].image_point_px = std::array<double, 2>{60.0, 20.0};
+    server.setBoardState(moved);
+    EXPECT_EQ(client.next("board_state")["cameras"][0]["image_point_px"], json({60.0, 20.0}));
 
     int checks = 0;
     server.onCheckBoard([&] { ++checks; });

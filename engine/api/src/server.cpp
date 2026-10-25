@@ -1,6 +1,7 @@
 #include "dartpilot/api/server.hpp"
 
 #include <chrono>
+#include <cmath>
 #include <ctime>
 
 #include <ixwebsocket/IXNetSystem.h>
@@ -18,6 +19,34 @@ std::int64_t monotonicNowNs ()
 }
 
 constexpr std::size_t kMaxSharedGameBytes = 256 * 1024;
+
+// An object found again at almost the same place is no news: the averaged images of a still board differ by noise, which
+// moves the found point by a few pixels each time.
+constexpr double kSameObject_px = 10.0;
+
+bool sameForClients (const BoardStateInfo& a, const BoardStateInfo& b)
+{
+    if(a.state != b.state || a.reference_stored != b.reference_stored || a.cameras.size() != b.cameras.size())
+    {
+        return false;
+    }
+    for(std::size_t i = 0; i < a.cameras.size(); ++i)
+    {
+        const auto& x = a.cameras[i];
+        const auto& y = b.cameras[i];
+        if(x.camera != y.camera || x.state != y.state || x.reason != y.reason || x.image_size_px != y.image_size_px ||
+           x.image_point_px.has_value() != y.image_point_px.has_value())
+        {
+            return false;
+        }
+        if(x.image_point_px &&
+           std::hypot((*x.image_point_px)[0] - (*y.image_point_px)[0], (*x.image_point_px)[1] - (*y.image_point_px)[1]) > kSameObject_px)
+        {
+            return false;
+        }
+    }
+    return true;
+}
 
 template <typename... Ts>
 struct Overloaded : Ts...
@@ -157,7 +186,7 @@ void Server::setBoardState (BoardStateInfo board)
 {
     {
         std::lock_guard lock(mutex_);
-        if(hello_.board_state == board)
+        if(sameForClients(hello_.board_state, board))
         {
             return;
         }
