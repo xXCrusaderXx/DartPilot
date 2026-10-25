@@ -117,6 +117,13 @@ ApplicationWindow {
                     selected: window.page === 5
                     onClicked: window.page = 5
                 }
+                NavButton {
+                    text: "Detection test"
+                    subtitle: "Throw, rate, tune"
+                    glyph: "➶"
+                    selected: window.page === 6
+                    onClicked: window.page = 6
+                }
 
                 Item {
                     Layout.fillHeight: true
@@ -177,6 +184,10 @@ ApplicationWindow {
             }
             ValidationPage {
                 active: window.page === 5
+                cameras: finder.cameras
+            }
+            DetectionPage {
+                active: window.page === 6
                 cameras: finder.cameras
             }
         }

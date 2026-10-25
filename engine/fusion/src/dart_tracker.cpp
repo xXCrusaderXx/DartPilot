@@ -229,6 +229,7 @@ TrackerUpdate DartTracker::addStill (const std::vector<cv::Mat>& images)
             continue;
         }
         view.state = changes[c]->cut ? "cut" : "seen";
+        view.observation = changes[c];
         if(cameras_[c].calibration)
         {
             views.push_back({cameras_[c].calibration, *changes[c]});
