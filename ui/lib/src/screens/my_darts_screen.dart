@@ -5,6 +5,7 @@ import '../engine/engine_connection.dart';
 import '../engine/engine_events.dart';
 import '../stats/dart_links.dart';
 import '../stats/statistics.dart';
+import '../widgets/board_check.dart';
 
 /// The player's darts (#120): measured sets with their dimensions and reference images, each linked to the players
 /// who throw it. Optional: without a set the engine detects any dart.
@@ -298,6 +299,21 @@ class _DartSetCaptureScreenState extends State<DartSetCaptureScreen> {
                   style: theme.textTheme.titleMedium,
                 ),
                 const SizedBox(height: 16),
+                // Between places the engine waits for the empty board; a stale empty-board image never lets it.
+                if ((capture?.state == 'placed' || capture?.state == 'failed') &&
+                    (EngineScope.of(context).boardState?.occupied ?? false))
+                  Card(
+                    key: const ValueKey('dart-set-board-occupied'),
+                    color: theme.colorScheme.tertiaryContainer,
+                    child: ListTile(
+                      leading: const Icon(Icons.crop_free),
+                      title: Text(l10n.dartSetBoardStillOccupied),
+                      trailing: TextButton(
+                        onPressed: () => storeEmptyBoard(context),
+                        child: Text(l10n.storeEmptyReference),
+                      ),
+                    ),
+                  ),
                 if (capture != null && error == null)
                   LinearProgressIndicator(value: capture.needed == 0 ? null : capture.placed / capture.needed),
                 if (capture != null && capture.cameraStates.isNotEmpty)

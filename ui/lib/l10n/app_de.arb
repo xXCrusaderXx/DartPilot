@@ -439,5 +439,6 @@
   "dartSetSeenByOne": "Nur eine Kamera hat den Dart gesehen.",
   "dartSetPlacementsDisagree": "Diese Stelle passt nicht zu den anderen Messungen.",
   "dartSetNotMeasured": "Der Dart ließ sich hier nicht vermessen.",
-  "dartSetSaveFailed": "Das Set konnte nicht gespeichert werden."
+  "dartSetSaveFailed": "Das Set konnte nicht gespeichert werden.",
+  "dartSetBoardStillOccupied": "Die Engine sieht noch etwas im Board. Ist es leer, speichere das leere Board neu – sonst geht es nicht weiter."
 }

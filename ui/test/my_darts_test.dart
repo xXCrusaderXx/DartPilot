@@ -113,6 +113,10 @@ void main() {
     );
     await tester.pump();
     expect(find.text('Kamera 2: Dart am Rand abgeschnitten'), findsOneWidget);
+    // A board that stays occupied between places gets a hint and the way out.
+    engine.receiveForTest(jsonEncode({'type': 'board_state', 'state': 'occupied', 'cameras': <Object>[]}));
+    await tester.pump();
+    expect(find.byKey(const ValueKey('dart-set-board-occupied')), findsOneWidget);
     expect(step(), startsWith('Gemessen.'));
     expect(find.text('1 von 4 Stellen'), findsOneWidget);
     // A place that failed is not the end of the measurement.

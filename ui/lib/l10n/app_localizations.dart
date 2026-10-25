@@ -2731,6 +2731,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The set could not be saved.'**
   String get dartSetSaveFailed;
+
+  /// No description provided for @dartSetBoardStillOccupied.
+  ///
+  /// In en, this message translates to:
+  /// **'The engine still sees something in the board. If it is empty, store the empty board again – otherwise the measurement cannot go on.'**
+  String get dartSetBoardStillOccupied;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

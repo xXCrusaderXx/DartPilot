@@ -1514,4 +1514,8 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get dartSetSaveFailed => 'Das Set konnte nicht gespeichert werden.';
+
+  @override
+  String get dartSetBoardStillOccupied =>
+      'Die Engine sieht noch etwas im Board. Ist es leer, speichere das leere Board neu – sonst geht es nicht weiter.';
 }
