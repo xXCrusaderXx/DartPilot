@@ -253,6 +253,7 @@ The guided reference measurement (#14), started with `start_reference_run` and s
 - `step`: `empty_board` (waiting for a still empty board), `insert_dart`, `remove_dart`, and `done` once the last dart is pulled.
 - `target`: the next position; `wires` are the sector numbers on either side of the corner's radial wire (empty for the bull centre), `field` the field the point sits in. `null` when done.
 - `results`: per placed dart, `located_mm` and `error_mm`, or `null` with `reason` when the engine abstained.
+- `saved_session`: once a run is done, the id of the session it was stored as in the sessions directory, `null` before. It holds the targets as the annotation set `reference_corners` and the located darts as the run `reference`, without frames, so the benchmark scores it: `python -m dartpilot_tools.benchmark <sessions>/<id>... --run reference --annotations reference_corners` (docs/benchmark.md). Several runs together give the spread of the method for #14.
 - Errors of `start_reference_run`: `not_calibrated`.
 
 ### engine_status
