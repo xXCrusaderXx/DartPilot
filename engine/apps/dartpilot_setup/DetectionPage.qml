@@ -374,6 +374,8 @@ ColumnLayout {
 
                         Layout.fillWidth: true
                         padding: 10
+                        // Several children: a Pane then takes its content size from none of them.
+                        contentHeight: dartColumn.implicitHeight
 
                         TapHandler {
                             onTapped: page.selected = page.selected === dartCard.index ? -1 : dartCard.index
@@ -389,7 +391,9 @@ ColumnLayout {
                             color: Tokens.accent
                         }
                         ColumnLayout {
-                            anchors.fill: parent
+                            id: dartColumn
+
+                            width: parent.width
                             spacing: 4
 
                             RowLayout {
