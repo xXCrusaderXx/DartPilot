@@ -2,16 +2,20 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstdio>
 #include <fstream>
+#include <memory>
 #include <sstream>
 
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 
+#include "dartpilot/scoring/score.hpp"
 #include "dartpilot/session/json.hpp"
 #include "dartpilot/session/sha256.hpp"
 #include "dartpilot/version.hpp"
+#include "pipelines.hpp"
 
 namespace dartpilot::replay
 {
@@ -63,10 +67,117 @@ std::string checkLine (const std::string& camera, const PendingCheck& pending, c
     return line.str();
 }
 
+// Confidence of a located dart by the number of cameras that agree, and of an abstention, as in live detection (#48)
+constexpr double kConfidenceTwoCameras = 0.8;
+constexpr double kConfidenceThreeCameras = 0.95;
+constexpr double kConfidenceAbstained = 0.3;
+
+const char* ringName (scoring::Ring ring)
+{
+    switch(ring)
+    {
+        case scoring::Ring::InnerBull:
+            return "inner_bull";
+        case scoring::Ring::OuterBull:
+            return "outer_bull";
+        case scoring::Ring::InnerSingle:
+            return "inner_single";
+        case scoring::Ring::Triple:
+            return "triple";
+        case scoring::Ring::OuterSingle:
+            return "outer_single";
+        case scoring::Ring::Double:
+            return "double";
+        case scoring::Ring::Miss:
+            break;
+    }
+    return "miss";
+}
+
+std::string distance (double value_mm) { return std::isfinite(value_mm) ? number(value_mm) : "null"; }
+
+std::string boardPoint (const cv::Point2f& point_mm, const std::optional<cv::Matx22d>& covariance_mm2)
+{
+    std::string text = "{\"x_mm\": " + number(point_mm.x) + ", \"y_mm\": " + number(point_mm.y);
+    if(covariance_mm2)
+    {
+        const auto& c = *covariance_mm2;
+        text += ", \"covariance_mm2\": {\"xx\": " + number(c(0, 0)) + ", \"xy\": " + number(c(0, 1)) + ", \"yy\": " + number(c(1, 1)) + "}";
+    }
+    return text + "}";
+}
+
+std::string scoreJson (const cv::Point2f& point_mm)
+{
+    const auto s = scoring::score(point_mm.x, point_mm.y);
+    return std::string("{\"ring\": \"") + ringName(s.ring) + "\", \"sector\": " + std::to_string(s.sector) +
+           ", \"multiplier\": " + std::to_string(s.multiplier) + ", \"points\": " + std::to_string(s.points) +
+           ", \"label\": " + jsonString(scoring::label(s)) + ", \"boundary_distance_mm\": " + distance(s.boundary_distance_mm) +
+           ", \"ring_boundary_distance_mm\": " + distance(s.ring_boundary_distance_mm) +
+           ", \"sector_boundary_distance_mm\": " + distance(s.sector_boundary_distance_mm) + ", \"board_geometry\": \"nominal\"}";
+}
+
+std::string sequences (const std::vector<std::uint32_t>& frames)
+{
+    std::string text = "[";
+    for(std::size_t i = 0; i < frames.size(); ++i)
+    {
+        text += (i == 0 ? "" : ", ") + std::to_string(frames[i]);
+    }
+    return text + "]";
+}
+
+struct ThrowEvent
+{
+    std::string throw_id;
+    std::int64_t event_ns = 0;
+    std::int64_t window_start_ns = 0;
+    std::int64_t window_end_ns = 0;
+};
+
+std::string throwLine (const session::RecordedSession& session, const ReplayConfig& config, const ThrowEvent& event, const DetectedDart& dart,
+                       const std::vector<std::vector<std::uint32_t>>& baseline_frames, const std::vector<std::vector<std::uint32_t>>& after_frames)
+{
+    std::ostringstream line;
+    const bool accepted = dart.board_mm.has_value();
+    line << "{\"throw_id\": " << jsonString(event.throw_id) << ", \"accepted\": " << (accepted ? "true" : "false")
+         << ", \"board_point\": " << (accepted ? boardPoint(*dart.board_mm, dart.covariance_mm2) : "null")
+         << ", \"score\": " << (accepted ? scoreJson(*dart.board_mm) : "null") << ", \"confidence\": "
+         << number(!accepted                    ? kConfidenceAbstained
+                   : dart.cameras_agreeing >= 3 ? kConfidenceThreeCameras
+                                                : kConfidenceTwoCameras,
+                   2)
+         << ", \"camera_measurements\": [";
+    for(std::size_t c = 0; c < session.cameras.size() && c < dart.cameras.size(); ++c)
+    {
+        const auto& camera = dart.cameras[c];
+        line << (c == 0 ? "" : ", ") << "{\"camera\": " << jsonString(session.cameras[c].id)
+             << ", \"frames\": {\"baseline\": " << sequences(c < baseline_frames.size() ? baseline_frames[c] : std::vector<std::uint32_t>{})
+             << ", \"after\": " << sequences(after_frames[c]) << "}, \"tip_candidates\": [";
+        if(camera.tip_px)
+        {
+            line << "{\"pixel_xy\": [" << number(camera.tip_px->x, 1) << ", " << number(camera.tip_px->y, 1) << "]}";
+        }
+        line << "], \"selected_candidate\": " << (camera.tip_px ? "0" : "null")
+             << ", \"board_point\": " << (camera.board_mm ? boardPoint(*camera.board_mm, std::nullopt) : "null")
+             << ", \"state\": " << jsonString(camera.state) << ", \"used\": " << (camera.used ? "true" : "false") << "}";
+    }
+    line << "], \"diagnostics\": {\"pipeline\": " << jsonString(config.pipeline) << ", \"event_ns\": " << event.event_ns
+         << ", \"window_start_ns\": " << event.window_start_ns << ", \"window_end_ns\": " << event.window_end_ns
+         << ", \"cameras_agreeing\": " << dart.cameras_agreeing << ", \"reason\": " << (dart.reason.empty() ? "null" : jsonString(dart.reason))
+         << "}, \"processing_latency_ms\": null}\n";
+    return line.str();
+}
+
 std::string configJson (const ReplayConfig& config)
 {
+    const auto& still = config.still;
     return "{\"calibration_check\": {\"interval_ns\": " + std::to_string(config.check_interval_ns) +
-           ", \"frames\": " + std::to_string(config.check_frames) + "}}";
+           ", \"frames\": " + std::to_string(config.check_frames) + "}, \"pipeline\": " + jsonString(config.pipeline) +
+           ", \"still\": {\"sample_interval_ns\": " + std::to_string(still.sample_interval_ns) +
+           ", \"still_motion\": " + number(still.still_motion, 2) + ", \"settle_samples\": " + std::to_string(still.settle_samples) +
+           ", \"frames_to_average\": " + std::to_string(still.frames_to_average) +
+           ", \"retry_interval_ns\": " + std::to_string(still.retry_interval_ns) + "}}";
 }
 }  // namespace
 
@@ -99,6 +210,32 @@ std::optional<ReplaySummary> replaySession (const session::RecordedSession& sess
     {
         error = "Invalid run id \"" + config.run_id + "\"";
         return std::nullopt;
+    }
+    std::vector<const geometry::RefinedCamera*> calibrations(session.cameras.size(), nullptr);
+    for(std::size_t c = 0; c < session.cameras.size() && config.extrinsics; ++c)
+    {
+        for(const auto& refined : config.extrinsics->refinement.cameras)
+        {
+            if(refined.usb_port == session.cameras[c].usb_port)
+            {
+                calibrations[c] = &refined;
+            }
+        }
+    }
+    std::unique_ptr<Pipeline> pipeline;
+    if(config.pipeline != "none")
+    {
+        if(!config.extrinsics)
+        {
+            error = "Throw detection needs the board refinement";
+            return std::nullopt;
+        }
+        pipeline = makePipeline(config.pipeline, calibrations, config.extrinsics->refinement.board);
+        if(!pipeline)
+        {
+            error = "Unknown pipeline \"" + config.pipeline + "\"; known are tracker, baseline and none";
+            return std::nullopt;
+        }
     }
     ReplaySummary summary;
     summary.run_directory = session.directory / "results" / config.run_id;
@@ -140,7 +277,6 @@ std::optional<ReplaySummary> replaySession (const session::RecordedSession& sess
             return std::nullopt;
         }
     }
-    // No throw detection exists yet (#18); the file is there so readers find every run complete.
     std::ofstream throws(summary.run_directory / "throws.jsonl");
     std::ofstream checks(summary.run_directory / "calibration_checks.jsonl");
     if(!throws || !checks)
@@ -154,22 +290,102 @@ std::optional<ReplaySummary> replaySession (const session::RecordedSession& sess
     for(std::size_t c = 0; c < session.cameras.size(); ++c)
     {
         readers.emplace_back(session, c);
-        if(config.extrinsics && config.check_interval_ns > 0)
+        if(config.check_interval_ns > 0)
         {
-            for(const auto& refined : config.extrinsics->refinement.cameras)
-            {
-                if(refined.usb_port == session.cameras[c].usb_port)
-                {
-                    cameras[c].calibration = &refined;
-                }
-            }
+            cameras[c].calibration = calibrations[c];
         }
     }
+
+    // Throw detection samples every camera's latest frame at fixed steps of recorded time, as live detection does.
+    event_detection::StillDetector still(session.cameras.size(), config.still);
+    std::vector<std::optional<std::size_t>> latest(session.cameras.size()), sampled(session.cameras.size());
+    std::optional<std::int64_t> next_sample_ns;
+    std::optional<event_detection::StillMoment> previous_moment;
+    std::vector<bool> matched(session.throws.size(), false);
+    std::vector<ThrowEvent> new_session_throws;
+    const auto throwId = [&] (std::int64_t event_ns)
+    {
+        if(session.throws.empty())
+        {
+            return session.session_id + "/" + std::to_string(summary.throws);
+        }
+        std::optional<std::size_t> best;
+        for(std::size_t i = 0; i < session.throws.size(); ++i)
+        {
+            const auto& recorded = session.throws[i];
+            if(!matched[i] && event_ns >= recorded.window_start_ns && event_ns <= recorded.window_end_ns &&
+               (!best || std::llabs(event_ns - recorded.event_ns) < std::llabs(event_ns - session.throws[*best].event_ns)))
+            {
+                best = i;
+            }
+        }
+        if(best)
+        {
+            matched[*best] = true;
+            return session.throws[*best].throw_id;
+        }
+        ++summary.unmatched_throws;
+        return session.session_id + "/unmatched-" + std::to_string(summary.unmatched_throws);
+    };
+    const auto sample = [&] (std::int64_t time_ns)
+    {
+        std::vector<std::optional<event_detection::StillSample>> samples(session.cameras.size());
+        for(std::size_t c = 0; c < session.cameras.size(); ++c)
+        {
+            if(!latest[c] || latest[c] == sampled[c])
+            {
+                continue;
+            }
+            sampled[c] = latest[c];
+            const auto& index = session.cameras[c].frames[*latest[c]];
+            cv::Mat image = cv::imdecode(readers[c].read(*latest[c]), cv::IMREAD_COLOR);
+            if(image.empty())
+            {
+                ++summary.undecodable_frames;
+                continue;
+            }
+            samples[c] = event_detection::StillSample{std::move(image), index.sequence, index.exposure_ns};
+        }
+        const auto moment = still.addSample(time_ns, samples, !pipeline->ready());
+        if(!moment)
+        {
+            return;
+        }
+        const auto result = pipeline->addStill(moment->means);
+        summary.takeouts += result.takeout ? 1 : 0;
+        if(result.dart)
+        {
+            ++summary.throws;
+            summary.abstained += result.dart->board_mm ? 0 : 1;
+            ThrowEvent event{"", moment->start_ns, previous_moment ? previous_moment->start_ns : moment->start_ns, moment->end_ns};
+            event.throw_id = throwId(event.event_ns);
+            if(session.throws.empty())
+            {
+                new_session_throws.push_back(event);
+            }
+            throws << throwLine(session, config, event, *result.dart,
+                                previous_moment ? previous_moment->frames : std::vector<std::vector<std::uint32_t>>{}, moment->frames);
+        }
+        previous_moment = *moment;
+    };
 
     for(const ReplayFrame& item : replayOrder(session))
     {
         ++summary.frames;
         const session::FrameIndex& index = session.cameras[item.camera].frames[item.frame];
+        if(pipeline)
+        {
+            if(!next_sample_ns)
+            {
+                next_sample_ns = index.exposure_ns;
+            }
+            while(*next_sample_ns < index.exposure_ns)
+            {
+                sample(*next_sample_ns);
+                *next_sample_ns += config.still.sample_interval_ns;
+            }
+            latest[item.camera] = item.frame;
+        }
         CameraState& state = cameras[item.camera];
         if(!state.calibration)
         {
@@ -219,10 +435,32 @@ std::optional<ReplaySummary> replaySession (const session::RecordedSession& sess
         ++summary.calibration_checks;
         state.pending.reset();
     }
+    if(pipeline && next_sample_ns)
+    {
+        sample(*next_sample_ns);
+    }
     if(!checks || !throws)
     {
         error = "Cannot write the results in " + summary.run_directory.string();
         return std::nullopt;
+    }
+    // The session's throws, so annotations and later runs refer to the same throw ids (docs/replay-format.md)
+    const auto throws_csv = session.directory / "throws.csv";
+    if(!new_session_throws.empty() && !std::filesystem::exists(throws_csv, fs_error))
+    {
+        std::ofstream csv(throws_csv);
+        csv << "throw_id,event_ns,window_start_ns,window_end_ns,source\n";
+        for(const auto& event : new_session_throws)
+        {
+            csv << event.throw_id << ',' << event.event_ns << ',' << event.window_start_ns << ',' << event.window_end_ns
+                << ",replay:" << config.run_id << '\n';
+        }
+        if(!csv)
+        {
+            error = "Cannot write " + throws_csv.string();
+            return std::nullopt;
+        }
+        summary.wrote_session_throws = true;
     }
     return summary;
 }

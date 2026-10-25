@@ -1,5 +1,6 @@
 #include "dartpilot/session/session_reader.hpp"
 
+#include <algorithm>
 #include <charconv>
 #include <sstream>
 #include <string_view>
@@ -107,6 +108,52 @@ bool readFrameIndex (const std::filesystem::path& path, std::uint64_t data_size,
     }
     return true;
 }
+// Lines that cannot be read are skipped: throws.csv only names throws, the frames stay readable without it.
+std::vector<RecordedThrow> readThrows (const std::filesystem::path& path)
+{
+    std::vector<RecordedThrow> throws;
+    std::ifstream in(path);
+    std::string header;
+    if(!in || !std::getline(in, header))
+    {
+        return throws;
+    }
+    const auto names = splitCsv(header);
+    const auto column = [&] (std::string_view name)
+    {
+        const auto it = std::find(names.begin(), names.end(), name);
+        return it == names.end() ? std::string_view::npos : static_cast<std::size_t>(it - names.begin());
+    };
+    const std::size_t id = column("throw_id"), event = column("event_ns"), start = column("window_start_ns"), end = column("window_end_ns"),
+                      source = column("source");
+    if(id == std::string_view::npos || event == std::string_view::npos)
+    {
+        return throws;
+    }
+    std::string line;
+    while(std::getline(in, line))
+    {
+        const auto fields = splitCsv(line);
+        RecordedThrow thrown;
+        if(fields.size() != names.size() || !parseNumber(fields[event], thrown.event_ns))
+        {
+            continue;
+        }
+        thrown.throw_id = std::string(fields[id]);
+        thrown.window_start_ns = thrown.window_end_ns = thrown.event_ns;
+        if(start != std::string_view::npos && end != std::string_view::npos)
+        {
+            parseNumber(fields[start], thrown.window_start_ns);
+            parseNumber(fields[end], thrown.window_end_ns);
+        }
+        if(source != std::string_view::npos)
+        {
+            thrown.source = std::string(fields[source]);
+        }
+        throws.push_back(std::move(thrown));
+    }
+    return throws;
+}
 }  // namespace
 
 std::optional<RecordedSession> openSession (const std::filesystem::path& directory, std::string& error)
@@ -189,6 +236,7 @@ std::optional<RecordedSession> openSession (const std::filesystem::path& directo
         }
         session.cameras.push_back(std::move(camera));
     }
+    session.throws = readThrows(directory / "throws.csv");
     return session;
 }
 

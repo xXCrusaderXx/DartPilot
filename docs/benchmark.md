@@ -7,6 +7,13 @@ cd tools
 python -m dartpilot_tools.benchmark ~/.local/share/dartpilot/sessions/<session>... --run <run id> --annotations <set> --out <dir>
 ```
 
+A run of the live detection and one of the baseline (#18) over a recorded session come from the replay:
+
+```sh
+dartpilot replay ~/.local/share/dartpilot/sessions/<session> --pipeline tracker --run-id tracker
+dartpilot replay ~/.local/share/dartpilot/sessions/<session> --pipeline baseline --run-id baseline
+```
+
 It pairs each throw of `results/<run id>/throws.jsonl` with its ground truth in `annotations/<set>.jsonl` (see [replay-format.md](replay-format.md)), in one or more sessions. It writes four files into `<dir>`:
 
 - `report.md` for people;

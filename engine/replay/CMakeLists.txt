@@ -1,1 +1,1 @@
-dartpilot_add_module(replay DEPS fusion scoring session dartpilot_version opencv_imgcodecs)
+dartpilot_add_module(replay DEPS event_detection tip_candidates fusion scoring session dartpilot_version opencv_imgcodecs)
