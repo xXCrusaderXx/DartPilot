@@ -1,4 +1,3 @@
-import 'package:dartpilot/l10n/app_localizations_de.dart';
 import 'package:dartpilot/src/app.dart';
 import 'package:dartpilot/src/board/dart_throw.dart';
 import 'package:dartpilot/src/board/scoring.dart';
@@ -14,26 +13,24 @@ import 'navigation.dart';
 DartThrow at(Ring ring, [int sector = 20]) => DartThrow(fieldCentre(ring, sector: sector), ThrowInput.keypad);
 
 void main() {
-  final l10n = AppLocalizationsDe();
-
   /// The calls after `dart`, thrown into `game`
   List<String> callsAfter(X01Game game, DartThrow dart) {
     final visits = game.visits.length;
     final leg = game.legNumber;
     game.add(dart);
-    return x01Calls(l10n, game, visitsBefore: visits, legBefore: leg);
+    return x01Calls(game, visitsBefore: visits, legBefore: leg);
   }
 
   test('a visit is called when it ends, with 180, no score and bust by name', () {
     final game = X01Game(const X01Settings(players: ['Anna', 'Ben'], startScore: 301));
     expect(callsAfter(game, at(Ring.triple)), isEmpty);
     expect(callsAfter(game, at(Ring.triple)), isEmpty);
-    expect(callsAfter(game, at(Ring.triple)), ['Einhundertachtzig!']);
+    expect(callsAfter(game, at(Ring.triple)), ['One hundred and eighty!']);
     for (var i = 0; i < 2; ++i) {
       callsAfter(game, at(Ring.miss));
     }
     // Anna has 121 left, a finish: her turn is called with it.
-    expect(callsAfter(game, at(Ring.miss)), ['No score', 'Anna, du brauchst 121']);
+    expect(callsAfter(game, at(Ring.miss)), ['No score', 'Anna, you require 121']);
     callsAfter(game, at(Ring.outerSingle));
     callsAfter(game, at(Ring.outerSingle));
     // Ben's 301 is no finish, so only the score is called.
@@ -42,9 +39,9 @@ void main() {
 
   test('bust, game shot and the match', () {
     final game = X01Game(const X01Settings(players: ['Anna'], startScore: 40, legsToWin: 2));
-    expect(callsAfter(game, at(Ring.triple)), ['Bust', 'Anna, du brauchst 40']);
+    expect(callsAfter(game, at(Ring.triple)), ['Bust', 'Anna, you require 40']);
     expect(callsAfter(game, at(Ring.double)), ['Game shot!']);
-    expect(callsAfter(game, at(Ring.double)), ['Game shot und das Match!']);
+    expect(callsAfter(game, at(Ring.double)), ['Game shot, and the match!']);
   });
 
   testWidgets('a game calls each visit when the caller is on', (tester) async {
@@ -65,7 +62,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(caller.enabled, isTrue);
     await tester.tap(find.byKey(const ValueKey('caller-test')));
-    expect(voice.spoken.last, 'Einhundertachtzig!');
+    expect(voice.spoken.last, 'One hundred and eighty!');
 
     await tester.tap(find.byIcon(Icons.home_outlined));
     await tester.pumpAndSettle();

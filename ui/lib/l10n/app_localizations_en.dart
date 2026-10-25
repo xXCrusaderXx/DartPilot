@@ -1587,26 +1587,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get callMatchShot => 'Game shot and the match!';
-
-  @override
-  String get callGameShot => 'Game shot!';
-
-  @override
-  String get callBust => 'Bust';
-
-  @override
-  String get callNoScore => 'No score';
-
-  @override
-  String get callOneEighty => 'One hundred and eighty!';
-
-  @override
-  String callYouRequire(String name, int remaining) {
-    return '$name, you require $remaining';
-  }
-
-  @override
   String get scoreCaller => 'Score caller';
 
   @override

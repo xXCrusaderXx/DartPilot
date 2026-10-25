@@ -78,8 +78,7 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
     setState(() => _game.add(dart));
     final l10n = AppLocalizations.of(context);
     if (!widget.watching) {
-      CallerScope.read(context)
-          .call(x01Calls(l10n, _game, visitsBefore: visitsBefore, legBefore: legBefore), l10n.localeName);
+      CallerScope.read(context).call(x01Calls(_game, visitsBefore: visitsBefore, legBefore: legBefore), callLanguage);
     }
     if (_game.isFinished) {
       _showWinner();

@@ -1044,25 +1044,9 @@
       }
     }
   },
-  "callMatchShot": "Game shot and the match!",
-  "callGameShot": "Game shot!",
-  "callBust": "Bust",
-  "callNoScore": "No score",
-  "callOneEighty": "One hundred and eighty!",
-  "callYouRequire": "{name}, you require {remaining}",
   "scoreCaller": "Score caller",
   "scoreCallerHint": "Announces each visit's score, like a caller",
   "callerVolume": "Caller volume",
   "callerTest": "Test",
-  "callerNoVoice": "This device has no speech output. On Linux: install speech-dispatcher (spd-say).",
-  "@callYouRequire": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      },
-      "remaining": {
-        "type": "int"
-      }
-    }
-  }
+  "callerNoVoice": "This device has no speech output. On Linux: install speech-dispatcher (spd-say)."
 }

@@ -4,6 +4,7 @@ import '../../l10n/app_localizations.dart';
 import '../engine/engine_choice.dart';
 import '../engine/engine_connection.dart';
 import '../sound/caller.dart';
+import '../sound/x01_calls.dart';
 import '../widgets/board_check.dart';
 import '../widgets/engine_card.dart';
 import '../widgets/paired_devices.dart';
@@ -203,7 +204,7 @@ class _CallerSettingsState extends State<CallerSettings> {
             ),
             trailing: TextButton(
               key: const ValueKey('caller-test'),
-              onPressed: () => caller.call([l10n.callOneEighty], l10n.localeName),
+              onPressed: () => caller.call([callOneEighty], callLanguage),
               child: Text(l10n.callerTest),
             ),
           ),
