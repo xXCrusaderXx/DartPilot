@@ -49,3 +49,27 @@ Impacts seen by every camera: 25.
 | usb-2.4.3.1.3 − usb-2.4.3.1.2 | 20 | 26.2 ms | +5.4 ms | 1.7 ms |
 | usb-2.4.3.1.4 − usb-2.4.3.1.2 | 24 | 22.4 ms | -0.1 ms | 3.2 ms |
 | usb-2.4.3.1.4 − usb-2.4.3.1.3 | 23 | 29.4 ms | -6.3 ms | 3.2 ms |
+
+## 20261025T215100Z-1c5d
+
+2.1 min, Recorded by dartpilot serve while playing
+
+| Camera | Period | Interval P95 | Jitter (1 σ) | Lost frames |
+| - | - | - | - | - |
+| usb-2.4.3.1.2 | 33.328 ms | 33.33 ms | 0.000 ms | 10 |
+| usb-2.4.3.1.3 | 33.328 ms | 33.33 ms | 0.000 ms | 8 |
+| usb-2.4.3.1.4 | 33.328 ms | 33.33 ms | 0.000 ms | 5 |
+
+| Pair (b − a) | Offset median | Std | P95 abs | Drift | Jitter around offset and drift |
+| - | - | - | - | - | - |
+| usb-2.4.3.1.3 − usb-2.4.3.1.2 | -12.70 ms | 2.13 ms | 12.70 ms | -0.004 ms/min | 0.003 ms |
+| usb-2.4.3.1.4 − usb-2.4.3.1.2 | -16.59 ms | 5.26 ms | 16.59 ms | -0.001 ms/min | 0.003 ms |
+| usb-2.4.3.1.4 − usb-2.4.3.1.3 | -3.89 ms | 2.05 ms | 3.90 ms | +0.003 ms/min | 0.002 ms |
+
+Flashes of the phone screen seen by every camera: 208.
+
+| Pair (b − a) | Timestamp error from flashes | ± (1 σ) | Half-brightness crossing, b − a: mean | median | std |
+| - | - | - | - | - | - |
+| usb-2.4.3.1.3 − usb-2.4.3.1.2 | -0.1 ms | 1.1 ms | -0.4 ms | -4.5 ms | 9.6 ms |
+| usb-2.4.3.1.4 − usb-2.4.3.1.2 | -1.0 ms | 1.2 ms | +0.4 ms | +0.7 ms | 9.9 ms |
+| usb-2.4.3.1.4 − usb-2.4.3.1.3 | -0.9 ms | 0.8 ms | +0.8 ms | -1.5 ms | 5.6 ms |

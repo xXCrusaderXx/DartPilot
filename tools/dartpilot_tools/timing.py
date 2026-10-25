@@ -129,6 +129,74 @@ def impact_onsets(session: Session) -> list[dict[str, int]]:
     return out
 
 
+def flash_onsets(session: Session, min_flashes: int = 20) -> tuple[list[dict[str, int]], list[dict[str, float]]]:
+    """For a session recorded with a flashing phone screen at the board (the "Kamera-Blitz" page): per change of the
+    screen seen by every camera, each camera's first frame on the new side of half brightness (onsets, for
+    event_phase), and the time it crossed half brightness, interpolated between its two frames (crossings). Empty if
+    the session shows no such flashing."""
+
+    def cells_of(camera, rows) -> np.ndarray:
+        return np.stack(
+            [
+                cv2.resize(
+                    cv2.imdecode(np.frombuffer(camera.read_frame(r), np.uint8), cv2.IMREAD_GRAYSCALE),
+                    (80, 45),
+                    interpolation=cv2.INTER_AREA,
+                ).astype(np.float32)
+                for r in rows
+            ]
+        )
+
+    # First a look at a few hundred frames: a session without flashing is left at that.
+    for camera in session.cameras[:1]:
+        sample = cells_of(camera, range(0, len(camera.frames), max(1, len(camera.frames) // 300)))
+        spread = sample.std(axis=0)
+        y, x = np.unravel_index(int(np.argmax(spread)), spread.shape)
+        level = sample[:, y, x]
+        middle = (level.min() + level.max()) / 2
+        # A screen flashing a few times a second, sampled about once a second, flips side in about every other sample;
+        # a hand or a dart now and then does not.
+        flips = np.count_nonzero(np.diff(np.sign(level - middle)))
+        if spread[y, x] < 40 or flips < len(level) / 5:
+            return [], []
+    per_camera: dict[str, list[tuple[float, int, int]]] = {}
+    for camera in session.cameras:
+        frames = camera.frames
+        rows = range(len(frames))
+        cells = cells_of(camera, rows)
+        # The screen is the place that changes most over the recording
+        spread = cells.std(axis=0)
+        y, x = np.unravel_index(int(np.argmax(spread)), spread.shape)
+        level = cells[:, y, x]
+        low, high = np.percentile(level, [5, 95])
+        if spread[y, x] < 40 or high - low < 80:
+            return [], []
+        level = (level - low) / (high - low)
+        t = frames["exposure_ns"].to_numpy(dtype=np.float64)
+        crossings = []
+        for i in range(len(level) - 1):
+            # Not across a lost frame, whose gap would spread the interpolation
+            if t[i + 1] - t[i] < 1.5 * 33.4e6 and (level[i] - 0.5) * (level[i + 1] - 0.5) < 0:
+                at = t[i] + (t[i + 1] - t[i]) * (0.5 - level[i]) / (level[i + 1] - level[i])
+                crossings.append((at, 1 if level[i + 1] > level[i] else -1, int(t[i + 1])))
+        per_camera[camera.id] = crossings
+    ids = [c.id for c in session.cameras]
+    onsets, interpolated = [], []
+    for at, direction, _ in per_camera[ids[0]]:
+        matched = {}
+        for camera_id in ids:
+            near = [(abs(a - at), a, f) for a, d, f in per_camera[camera_id] if d == direction and abs(a - at) < 60e6]
+            if near:
+                _, a, f = min(near)
+                matched[camera_id] = (a, f)
+        if len(matched) == len(ids):
+            onsets.append({c: matched[c][1] for c in ids})
+            interpolated.append({c: matched[c][0] for c in ids})
+    if len(onsets) < min_flashes:
+        return [], []
+    return onsets, interpolated
+
+
 @dataclass
 class EventPhase:
     a: str
@@ -207,6 +275,25 @@ def report(sessions: list[Session]) -> str:
                 f"| {b} − {a} | {p.median_ms:+.2f} ms | {p.std_ms:.2f} ms | {p.p95_abs_ms:.2f} ms "
                 f"| {p.drift_ms_per_min:+.3f} ms/min | {p.jitter_ms:.3f} ms |"
             )
+        flashes, crossings = flash_onsets(session)
+        if flashes:
+            lines += [
+                "",
+                f"Flashes of the phone screen seen by every camera: {len(flashes)}.",
+                "",
+                "| Pair (b − a) | Timestamp error from flashes | ± (1 σ) "
+                "| Half-brightness crossing, b − a: mean | median | std |",
+                "| - | - | - | - | - | - |",
+            ]
+            for a, b in itertools.combinations(ids, 2):
+                e = event_phase(flashes, grids[a], grids[b])
+                d = np.array([(c[b] - c[a]) / 1e6 for c in crossings])
+                lines.append(
+                    f"| {b} − {a} | {e.timestamp_error_ms:+.1f} ms | {e.uncertainty_ms:.1f} ms | {d.mean():+.1f} ms "
+                    f"| {np.median(d):+.1f} ms | {d.std():.1f} ms |"
+                )
+            lines.append("")
+            continue
         onsets = impact_onsets(session)
         if onsets:
             lines += [
