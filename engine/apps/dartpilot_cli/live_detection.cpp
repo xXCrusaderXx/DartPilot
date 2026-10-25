@@ -15,13 +15,6 @@ namespace dartpilot::cli
 {
 namespace
 {
-constexpr auto kSampleInterval = std::chrono::milliseconds(100);
-// Samples every camera must be still before averaging starts, and samples averaged
-constexpr int kSettleSamples = 15;
-constexpr int kSamplesToAverage = 10;
-// While it waits for an empty board, a still board is checked again this often: the first check may have come while
-// the exposure was still settling after the cameras started.
-constexpr auto kRetryWhileWaiting = std::chrono::seconds(3);
 // Confidence of a located dart by the number of cameras that agree, and of an abstention (provisional, #48)
 constexpr double kConfidenceTwoCameras = 0.8;
 constexpr double kConfidenceThreeCameras = 0.95;
@@ -91,108 +84,58 @@ void LiveDetection::stop ()
     }
 }
 
-void LiveDetection::sample (Camera& camera, std::size_t index)
+std::optional<event_detection::StillSample> LiveDetection::sample (Camera& camera, std::size_t index)
 {
     std::vector<std::uint8_t> jpeg;
     std::uint32_t sequence = 0;
     if(!previews_.latest(index, jpeg, sequence) || (camera.seen && sequence == camera.last_sequence))
     {
-        return;
+        return std::nullopt;
     }
-    const cv::Mat frame = cv::imdecode(jpeg, cv::IMREAD_COLOR);
-    if(frame.empty())
+    event_detection::StillSample sample;
+    sample.image = cv::imdecode(jpeg, cv::IMREAD_COLOR);
+    if(sample.image.empty())
     {
-        return;
+        return std::nullopt;
     }
     camera.seen = true;
     camera.last_sequence = sequence;
-    cv::Mat small;
-    cv::resize(frame, small, cv::Size(), 0.25, 0.25, cv::INTER_AREA);
-    cv::cvtColor(small, small, cv::COLOR_BGR2GRAY);
-    small.convertTo(small, CV_32F);
-    camera.moving = event_detection::moved(camera.previous_small, small);
-    camera.previous_small = small;
-    camera.latest = frame;
-    camera.fresh = true;
+    sample.sequence = sequence;
+    sample.exposure_ns = capture::monotonicNowNs();
+    return sample;
 }
 
 void LiveDetection::run ()
 {
-    int still_samples = 0;
-    bool measured_since_motion = false;
-    std::int64_t still_since_ns = 0;
-    auto last_measured = std::chrono::steady_clock::now();
+    // The same still moments as a replay of the recording (event_detection::StillSettings); while it waits for an empty
+    // board, a still board is checked again, as the first check may have come while the exposure was still settling.
+    event_detection::StillDetector still(cameras_.size(), event_detection::StillSettings{});
+    const auto interval = std::chrono::nanoseconds(still.settings().sample_interval_ns);
     while(!stop_)
     {
-        const auto next = std::chrono::steady_clock::now() + kSampleInterval;
-        bool still = true;
+        const auto next = std::chrono::steady_clock::now() + interval;
+        std::vector<std::optional<event_detection::StillSample>> samples;
         for(std::size_t i = 0; i < cameras_.size(); ++i)
         {
-            sample(cameras_[i], i);
-            still = still && cameras_[i].seen && !cameras_[i].moving;
+            samples.push_back(sample(cameras_[i], i));
         }
-        if(!still || !running_)
+        if(!running_)
         {
-            still_samples = 0;
-            measured_since_motion = false;
-            for(auto& camera : cameras_)
-            {
-                camera.sum.release();
-                camera.summed = 0;
-                camera.frames.clear();
-            }
+            // Paused: a person may move in front of the board, so the next still moment is measured afresh.
+            samples.assign(cameras_.size(), std::nullopt);
+            still = event_detection::StillDetector(cameras_.size(), still.settings());
         }
-        else if((!measured_since_motion || (!tracker_->ready() && std::chrono::steady_clock::now() - last_measured >= kRetryWhileWaiting)) &&
-                ++still_samples >= kSettleSamples)
+        else if(const auto moment = still.addSample(capture::monotonicNowNs(), samples, !tracker_->ready()))
         {
-            if(still_samples == kSettleSamples)
+            const auto started = std::chrono::steady_clock::now();
+            const auto update = tracker_->addStill(moment->means);
+            if(std::getenv("DARTPILOT_TRACE"))
             {
-                still_since_ns = capture::monotonicNowNs();
+                std::fprintf(stderr, "still: ready %d darts %d dart %s takeout %d\n", tracker_->ready(), tracker_->dartsInBoard(),
+                             update.dart ? (update.dart->location ? "located" : update.dart->reason.c_str()) : "-", update.takeout.value_or(-1));
             }
-            bool complete = true;
-            for(auto& camera : cameras_)
-            {
-                if(camera.fresh && camera.summed < kSamplesToAverage)
-                {
-                    if(camera.sum.empty())
-                    {
-                        camera.sum = cv::Mat::zeros(camera.latest.size(), CV_32FC3);
-                    }
-                    if(camera.latest.size() == camera.sum.size())
-                    {
-                        cv::accumulate(camera.latest, camera.sum);
-                        camera.frames.push_back(camera.last_sequence);
-                        ++camera.summed;
-                    }
-                    camera.fresh = false;
-                }
-                complete = complete && camera.summed >= kSamplesToAverage;
-            }
-            if(complete)
-            {
-                std::vector<cv::Mat> means;
-                for(auto& camera : cameras_)
-                {
-                    means.push_back(camera.sum / camera.summed);
-                }
-                const auto started = std::chrono::steady_clock::now();
-                const auto update = tracker_->addStill(means);
-                if(std::getenv("DARTPILOT_TRACE"))
-                {
-                    std::fprintf(stderr, "still: ready %d darts %d dart %s takeout %d\n", tracker_->ready(), tracker_->dartsInBoard(),
-                                 update.dart ? (update.dart->location ? "located" : update.dart->reason.c_str()) : "-", update.takeout.value_or(-1));
-                }
-                const double latency_ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started).count();
-                publish(update, still_since_ns, latency_ms);
-                measured_since_motion = true;
-                last_measured = std::chrono::steady_clock::now();
-                for(auto& camera : cameras_)
-                {
-                    camera.sum.release();
-                    camera.summed = 0;
-                    camera.frames.clear();
-                }
-            }
+            const double latency_ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started).count();
+            publish(update, *moment, latency_ms);
         }
         std::this_thread::sleep_until(next);
     }
@@ -204,7 +147,7 @@ void LiveDetection::intercept (std::function<void(const fusion::TrackerUpdate&)>
     intercept_ = std::move(handler);
 }
 
-void LiveDetection::publish (const fusion::TrackerUpdate& update, std::int64_t event_ns, double latency_ms)
+void LiveDetection::publish (const fusion::TrackerUpdate& update, const event_detection::StillMoment& moment, double latency_ms)
 {
     ready_ = tracker_ && tracker_->ready();
     std::function<void(const fusion::TrackerUpdate&)> intercept;
@@ -223,7 +166,7 @@ void LiveDetection::publish (const fusion::TrackerUpdate& update, std::int64_t e
     }
     if(update.takeout)
     {
-        server_.publishTakeout(event_ns, *update.takeout);
+        server_.publishTakeout(moment.start_ns, *update.takeout);
     }
     for(const auto& [camera, shift] : update.moved_cameras)
     {
@@ -235,7 +178,7 @@ void LiveDetection::publish (const fusion::TrackerUpdate& update, std::int64_t e
     }
     const auto& dart = *update.dart;
     api::Throw thrown;
-    thrown.event_ns = event_ns;
+    thrown.event_ns = moment.start_ns;
     thrown.accepted = dart.location.has_value();
     thrown.processing_latency_ms = latency_ms;
     if(dart.location)
@@ -254,7 +197,7 @@ void LiveDetection::publish (const fusion::TrackerUpdate& update, std::int64_t e
     {
         const auto& view = dart.cameras[c];
         thrown.cameras.push_back(
-            {cameras_[c].id, view.used, view.used ? cameras_[c].frames : std::vector<std::uint32_t>{}, view.used ? std::string() : view.state});
+            {cameras_[c].id, view.used, view.used ? moment.frames[c] : std::vector<std::uint32_t>{}, view.used ? std::string() : view.state});
     }
     server_.publishThrow(std::move(thrown));
 }

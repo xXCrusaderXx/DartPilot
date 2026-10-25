@@ -47,8 +47,9 @@ int usage ()
 {
     std::fprintf(stderr,
                  "Usage: dartpilot replay <session directory> [--pipeline tracker|baseline|none] [--run-id ID] [--extrinsics FILE]\n"
-                 "                        [--check-every SECONDS] [--no-checks]\n"
-                 "  --pipeline     throw detection: tracker (the live detection, default), baseline (frame differencing) or none\n");
+                 "                        [--check-every SECONDS] [--no-checks] [--sample-ms MS] [--settle-samples N] [--average-frames N]\n"
+                 "  --pipeline     throw detection: tracker (the live detection, default), baseline (frame differencing) or none\n"
+                 "  --sample-ms, --settle-samples, --average-frames   when the board counts as still, to compare settings (run.json)\n");
     return 2;
 }
 }  // namespace
@@ -73,6 +74,18 @@ int runReplay (int argc, char* argv[])
         else if(arg == "--check-every" && i + 1 < argc)
         {
             config.check_interval_ns = static_cast<std::int64_t>(std::atof(argv[++i]) * 1e9);
+        }
+        else if(arg == "--sample-ms" && i + 1 < argc)
+        {
+            config.still.sample_interval_ns = static_cast<std::int64_t>(std::atof(argv[++i]) * 1e6);
+        }
+        else if(arg == "--settle-samples" && i + 1 < argc)
+        {
+            config.still.settle_samples = std::atoi(argv[++i]);
+        }
+        else if(arg == "--average-frames" && i + 1 < argc)
+        {
+            config.still.frames_to_average = std::atoi(argv[++i]);
         }
         else if(arg == "--pipeline" && i + 1 < argc)
         {

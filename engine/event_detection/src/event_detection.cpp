@@ -47,8 +47,13 @@ std::optional<StillMoment> StillDetector::addSample (std::int64_t time_ns, const
             cv::resize(samples[c]->image, small, cv::Size(), 0.25, 0.25, cv::INTER_AREA);
             cv::cvtColor(small, small, cv::COLOR_BGR2GRAY);
             small.convertTo(small, CV_32F);
-            camera.moving = moved(camera.previous_small, small, settings_);
-            camera.previous_small = small;
+            auto& recent = camera.recent_small;
+            camera.moving = recent.empty() || moved(recent.back().second, small, settings_) || moved(recent.front().second, small, settings_);
+            recent.emplace_back(time_ns, small);
+            while(recent.size() > 1 && time_ns - recent[1].first >= settings_.motion_span_ns)
+            {
+                recent.pop_front();
+            }
             camera.seen = true;
         }
         still = still && camera.seen && !camera.moving;

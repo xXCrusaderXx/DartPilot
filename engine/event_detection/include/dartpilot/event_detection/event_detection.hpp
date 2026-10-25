@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <deque>
 #include <optional>
 #include <string_view>
 #include <vector>
@@ -17,8 +18,11 @@ std::string_view moduleName ();
 // whatever the speed it runs at
 struct StillSettings
 {
-    // Every camera's latest frame is looked at this often
-    std::int64_t sample_interval_ns = 100'000'000;
+    // Every camera's latest frame is looked at this often: every frame at 30 fps
+    std::int64_t sample_interval_ns = 33'333'333;
+    // Each sample is also compared with the one this long before, so that a hand moving slowly still counts as motion
+    // when the samples come at the camera's frame rate
+    std::int64_t motion_span_ns = 100'000'000;
     // Mean brightness change between two samples at a quarter of the size above which a camera moves; image noise
     // gives about 1
     double still_motion = 2.5;
@@ -27,9 +31,11 @@ struct StillSettings
     // dart 100 to 700)
     double local_change = 25.0;
     int local_change_px = 30;
-    // Samples every camera must be still before averaging starts, and frames averaged per camera
-    int settle_samples = 15;
-    int frames_to_average = 10;
+    // Samples every camera must be still before averaging starts, and frames averaged per camera: a dart's flight stops
+    // swinging about 100 ms after it lands, so the board is measured about 0.4 s after a dart lands. On the recorded game
+    // of 2026-10-25 this gave the same fields as 1.5 s of settling and 10 frames.
+    int settle_samples = 6;
+    int frames_to_average = 4;
     // While measure_again is set, a still board is measured again this often, e.g. while waiting for an empty board
     std::int64_t retry_interval_ns = 3'000'000'000;
 };
@@ -66,7 +72,8 @@ class StillDetector
    private:
     struct Camera
     {
-        cv::Mat previous_small;
+        // Recent samples at a quarter of the size, oldest first, back to motion_span_ns
+        std::deque<std::pair<std::int64_t, cv::Mat>> recent_small;
         bool seen = false;
         bool moving = true;
         cv::Mat sum;

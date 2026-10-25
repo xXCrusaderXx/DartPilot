@@ -12,6 +12,7 @@
 #include <opencv2/core.hpp>
 
 #include "dartpilot/api/server.hpp"
+#include "dartpilot/event_detection/event_detection.hpp"
 #include "dartpilot/fusion/dart_tracker.hpp"
 #include "dartpilot/geometry/board_refinement.hpp"
 #include "preview_sources.hpp"
@@ -45,18 +46,12 @@ class LiveDetection
         std::string id;
         std::uint32_t last_sequence = 0;
         bool seen = false;
-        bool moving = true;
-        cv::Mat previous_small;
-        cv::Mat latest;
-        bool fresh = false;
-        cv::Mat sum;
-        int summed = 0;
-        std::vector<std::uint32_t> frames;
     };
 
     void run ();
-    void sample (Camera& camera, std::size_t index);
-    void publish (const fusion::TrackerUpdate& update, std::int64_t event_ns, double latency_ms);
+    // The camera's latest frame, if it has a new one since the last sample
+    std::optional<event_detection::StillSample> sample (Camera& camera, std::size_t index);
+    void publish (const fusion::TrackerUpdate& update, const event_detection::StillMoment& moment, double latency_ms);
 
     api::Server& server_;
     const FrameFeed& previews_;
