@@ -95,6 +95,40 @@ void main() {
     expect(find.text('2 Darts fehlen'), findsOneWidget);
   });
 
+  testWidgets('three candidates fit beside the question on a medium window', (tester) async {
+    tester.view.physicalSize = const Size(1000, 700);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final engine = EngineConnection.forTest((_) {});
+    addTearDown(engine.dispose);
+    await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
+    await playOffline(tester);
+    await tester.tap(find.text('X01'));
+    await tester.pumpAndSettle();
+    await pickPlayers(tester, ['Anna']);
+    await tester.tap(find.text('Spiel starten'));
+    await tester.pumpAndSettle();
+
+    Map<String, dynamic> candidate(double x, double y, double p) => {
+      'board_point': {'x_mm': x, 'y_mm': y},
+      'probability': p,
+    };
+    engine.receiveForTest(
+      jsonEncode({
+        'type': 'throw',
+        'throw_id': 's/8',
+        'accepted': false,
+        'reason': 'near_wire',
+        'board_point': {'x_mm': 16.1, 'y_mm': 102.9, 'covariance_mm2': null},
+        'confidence': 0.45,
+        'candidates': [candidate(16.1, 102.9, 0.45), candidate(16.9, 102.6, 0.35), candidate(16.5, 98.0, 0.2)],
+      }),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('T1 (35\u00a0%)'), findsOneWidget);
+  });
+
   testWidgets('an uncertain dart on a wire offers both fields, marks them, and sends the one picked', (tester) async {
     tester.view.physicalSize = const Size(1400, 1000);
     tester.view.devicePixelRatio = 1.0;

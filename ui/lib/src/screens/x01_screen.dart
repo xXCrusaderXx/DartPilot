@@ -8,18 +8,16 @@ import '../sound/game_calls.dart';
 import '../sound/x01_calls.dart';
 import '../bots/bot_turns.dart';
 import '../games/dart_game.dart';
-import '../input/game_input.dart';
 import '../input/takeout_gate.dart';
 import '../stats/game_record.dart';
 import '../stats/statistics.dart';
 import '../widgets/winner_dialog.dart';
 import 'my_darts_screen.dart';
 import 'game_layout.dart';
-import 'watched_board.dart';
+import 'game_scaffold.dart';
 import 'x01_setup_screen.dart';
 import '../board/score_text.dart';
 import '../widgets/precision_text.dart';
-import '../widgets/leave_game_guard.dart';
 
 class X01Screen extends StatefulWidget {
   const X01Screen({
@@ -167,25 +165,18 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
         ),
       ],
     );
-    final input = widget.watching
-        ? WatchedBoard(throws: [for (final d in visit.darts) d.dart])
-        : GameInput(
-            game: _game,
-            takeout: _takeout,
-            shownThrows: [for (final d in visit.darts) d.dart],
-            onDart: (dart) {
-              // While a bot is at the oche, its darts are its own.
-              if (!isBotTurn) _add(dart);
-            },
-            onChanged: () => setState(() {}),
-          );
-
-    return LeaveGameGuard(
-      canLeave: widget.watching || _game.isFinished || currentRecord.throws.isEmpty,
-      child: Scaffold(
-        appBar: AppBar(title: Text('${widget.settings.startScore}')),
-        body: GameLayout(input: input, panel: scoreboard),
-      ),
+    return GameScaffold(
+      title: '${widget.settings.startScore}',
+      game: _game,
+      takeout: _takeout,
+      shownThrows: [for (final d in visit.darts) d.dart],
+      watching: widget.watching,
+      onDart: (dart) {
+        // While a bot is at the oche, its darts are its own.
+        if (!isBotTurn) _add(dart);
+      },
+      onChanged: () => setState(() {}),
+      panel: scoreboard,
     );
   }
 

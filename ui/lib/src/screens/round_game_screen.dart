@@ -6,7 +6,6 @@ import '../board/dart_throw.dart';
 import '../bots/bot_turns.dart';
 import '../games/dart_game.dart';
 import '../games/round_games.dart';
-import '../input/game_input.dart';
 import '../input/takeout_gate.dart';
 import '../sound/caller.dart';
 import '../sound/game_calls.dart';
@@ -15,10 +14,9 @@ import '../stats/game_record.dart';
 import '../stats/statistics.dart';
 import '../widgets/winner_dialog.dart';
 import 'game_layout.dart';
+import 'game_scaffold.dart';
 import 'my_darts_screen.dart';
 import 'players_setup_screen.dart';
-import 'watched_board.dart';
-import '../widgets/leave_game_guard.dart';
 import '../widgets/precision_text.dart';
 
 /// Shanghai, Bob's 27 and Halve-It (#118): a round's target, every player's score, and the darts of the visit.
@@ -199,26 +197,18 @@ class _RoundGameScreenState extends State<RoundGameScreen> with RecordsGame, Bot
         ),
       ],
     );
-    return LeaveGameGuard(
-      canLeave: widget.watching || _game.isFinished || currentRecord.throws.isEmpty,
-      child: Scaffold(
-        appBar: AppBar(title: Text(RoundGameScreen.title(l10n, widget.mode))),
-        body: GameLayout(
-          input: widget.watching
-              ? WatchedBoard(throws: visit)
-              : GameInput(
-                  game: _game,
-                  takeout: _takeout,
-                  shownThrows: visit,
-                  onDart: (dart) {
-                    // While a bot is at the oche, its darts are its own.
-                    if (!isBotTurn) _add(dart);
-                  },
-                  onChanged: () => setState(() {}),
-                ),
-          panel: panel,
-        ),
-      ),
+    return GameScaffold(
+      title: RoundGameScreen.title(l10n, widget.mode),
+      game: _game,
+      takeout: _takeout,
+      shownThrows: visit,
+      watching: widget.watching,
+      onDart: (dart) {
+        // While a bot is at the oche, its darts are its own.
+        if (!isBotTurn) _add(dart);
+      },
+      onChanged: () => setState(() {}),
+      panel: panel,
     );
   }
 }

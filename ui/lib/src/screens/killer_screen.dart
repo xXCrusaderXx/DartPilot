@@ -7,7 +7,6 @@ import '../board/dart_throw.dart';
 import '../bots/bot_turns.dart';
 import '../games/dart_game.dart';
 import '../games/killer.dart';
-import '../input/game_input.dart';
 import '../input/takeout_gate.dart';
 import '../sound/caller.dart';
 import '../sound/game_calls.dart';
@@ -16,11 +15,10 @@ import '../stats/game_record.dart';
 import '../stats/statistics.dart';
 import '../widgets/winner_dialog.dart';
 import 'game_layout.dart';
+import 'game_scaffold.dart';
 import 'my_darts_screen.dart';
 import 'players_setup_screen.dart';
-import 'watched_board.dart';
 import '../board/score_text.dart';
-import '../widgets/leave_game_guard.dart';
 
 /// Killer (#118): every player's number, marks on the way to killer, and lives.
 class KillerScreen extends StatefulWidget {
@@ -168,26 +166,18 @@ class _KillerScreenState extends State<KillerScreen> with RecordsGame, BotTurns 
         ),
       ],
     );
-    return LeaveGameGuard(
-      canLeave: widget.watching || _game.isFinished || currentRecord.throws.isEmpty,
-      child: Scaffold(
-        appBar: AppBar(title: Text(l10n.modeKiller)),
-        body: GameLayout(
-          input: widget.watching
-              ? WatchedBoard(throws: _game.currentVisit)
-              : GameInput(
-                  game: _game,
-                  takeout: _takeout,
-                  shownThrows: _game.currentVisit,
-                  onDart: (dart) {
-                    // While a bot is at the oche, its darts are its own.
-                    if (!isBotTurn) _add(dart);
-                  },
-                  onChanged: () => setState(() {}),
-                ),
-          panel: panel,
-        ),
-      ),
+    return GameScaffold(
+      title: l10n.modeKiller,
+      game: _game,
+      takeout: _takeout,
+      shownThrows: _game.currentVisit,
+      watching: widget.watching,
+      onDart: (dart) {
+        // While a bot is at the oche, its darts are its own.
+        if (!isBotTurn) _add(dart);
+      },
+      onChanged: () => setState(() {}),
+      panel: panel,
     );
   }
 }

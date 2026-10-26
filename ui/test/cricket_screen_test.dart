@@ -42,6 +42,22 @@ void main() {
     expect(find.text('Anna gewinnt!'), findsOneWidget);
   });
 
+  testWidgets('back on the winner dialog leaves the finished game for the menu', (tester) async {
+    await start(tester, 'Cricket');
+    for (final n in [20, 19, 18, 17, 16, 15]) {
+      await dart(tester, 'Triple', 'keypad-$n');
+    }
+    await dart(tester, '', 'keypad-bull');
+    await dart(tester, '', 'keypad-25');
+    expect(find.text('Anna gewinnt!'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('Anna gewinnt!'), findsNothing);
+    expect(find.byKey(const ValueKey('keypad-20')), findsNothing);
+    expect(find.text('Cricket'), findsOneWidget);
+  });
+
   testWidgets('a solo Around the Clock game without the bull', (tester) async {
     tester.view.physicalSize = const Size(1400, 1000);
     tester.view.devicePixelRatio = 1.0;
