@@ -15,7 +15,7 @@ qt_add_qml_module(dartpilot_setup
   VERSION 1.0
   QML_FILES
     Main.qml Tokens.qml
-    Card.qml CameraCardHeader.qml Chip.qml EmptyState.qml HintBanner.qml SectionLabel.qml NavButton.qml PageHeader.qml StepCard.qml
+    Card.qml CameraCardHeader.qml Chip.qml ConfirmDialog.qml EmptyState.qml HintBanner.qml SectionLabel.qml NavButton.qml PageHeader.qml StepCard.qml
     CamerasPage.qml CameraPane.qml IntrinsicPage.qml ExtrinsicPage.qml
     CaptureGuide.qml ChecklistItem.qml GuideDialog.qml GuideDialogBase.qml PatternWindow.qml
     BoardIllustration.qml ExtrinsicGuideDialog.qml

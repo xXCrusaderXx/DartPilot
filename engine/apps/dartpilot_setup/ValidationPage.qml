@@ -41,6 +41,7 @@ ColumnLayout {
     }
 
     HintBanner {
+        glance: true
         text: run.instruction
 
         Chip {
@@ -77,7 +78,9 @@ ColumnLayout {
                         required property var modelData
                         required property int index
 
+                        // Columns share the width evenly, whatever the header would like
                         Layout.fillWidth: true
+                        Layout.preferredWidth: 1
                         Layout.alignment: Qt.AlignTop
 
                         ColumnLayout {
@@ -85,11 +88,13 @@ ColumnLayout {
                             spacing: Tokens.spaceSm
 
                             CameraCardHeader {
+                                Layout.maximumWidth: pane.availableWidth
                                 number: pane.index + 1
                                 usbPort: pane.modelData.usbPort
                             }
                             MarkerView {
                                 Layout.fillWidth: true
+                                Layout.maximumWidth: pane.availableWidth
                                 Layout.preferredHeight: width * 9 / 16
                                 devicePath: page.active ? pane.modelData.path : ""
                                 markers: run.markers[pane.modelData.usbPort] || []

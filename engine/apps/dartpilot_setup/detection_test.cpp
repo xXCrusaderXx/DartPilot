@@ -604,6 +604,27 @@ QVariantMap DetectionTest::paramMap (const fusion::DetectionParam& param) const
                        {"defaultValue", param.defaultValue()}};
 }
 
+QString DetectionTest::groupTitle (const QString& group) const
+{
+    if(group == QLatin1String("event_detection"))
+    {
+        return "Event detection";
+    }
+    if(group == QLatin1String("tip_candidates"))
+    {
+        return "Tip candidates";
+    }
+    if(group == QLatin1String("geometry"))
+    {
+        return "Geometry";
+    }
+    if(group == QLatin1String("fusion"))
+    {
+        return "Fusion";
+    }
+    return group;
+}
+
 QStringList DetectionTest::paramNames (const QString& group) const
 {
     QStringList names;

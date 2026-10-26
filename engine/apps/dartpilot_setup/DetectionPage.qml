@@ -15,6 +15,20 @@ ColumnLayout {
     // Index in test.darts of the dart a tap on the board corrects; -1 adds a missed dart
     property int selected: -1
 
+    // Runs a profile action and says it worked, unless it reported a problem
+    function afterProfileAction(action, message) {
+        problemLabel.text = "";
+        action();
+        if (problemLabel.text === "") {
+            doneLabel.text = message;
+            doneTimer.restart();
+        }
+    }
+
+    // Right a filled dot, a wrong field a cross, unsure a ring, missed a square
+    function shapeOf(outcome) {
+        return outcome === "right" ? "dot" : outcome === "abstained" ? "ring" : outcome === "missed" ? "square" : "cross";
+    }
     function toneOf(outcome) {
         return outcome === "right" ? Tokens.good : outcome === "abstained" ? Tokens.warning : outcome === "missed" ? Tokens.accent : Tokens.bad;
     }
@@ -32,6 +46,26 @@ ColumnLayout {
     }
 
     spacing: Tokens.spacing
+
+    ConfirmDialog {
+        id: resetDialog
+
+        title: "All values to their defaults?"
+        text: "Every value you tuned goes back to its default. Save them as a profile first to keep them."
+        confirmText: "Reset all"
+        onAccepted: page.afterProfileAction(() => test.resetAllParams(), "All values are at their defaults.")
+    }
+
+    ConfirmDialog {
+        id: overwriteDialog
+
+        property string name
+
+        title: "Overwrite " + name + "?"
+        text: "A profile of this name exists; its values are replaced by the current ones."
+        confirmText: "Overwrite"
+        onAccepted: page.afterProfileAction(() => test.saveProfile(name), "Saved as " + name + ".")
+    }
 
     DetectionTest {
         id: test
@@ -98,7 +132,9 @@ ColumnLayout {
                         required property var modelData
                         required property int index
 
+                        // Columns share the width evenly, whatever the header would like
                         Layout.fillWidth: true
+                        Layout.preferredWidth: 1
                         Layout.alignment: Qt.AlignTop
 
                         ColumnLayout {
@@ -106,11 +142,13 @@ ColumnLayout {
                             spacing: Tokens.spaceSm
 
                             CameraCardHeader {
+                                Layout.maximumWidth: pane.availableWidth
                                 number: pane.index + 1
                                 usbPort: pane.modelData.usbPort
                             }
                             MarkerView {
                                 Layout.fillWidth: true
+                                Layout.maximumWidth: pane.availableWidth
                                 Layout.preferredHeight: width * 9 / 16
                                 devicePath: page.active ? pane.modelData.path : ""
                                 markers: test.markers[pane.modelData.usbPort] || []
@@ -121,6 +159,7 @@ ColumnLayout {
 
                 Card {
                     Layout.fillWidth: true
+                    Layout.preferredWidth: 1
                     Layout.columnSpan: page.cameras.length > 1 ? 2 : 1
 
                     ColumnLayout {
@@ -132,42 +171,65 @@ ColumnLayout {
                             font.pixelSize: Tokens.headingSize
                             font.weight: Font.Bold
                         }
-                        RowLayout {
+                        // Wraps on a narrow window instead of pushing Save and the reset out of the card
+                        Flow {
+                            Layout.fillWidth: true
                             spacing: Tokens.spaceSm
 
                             ComboBox {
                                 id: profileBox
 
-                                Layout.preferredWidth: 200
+                                width: 200
                                 model: test.profiles
                             }
                             Button {
                                 text: "Load"
                                 enabled: profileBox.currentIndex >= 0
-                                onClicked: test.loadProfile(profileBox.currentText)
+                                onClicked: page.afterProfileAction(() => test.loadProfile(profileBox.currentText), "Loaded " + profileBox.currentText + ".")
                             }
                             TextField {
                                 id: profileName
 
-                                Layout.preferredWidth: 180
+                                width: 180
                                 placeholderText: "Profile name"
                             }
                             Button {
                                 text: "Save"
                                 enabled: profileName.text.trim() !== ""
-                                onClicked: test.saveProfile(profileName.text)
-                            }
-                            Item {
-                                Layout.fillWidth: true
+                                onClicked: {
+                                    const name = profileName.text.trim();
+                                    if (test.profiles.indexOf(name) >= 0) {
+                                        overwriteDialog.name = name;
+                                        overwriteDialog.open();
+                                    } else {
+                                        page.afterProfileAction(() => test.saveProfile(name), "Saved as " + name + ".");
+                                    }
+                                }
                             }
                             Label {
+                                height: profileName.height
+                                verticalAlignment: Text.AlignVCenter
                                 text: "Revision " + test.revision
                                 color: Tokens.textMuted
                             }
                             Button {
                                 text: "All to defaults"
                                 flat: true
-                                onClicked: test.resetAllParams()
+                                onClicked: resetDialog.open()
+                            }
+                        }
+                        Label {
+                            id: doneLabel
+
+                            visible: text !== ""
+                            Layout.fillWidth: true
+                            color: Tokens.good
+
+                            Timer {
+                                id: doneTimer
+
+                                interval: 3000
+                                onTriggered: doneLabel.text = ""
                             }
                         }
                         Label {
@@ -189,11 +251,10 @@ ColumnLayout {
                                 Layout.fillWidth: true
                                 spacing: Tokens.spaceXs
 
-                                Label {
+                                // A heading, not a control: muted small caps, not the accent that marks what can be clicked
+                                SectionLabel {
                                     Layout.topMargin: Tokens.spaceSm
-                                    text: group.modelData
-                                    font.weight: Font.Bold
-                                    color: Tokens.accent
+                                    text: test.groupTitle(group.modelData)
                                 }
                                 Repeater {
                                     // Names only: a change of a value must not rebuild the rows, or a slider moved by keyboard loses its focus.
@@ -351,6 +412,7 @@ ColumnLayout {
                                         xMm: d.xMm,
                                         yMm: d.yMm,
                                         colour: page.toneOf(d.outcome),
+                                        shape: page.shapeOf(d.outcome),
                                         selected: test.darts.indexOf(d) === page.selected
                                     }))
                             onPicked: (xMm, yMm) => {
