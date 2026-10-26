@@ -14,7 +14,7 @@ class PinView : public StreamView
 {
     Q_OBJECT
     QML_ELEMENT
-    Q_PROPERTY(QString usbPort MEMBER usb_port_)
+    Q_PROPERTY(QString usbPort MEMBER usb_port_ NOTIFY usbPortChanged)
     Q_PROPERTY(bool picked READ picked NOTIFY pickedChanged)
 
    public:
@@ -25,6 +25,7 @@ class PinView : public StreamView
     Q_INVOKABLE void clearPick ();
 
    signals:
+    void usbPortChanged ();
     void pickedChanged ();
     // Image point of the click, in pixels of the camera image
     void pointPicked (const QString& usbPort, double x_px, double y_px);

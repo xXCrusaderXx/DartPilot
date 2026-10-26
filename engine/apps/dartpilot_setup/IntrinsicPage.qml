@@ -237,7 +237,7 @@ ColumnLayout {
                                 wrapMode: Text.WrapAnywhere
                                 font.pixelSize: Tokens.captionSize
                                 color: Tokens.textMuted
-                                text: view.target !== "" ? view.patternDownloadUrl() : ""
+                                text: view.target !== "" ? view.patternDownloadUrl : ""
                             }
                         }
                     }
@@ -366,8 +366,7 @@ ColumnLayout {
                     Label {
                         id: savedLabel
 
-                        // Re-read when the camera, the page or a save changes
-                        readonly property string summary: page.active && page.camera && view.savedPath !== "-" ? view.savedSummary() : ""
+                        readonly property string summary: page.active ? view.savedSummary : ""
 
                         visible: summary !== ""
                         Layout.fillWidth: true
@@ -521,7 +520,7 @@ ColumnLayout {
                         wrapMode: Text.WrapAnywhere
                         font.pixelSize: Tokens.captionSize
                         color: page.saveFailed ? Tokens.bad : view.savedPath !== "" ? Tokens.good : Tokens.textMuted
-                        text: page.saveFailed ? "Saving failed. Check that " + view.calibrationDirectory() + " is writable." : view.savedPath !== "" ? "Saved to " + view.savedPath : "Will be saved to " + view.calibrationDirectory()
+                        text: page.saveFailed ? "Saving failed. Check that " + view.calibrationDirectory + " is writable." : view.savedPath !== "" ? "Saved to " + view.savedPath : "Will be saved to " + view.calibrationDirectory
                     }
                 }
             }
