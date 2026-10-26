@@ -1175,7 +1175,7 @@
   "doublesRanking": "Your doubles, best first",
   "doublesRound": "This round",
   "modeCheckout": "Checkout trainer",
-  "modeCheckoutDescription": "Random finishes; every miss measured against the field to aim at",
+  "modeCheckoutDescription": "Random finishes or the 121 ladder; every miss measured against the field to aim at",
   "checkoutRange": "Finishes",
   "checkoutCount": "Checkouts per round",
   "checkoutDarts": "Darts per checkout",
@@ -1220,5 +1220,54 @@
   "modePrecisionDescription": "Grouping, doubles and checkouts, measured in millimetres",
   "or": "or",
   "pickCandidate": "Tap the right field, or tap the board where the dart is.",
-  "callCheckout": "Say the checkout"
+  "callCheckout": "Say the checkout",
+  "modeMoreGames": "More games",
+  "modeMoreGamesDescription": "Shanghai, Bob's 27, Halve-It and Killer",
+  "modeShanghai": "Shanghai",
+  "modeShanghaiDescription": "Rounds 1 to 7 at that number; single, double and triple in one visit win at once",
+  "shanghaiAllNumbers": "All 20 numbers instead of 7",
+  "modeBobs27": "Bob's 27",
+  "modeBobs27Description": "Doubles practice: start with 27, D1 to the bull; a visit without a hit costs the double",
+  "modeHalveIt": "Halve-It",
+  "modeHalveItDescription": "Start with 40; a visit without a hit on the target halves your score",
+  "roundOf": "Round {round} of {total}",
+  "@roundOf": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "playerOut": "out",
+  "targetAnyDouble": "any double",
+  "targetAnyTriple": "any triple",
+  "cutThroat": "Cut-throat: points go to the opponents, the lowest score wins",
+  "ladderBest": "Highest checkout: {score}",
+  "@ladderBest": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "modeKiller": "Killer",
+  "modeKillerDescription": "Hit your own double three times to become a killer, then take your opponents' lives",
+  "killerIsKiller": "Killer",
+  "killerMarks": "{marks} of {needed} on {field}",
+  "@killerMarks": {
+    "placeholders": {
+      "marks": {
+        "type": "int"
+      },
+      "needed": {
+        "type": "int"
+      },
+      "field": {
+        "type": "String"
+      }
+    }
+  }
 }

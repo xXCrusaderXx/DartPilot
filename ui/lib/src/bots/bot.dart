@@ -6,6 +6,8 @@ import '../board/dart_throw.dart';
 import '../board/scoring.dart';
 import '../games/around_the_clock.dart';
 import '../games/cricket.dart';
+import '../games/killer.dart';
+import '../games/round_games.dart';
 import '../games/x01.dart';
 
 /// A bot's strength. [spreadMm] is the standard deviation of its darts around the aim point, per axis; it is set so
@@ -54,6 +56,8 @@ class Bot {
     X01Game() => aimX01(game),
     CricketGame() => aimCricket(game),
     AroundTheClockGame() => aimAroundTheClock(game),
+    RoundGame() => aimAt(game.target.aim),
+    KillerGame() => aimKiller(game),
     _ => const BoardPoint(0, 0),
   });
 }
@@ -90,4 +94,15 @@ BoardPoint aimCricket(CricketGame game) {
 BoardPoint aimAroundTheClock(AroundTheClockGame game) {
   final position = game.players[game.current].position;
   return position < 20 ? aimAt('S${position + 1}') : aimAt('50');
+}
+
+/// The own double until the bot is a killer, then the double of the opponent with the fewest lives
+BoardPoint aimKiller(KillerGame game) {
+  final me = game.players[game.current];
+  if (!me.isKiller) return aimAt('D${me.number}');
+  final opponents = [
+    for (final p in game.players)
+      if (!identical(p, me) && !p.out) p,
+  ]..sort((a, b) => a.lives.compareTo(b.lives));
+  return aimAt('D${opponents.first.number}');
 }

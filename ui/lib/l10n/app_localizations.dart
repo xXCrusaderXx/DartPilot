@@ -3269,7 +3269,7 @@ abstract class AppLocalizations {
   /// No description provided for @modeCheckoutDescription.
   ///
   /// In en, this message translates to:
-  /// **'Random finishes; every miss measured against the field to aim at'**
+  /// **'Random finishes or the 121 ladder; every miss measured against the field to aim at'**
   String get modeCheckoutDescription;
 
   /// No description provided for @checkoutRange.
@@ -3355,6 +3355,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Say the checkout'**
   String get callCheckout;
+
+  /// No description provided for @modeMoreGames.
+  ///
+  /// In en, this message translates to:
+  /// **'More games'**
+  String get modeMoreGames;
+
+  /// No description provided for @modeMoreGamesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Shanghai, Bob\'s 27, Halve-It and Killer'**
+  String get modeMoreGamesDescription;
+
+  /// No description provided for @modeShanghai.
+  ///
+  /// In en, this message translates to:
+  /// **'Shanghai'**
+  String get modeShanghai;
+
+  /// No description provided for @modeShanghaiDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Rounds 1 to 7 at that number; single, double and triple in one visit win at once'**
+  String get modeShanghaiDescription;
+
+  /// No description provided for @shanghaiAllNumbers.
+  ///
+  /// In en, this message translates to:
+  /// **'All 20 numbers instead of 7'**
+  String get shanghaiAllNumbers;
+
+  /// No description provided for @modeBobs27.
+  ///
+  /// In en, this message translates to:
+  /// **'Bob\'s 27'**
+  String get modeBobs27;
+
+  /// No description provided for @modeBobs27Description.
+  ///
+  /// In en, this message translates to:
+  /// **'Doubles practice: start with 27, D1 to the bull; a visit without a hit costs the double'**
+  String get modeBobs27Description;
+
+  /// No description provided for @modeHalveIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Halve-It'**
+  String get modeHalveIt;
+
+  /// No description provided for @modeHalveItDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Start with 40; a visit without a hit on the target halves your score'**
+  String get modeHalveItDescription;
+
+  /// No description provided for @roundOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Round {round} of {total}'**
+  String roundOf(int round, int total);
+
+  /// No description provided for @playerOut.
+  ///
+  /// In en, this message translates to:
+  /// **'out'**
+  String get playerOut;
+
+  /// No description provided for @targetAnyDouble.
+  ///
+  /// In en, this message translates to:
+  /// **'any double'**
+  String get targetAnyDouble;
+
+  /// No description provided for @targetAnyTriple.
+  ///
+  /// In en, this message translates to:
+  /// **'any triple'**
+  String get targetAnyTriple;
+
+  /// No description provided for @cutThroat.
+  ///
+  /// In en, this message translates to:
+  /// **'Cut-throat: points go to the opponents, the lowest score wins'**
+  String get cutThroat;
+
+  /// No description provided for @ladderBest.
+  ///
+  /// In en, this message translates to:
+  /// **'Highest checkout: {score}'**
+  String ladderBest(String score);
+
+  /// No description provided for @modeKiller.
+  ///
+  /// In en, this message translates to:
+  /// **'Killer'**
+  String get modeKiller;
+
+  /// No description provided for @modeKillerDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Hit your own double three times to become a killer, then take your opponents\' lives'**
+  String get modeKillerDescription;
+
+  /// No description provided for @killerIsKiller.
+  ///
+  /// In en, this message translates to:
+  /// **'Killer'**
+  String get killerIsKiller;
+
+  /// No description provided for @killerMarks.
+  ///
+  /// In en, this message translates to:
+  /// **'{marks} of {needed} on {field}'**
+  String killerMarks(int marks, int needed, String field);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

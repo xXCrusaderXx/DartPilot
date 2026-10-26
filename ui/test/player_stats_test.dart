@@ -105,7 +105,7 @@ void main() {
     final file = File('${dir.path}/games.jsonl');
     final store = FileGameStore(file);
     await store.add(x01(['Anna'], [t20, s20]));
-    await file.writeAsString('{"mode":"shanghai","id":"later"}\nnot json\n', mode: FileMode.append);
+    await file.writeAsString('{"mode":"future_mode","id":"later"}\nnot json\n', mode: FileMode.append);
     final loaded = await FileGameStore(file).load();
     expect(loaded.single.players, ['Anna']);
     expect(loaded.single.throws.first.score.label, 'T20');

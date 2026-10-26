@@ -5,6 +5,8 @@ import '../games/checkout_trainer.dart';
 import '../games/cricket.dart';
 import '../games/doubles.dart';
 import '../games/grouping.dart';
+import '../games/killer.dart';
+import '../games/round_games.dart';
 import '../games/x01.dart';
 import 'game_record.dart';
 import 'precision.dart';
@@ -20,6 +22,7 @@ class PlayedGame {
     this.hitRate,
     this.spreadMm,
     this.checkoutRate,
+    this.points,
   });
 
   final GameRecord record;
@@ -37,6 +40,9 @@ class PlayedGame {
 
   /// Checkout trainer: share of the checkouts finished
   final double? checkoutRate;
+
+  /// Shanghai, Bob's 27, Halve-It: the final score
+  final int? points;
 }
 
 class PlayerStats {
@@ -136,6 +142,10 @@ PlayerStats computePlayerStats(List<GameRecord> games, String player, {DateTime?
         played = PlayedGame(record, won: false, darts: mine.length, spreadMm: game.spread?.spreadMm);
       case DoublesGame():
         played = PlayedGame(record, won: false, darts: mine.length, hitRate: game.hitRate);
+      case KillerGame():
+        played = PlayedGame(record, won: game.winner == index, darts: mine.length);
+      case RoundGame():
+        played = PlayedGame(record, won: game.winner == index, darts: mine.length, points: game.players[index].score);
       case CheckoutTrainer():
         played = PlayedGame(record, won: false, darts: mine.length, checkoutRate: game.checkoutRate);
       default:

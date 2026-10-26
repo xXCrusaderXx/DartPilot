@@ -32,14 +32,16 @@ class CricketDart {
   final int points;
 }
 
-/// Standard Cricket, replayed from all darts so undo is exact.
+/// Standard Cricket, replayed from all darts so undo is exact. In Cut-Throat Cricket ([cutThroat]) the points of a
+/// closed number go to every opponent who has not closed it, and the lowest score wins.
 class CricketGame implements DartGame {
-  CricketGame(List<String> names) : names = List.unmodifiable(names) {
+  CricketGame(List<String> names, {this.cutThroat = false}) : names = List.unmodifiable(names) {
     if (names.isEmpty) throw ArgumentError('at least one player');
     _replay();
   }
 
   final List<String> names;
+  final bool cutThroat;
   final List<DartThrow> _throws = [];
 
   late List<CricketPlayerState> players;
@@ -111,12 +113,21 @@ class CricketGame implements DartGame {
       if (extra > 0 && opponentOpen) points = extra * target;
       // Marks beyond closing only count when they score.
       counted = extra > 0 && !opponentOpen ? toClose : marks;
-      player.points += points;
+      if (cutThroat) {
+        for (final p in players) {
+          if (!identical(p, player) && !p.isClosed(target)) p.points += points;
+        }
+      } else {
+        player.points += points;
+      }
       player.totalMarks += counted;
     }
     currentVisit.add(CricketDart(dart, target, counted, points));
 
-    if (player.allClosed && players.every((p) => identical(p, player) || p.points <= player.points)) {
+    final leads = cutThroat
+        ? players.every((p) => identical(p, player) || p.points >= player.points)
+        : players.every((p) => identical(p, player) || p.points <= player.points);
+    if (player.allClosed && leads) {
       winner = current;
       return;
     }

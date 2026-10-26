@@ -27,6 +27,7 @@ class CheckoutScreen extends StatefulWidget {
     required this.player,
     required this.starts,
     this.dartsPerAttempt = 9,
+    this.ladder = false,
     this.replay = const [],
     this.watching = false,
   });
@@ -36,6 +37,9 @@ class CheckoutScreen extends StatefulWidget {
   /// The scores to check out, in order
   final List<int> starts;
   final int dartsPerAttempt;
+
+  /// 121: each checkout made moves up by one
+  final bool ladder;
 
   /// Darts already thrown, for a game rebuilt from a shared record
   final List<DartThrow> replay;
@@ -54,7 +58,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
   bool get watching => widget.watching;
 
   late final CheckoutTrainer _game = replayed(
-    CheckoutTrainer(widget.starts, dartsPerAttempt: widget.dartsPerAttempt),
+    CheckoutTrainer(widget.starts, dartsPerAttempt: widget.dartsPerAttempt, ladder: widget.ladder),
     widget.replay,
   );
   final TakeoutGate _takeout = TakeoutGate();
@@ -66,7 +70,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
     started: started,
     ended: ended,
     players: [widget.player],
-    settings: {'starts': widget.starts, 'darts': widget.dartsPerAttempt},
+    settings: {'starts': widget.starts, 'darts': widget.dartsPerAttempt, if (widget.ladder) 'ladder': true},
     throws: _game.throws,
   );
 
@@ -83,7 +87,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
       builder: (dialogContext) => AlertDialog(
         title: Text(l10n.groupingDone),
         content: Text(
-          '${l10n.statsCheckoutRate}: ${_game.checkouts} / ${_game.attemptsDone}',
+          [
+            '${l10n.statsCheckoutRate}: ${_game.checkouts} / ${_game.attemptsDone}',
+            if (widget.ladder) l10n.ladderBest(_game.bestCheckout?.toString() ?? '–'),
+          ].join('\n'),
           key: const ValueKey('checkout-result'),
         ),
         actions: [
@@ -104,9 +111,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
                     starts: checkoutStarts(
                       math.Random().nextInt(1 << 31),
                       widget.starts.length,
-                      _rangeOf(widget.starts),
+                      widget.ladder ? CheckoutRange.ladder : _rangeOf(widget.starts),
                     ),
                     dartsPerAttempt: widget.dartsPerAttempt,
+                    ladder: widget.ladder,
                   ),
                 ),
               );
@@ -252,7 +260,10 @@ class _CheckoutSetupScreenState extends State<CheckoutSetupScreen> {
               SegmentedButton<CheckoutRange>(
                 segments: [
                   for (final r in CheckoutRange.values)
-                    ButtonSegment(value: r, label: Text('${r.lowest}–${r.highest}')),
+                    ButtonSegment(
+                      value: r,
+                      label: Text(r == CheckoutRange.ladder ? '121 ↑' : '${r.lowest}–${r.highest}'),
+                    ),
                 ],
                 selected: {_range},
                 onSelectionChanged: (s) => setState(() => _range = s.first),
@@ -287,7 +298,12 @@ class _CheckoutSetupScreenState extends State<CheckoutSetupScreen> {
                         final starts = checkoutStarts(math.Random().nextInt(1 << 31), _count, _range);
                         Navigator.of(context).pushReplacement(
                           MaterialPageRoute<void>(
-                            builder: (_) => CheckoutScreen(player: player, starts: starts, dartsPerAttempt: _darts),
+                            builder: (_) => CheckoutScreen(
+                              player: player,
+                              starts: starts,
+                              dartsPerAttempt: _darts,
+                              ladder: _range == CheckoutRange.ladder,
+                            ),
                           ),
                         );
                       },

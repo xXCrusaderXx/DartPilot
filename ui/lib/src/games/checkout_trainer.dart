@@ -9,7 +9,10 @@ import 'x01.dart';
 enum CheckoutRange {
   low(2, 40),
   middle(41, 100),
-  high(101, 170);
+  high(101, 170),
+
+  /// 121: a checkout made moves up to the next score, a missed one is tried again
+  ladder(121, 170);
 
   const CheckoutRange(this.lowest, this.highest);
 
@@ -18,8 +21,10 @@ enum CheckoutRange {
 }
 
 /// The scores to check out, drawn from [seed] so a kept training replays the same; only scores that can be finished
-/// with three darts.
+/// with three darts. For the ladder, its first score for every checkout.
 List<int> checkoutStarts(int seed, int count, CheckoutRange range) {
+  // The ladder sets only where it begins; the trainer moves up from there.
+  if (range == CheckoutRange.ladder) return List.filled(count, range.lowest);
   final finishable = [
     for (var n = range.lowest; n <= range.highest; ++n)
       if (suggestCheckout(n, 3) != null) n,
@@ -42,13 +47,16 @@ class CheckoutAttempt {
 }
 
 /// Checkout trainer (#125): double-out finishes from random scores, each with a set number of darts. Before every dart
-/// it names the field to aim at, so every miss is measured against what the player went for. Pure logic, no UI.
+/// it names the field to aim at, so every miss is measured against what the player went for. As a [ladder] (121, #118)
+/// only the first score is set: each checkout made moves up by one, a missed one is tried again. Pure logic, no UI.
 class CheckoutTrainer implements DartGame, AimedGame {
-  CheckoutTrainer(this.starts, {this.dartsPerAttempt = 9}) : assert(starts.isNotEmpty) {
+  CheckoutTrainer(this.starts, {this.dartsPerAttempt = 9, this.ladder = false}) : assert(starts.isNotEmpty) {
     _replay();
   }
 
+  /// The scores to check out; as a ladder, the first score and as many entries as checkouts
   final List<int> starts;
+  final bool ladder;
 
   /// 3: one visit per checkout; 9: three visits
   final int dartsPerAttempt;
@@ -131,6 +139,18 @@ class CheckoutTrainer implements DartGame, AimedGame {
     _leg.add(dart);
     attempt.remaining = _leg.players.first.remaining;
     attempt.checkedOut = _leg.isFinished;
-    if (_attemptOver(attempt) && attempts.length < starts.length) _startAttempt(starts[attempts.length]);
+    if (_attemptOver(attempt) && attempts.length < starts.length) {
+      _startAttempt(
+        ladder
+            ? (attempt.checkedOut ? math.min(attempt.start + 1, CheckoutRange.ladder.highest) : attempt.start)
+            : starts[attempts.length],
+      );
+    }
   }
+
+  /// The highest score checked out, for the 121 ladder
+  int? get bestCheckout => attempts
+      .where((a) => a.checkedOut)
+      .map((a) => a.start)
+      .fold<int?>(null, (best, s) => best == null || s > best ? s : best);
 }

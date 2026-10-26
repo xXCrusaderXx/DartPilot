@@ -10,6 +10,8 @@ import 'checkout_screen.dart';
 import 'cricket_screen.dart';
 import 'doubles_screen.dart';
 import 'grouping_screen.dart';
+import 'killer_screen.dart';
+import 'round_game_screen.dart';
 import 'x01_screen.dart';
 
 /// The game another app leads, as that app shows it (#116). Every shared update rebuilds it from the record with the
@@ -47,6 +49,7 @@ class WatchGameScreen extends StatelessWidget {
       GameMode.cricket => CricketScreen(
         key: key,
         names: record.players,
+        cutThroat: record.settings['cut_throat'] == true,
         bots: record.bots,
         replay: record.throws,
         watching: true,
@@ -80,6 +83,24 @@ class WatchGameScreen extends StatelessWidget {
         player: record.players.first,
         starts: record.checkoutTrainer.starts,
         dartsPerAttempt: record.checkoutTrainer.dartsPerAttempt,
+        ladder: record.checkoutTrainer.ladder,
+        replay: record.throws,
+        watching: true,
+      ),
+      GameMode.killer => KillerScreen(
+        key: key,
+        names: record.players,
+        numbers: record.killerGame.numbers,
+        bots: record.bots,
+        replay: record.throws,
+        watching: true,
+      ),
+      GameMode.shanghai || GameMode.bobs27 || GameMode.halveIt => RoundGameScreen(
+        key: key,
+        mode: record.mode,
+        names: record.players,
+        settings: record.settings,
+        bots: record.bots,
         replay: record.throws,
         watching: true,
       ),
@@ -106,6 +127,8 @@ class SharedGameCard extends StatelessWidget {
       GameMode.grouping => '${l10n.modeGrouping} ${record.groupingTarget.label}',
       GameMode.doubles => l10n.modeDoubles,
       GameMode.checkout => l10n.modeCheckout,
+      GameMode.shanghai || GameMode.bobs27 || GameMode.halveIt => RoundGameScreen.title(l10n, record.mode),
+      GameMode.killer => l10n.modeKiller,
     };
     return Card(
       key: const ValueKey('shared-game'),

@@ -22,12 +22,16 @@ class CricketScreen extends StatefulWidget {
   const CricketScreen({
     super.key,
     required this.names,
+    this.cutThroat = false,
     this.bots = const {},
     this.replay = const [],
     this.watching = false,
   });
 
   final List<String> names;
+
+  /// Cut-Throat Cricket: points go to the opponents, the lowest score wins
+  final bool cutThroat;
 
   /// Bot level per player index; the others are people
   final Map<int, int> bots;
@@ -42,7 +46,8 @@ class CricketScreen extends StatefulWidget {
     final l10n = AppLocalizations.of(context);
     return PlayersSetupScreen(
       title: l10n.cricketSetup,
-      start: (names, bots, _) => CricketScreen(names: names, bots: bots),
+      options: [(l10n.cutThroat, false)],
+      start: (names, bots, options) => CricketScreen(names: names, cutThroat: options.first, bots: bots),
     );
   }
 
@@ -54,7 +59,7 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
   @override
   bool get watching => widget.watching;
 
-  late final CricketGame _game = replayed(CricketGame(widget.names), widget.replay);
+  late final CricketGame _game = replayed(CricketGame(widget.names, cutThroat: widget.cutThroat), widget.replay);
   final TakeoutGate _takeout = TakeoutGate();
 
   @override
@@ -67,6 +72,7 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
     started: started,
     ended: ended,
     players: widget.names,
+    settings: {if (widget.cutThroat) 'cut_throat': true},
     throws: _game.throws,
     bots: widget.bots,
   );
