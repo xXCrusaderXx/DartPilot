@@ -30,6 +30,8 @@ Rectangle {
             color: chip.tone
         }
         Label {
+            Layout.maximumWidth: 320
+            elide: Text.ElideMiddle
             text: chip.text
             color: chip.tone
             font.pixelSize: Tokens.captionSize

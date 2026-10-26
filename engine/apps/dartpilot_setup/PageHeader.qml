@@ -12,6 +12,8 @@ ColumnLayout {
     spacing: Tokens.spaceXs
 
     Label {
+        Layout.fillWidth: true
+        elide: Text.ElideRight
         text: header.title
         font.pixelSize: Tokens.titleSize
         font.weight: Font.Bold
