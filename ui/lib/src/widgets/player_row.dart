@@ -37,6 +37,9 @@ class PlayerRow extends StatelessWidget {
   /// The details are part of the game, not figures to look up later: shown from afar too
   final bool detailsFromAfar;
 
+  /// The active player's value from afar: like the X01 score, by the panel's width within bounds
+  static double _farSize(double width) => (width * 0.18).clamp(57, 140).toDouble();
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -50,7 +53,7 @@ class PlayerRow extends StatelessWidget {
                 ? (far ? theme.textTheme.displayLarge : theme.textTheme.displayMedium)
                 : (far ? theme.textTheme.displaySmall : theme.textTheme.headlineMedium))
             ?.copyWith(fontWeight: FontWeight.w700, color: valueColour ?? onBlock);
-    final row = Padding(
+    Widget row(double width) => Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
@@ -85,13 +88,28 @@ class PlayerRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          Text(value, key: valueKey, style: valueStyle),
+          if (active && far)
+            // From the oche the value at stake grows with the panel, as the X01 score does; long values shrink to fit
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: width * 0.6),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  value,
+                  key: valueKey,
+                  style: valueStyle?.copyWith(fontSize: _farSize(width), height: 1.0),
+                ),
+              ),
+            )
+          else
+            Text(value, key: valueKey, style: valueStyle),
         ],
       ),
     );
+    final Widget content = LayoutBuilder(builder: (context, constraints) => row(constraints.maxWidth));
     final Widget body;
     if (active && scoreboard) {
-      body = Container(color: AppColors.warning, child: row);
+      body = Container(color: AppColors.warning, child: content);
     } else if (active) {
       body = Container(
         decoration: BoxDecoration(
@@ -99,10 +117,10 @@ class PlayerRow extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: theme.colorScheme.primary, width: 3),
         ),
-        child: row,
+        child: content,
       );
     } else {
-      body = Card(margin: EdgeInsets.zero, child: row);
+      body = Card(margin: EdgeInsets.zero, child: content);
     }
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
