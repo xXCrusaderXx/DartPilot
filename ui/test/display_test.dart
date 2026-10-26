@@ -2,6 +2,7 @@ import 'package:dartpilot/src/app.dart';
 import 'package:dartpilot/src/display.dart';
 import 'package:dartpilot/src/stats/statistics.dart';
 import 'package:dartpilot/src/theme.dart';
+import 'package:dartpilot/src/widgets/player_row.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -82,5 +83,38 @@ void main() {
     await tester.tap(find.text('Fern'));
     await tester.pumpAndSettle();
     expect(display.distance, ViewingDistance.far);
+  });
+
+  testWidgets('from afar the value of the player at the oche grows with the panel, and a long one still fits', (
+    tester,
+  ) async {
+    Future<double> valueSize(double width, String value, ViewingDistance distance) async {
+      final display = DisplaySettings(store: false)..distance = distance;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: DisplayScope(
+            settings: display,
+            child: Scaffold(
+              body: Center(
+                child: SizedBox(
+                  width: width,
+                  child: PlayerRow(name: 'Anna', value: value, valueKey: const ValueKey('value'), active: true),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(tester.takeException(), isNull);
+      return tester.getSize(find.byKey(const ValueKey('value'))).height;
+    }
+
+    final near = await valueSize(800, 'D20', ViewingDistance.near);
+    final farNarrow = await valueSize(400, 'D20', ViewingDistance.far);
+    final farWide = await valueSize(800, 'D20', ViewingDistance.far);
+    expect(farNarrow, greaterThan(near));
+    expect(farWide, greaterThan(farNarrow));
+    // Killer's lives as hearts: shrunk into the row instead of overflowing it
+    await valueSize(400, '♥♥♥♥♥♥♥♥♥♥', ViewingDistance.far);
   });
 }
