@@ -88,6 +88,12 @@ class Caller extends ChangeNotifier {
   /// Says `calls` one after the other, when the caller is on
   void call(List<String> calls, String language) {
     if (!enabled || calls.isEmpty) return;
+    say(calls, language);
+  }
+
+  /// Says `calls` at the caller's volume, also when the caller is off: for what a player asked for
+  void say(List<String> calls, String language) {
+    if (calls.isEmpty) return;
     voice.speak(calls.join('. '), language: language, volume: volume);
   }
 }

@@ -1843,4 +1843,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get pickCandidate => 'Tipp auf das richtige Feld oder auf die Stelle im Board, wo der Dart steckt.';
+
+  @override
+  String get callCheckout => 'Checkout ansagen';
 }

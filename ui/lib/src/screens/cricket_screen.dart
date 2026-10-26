@@ -7,6 +7,9 @@ import '../bots/bot_turns.dart';
 import '../games/dart_game.dart';
 import '../input/game_input.dart';
 import '../input/takeout_gate.dart';
+import '../sound/caller.dart';
+import '../sound/game_calls.dart';
+import '../sound/x01_calls.dart';
 import '../stats/game_record.dart';
 import '../stats/statistics.dart';
 import '../widgets/winner_dialog.dart';
@@ -79,6 +82,7 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
 
   void _add(DartThrow dart) {
     setState(() => _game.add(dart));
+    if (!widget.watching) CallerScope.read(context).call(cricketCalls(_game), callLanguage);
     if (!_game.isFinished) return;
     showWinnerDialog(
       context,

@@ -3307,6 +3307,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap the right field, or tap the board where the dart is.'**
   String get pickCandidate;
+
+  /// No description provided for @callCheckout.
+  ///
+  /// In en, this message translates to:
+  /// **'Say the checkout'**
+  String get callCheckout;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
