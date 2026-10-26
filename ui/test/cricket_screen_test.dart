@@ -31,15 +31,18 @@ void main() {
   }
 
   testWidgets('a solo Cricket game until everything is closed', (tester) async {
+    final semantics = tester.ensureSemantics();
     await start(tester, 'Cricket');
     for (final n in [20, 19, 18, 17, 16, 15]) {
       await dart(tester, 'Triple', 'keypad-$n');
     }
-    expect(find.text('Ⓧ'), findsNWidgets(6));
+    // The marks are drawn; screen readers hear them
+    expect(find.bySemanticsLabel('Geschlossen'), findsNWidgets(6));
     await dart(tester, '', 'keypad-bull');
-    expect(find.text('✕'), findsOneWidget);
+    expect(find.bySemanticsLabel('2 Treffer'), findsOneWidget);
     await dart(tester, '', 'keypad-25');
     expect(find.text('Anna gewinnt!'), findsOneWidget);
+    semantics.dispose();
   });
 
   testWidgets('back on the winner dialog leaves the finished game for the menu', (tester) async {

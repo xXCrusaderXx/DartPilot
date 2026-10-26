@@ -18,6 +18,7 @@ import 'game_scaffold.dart';
 import 'players_setup_screen.dart';
 import '../board/score_text.dart';
 import '../display.dart';
+import '../widgets/cricket_mark.dart';
 import '../theme.dart';
 
 class CricketScreen extends StatefulWidget {
@@ -101,13 +102,6 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
     );
   }
 
-  static String _markSymbol(int marks) => switch (marks) {
-    0 => '',
-    1 => '/',
-    2 => '✕',
-    _ => 'Ⓧ',
-  };
-
   @override
   Widget build(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -131,7 +125,7 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
     final far = display.farFor(window);
     final activeFill = scoreboard ? AppColors.warning : theme.colorScheme.primary.withValues(alpha: 0.18);
     final markStyle = far ? theme.textTheme.displaySmall : theme.textTheme.titleLarge;
-    TableRow row(String label, List<String> cells, {TextStyle? style}) => TableRow(
+    TableRow row(String label, List<String> cells, {TextStyle? style, List<int>? marks}) => TableRow(
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
@@ -141,18 +135,27 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
             style: far ? theme.textTheme.headlineSmall : theme.textTheme.titleMedium,
           ),
         ),
-        for (var i = 0; i < cells.length; ++i)
+        for (var i = 0; i < (marks?.length ?? cells.length); ++i)
           Container(
             color: i == atOche ? activeFill : null,
             padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Text(
-              cells[i],
-              textAlign: TextAlign.center,
-              style: (style ?? markStyle)?.copyWith(
-                fontWeight: i == atOche ? FontWeight.w800 : null,
-                color: i == atOche && scoreboard ? AppColors.background : null,
-              ),
-            ),
+            child: marks != null
+                ? Center(
+                    child: CricketMark(
+                      marks[i],
+                      key: ValueKey('marks-${players[i].name}-$label'),
+                      size: (markStyle?.fontSize ?? 22) * 1.1,
+                      color: i == atOche && scoreboard ? AppColors.background : null,
+                    ),
+                  )
+                : Text(
+                    cells[i],
+                    textAlign: TextAlign.center,
+                    style: (style ?? markStyle)?.copyWith(
+                      fontWeight: i == atOche ? FontWeight.w800 : null,
+                      color: i == atOche && scoreboard ? AppColors.background : null,
+                    ),
+                  ),
           ),
       ],
     );
@@ -164,7 +167,7 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
           children: [
             row('', [for (final p in players) p.name], style: theme.textTheme.titleSmall),
             for (final target in cricketTargets)
-              row(target == 25 ? l10n.bull : '$target', [for (final p in players) _markSymbol(p.marks[target]!)]),
+              row(target == 25 ? l10n.bull : '$target', const [], marks: [for (final p in players) p.marks[target]!]),
             row(l10n.points, [for (final p in players) '${p.points}']),
           ],
         ),

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../engine/camera_order.dart';
 import '../engine/engine_connection.dart';
 import '../engine/engine_events.dart';
 import 'live_jpeg.dart';
@@ -111,7 +112,7 @@ class _OverlayPreviewState extends State<OverlayPreview> {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      LiveJpeg(frame.jpeg, fit: BoxFit.fill),
+                      LiveJpeg(frame.jpeg, fit: BoxFit.fill, semanticLabel: cameraLabel(context, widget.camera)),
                       if (painter != null) CustomPaint(painter: _Overlay(painter, scale, widget.repaintKey)),
                     ],
                   ),

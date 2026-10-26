@@ -51,6 +51,8 @@
   "doubleIn": "Double in",
   "doubleOut": "Double out",
   "legsToWin": "Legs to win",
+  "fewerLegs": "One leg fewer",
+  "moreLegs": "One leg more",
   "startGame": "Start game",
   "leg": "Leg {number}",
   "@leg": {
@@ -93,6 +95,30 @@
   },
   "checkout": "Checkout",
   "bust": "Bust",
+  "dartboardLabel": "Dartboard",
+  "dartboardTapHint": "Tap where the dart is",
+  "calibLightNoneFound": "Board not found yet",
+  "calibLightFoundRange": "Board found from {from} to {to} K",
+  "@calibLightFoundRange": {
+    "placeholders": {
+      "from": {
+        "type": "int"
+      },
+      "to": {
+        "type": "int"
+      }
+    }
+  },
+  "visitHit": "Hit",
+  "visitNoHit": "No hit",
+  "cricketMarksLabel": "{count, plural, =0{No marks} =1{1 mark} =2{2 marks} other{Closed}}",
+  "@cricketMarksLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "notIn": "not in",
   "legWonBy": "{name} wins the leg",
   "@legWonBy": {
@@ -958,6 +984,7 @@
   "engineQrHint": "Scan this code with the DartPilot app on your phone or tablet (Engine → In the network → scan).",
   "engineQrNoNetwork": "This device has no address in a home network.",
   "scanEngineQr": "Scan QR code",
+  "scanEngineQrUnavailable": "The camera cannot be used to scan. Allow the camera for DartPilot, or type the address shown under the QR code.",
   "scanEngineQrHint": "Point the camera at the QR code that the engine's device shows.",
   "enterAddressManually": "Enter the address or scan a QR code",
   "restartEngine": "Restart the engine",

@@ -128,7 +128,10 @@ class _AroundTheClockScreenState extends State<AroundTheClockScreen> with Record
             valueKey: ValueKey('target-${_game.players[i].name}'),
           ),
         const SizedBox(height: 12),
-        VisitDarts([for (final (dart, hit) in _game.currentVisit) '${dart.score.text(l10n)} ${hit ? '✓' : '✗'}']),
+        VisitDarts(
+          [for (final (dart, _) in _game.currentVisit) dart.score.text(l10n)],
+          hits: [for (final (_, hit) in _game.currentVisit) hit],
+        ),
       ],
       bottom: [
         OutlinedButton.icon(

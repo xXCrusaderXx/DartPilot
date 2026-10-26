@@ -125,6 +125,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get legsToWin => 'Legs zum Sieg';
 
   @override
+  String get fewerLegs => 'Ein Leg weniger';
+
+  @override
+  String get moreLegs => 'Ein Leg mehr';
+
+  @override
   String get startGame => 'Spiel starten';
 
   @override
@@ -156,6 +162,39 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get bust => 'Überworfen';
+
+  @override
+  String get dartboardLabel => 'Dartscheibe';
+
+  @override
+  String get dartboardTapHint => 'Tippe dorthin, wo der Dart steckt';
+
+  @override
+  String get calibLightNoneFound => 'Scheibe noch nicht gefunden';
+
+  @override
+  String calibLightFoundRange(int from, int to) {
+    return 'Scheibe gefunden von $from bis $to K';
+  }
+
+  @override
+  String get visitHit => 'Treffer';
+
+  @override
+  String get visitNoHit => 'Kein Treffer';
+
+  @override
+  String cricketMarksLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Geschlossen',
+      two: '2 Treffer',
+      one: '1 Treffer',
+      zero: 'Keine Treffer',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get notIn => 'nicht drin';
@@ -1439,6 +1478,10 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get scanEngineQr => 'QR-Code scannen';
+
+  @override
+  String get scanEngineQrUnavailable =>
+      'Die Kamera lässt sich zum Scannen nicht nutzen. Erlaube DartPilot die Kamera oder tippe die Adresse ein, die unter dem QR-Code steht.';
 
   @override
   String get scanEngineQrHint => 'Richte die Kamera auf den QR-Code, den das Gerät mit der Engine anzeigt.';

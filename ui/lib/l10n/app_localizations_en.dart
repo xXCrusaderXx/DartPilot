@@ -125,6 +125,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get legsToWin => 'Legs to win';
 
   @override
+  String get fewerLegs => 'One leg fewer';
+
+  @override
+  String get moreLegs => 'One leg more';
+
+  @override
   String get startGame => 'Start game';
 
   @override
@@ -156,6 +162,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bust => 'Bust';
+
+  @override
+  String get dartboardLabel => 'Dartboard';
+
+  @override
+  String get dartboardTapHint => 'Tap where the dart is';
+
+  @override
+  String get calibLightNoneFound => 'Board not found yet';
+
+  @override
+  String calibLightFoundRange(int from, int to) {
+    return 'Board found from $from to $to K';
+  }
+
+  @override
+  String get visitHit => 'Hit';
+
+  @override
+  String get visitNoHit => 'No hit';
+
+  @override
+  String cricketMarksLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Closed',
+      two: '2 marks',
+      one: '1 mark',
+      zero: 'No marks',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get notIn => 'not in';
@@ -1439,6 +1478,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get scanEngineQr => 'Scan QR code';
+
+  @override
+  String get scanEngineQrUnavailable =>
+      'The camera cannot be used to scan. Allow the camera for DartPilot, or type the address shown under the QR code.';
 
   @override
   String get scanEngineQrHint => 'Point the camera at the QR code that the engine\'s device shows.';

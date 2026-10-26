@@ -84,10 +84,16 @@ class _X01SetupScreenState extends State<X01SetupScreen> {
                   children: [
                     IconButton(
                       onPressed: _legsToWin > 1 ? () => setState(() => _legsToWin--) : null,
+                      tooltip: l10n.fewerLegs,
                       icon: const Icon(Icons.remove),
                     ),
                     Text('$_legsToWin', style: theme.textTheme.titleLarge),
-                    IconButton(onPressed: () => setState(() => _legsToWin++), icon: const Icon(Icons.add)),
+                    IconButton(
+                      // First to 11 is already a long evening
+                      onPressed: _legsToWin < 11 ? () => setState(() => _legsToWin++) : null,
+                      tooltip: l10n.moreLegs,
+                      icon: const Icon(Icons.add),
+                    ),
                   ],
                 ),
               ),
