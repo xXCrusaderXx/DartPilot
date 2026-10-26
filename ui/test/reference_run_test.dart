@@ -106,4 +106,23 @@ void main() {
     expect(find.byKey(const ValueKey('reference-verdict')), findsNothing);
     expect(find.text('Nach 1 Dart abgebrochen. Starte neu für ein Urteil.'), findsOneWidget);
   });
+
+  testWidgets('on a phone the zoom sits below the instruction', (tester) async {
+    tester.view.physicalSize = const Size(412, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final engine = EngineConnection.forTest((_) {});
+    addTearDown(engine.dispose);
+    engine.receiveForTest(jsonEncode(hello));
+    engine.receiveForTest(jsonEncode(fixtures['first']));
+    await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
+    await openSettings(tester);
+    await showSettingsEntry(tester, 'open-reference-run');
+    await tester.tap(find.byKey(const ValueKey('open-reference-run')));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    final instruction = tester.getRect(find.byKey(const ValueKey('reference-instruction')));
+    final zoom = tester.getRect(find.byKey(const ValueKey('reference-zoom')));
+    expect(zoom.top, greaterThan(instruction.bottom));
+  });
 }

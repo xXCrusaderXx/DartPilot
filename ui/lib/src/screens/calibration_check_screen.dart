@@ -119,7 +119,13 @@ class _CameraCheck extends StatelessWidget {
               children: [
                 Icon(Icons.circle, size: 12, color: colour),
                 const SizedBox(width: 8),
-                Text(cameraLabel(context, camera), style: theme.textTheme.titleSmall),
+                Expanded(
+                  child: Text(
+                    cameraLabel(context, camera),
+                    style: theme.textTheme.titleSmall,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ],
             ),
           ),

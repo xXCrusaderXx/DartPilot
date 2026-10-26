@@ -7,6 +7,7 @@ import '../engine/camera_order.dart';
 import '../engine/engine_connection.dart';
 import '../engine/engine_events.dart';
 import 'overlay_preview.dart';
+import '../theme.dart';
 
 /// Before a game starts: true when the board is empty, unknown or no engine is connected; otherwise asks the player
 /// to pull out the darts and is true once the board is empty or the player starts anyway.
@@ -175,13 +176,12 @@ class BoardStateRow extends StatelessWidget {
 
   Widget _build(BuildContext context, EngineBoardState? board) {
     final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
     if (board == null) return const SizedBox.shrink();
     if (board.occupied) {
       return Row(
         key: const ValueKey('board-occupied'),
         children: [
-          Icon(Icons.warning_amber, color: theme.colorScheme.error),
+          Icon(Icons.warning_amber, color: StatusColors.of(context).warning),
           const SizedBox(width: 8),
           Expanded(child: Text(l10n.boardOccupiedBanner)),
           TextButton(
