@@ -3392,17 +3392,41 @@ abstract class AppLocalizations {
   /// **'Keypad darts and corrected darts have no measured point and do not count for the group.'**
   String get groupingNotMeasured;
 
-  /// No description provided for @groupingDone.
+  /// No description provided for @roundDone.
   ///
   /// In en, this message translates to:
   /// **'Round done'**
-  String get groupingDone;
+  String get roundDone;
 
-  /// No description provided for @groupingAgain.
+  /// No description provided for @roundAgain.
   ///
   /// In en, this message translates to:
   /// **'Another round'**
-  String get groupingAgain;
+  String get roundAgain;
+
+  /// No description provided for @resultSpread.
+  ///
+  /// In en, this message translates to:
+  /// **'Spread: {value}'**
+  String resultSpread(String value);
+
+  /// No description provided for @resultOffset.
+  ///
+  /// In en, this message translates to:
+  /// **'Offset: {value}'**
+  String resultOffset(String value);
+
+  /// No description provided for @resultHitRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Hit rate: {value}'**
+  String resultHitRate(String value);
+
+  /// No description provided for @resultCheckouts.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkout rate: {done} of {total}'**
+  String resultCheckouts(int done, int total);
 
   /// No description provided for @statsPrecision.
   ///

@@ -17,7 +17,7 @@ import '../widgets/precision_plot.dart';
 import '../widgets/precision_text.dart';
 import 'game_scaffold.dart';
 import 'my_darts_screen.dart';
-import '../widgets/leave_game_guard.dart';
+import '../widgets/winner_dialog.dart';
 
 /// Checkout trainer (#125): random finishes, the field to aim at before every dart, and how far each dart missed it.
 class CheckoutScreen extends StatefulWidget {
@@ -80,57 +80,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
 
   Future<void> _showResult() {
     final l10n = AppLocalizations.of(context);
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => EndOfGameBack(
-        gameContext: context,
-        child: AlertDialog(
-          title: Text(l10n.groupingDone),
-          content: Text(
-            [
-              '${l10n.statsCheckoutRate}: ${_game.checkouts} / ${_game.attemptsDone}',
-              if (widget.ladder) l10n.ladderBest(_game.bestCheckout?.toString() ?? '–'),
-            ].join('\n'),
-            key: const ValueKey('checkout-result'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                setState(_game.undo);
-              },
-              child: Text(l10n.undo),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute<void>(
-                    builder: (_) => CheckoutScreen(
-                      player: widget.player,
-                      starts: checkoutStarts(
-                        math.Random().nextInt(1 << 31),
-                        widget.starts.length,
-                        widget.ladder ? CheckoutRange.ladder : _rangeOf(widget.starts),
-                      ),
-                      dartsPerAttempt: widget.dartsPerAttempt,
-                      ladder: widget.ladder,
-                    ),
-                  ),
-                );
-              },
-              child: Text(l10n.groupingAgain),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                Navigator.of(context).pop();
-              },
-              child: Text(l10n.backToMenu),
-            ),
-          ],
+    return showRoundResult(
+      context,
+      content: Text(
+        [
+          l10n.resultCheckouts(_game.checkouts, _game.attemptsDone),
+          if (widget.ladder) l10n.ladderBest(_game.bestCheckout?.toString() ?? '–'),
+        ].join('\n'),
+        key: const ValueKey('checkout-result'),
+      ),
+      onUndo: () => setState(_game.undo),
+      again: (_) => CheckoutScreen(
+        player: widget.player,
+        starts: checkoutStarts(
+          math.Random().nextInt(1 << 31),
+          widget.starts.length,
+          widget.ladder ? CheckoutRange.ladder : _rangeOf(widget.starts),
         ),
+        dartsPerAttempt: widget.dartsPerAttempt,
+        ladder: widget.ladder,
       ),
     );
   }

@@ -1914,10 +1914,30 @@ class AppLocalizationsDe extends AppLocalizations {
       'Darts über die Zifferntasten und korrigierte Darts haben keinen gemessenen Punkt und zählen nicht für die Gruppe.';
 
   @override
-  String get groupingDone => 'Runde fertig';
+  String get roundDone => 'Runde fertig';
 
   @override
-  String get groupingAgain => 'Noch eine Runde';
+  String get roundAgain => 'Noch eine Runde';
+
+  @override
+  String resultSpread(String value) {
+    return 'Streuung: $value';
+  }
+
+  @override
+  String resultOffset(String value) {
+    return 'Versatz: $value';
+  }
+
+  @override
+  String resultHitRate(String value) {
+    return 'Trefferquote: $value';
+  }
+
+  @override
+  String resultCheckouts(int done, int total) {
+    return 'Checkout-Quote: $done von $total';
+  }
 
   @override
   String get statsPrecision => 'Präzision';

@@ -15,7 +15,7 @@ import '../widgets/precision_plot.dart';
 import '../widgets/precision_text.dart';
 import 'game_scaffold.dart';
 import 'my_darts_screen.dart';
-import '../widgets/leave_game_guard.dart';
+import '../widgets/winner_dialog.dart';
 
 /// Doubles practice (#125): one visit at each double, with the miss of every dart, and the doubles ranked by the
 /// player's own hit rate and spread.
@@ -94,60 +94,20 @@ class _DoublesScreenState extends State<DoublesScreen> with RecordsGame {
   Future<void> _showResult() {
     final l10n = AppLocalizations.of(context);
     final ranking = _roundRanking;
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => EndOfGameBack(
-        gameContext: context,
-        child: AlertDialog(
-          title: Text(l10n.groupingDone),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${l10n.hitRate}: ${percentText(l10n, _game.hitRate)}',
-                  key: const ValueKey('doubles-result-rate'),
-                ),
-                const SizedBox(height: 8),
-                for (final p in ranking) Text(rankingLine(l10n, p)),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                setState(_game.undo);
-              },
-              child: Text(l10n.undo),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute<void>(
-                    builder: (_) => DoublesScreen(
-                      player: widget.player,
-                      targets: widget.targets,
-                      dartsPerTarget: widget.dartsPerTarget,
-                    ),
-                  ),
-                );
-              },
-              child: Text(l10n.groupingAgain),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                Navigator.of(context).pop();
-              },
-              child: Text(l10n.backToMenu),
-            ),
-          ],
-        ),
+    return showRoundResult(
+      context,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l10n.resultHitRate(percentText(l10n, _game.hitRate)), key: const ValueKey('doubles-result-rate')),
+          const SizedBox(height: 8),
+          for (final p in ranking) Text(rankingLine(l10n, p)),
+        ],
       ),
+      onUndo: () => setState(_game.undo),
+      again: (_) =>
+          DoublesScreen(player: widget.player, targets: widget.targets, dartsPerTarget: widget.dartsPerTarget),
     );
   }
 
