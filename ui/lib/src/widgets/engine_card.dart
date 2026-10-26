@@ -7,6 +7,7 @@ import '../../l10n/app_localizations.dart';
 import '../engine/engine_choice.dart';
 import '../engine/engine_connection.dart';
 import '../engine/engine_discovery.dart';
+import '../engine/engine_errors.dart';
 import '../engine/engine_manager.dart';
 import 'engine_qr.dart';
 
@@ -94,7 +95,7 @@ class _EngineCardState extends State<EngineCard> {
         engine.hello?.mode == 'simulate' ? '${l10n.engineConnected} (${l10n.engineSimulated})' : l10n.engineConnected,
       ),
       EngineConnectionState.connecting => (Icons.sync, theme.colorScheme.secondary, l10n.engineConnecting),
-      EngineConnectionState.failed => (Icons.link_off, theme.colorScheme.error, l10n.engineFailed),
+      EngineConnectionState.failed => (Icons.link_off, StatusColors.of(context).bad, l10n.engineFailed),
       EngineConnectionState.disconnected => (Icons.link_off, theme.disabledColor, l10n.engineDisconnected),
     };
     final connected = engine.state == EngineConnectionState.connected;
@@ -108,13 +109,39 @@ class _EngineCardState extends State<EngineCard> {
           children: [
             Row(
               children: [
-                Icon(icon, color: color),
+                if (engine.state == EngineConnectionState.connecting)
+                  const SizedBox.square(
+                    dimension: 24,
+                    child: Padding(padding: EdgeInsets.all(3), child: CircularProgressIndicator(strokeWidth: 2)),
+                  )
+                else
+                  Icon(icon, color: color),
                 const SizedBox(width: 8),
                 Text(l10n.engine, style: theme.textTheme.titleMedium),
                 const SizedBox(width: 12),
                 Expanded(child: Text(text, key: const ValueKey('engine-state'))),
               ],
             ),
+            if (engine.state == EngineConnectionState.failed && !onThisDevice) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      connectionErrorText(l10n, engine.error) ?? engine.error ?? '',
+                      key: const ValueKey('engine-error'),
+                      style: theme.textTheme.bodySmall?.copyWith(color: StatusColors.of(context).bad),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  TextButton(
+                    key: const ValueKey('engine-retry'),
+                    onPressed: () => engine.connect(engine.url),
+                    child: Text(l10n.engineRetry),
+                  ),
+                ],
+              ),
+            ],
             if (local != null) ...[
               const SizedBox(height: 12),
               SegmentedButton<EngineMode>(

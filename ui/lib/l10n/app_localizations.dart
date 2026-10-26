@@ -434,6 +434,48 @@ abstract class AppLocalizations {
   /// **'Connection failed'**
   String get engineFailed;
 
+  /// No description provided for @engineFailedRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing answers at this address. Is the engine running?'**
+  String get engineFailedRefused;
+
+  /// No description provided for @engineFailedTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'The engine could not be reached in time. Check the address and the network.'**
+  String get engineFailedTimeout;
+
+  /// No description provided for @engineFailedHost.
+  ///
+  /// In en, this message translates to:
+  /// **'This address was not found in the network.'**
+  String get engineFailedHost;
+
+  /// No description provided for @engineFailedAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'This is not an engine address; it looks like ws://192.168.1.20:8484/.'**
+  String get engineFailedAddress;
+
+  /// No description provided for @engineRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get engineRetry;
+
+  /// No description provided for @engineErrorDisconnected.
+  ///
+  /// In en, this message translates to:
+  /// **'The connection to the engine was lost.'**
+  String get engineErrorDisconnected;
+
+  /// No description provided for @engineErrorTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'The engine did not answer.'**
+  String get engineErrorTimeout;
+
   /// No description provided for @engineSimulated.
   ///
   /// In en, this message translates to:

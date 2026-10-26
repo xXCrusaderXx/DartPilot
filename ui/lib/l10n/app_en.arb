@@ -85,6 +85,13 @@
   "engineConnecting": "Connecting…",
   "engineDisconnected": "Not connected",
   "engineFailed": "Connection failed",
+  "engineFailedRefused": "Nothing answers at this address. Is the engine running?",
+  "engineFailedTimeout": "The engine could not be reached in time. Check the address and the network.",
+  "engineFailedHost": "This address was not found in the network.",
+  "engineFailedAddress": "This is not an engine address; it looks like ws://192.168.1.20:8484/.",
+  "engineRetry": "Try again",
+  "engineErrorDisconnected": "The connection to the engine was lost.",
+  "engineErrorTimeout": "The engine did not answer.",
   "engineSimulated": "simulated",
   "uncertainDart": "Uncertain: {label} ({percent} %)",
   "@uncertainDart": {

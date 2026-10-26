@@ -90,4 +90,42 @@ void main() {
     expect(engine.state, EngineConnectionState.disconnected);
     await server.close(force: true);
   });
+
+  test('a request fails with disconnected when the engine goes away, and its state is dropped', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    WebSocket? engineSide;
+    server.transform(WebSocketTransformer()).listen((socket) {
+      engineSide = socket;
+      socket.add(jsonEncode(helloJson));
+      socket.listen((_) {});
+    });
+
+    final engine = EngineConnection();
+    await engine.connect('ws://127.0.0.1:${server.port}/');
+    await Future.doWhile(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      return !engine.isConnected;
+    }).timeout(const Duration(seconds: 5));
+    expect(engine.hello, isNotNull);
+
+    final result = engine.startDiagnosis();
+    await engineSide!.close();
+    expect(await result.timeout(const Duration(seconds: 5)), 'disconnected');
+    expect(engine.state, EngineConnectionState.disconnected);
+    expect(engine.hello, isNull);
+    expect(engine.cameraStatus, isEmpty);
+
+    expect(await engine.startDiagnosis(), 'disconnected');
+    await server.close(force: true);
+  });
+
+  testWidgets('a request without a result times out', (tester) async {
+    final engine = EngineConnection.forTest((_) {}, requestTimeout: EngineConnection.defaultRequestTimeout);
+    String? code;
+    engine.startDiagnosis().then((c) => code = c);
+    await tester.pump(EngineConnection.defaultRequestTimeout - const Duration(seconds: 1));
+    expect(code, isNull);
+    await tester.pump(const Duration(seconds: 2));
+    expect(code, 'timeout');
+  });
 }

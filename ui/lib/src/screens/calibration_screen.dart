@@ -9,6 +9,7 @@ import '../engine/engine_connection.dart';
 import '../engine/engine_events.dart';
 import '../theme.dart';
 import '../widgets/overlay_preview.dart';
+import '../engine/engine_errors.dart';
 import 'diagnosis_screen.dart';
 
 enum CalibrationStep { overview, light, board, refine, done }
@@ -242,14 +243,13 @@ class _ErrorText extends StatelessWidget {
       padding: const EdgeInsets.only(top: 8),
       child: Text(
         switch (code) {
-          'busy' => l10n.calibErrorBusy,
           'no_detection' => l10n.calibErrorNoDetection,
           'outside_board' => l10n.calibErrorOutsideBoard,
           'fit_failed' => l10n.calibErrorFitFailed,
           'no_board_planes' => l10n.calibErrorNoBoardPlanes,
           'pose_failed' => l10n.calibErrorPoseFailed,
           'save_failed' => l10n.calibErrorSaveFailed,
-          _ => l10n.calibErrorOther(code),
+          _ => engineErrorText(l10n, code) ?? l10n.calibErrorOther(code),
         },
         key: const ValueKey('calib-error'),
         style: TextStyle(color: StatusColors.of(context).bad),

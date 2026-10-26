@@ -189,6 +189,27 @@ class AppLocalizationsDe extends AppLocalizations {
   String get engineFailed => 'Verbindung fehlgeschlagen';
 
   @override
+  String get engineFailedRefused => 'Unter dieser Adresse antwortet nichts. Läuft die Engine?';
+
+  @override
+  String get engineFailedTimeout => 'Die Engine war nicht rechtzeitig erreichbar. Prüfe Adresse und Netzwerk.';
+
+  @override
+  String get engineFailedHost => 'Diese Adresse wurde im Netzwerk nicht gefunden.';
+
+  @override
+  String get engineFailedAddress => 'Das ist keine Engine-Adresse; sie sieht aus wie ws://192.168.1.20:8484/.';
+
+  @override
+  String get engineRetry => 'Erneut versuchen';
+
+  @override
+  String get engineErrorDisconnected => 'Die Verbindung zur Engine ist abgerissen.';
+
+  @override
+  String get engineErrorTimeout => 'Die Engine hat nicht geantwortet.';
+
+  @override
   String get engineSimulated => 'simuliert';
 
   @override
