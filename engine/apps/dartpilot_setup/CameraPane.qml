@@ -24,22 +24,12 @@ Card {
 
     ColumnLayout {
         anchors.fill: parent
-        spacing: 12
+        spacing: Tokens.spaceMd
 
-        RowLayout {
-            spacing: 10
+        CameraCardHeader {
+            number: pane.index + 1
+            usbPort: pane.modelData.usbPort
 
-            Label {
-                text: "Camera " + (pane.index + 1)
-                font.pixelSize: Tokens.headingSize
-                font.weight: Font.Bold
-            }
-            Chip {
-                text: "USB " + pane.modelData.usbPort
-            }
-            Item {
-                Layout.fillWidth: true
-            }
             Chip {
                 text: view.error !== "" ? "Error" : !running.checked ? "Off" : view.fps > 0 ? view.fps.toFixed(1) + " fps" : "Starting"
                 tone: pane.statusTone
@@ -75,15 +65,12 @@ Card {
         GridLayout {
             Layout.fillWidth: true
             columns: 3
-            columnSpacing: 16
-            rowSpacing: 4
+            columnSpacing: Tokens.spaceLg
+            rowSpacing: Tokens.spaceXs
             enabled: running.checked
 
-            Label {
-                text: "EXPOSURE"
-                font.pixelSize: Tokens.captionSize
-                font.weight: Font.DemiBold
-                color: Tokens.textMuted
+            SectionLabel {
+                text: "Exposure"
                 Layout.columnSpan: 3
             }
             Switch {
@@ -122,13 +109,10 @@ Card {
                 onToggled: view.setControl("dynamicFramerate", checked ? 0 : 1)
             }
 
-            Label {
-                text: "WHITE BALANCE"
-                font.pixelSize: Tokens.captionSize
-                font.weight: Font.DemiBold
-                color: Tokens.textMuted
+            SectionLabel {
+                text: "White balance"
                 Layout.columnSpan: 3
-                Layout.topMargin: 8
+                Layout.topMargin: Tokens.spaceSm
             }
             Switch {
                 readonly property var ctl: pane.control("autoWhiteBalance", pane.revision)
@@ -155,13 +139,10 @@ Card {
                 Layout.fillWidth: true
             }
 
-            Label {
-                text: "FOCUS"
-                font.pixelSize: Tokens.captionSize
-                font.weight: Font.DemiBold
-                color: Tokens.textMuted
+            SectionLabel {
+                text: "Focus"
                 Layout.columnSpan: 3
-                Layout.topMargin: 8
+                Layout.topMargin: Tokens.spaceSm
             }
             Switch {
                 id: focusSwitch

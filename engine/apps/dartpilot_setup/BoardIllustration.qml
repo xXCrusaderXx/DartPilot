@@ -79,7 +79,7 @@ Canvas {
                 const twenty = order[i] === 20;
                 ctx.beginPath();
                 ctx.arc(x, y, 12 * scale * 1.3, 0, 2 * Math.PI);
-                ctx.fillStyle = twenty ? Tokens.warning : Qt.rgba(Tokens.background.r, Tokens.background.g, Tokens.background.b, 0.85);
+                ctx.fillStyle = twenty ? Tokens.warning : Tokens.tint(Tokens.background, 0.85);
                 ctx.fill();
                 ctx.fillStyle = twenty ? Tokens.background : Tokens.text;
                 ctx.fillText(order[i], x, y);

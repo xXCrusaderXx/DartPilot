@@ -9,7 +9,7 @@ ColumnLayout {
     property string title
     property string description
 
-    spacing: 4
+    spacing: Tokens.spaceXs
 
     Label {
         text: header.title

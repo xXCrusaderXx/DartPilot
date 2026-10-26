@@ -13,10 +13,6 @@ ColumnLayout {
     required property bool active
     required property var cameras
 
-    function toneOf(quality) {
-        return quality === "good" ? Tokens.good : quality === "fair" ? Tokens.warning : quality === "poor" ? Tokens.bad : Tokens.textMuted;
-    }
-
     spacing: Tokens.spacing
 
     ValidationRun {
@@ -44,32 +40,13 @@ ColumnLayout {
         }
     }
 
-    Rectangle {
-        Layout.fillWidth: true
-        implicitHeight: instructionLabel.implicitHeight + 24
-        radius: Tokens.radius
-        color: Qt.rgba(Tokens.accent.r, Tokens.accent.g, Tokens.accent.b, 0.10)
-        border.color: Qt.rgba(Tokens.accent.r, Tokens.accent.g, Tokens.accent.b, 0.35)
+    HintBanner {
+        text: run.instruction
 
-        RowLayout {
-            anchors.fill: parent
-            anchors.margins: 12
-            anchors.leftMargin: 16
-            spacing: 12
-
-            Label {
-                id: instructionLabel
-
-                Layout.fillWidth: true
-                text: "→  " + run.instruction
-                font.pixelSize: Tokens.headingSize
-                wrapMode: Text.WordWrap
-            }
-            Chip {
-                text: run.status === "measuring" ? "Measuring" : run.status === "moving" ? "Movement" : run.status === "waiting" ? "Waiting" : "Still"
-                tone: run.status === "measuring" ? Tokens.accent : run.status === "moving" ? Tokens.warning : run.status === "waiting" ? Tokens.textMuted : Tokens.good
-                dot: true
-            }
+        Chip {
+            text: run.status === "measuring" ? "Measuring" : run.status === "moving" ? "Movement" : run.status === "waiting" ? "Waiting" : "Still"
+            tone: run.status === "measuring" ? Tokens.accent : run.status === "moving" ? Tokens.warning : run.status === "waiting" ? Tokens.textMuted : Tokens.good
+            dot: true
         }
     }
 
@@ -105,19 +82,11 @@ ColumnLayout {
 
                         ColumnLayout {
                             anchors.fill: parent
-                            spacing: 8
+                            spacing: Tokens.spaceSm
 
-                            RowLayout {
-                                spacing: 10
-
-                                Label {
-                                    text: "Camera " + (pane.index + 1)
-                                    font.pixelSize: Tokens.headingSize
-                                    font.weight: Font.Bold
-                                }
-                                Chip {
-                                    text: "USB " + pane.modelData.usbPort
-                                }
+                            CameraCardHeader {
+                                number: pane.index + 1
+                                usbPort: pane.modelData.usbPort
                             }
                             MarkerView {
                                 Layout.fillWidth: true
@@ -134,13 +103,13 @@ ColumnLayout {
         ScrollView {
             id: side
 
-            Layout.preferredWidth: 420
+            Layout.preferredWidth: Tokens.sidePanelWidth
             Layout.fillHeight: true
             contentWidth: availableWidth
 
             ColumnLayout {
                 width: side.availableWidth
-                spacing: 12
+                spacing: Tokens.spaceMd
 
                 StepCard {
                     Layout.fillWidth: true
@@ -161,7 +130,7 @@ ColumnLayout {
                             required property var modelData
 
                             text: "Camera " + modelData.number + "  ·  " + (modelData.found ? modelData.rmsMm.toFixed(2) + " mm" : "board not found")
-                            tone: page.toneOf(modelData.quality)
+                            tone: Tokens.qualityTone(modelData.quality)
                             dot: true
                         }
                     }

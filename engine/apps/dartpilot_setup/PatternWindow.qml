@@ -8,12 +8,12 @@ Window {
     // tablet or phone
     property string target: "tablet"
 
-    color: "white"
+    color: Tokens.paper
     title: "DartPilot calibration pattern"
 
     Image {
         anchors.fill: parent
-        anchors.margins: 24
+        anchors.margins: Tokens.spaceXl
         fillMode: Image.PreserveAspectFit
         source: "image://charuco/pattern/" + patternWindow.target
         sourceSize.width: patternWindow.width
@@ -25,9 +25,9 @@ Window {
 
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: 6
+        anchors.bottomMargin: Tokens.spaceSm
         text: "Click or press Esc to close"
-        color: "#777777"
+        color: Tokens.paperCaption
 
         SequentialAnimation on opacity {
             running: patternWindow.visible

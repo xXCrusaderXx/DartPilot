@@ -92,10 +92,10 @@ ColumnLayout {
         ColumnLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            spacing: 12
+            spacing: Tokens.spaceMd
 
             RowLayout {
-                spacing: 8
+                spacing: Tokens.spaceSm
 
                 Chip {
                     text: "Corners " + view.cornersInFrame + " / " + view.totalCorners
@@ -123,7 +123,7 @@ ColumnLayout {
             Card {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                padding: 8
+                padding: Tokens.spaceSm
 
                 IntrinsicView {
                     id: view
@@ -135,38 +135,21 @@ ColumnLayout {
                 }
             }
 
-            Rectangle {
-                Layout.fillWidth: true
-                implicitHeight: hintLabel.implicitHeight + 24
-                radius: Tokens.radius
-                color: Qt.rgba(Tokens.accent.r, Tokens.accent.g, Tokens.accent.b, 0.10)
-                border.color: Qt.rgba(Tokens.accent.r, Tokens.accent.g, Tokens.accent.b, 0.35)
-
-                Label {
-                    id: hintLabel
-
-                    anchors.fill: parent
-                    anchors.margins: 12
-                    anchors.leftMargin: 16
-                    text: "→  " + view.hint
-                    font.pixelSize: Tokens.headingSize
-                    color: Tokens.text
-                    wrapMode: Text.WordWrap
-                    verticalAlignment: Text.AlignVCenter
-                }
+            HintBanner {
+                text: view.hint
             }
         }
 
         ScrollView {
             id: side
 
-            Layout.preferredWidth: 420
+            Layout.preferredWidth: Tokens.sidePanelWidth
             Layout.fillHeight: true
             contentWidth: availableWidth
 
             ColumnLayout {
                 width: side.availableWidth
-                spacing: 12
+                spacing: Tokens.spaceMd
 
                 StepCard {
                     Layout.fillWidth: true
@@ -176,7 +159,7 @@ ColumnLayout {
                     done: view.viewCount > 0
 
                     RowLayout {
-                        spacing: 8
+                        spacing: Tokens.spaceSm
 
                         ButtonGroup {
                             id: targetGroup
@@ -205,12 +188,12 @@ ColumnLayout {
                     Rectangle {
                         Layout.fillWidth: true
                         Layout.preferredHeight: width * (view.target === "phone" ? 0.5 : 0.7)
-                        radius: 8
-                        color: "white"
+                        radius: Tokens.radiusSmall
+                        color: Tokens.paper
 
                         Image {
                             anchors.fill: parent
-                            anchors.margins: 6
+                            anchors.margins: Tokens.spaceSm
                             source: "image://charuco/pattern/" + view.target
                             sourceSize.width: 600
                             fillMode: Image.PreserveAspectFit
@@ -218,13 +201,13 @@ ColumnLayout {
                     }
                     RowLayout {
                         Layout.fillWidth: true
-                        spacing: 12
+                        spacing: Tokens.spaceMd
 
                         Rectangle {
                             implicitWidth: 160
                             implicitHeight: 160
-                            radius: 8
-                            color: "white"
+                            radius: Tokens.radiusSmall
+                            color: Tokens.paper
 
                             // Rendered at the displayed size and not scaled, so every module stays whole pixels and scans reliably.
                             Image {
@@ -237,7 +220,7 @@ ColumnLayout {
                         }
                         ColumnLayout {
                             Layout.fillWidth: true
-                            spacing: 4
+                            spacing: Tokens.spaceXs
 
                             Label {
                                 Layout.fillWidth: true
@@ -322,7 +305,7 @@ ColumnLayout {
                         Layout.fillWidth: true
                         Layout.preferredHeight: Math.min(contentHeight, 220)
                         clip: true
-                        spacing: 2
+                        spacing: Tokens.spaceXxs
                         model: view.views
 
                         delegate: Rectangle {
@@ -332,12 +315,12 @@ ColumnLayout {
 
                             width: ListView.view.width
                             height: 34
-                            radius: 8
-                            color: entry.modelData.outlier ? Qt.rgba(Tokens.bad.r, Tokens.bad.g, Tokens.bad.b, 0.12) : Tokens.surfaceRaised
+                            radius: Tokens.radiusSmall
+                            color: entry.modelData.outlier ? Tokens.tint(Tokens.bad, 0.12) : Tokens.surfaceRaised
 
                             RowLayout {
                                 anchors.fill: parent
-                                anchors.leftMargin: 12
+                                anchors.leftMargin: Tokens.spaceMd
 
                                 Label {
                                     text: "View " + (entry.modelData.index + 1)
@@ -417,14 +400,14 @@ ColumnLayout {
 
                             Layout.fillWidth: true
                             implicitHeight: 40
-                            radius: 8
-                            color: selected ? Qt.rgba(Tokens.accent.r, Tokens.accent.g, Tokens.accent.b, 0.14) : Tokens.surfaceRaised
+                            radius: Tokens.radiusSmall
+                            color: selected ? Tokens.tint(Tokens.accent, Tokens.tintFill) : Tokens.surfaceRaised
                             border.color: selected ? Tokens.accent : "transparent"
 
                             RowLayout {
                                 anchors.fill: parent
-                                anchors.leftMargin: 12
-                                anchors.rightMargin: 12
+                                anchors.leftMargin: Tokens.spaceMd
+                                anchors.rightMargin: Tokens.spaceMd
 
                                 Label {
                                     Layout.preferredWidth: 72
@@ -457,17 +440,17 @@ ColumnLayout {
                         visible: view.quality !== ""
                         Layout.fillWidth: true
                         implicitHeight: qualityColumn.implicitHeight + 20
-                        radius: 8
-                        readonly property color tone: view.quality === "good" ? Tokens.good : view.quality === "fair" ? Tokens.warning : Tokens.bad
-                        color: Qt.rgba(tone.r, tone.g, tone.b, 0.10)
-                        border.color: Qt.rgba(tone.r, tone.g, tone.b, 0.35)
+                        radius: Tokens.radiusSmall
+                        readonly property color tone: Tokens.qualityTone(view.quality)
+                        color: Tokens.tint(tone, Tokens.tintFillSoft)
+                        border.color: Tokens.tint(tone, Tokens.tintBorder)
 
                         ColumnLayout {
                             id: qualityColumn
 
                             anchors.fill: parent
-                            anchors.margins: 10
-                            spacing: 6
+                            anchors.margins: Tokens.spaceMd
+                            spacing: Tokens.spaceSm
 
                             Chip {
                                 text: view.quality === "good" ? "Good" : view.quality === "fair" ? "Usable, can be better" : "Not good enough"
@@ -492,17 +475,17 @@ ColumnLayout {
                         visible: view.resultText !== ""
                         Layout.fillWidth: true
                         implicitHeight: resultLabel.implicitHeight + 20
-                        radius: 8
+                        radius: Tokens.radiusSmall
                         color: Tokens.surfaceRaised
 
                         Label {
                             id: resultLabel
 
                             anchors.fill: parent
-                            anchors.margins: 10
+                            anchors.margins: Tokens.spaceMd
                             text: view.resultText
                             wrapMode: Text.WrapAnywhere
-                            font.family: "monospace"
+                            font.family: Tokens.codeFont
                             font.pixelSize: Tokens.captionSize
                         }
                     }

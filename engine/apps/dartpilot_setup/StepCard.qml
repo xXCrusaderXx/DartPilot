@@ -13,16 +13,16 @@ Card {
 
     ColumnLayout {
         anchors.fill: parent
-        spacing: 12
+        spacing: Tokens.spaceMd
 
         RowLayout {
-            spacing: 10
+            spacing: Tokens.spaceMd
 
             Rectangle {
-                implicitWidth: 26
-                implicitHeight: 26
-                radius: 13
-                color: card.done ? Tokens.good : Qt.rgba(Tokens.accent.r, Tokens.accent.g, Tokens.accent.b, 0.18)
+                implicitWidth: Tokens.chipHeight
+                implicitHeight: Tokens.chipHeight
+                radius: height / 2
+                color: card.done ? Tokens.good : Tokens.tint(Tokens.accent, 0.18)
 
                 Label {
                     anchors.centerIn: parent
@@ -42,7 +42,7 @@ Card {
             id: body
 
             Layout.fillWidth: true
-            spacing: 8
+            spacing: Tokens.spaceSm
         }
     }
 }
