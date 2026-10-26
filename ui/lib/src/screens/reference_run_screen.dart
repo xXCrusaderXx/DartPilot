@@ -135,48 +135,59 @@ class _TargetCard extends StatelessWidget {
       ),
       _ => (Icons.ads_click, target.field),
     };
+    final info = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (target != null)
+          Text(l10n.referenceProgress(target.index + 1, target.total), style: theme.textTheme.labelLarge),
+        const SizedBox(height: 8),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 36, color: theme.colorScheme.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(text, key: const ValueKey('reference-instruction'), style: theme.textTheme.titleLarge),
+            ),
+          ],
+        ),
+        if (run.step == 'insert_dart' && target?.hintCode == 'corner') ...[
+          const SizedBox(height: 8),
+          Text(l10n.referenceCornerHint, style: theme.textTheme.bodySmall),
+        ],
+        const SizedBox(height: 12),
+        LinearProgressIndicator(
+          value: target == null ? 1 : run.results.length / target.total,
+          minHeight: 8,
+          borderRadius: BorderRadius.circular(4),
+        ),
+      ],
+    );
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (target != null)
-                    Text(l10n.referenceProgress(target.index + 1, target.total), style: theme.textTheme.labelLarge),
-                  const SizedBox(height: 8),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(icon, size: 36, color: theme.colorScheme.primary),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          text,
-                          key: const ValueKey('reference-instruction'),
-                          style: theme.textTheme.titleLarge,
-                        ),
+        // On a phone the zoom goes below the instruction, which keeps the width to read
+        child: LayoutBuilder(
+          builder: (context, constraints) => constraints.maxWidth < 500
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    info,
+                    if (target != null) ...[
+                      const SizedBox(height: 16),
+                      Center(
+                        child: _Zoom(run: run, target: target.boardMm),
                       ),
                     ],
-                  ),
-                  if (run.step == 'insert_dart' && target?.hintCode == 'corner') ...[
-                    const SizedBox(height: 8),
-                    Text(l10n.referenceCornerHint, style: theme.textTheme.bodySmall),
                   ],
-                  const SizedBox(height: 12),
-                  LinearProgressIndicator(
-                    value: target == null ? 1 : run.results.length / target.total,
-                    minHeight: 8,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ],
-              ),
-            ),
-            if (target != null) ...[const SizedBox(width: 16), _Zoom(run: run, target: target.boardMm)],
-          ],
+                )
+              : Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: info),
+                    if (target != null) ...[const SizedBox(width: 16), _Zoom(run: run, target: target.boardMm)],
+                  ],
+                ),
         ),
       ),
     );

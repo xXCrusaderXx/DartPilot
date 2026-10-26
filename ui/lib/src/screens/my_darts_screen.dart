@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../l10n/app_localizations.dart';
 import '../engine/engine_connection.dart';
 import '../engine/engine_events.dart';
+import '../theme.dart';
 import '../stats/dart_links.dart';
 import '../stats/statistics.dart';
 import '../widgets/board_check.dart';
@@ -444,7 +445,7 @@ class _DartSetCaptureScreenState extends State<DartSetCaptureScreen> {
                             key: ValueKey('capture-camera-$camera'),
                             avatar: Icon(
                               state == 'seen' ? Icons.check_circle : Icons.error_outline,
-                              color: state == 'seen' ? Colors.green : theme.colorScheme.error,
+                              color: state == 'seen' ? StatusColors.of(context).good : StatusColors.of(context).bad,
                               size: 18,
                             ),
                             label: Text('${cameraLabelOf(context, camera)}: ${_cameraState(l10n, state)}'),

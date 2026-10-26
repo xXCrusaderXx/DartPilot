@@ -9,6 +9,7 @@ import '../engine/engine_connection.dart';
 import '../engine/engine_events.dart';
 import 'camera_assign_screen.dart';
 import '../widgets/live_jpeg.dart';
+import '../widgets/preview_watcher.dart';
 
 /// Live images of the engine's cameras with their status. Each camera is a panel that can be collapsed, which also
 /// stops its preview; tapping an image opens it full screen.
@@ -111,71 +112,6 @@ class _CamerasScreenState extends State<CamerasScreen> {
   }
 }
 
-/// Keeps the newest preview frame of a camera and measures the preview rate while it is watched.
-mixin _PreviewWatcher<T extends StatefulWidget> on State<T> {
-  EngineConnection? _engine;
-  PreviewHandle? _handle;
-  StreamSubscription<PreviewFrame>? _frames;
-  PreviewFrame? frame;
-  final List<DateTime> _arrivals = [];
-  Timer? _tick;
-
-  /// Whole seconds since the last frame while watched; the image then shows that it is old
-  int secondsWithoutFrame = 0;
-
-  String get watchedCamera;
-  double get previewFps;
-  int get previewWidth;
-
-  /// Frames per second over the last two seconds
-  double get previewRate {
-    final now = DateTime.now();
-    return _arrivals.where((t) => now.difference(t) <= const Duration(seconds: 2)).length / 2.0;
-  }
-
-  void startWatching() {
-    final engine = EngineScope.of(context);
-    if (identical(engine, _engine) && _handle != null) return;
-    stopWatching();
-    _engine = engine;
-    _handle = engine.watchPreview(watchedCamera, maxFps: previewFps, maxWidth: previewWidth);
-    _frames = engine.previews
-        .where((f) => f.camera == watchedCamera)
-        .listen(
-          (f) => setState(() {
-            frame = f;
-            _arrivals.add(DateTime.now());
-            secondsWithoutFrame = 0;
-          }),
-        );
-    // Rate and age change while no frame arrives, too.
-    _tick = Timer.periodic(const Duration(seconds: 1), (_) {
-      final now = DateTime.now();
-      setState(() {
-        _arrivals.removeWhere((t) => now.difference(t) > const Duration(seconds: 2));
-        secondsWithoutFrame++;
-      });
-    });
-  }
-
-  void stopWatching() {
-    _tick?.cancel();
-    _tick = null;
-    secondsWithoutFrame = 0;
-    _frames?.cancel();
-    _handle?.release();
-    _frames = null;
-    _handle = null;
-    _arrivals.clear();
-  }
-
-  @override
-  void dispose() {
-    stopWatching();
-    super.dispose();
-  }
-}
-
 class CameraPanel extends StatefulWidget {
   const CameraPanel({
     super.key,
@@ -202,7 +138,7 @@ class CameraPanel extends StatefulWidget {
   State<CameraPanel> createState() => _CameraPanelState();
 }
 
-class _CameraPanelState extends State<CameraPanel> with _PreviewWatcher<CameraPanel> {
+class _CameraPanelState extends State<CameraPanel> with PreviewWatcher<CameraPanel> {
   @override
   String get watchedCamera => widget.camera;
   @override
@@ -282,7 +218,7 @@ class _CameraPanelState extends State<CameraPanel> with _PreviewWatcher<CameraPa
                                 .push(MaterialPageRoute<void>(builder: (_) => CameraFullscreen(camera: widget.camera))),
                         child: LayoutBuilder(
                           // Decoded at the size it is shown, not at the size it was sent
-                          builder: (context, constraints) => _StaleFrame(
+                          builder: (context, constraints) => StaleFrame(
                             seconds: secondsWithoutFrame,
                             child: LiveJpeg(
                               current.jpeg,
@@ -321,7 +257,7 @@ class CameraFullscreen extends StatefulWidget {
   State<CameraFullscreen> createState() => _CameraFullscreenState();
 }
 
-class _CameraFullscreenState extends State<CameraFullscreen> with _PreviewWatcher<CameraFullscreen> {
+class _CameraFullscreenState extends State<CameraFullscreen> with PreviewWatcher<CameraFullscreen> {
   @override
   String get watchedCamera => widget.camera;
   @override
@@ -361,7 +297,7 @@ class _CameraFullscreenState extends State<CameraFullscreen> with _PreviewWatche
           : InteractiveViewer(
               maxScale: 6,
               child: Center(
-                child: _StaleFrame(
+                child: StaleFrame(
                   seconds: secondsWithoutFrame,
                   child: LiveJpeg(
                     current.jpeg,
@@ -371,33 +307,6 @@ class _CameraFullscreenState extends State<CameraFullscreen> with _PreviewWatche
                 ),
               ),
             ),
-    );
-  }
-}
-
-/// A camera image with a note over it once no new frame came for [seconds], so a frozen image does not look live
-class _StaleFrame extends StatelessWidget {
-  const _StaleFrame({required this.seconds, required this.child});
-
-  /// Shown from two seconds on, at a preview rate of 10 fps and more
-  static const int staleAfterSeconds = 2;
-
-  final int seconds;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    if (seconds < staleAfterSeconds) return child;
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        Opacity(opacity: 0.4, child: child),
-        Chip(
-          key: const ValueKey('camera-stale'),
-          avatar: Icon(Icons.hourglass_empty, color: StatusColors.of(context).warning),
-          label: Text(AppLocalizations.of(context).cameraNoFrameFor(seconds)),
-        ),
-      ],
     );
   }
 }
@@ -450,6 +359,17 @@ class _StatusLine extends StatelessWidget {
       if (previewRate != null) '${l10n.preview} ${l10n.fps(previewRate!.toStringAsFixed(1))}',
       ?frameSize,
     ];
-    return Text(parts.join('  ·  '), key: const ValueKey('camera-status-line'), style: style);
+    // One line under the title bar of the full view and on a narrow panel; the whole line as a tooltip
+    final line = parts.join('  ·  ');
+    return Tooltip(
+      message: line,
+      child: Text(
+        line,
+        key: const ValueKey('camera-status-line'),
+        style: style,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
   }
 }

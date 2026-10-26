@@ -350,7 +350,8 @@ class _KelvinBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          SizedBox(width: 90, child: Text(label)),
+          // A long camera name is cut, not wrapped, so every bar keeps its height
+          SizedBox(width: 90, child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis)),
           Expanded(
             child: Semantics(
               label: _foundText(l10n),

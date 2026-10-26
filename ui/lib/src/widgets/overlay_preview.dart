@@ -1,12 +1,9 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../engine/camera_order.dart';
-import '../engine/engine_connection.dart';
-import '../engine/engine_events.dart';
 import 'live_jpeg.dart';
+import 'preview_watcher.dart';
 
 /// Draws on top of a camera image. [scale] maps the camera's full-image pixels (the engine's coordinates) to the
 /// widget, so `Offset(x, y) * scale` is where the image pixel (x, y) appears.
@@ -43,53 +40,31 @@ class OverlayPreview extends StatefulWidget {
   State<OverlayPreview> createState() => _OverlayPreviewState();
 }
 
-class _OverlayPreviewState extends State<OverlayPreview> {
-  EngineConnection? _engine;
-  PreviewHandle? _handle;
-  StreamSubscription<PreviewFrame>? _frames;
-  PreviewFrame? _frame;
+class _OverlayPreviewState extends State<OverlayPreview> with PreviewWatcher<OverlayPreview> {
+  @override
+  String get watchedCamera => widget.camera;
+  @override
+  double get previewFps => widget.maxFps;
+  @override
+  int get previewWidth => widget.maxWidth;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _watch();
+    startWatching();
   }
 
   @override
   void didUpdateWidget(OverlayPreview old) {
     super.didUpdateWidget(old);
     if (old.camera != widget.camera || old.maxFps != widget.maxFps || old.maxWidth != widget.maxWidth) {
-      _release();
-      _frame = null;
-      _watch();
+      restartWatching();
     }
-  }
-
-  void _watch() {
-    final engine = EngineScope.of(context);
-    if (identical(engine, _engine) && _handle != null) return;
-    _release();
-    _engine = engine;
-    _handle = engine.watchPreview(widget.camera, maxFps: widget.maxFps, maxWidth: widget.maxWidth);
-    _frames = engine.previews.where((f) => f.camera == widget.camera).listen((f) => setState(() => _frame = f));
-  }
-
-  void _release() {
-    _frames?.cancel();
-    _handle?.release();
-    _frames = null;
-    _handle = null;
-  }
-
-  @override
-  void dispose() {
-    _release();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final frame = _frame;
+    final frame = this.frame;
     final imageSize =
         widget.imageSizePx ?? (frame == null ? null : Size(frame.width.toDouble(), frame.height.toDouble()));
     final aspect = imageSize == null || imageSize.height == 0 ? 16 / 9 : imageSize.width / imageSize.height;
@@ -109,12 +84,15 @@ class _OverlayPreviewState extends State<OverlayPreview> {
                   onTapUp: widget.onTapImagePx == null
                       ? null
                       : (details) => widget.onTapImagePx!(details.localPosition / scale),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      LiveJpeg(frame.jpeg, fit: BoxFit.fill, semanticLabel: cameraLabel(context, widget.camera)),
-                      if (painter != null) CustomPaint(painter: _Overlay(painter, scale, widget.repaintKey)),
-                    ],
+                  child: StaleFrame(
+                    seconds: secondsWithoutFrame,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        LiveJpeg(frame.jpeg, fit: BoxFit.fill, semanticLabel: cameraLabel(context, widget.camera)),
+                        if (painter != null) CustomPaint(painter: _Overlay(painter, scale, widget.repaintKey)),
+                      ],
+                    ),
                   ),
                 );
               },

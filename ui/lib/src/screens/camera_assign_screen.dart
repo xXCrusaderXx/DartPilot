@@ -6,9 +6,9 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../engine/camera_order.dart';
 import '../engine/engine_connection.dart';
-import '../engine/engine_events.dart';
 import '../engine/engine_errors.dart';
 import '../widgets/live_jpeg.dart';
+import '../widgets/preview_watcher.dart';
 
 /// All cameras of the engine with a live image, to put them in the player's order and name them: once when new
 /// cameras appear, and whenever two should swap places.
@@ -202,37 +202,29 @@ class CameraThumbnail extends StatefulWidget {
   State<CameraThumbnail> createState() => _CameraThumbnailState();
 }
 
-class _CameraThumbnailState extends State<CameraThumbnail> {
-  EngineConnection? _engine;
-  PreviewHandle? _handle;
-  StreamSubscription<PreviewFrame>? _frames;
-  PreviewFrame? _frame;
+class _CameraThumbnailState extends State<CameraThumbnail> with PreviewWatcher<CameraThumbnail> {
+  @override
+  String get watchedCamera => widget.camera;
+  @override
+  double get previewFps => 5;
+  @override
+  int get previewWidth => 320;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final engine = EngineScope.of(context);
-    if (identical(engine, _engine)) return;
-    _stop();
-    _engine = engine;
-    _handle = engine.watchPreview(widget.camera, maxFps: 5, maxWidth: 320);
-    _frames = engine.previews.where((f) => f.camera == widget.camera).listen((f) => setState(() => _frame = f));
-  }
-
-  void _stop() {
-    _frames?.cancel();
-    _handle?.release();
+    startWatching();
   }
 
   @override
-  void dispose() {
-    _stop();
-    super.dispose();
+  void didUpdateWidget(CameraThumbnail old) {
+    super.didUpdateWidget(old);
+    if (old.camera != widget.camera) restartWatching();
   }
 
   @override
   Widget build(BuildContext context) {
-    final frame = _frame;
+    final frame = this.frame;
     return AspectRatio(
       aspectRatio: 16 / 9,
       child: ClipRRect(
