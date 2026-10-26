@@ -121,6 +121,16 @@ QVariantMap CameraView::controlState (const QString& name) const
     return state;
 }
 
+QVariantMap CameraView::controls () const
+{
+    QVariantMap all;
+    for(const QString name : {"autoExposure", "exposure", "dynamicFramerate", "autoWhiteBalance", "whiteBalance"})
+    {
+        all[name] = controlState(name);
+    }
+    return all;
+}
+
 bool CameraView::setControl (const QString& name, int value)
 {
     const auto id = controlId(name);

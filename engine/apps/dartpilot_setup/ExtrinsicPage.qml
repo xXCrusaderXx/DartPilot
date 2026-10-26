@@ -60,7 +60,8 @@ ColumnLayout {
             id: cameraBox
 
             Layout.preferredWidth: Tokens.sidePanelWidth
-            model: page.cameras.map((c, i) => "Camera " + (i + 1) + "  ·  USB " + c.usbPort + (c.hasBoardPlane ? "  ·  board " + c.boardRmsMm.toFixed(2) + " mm" : "  ·  not yet"))
+            model: page.cameras
+            textRole: "boardChoice"
             currentIndex: page.selected
             // A new model resets the index and choosing an entry breaks the binding, so the selection is set again.
             onModelChanged: Qt.callLater(() => currentIndex = page.selected)
@@ -179,7 +180,7 @@ ColumnLayout {
                         spacing: Tokens.spaceSm
 
                         Button {
-                            text: view.phase === "detecting" ? "Detecting …" : view.hasPlane ? "Detect again" : "Detect board"
+                            text: view.phase === "detecting" ? "Detecting…" : view.hasPlane ? "Detect again" : "Detect board"
                             highlighted: !view.hasPlane
                             enabled: view.phase !== "detecting" && page.active
                             onClicked: view.detect()
@@ -283,7 +284,7 @@ ColumnLayout {
                         spacing: Tokens.spaceSm
 
                         Button {
-                            text: page.refiner.running ? "Refining …" : page.refiner.hasResult ? "Refine again" : "Refine all cameras"
+                            text: page.refiner.running ? "Refining…" : page.refiner.hasResult ? "Refine again" : "Refine all cameras"
                             highlighted: !page.refiner.hasResult || page.refiner.stale
                             enabled: !page.refiner.running && page.refiner.refinableCount > 0
                             onClicked: page.refiner.refine()

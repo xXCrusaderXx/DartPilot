@@ -16,6 +16,8 @@ class CameraView : public StreamView
     Q_OBJECT
     QML_ELEMENT
     Q_PROPERTY(bool focusEnabled READ focusEnabled WRITE setFocusEnabled NOTIFY focusEnabledChanged)
+    // Every control by name, as controlState gives it; bindings follow controlsChanged without a revision counter
+    Q_PROPERTY(QVariantMap controls READ controls NOTIFY controlsChanged)
 
    public:
     explicit CameraView (QQuickItem* parent = nullptr);
@@ -27,6 +29,7 @@ class CameraView : public StreamView
     // Control names: autoExposure, exposure, dynamicFramerate, autoWhiteBalance, whiteBalance.
     // Returns available, value, minimum, maximum, step and inactive.
     Q_INVOKABLE QVariantMap controlState (const QString& name) const;
+    QVariantMap controls () const;
     Q_INVOKABLE bool setControl (const QString& name, int value);
     Q_INVOKABLE void resetPeaks ();
 

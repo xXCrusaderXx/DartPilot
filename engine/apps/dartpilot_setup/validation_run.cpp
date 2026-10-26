@@ -515,7 +515,7 @@ QString ValidationRun::instruction () const
     }
     if(status_ == "measuring")
     {
-        return "Hold still: measuring …";
+        return "Hold still: measuring…";
     }
     if(step_ == "empty")
     {

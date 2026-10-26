@@ -12,15 +12,7 @@ Card {
     // False while the page is hidden, so the camera is released
     property bool active: true
 
-    // Bumped whenever a control changes, so every control re-reads its state
-    property int revision: 0
-    readonly property bool streaming: running.checked && view.error === "" && view.fps > 0
     readonly property color statusTone: view.error !== "" ? Tokens.bad : !running.checked ? Tokens.textMuted : view.fps >= 29 ? Tokens.good : Tokens.warning
-
-    // revision is passed in only so that bindings re-evaluate when it changes
-    function control(name, revision) {
-        return view.controlState(name);
-    }
 
     ColumnLayout {
         anchors.fill: parent
@@ -38,6 +30,7 @@ Card {
             Switch {
                 id: running
 
+                text: "Live"
                 checked: true
                 ToolTip.visible: hovered
                 ToolTip.text: checked ? "Stop this camera" : "Start this camera"
@@ -51,7 +44,6 @@ Card {
             Layout.preferredHeight: width * 9 / 16
             devicePath: pane.active && running.checked ? pane.modelData.path : ""
             focusEnabled: focusSwitch.checked
-            onControlsChanged: pane.revision++
         }
 
         Label {
@@ -74,7 +66,7 @@ Card {
                 Layout.columnSpan: 3
             }
             Switch {
-                readonly property var ctl: pane.control("autoExposure", pane.revision)
+                readonly property var ctl: view.controls.autoExposure
 
                 text: "Automatic"
                 enabled: ctl.available
@@ -84,7 +76,7 @@ Card {
             SpinBox {
                 id: exposureBox
 
-                readonly property var ctl: pane.control("exposure", pane.revision)
+                readonly property var ctl: view.controls.exposure
 
                 enabled: ctl.available && !ctl.inactive
                 from: ctl.available ? ctl.minimum : 0
@@ -100,7 +92,7 @@ Card {
                 Layout.fillWidth: true
             }
             Switch {
-                readonly property var ctl: pane.control("dynamicFramerate", pane.revision)
+                readonly property var ctl: view.controls.dynamicFramerate
 
                 Layout.columnSpan: 3
                 text: "Keep 30 fps in dim light"
@@ -115,7 +107,7 @@ Card {
                 Layout.topMargin: Tokens.spaceSm
             }
             Switch {
-                readonly property var ctl: pane.control("autoWhiteBalance", pane.revision)
+                readonly property var ctl: view.controls.autoWhiteBalance
 
                 text: "Automatic"
                 enabled: ctl.available
@@ -123,7 +115,7 @@ Card {
                 onToggled: view.setControl("autoWhiteBalance", checked ? 1 : 0)
             }
             SpinBox {
-                readonly property var ctl: pane.control("whiteBalance", pane.revision)
+                readonly property var ctl: view.controls.whiteBalance
 
                 enabled: ctl.available && !ctl.inactive
                 from: ctl.available ? ctl.minimum : 0

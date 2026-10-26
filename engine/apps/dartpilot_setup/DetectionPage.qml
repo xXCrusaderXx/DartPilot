@@ -249,6 +249,7 @@ ColumnLayout {
                                         Button {
                                             text: "↺"
                                             flat: true
+                                            Accessible.name: "Reset " + row.modelData + " to its default"
                                             enabled: row.changed
                                             onClicked: test.resetParam(row.modelData)
                                             ToolTip.visible: hovered
@@ -281,8 +282,6 @@ ColumnLayout {
                         anchors.fill: parent
                         spacing: Tokens.spaceSm
 
-                        readonly property var counts: test.stats.counts || {}
-
                         Label {
                             text: "Counts"
                             font.pixelSize: Tokens.headingSize
@@ -307,7 +306,7 @@ ColumnLayout {
                         Label {
                             Layout.fillWidth: true
                             wrapMode: Text.WordWrap
-                            text: "Placed in the right field: " + (test.stats.placedRight === undefined ? "–" : Math.round(test.stats.placedRight * 100) + " %") + "   ·   Rounds " + (test.stats.rounds || 1) + ", takeouts " + (test.stats.takeouts || 0) + (test.stats.movedCameras > 0 ? ", camera moved " + test.stats.movedCameras + "×" : "")
+                            text: "Placed in the right field: " + (test.stats.placedRight === undefined ? "–" : Math.round(test.stats.placedRight * 100) + "%") + "   ·   Rounds " + (test.stats.rounds || 1) + ", takeouts " + (test.stats.takeouts || 0) + (test.stats.movedCameras > 0 ? ", camera moved " + test.stats.movedCameras + "×" : "")
                         }
                         Label {
                             Layout.fillWidth: true
@@ -379,6 +378,13 @@ ColumnLayout {
                         // Several children: a Pane then takes its content size from none of them.
                         contentHeight: dartColumn.implicitHeight
 
+                        // Selected for correcting with a click, or with Tab and Space or Enter
+                        activeFocusOnTab: true
+                        Accessible.role: Accessible.Button
+                        Accessible.name: "Dart " + (dartCard.index + 1)
+                        Keys.onSpacePressed: page.selected = page.selected === dartCard.index ? -1 : dartCard.index
+                        Keys.onReturnPressed: page.selected = page.selected === dartCard.index ? -1 : dartCard.index
+
                         TapHandler {
                             onTapped: page.selected = page.selected === dartCard.index ? -1 : dartCard.index
                         }
@@ -444,7 +450,7 @@ ColumnLayout {
                                     delegate: Chip {
                                         required property var modelData
 
-                                        text: "Cam " + modelData.number + " " + modelData.state + (modelData.used ? " ✓" : "")
+                                        text: "Camera " + modelData.number + " " + modelData.state + (modelData.used ? " ✓" : "")
                                         tone: modelData.state === "seen" ? Tokens.good : modelData.state === "cut" ? Tokens.warning : modelData.state === "disagrees" ? Tokens.bad : Tokens.textMuted
                                     }
                                 }
