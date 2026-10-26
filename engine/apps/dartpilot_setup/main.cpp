@@ -4,6 +4,7 @@
 #include <QGuiApplication>
 #include <QIcon>
 #include <QQmlApplicationEngine>
+#include <QQmlEngine>
 #include <QQuickStyle>
 #include <QQuickWindow>
 #include <QTimer>
@@ -34,10 +35,17 @@ int main (int argc, char* argv[])
     // For documentation and for checking the layout without a display, e.g. with QT_QPA_PLATFORM=offscreen
     const QCommandLineOption screenshot_option("screenshot", "Save the window as an image after --delay milliseconds and quit.", "file");
     const QCommandLineOption delay_option("delay", "Delay before --screenshot, in milliseconds.", "ms", "3000");
-    parser.addOptions({page_option, screenshot_option, delay_option});
+    const QCommandLineOption reduced_motion_option("reduced-motion",
+                                                   "Show the guides step by step without moving pictures; also set by DARTPILOT_REDUCED_MOTION=1.");
+    parser.addOptions({page_option, screenshot_option, delay_option, reduced_motion_option});
     parser.process(app);
 
     QQmlApplicationEngine engine;
+    const QByteArray reduced_motion_env = qgetenv("DARTPILOT_REDUCED_MOTION");
+    if(parser.isSet(reduced_motion_option) || (!reduced_motion_env.isEmpty() && reduced_motion_env != "0"))
+    {
+        if(auto* tokens = engine.singletonInstance<QObject*>("DartPilotSetup", "Tokens")) tokens->setProperty("reducedMotion", true);
+    }
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed, &app, [] { QCoreApplication::exit(1); }, Qt::QueuedConnection);
     // The engine takes ownership of the provider.
     engine.addImageProvider("charuco", new dartpilot::setup::PatternImageProvider);

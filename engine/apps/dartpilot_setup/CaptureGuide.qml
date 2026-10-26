@@ -171,7 +171,7 @@ ColumnLayout {
 
                     Behavior on color {
                         ColorAnimation {
-                            duration: 300
+                            duration: Tokens.motion(300)
                         }
                     }
                 }
@@ -183,8 +183,10 @@ ColumnLayout {
 
             readonly property real baseWidth: stage.width * 0.36
 
-            width: baseWidth * guide.pose.scale
+            // Sized by scale, so the pattern image is not laid out again on every frame of a move
+            width: baseWidth
             height: width * 0.72
+            scale: guide.pose.scale
             x: stage.width * guide.pose.x - width / 2
             y: stage.height * guide.pose.y - height / 2
             radius: width * 0.05
@@ -204,7 +206,7 @@ ColumnLayout {
 
                     Behavior on angle {
                         NumberAnimation {
-                            duration: 700
+                            duration: Tokens.motion(700)
                             easing.type: Easing.InOutCubic
                         }
                     }
@@ -221,7 +223,7 @@ ColumnLayout {
 
                     Behavior on angle {
                         NumberAnimation {
-                            duration: 700
+                            duration: Tokens.motion(700)
                             easing.type: Easing.InOutCubic
                         }
                     }
@@ -230,19 +232,19 @@ ColumnLayout {
 
             Behavior on x {
                 NumberAnimation {
-                    duration: 700
+                    duration: Tokens.motion(700)
                     easing.type: Easing.InOutCubic
                 }
             }
             Behavior on y {
                 NumberAnimation {
-                    duration: 700
+                    duration: Tokens.motion(700)
                     easing.type: Easing.InOutCubic
                 }
             }
-            Behavior on width {
+            Behavior on scale {
                 NumberAnimation {
-                    duration: 700
+                    duration: Tokens.motion(700)
                     easing.type: Easing.InOutCubic
                 }
             }
@@ -269,7 +271,7 @@ ColumnLayout {
                 running: false
                 from: 0.35
                 to: 0
-                duration: 350
+                duration: Tokens.motion(350)
             }
         }
 
@@ -307,7 +309,7 @@ ColumnLayout {
 
                 Behavior on width {
                     NumberAnimation {
-                        duration: 200
+                        duration: Tokens.motion(200)
                     }
                 }
             }
