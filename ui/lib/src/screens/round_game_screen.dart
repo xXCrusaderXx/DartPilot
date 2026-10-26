@@ -18,6 +18,7 @@ import 'game_scaffold.dart';
 import 'my_darts_screen.dart';
 import 'players_setup_screen.dart';
 import '../widgets/precision_text.dart';
+import '../widgets/player_row.dart';
 
 /// Shanghai, Bob's 27 and Halve-It (#118): a round's target, every player's score, and the darts of the visit.
 class RoundGameScreen extends StatefulWidget {
@@ -167,24 +168,17 @@ class _RoundGameScreenState extends State<RoundGameScreen> with RecordsGame, Bot
         ),
         const SizedBox(height: 8),
         for (var i = 0; i < _game.players.length; ++i)
-          Card(
-            color: i == _game.current && !_game.isFinished ? theme.colorScheme.secondaryContainer : null,
-            child: ListTile(
-              leading: i == _game.current && !_game.isFinished ? const Icon(Icons.arrow_right) : null,
-              title: Text(_game.players[i].name),
-              subtitle: Text(
-                [
-                  '${_game.players[i].dartsThrown} ${l10n.darts}',
-                  '${l10n.hitRate} ${percentText(l10n, _game.players[i].hitRate)}',
-                  if (_game.players[i].out) l10n.playerOut,
-                ].join(' · '),
-              ),
-              trailing: Text(
-                '${_game.players[i].score}',
-                key: ValueKey('score-${_game.players[i].name}'),
-                style: theme.textTheme.headlineMedium,
-              ),
-            ),
+          PlayerRow(
+            name: _game.players[i].name,
+            active: i == _game.current && !_game.isFinished,
+            enabled: !_game.players[i].out,
+            details: [
+              '${_game.players[i].dartsThrown} ${l10n.darts}',
+              '${l10n.hitRate} ${percentText(l10n, _game.players[i].hitRate)}',
+              if (_game.players[i].out) l10n.playerOut,
+            ].join(' · '),
+            value: '${_game.players[i].score}',
+            valueKey: ValueKey('score-${_game.players[i].name}'),
           ),
         const SizedBox(height: 12),
         VisitDarts([for (final (dart, hit) in _game.currentVisit) '${dart.score.text(l10n)} ${hit ? '✓' : '✗'}']),

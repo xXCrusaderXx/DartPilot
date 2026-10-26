@@ -18,6 +18,7 @@ import 'game_layout.dart';
 import 'game_scaffold.dart';
 import 'players_setup_screen.dart';
 import '../widgets/precision_text.dart';
+import '../widgets/player_row.dart';
 
 class AroundTheClockScreen extends StatefulWidget {
   const AroundTheClockScreen({
@@ -110,7 +111,6 @@ class _AroundTheClockScreenState extends State<AroundTheClockScreen> with Record
       if (mounted && !_game.isFinished) useDartsOf(context, _game.players[_game.current].name);
     });
     final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
     // While its darts are in the board, the visit that ended stays on the scoreboard with its player.
     final atOche = _takeout.isClosed(_game)
         ? (_game.current + _game.players.length - 1) % _game.players.length
@@ -118,21 +118,14 @@ class _AroundTheClockScreenState extends State<AroundTheClockScreen> with Record
     final panel = ScrollingPanel(
       top: [
         for (var i = 0; i < _game.players.length; ++i)
-          Card(
-            color: i == atOche ? theme.colorScheme.secondaryContainer : null,
-            child: ListTile(
-              leading: i == atOche ? const Icon(Icons.arrow_right) : null,
-              title: Text(_game.players[i].name),
-              subtitle: Text(
+          PlayerRow(
+            name: _game.players[i].name,
+            active: i == atOche,
+            details:
                 '${_game.players[i].dartsThrown} ${l10n.darts} · '
                 '${l10n.hitRate} ${percentText(l10n, _game.players[i].hitRate)}',
-              ),
-              trailing: Text(
-                _game.targetLabel(_game.players[i].position.clamp(0, _game.targetCount - 1)),
-                key: ValueKey('target-${_game.players[i].name}'),
-                style: theme.textTheme.displaySmall,
-              ),
-            ),
+            value: _game.targetLabel(_game.players[i].position.clamp(0, _game.targetCount - 1)),
+            valueKey: ValueKey('target-${_game.players[i].name}'),
           ),
         const SizedBox(height: 12),
         VisitDarts([for (final (dart, hit) in _game.currentVisit) '${dart.score.text(l10n)} ${hit ? '✓' : '✗'}']),
