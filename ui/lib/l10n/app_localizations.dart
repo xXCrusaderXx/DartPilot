@@ -584,6 +584,12 @@ abstract class AppLocalizations {
   /// **'The engine did not answer.'**
   String get engineErrorTimeout;
 
+  /// No description provided for @engineReconnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection to the engine lost – connecting again…'**
+  String get engineReconnecting;
+
   /// No description provided for @engineSimulated.
   ///
   /// In en, this message translates to:

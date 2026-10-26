@@ -161,6 +161,7 @@
   "engineRetry": "Try again",
   "engineErrorDisconnected": "The connection to the engine was lost.",
   "engineErrorTimeout": "The engine did not answer.",
+  "engineReconnecting": "Connection to the engine lost – connecting again…",
   "engineSimulated": "simulated",
   "engineConnectedSimulated": "Connected (simulated)",
   "labelValue": "{label}: {value}",

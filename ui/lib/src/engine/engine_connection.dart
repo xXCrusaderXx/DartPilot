@@ -68,6 +68,19 @@ class EngineConnection extends ChangeNotifier {
   static const Duration defaultRequestTimeout = Duration(seconds: 15);
   final Duration? requestTimeout;
 
+  /// Pauses before each new try after the engine went away
+  static const List<Duration> reconnectDelays = [
+    Duration(seconds: 1),
+    Duration(seconds: 2),
+    Duration(seconds: 5),
+    Duration(seconds: 10),
+  ];
+
+  /// The engine went away by itself, and the app tries to reach it again
+  bool reconnecting = false;
+  Timer? _reconnectTimer;
+  int _reconnectAttempts = 0;
+
   String url = defaultUrl;
   EngineConnectionState state = EngineConnectionState.disconnected;
   EngineHello? hello;
@@ -148,7 +161,12 @@ class EngineConnection extends ChangeNotifier {
 
   /// Connects to `newUrl`. A `pin` in its query (from a QR code) pairs this device right away.
   Future<void> connect(String newUrl) async {
-    await disconnect();
+    _stopReconnecting();
+    await _open(newUrl);
+  }
+
+  Future<void> _open(String newUrl) async {
+    await _close();
     final (address, pin) = splitPairingPin(newUrl);
     _pendingPin = pin;
     url = newUrl = address;
@@ -164,12 +182,14 @@ class EngineConnection extends ChangeNotifier {
         onError: (Object e) => _fail('$e'),
         onDone: () {
           // The engine went away: nothing it sent before still holds, and no result will come.
+          final wasConnected = isConnected;
           _closeChannel();
           _clearEngineState();
           if (state != EngineConnectionState.failed) {
             state = EngineConnectionState.disconnected;
             notifyListeners();
           }
+          if (wasConnected || reconnecting) _scheduleReconnect();
         },
       );
       _send({'type': 'hello', 'client': clientName});
@@ -179,6 +199,11 @@ class EngineConnection extends ChangeNotifier {
   }
 
   Future<void> disconnect() async {
+    _stopReconnecting();
+    await _close();
+  }
+
+  Future<void> _close() async {
     await _closeChannel();
     _clearEngineState();
     if (state != EngineConnectionState.disconnected) {
@@ -210,6 +235,26 @@ class EngineConnection extends ChangeNotifier {
     state = EngineConnectionState.failed;
     error = message;
     notifyListeners();
+    if (reconnecting) _scheduleReconnect();
+  }
+
+  /// Tries the same engine again after a growing pause, until it answers or the player connects elsewhere.
+  void _scheduleReconnect() {
+    reconnecting = true;
+    notifyListeners();
+    final delay = reconnectDelays[math.min(_reconnectAttempts++, reconnectDelays.length - 1)];
+    _reconnectTimer?.cancel();
+    _reconnectTimer = Timer(delay, () => _open(url));
+  }
+
+  void _stopReconnecting() {
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    _reconnectAttempts = 0;
+    if (reconnecting) {
+      reconnecting = false;
+      notifyListeners();
+    }
   }
 
   void _onMessage(dynamic message) {
@@ -245,6 +290,8 @@ class EngineConnection extends ChangeNotifier {
         ..clear()
         ..addAll({for (final c in event.cameras) c: EngineCameraStatus(c, 'ok')});
       state = EngineConnectionState.connected;
+      _reconnectAttempts = 0;
+      reconnecting = false;
       pairingRequired = event.pairing == 'required';
       if (pairingRequired) _pairOnConnect(event.engineId);
       notifyListeners();
@@ -581,6 +628,7 @@ class EngineConnection extends ChangeNotifier {
   @override
   void dispose() {
     // No notifications after dispose: close the channel without going through disconnect().
+    _reconnectTimer?.cancel();
     _closeChannel();
     _events.close();
     _previews.close();

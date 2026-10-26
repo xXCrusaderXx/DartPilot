@@ -164,6 +164,7 @@ class _DartPilotAppState extends State<DartPilotApp> {
       ],
       supportedLocales: AppLocalizations.supportedLocales,
       theme: dartPilotTheme(),
+      builder: (context, child) => _ReconnectBanner(child: child!),
       home: const RootScreen(),
     );
     return EngineScope(
@@ -184,6 +185,50 @@ class _DartPilotAppState extends State<DartPilotApp> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Above every page while the app tries to reach a lost engine again, so a game or setup page left open says why
+/// nothing arrives.
+class _ReconnectBanner extends StatelessWidget {
+  const _ReconnectBanner({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!EngineScope.of(context).reconnecting) return child;
+    final theme = Theme.of(context);
+    final colors = StatusColors.of(context);
+    return Column(
+      children: [
+        Material(
+          color: Color.alphaBlend(colors.warning.withValues(alpha: 0.2), theme.colorScheme.surface),
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      AppLocalizations.of(context).engineReconnecting,
+                      key: const ValueKey('engine-reconnecting'),
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Expanded(
+          child: MediaQuery.removePadding(context: context, removeTop: true, child: child),
+        ),
+      ],
     );
   }
 }

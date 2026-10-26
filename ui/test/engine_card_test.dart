@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dartpilot/src/app.dart';
@@ -26,5 +27,18 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('engine-retry')));
     await tester.runAsync(() => Future<void>.delayed(Duration.zero));
     expect(attempts, 2);
+  });
+
+  testWidgets('a banner over every page says while the app reaches a lost engine again', (tester) async {
+    final engine = EngineConnection.forTest((_) {});
+    addTearDown(engine.dispose);
+    await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
+    expect(find.byKey(const ValueKey('engine-reconnecting')), findsNothing);
+
+    engine.reconnecting = true;
+    engine.receiveForTest(jsonEncode({'type': 'engine_status', 'detection': 'running', 'message': ''}));
+    await tester.pump();
+    expect(find.text('Verbindung zur Engine verloren – verbinde neu…'), findsWidgets);
+    expect(find.byKey(const ValueKey('engine-reconnecting')), findsOneWidget);
   });
 }

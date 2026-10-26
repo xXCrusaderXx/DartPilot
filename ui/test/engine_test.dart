@@ -116,6 +116,7 @@ void main() {
     expect(engine.cameraStatus, isEmpty);
 
     expect(await engine.startDiagnosis(), 'disconnected');
+    await engine.disconnect();
     await server.close(force: true);
   });
 
@@ -127,5 +128,36 @@ void main() {
     expect(code, isNull);
     await tester.pump(const Duration(seconds: 2));
     expect(code, 'timeout');
+  });
+
+  test('after the engine went away the app connects again by itself, until the player disconnects', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    final sockets = <WebSocket>[];
+    server.transform(WebSocketTransformer()).listen((socket) {
+      sockets.add(socket);
+      socket.add(jsonEncode(helloJson));
+      socket.listen((_) {});
+    });
+    Future<void> until(bool Function() condition) => Future.doWhile(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      return !condition();
+    }).timeout(const Duration(seconds: 5));
+
+    final engine = EngineConnection();
+    await engine.connect('ws://127.0.0.1:${server.port}/');
+    await until(() => engine.isConnected);
+
+    await sockets.single.close();
+    await until(() => engine.reconnecting);
+    expect(engine.isConnected, isFalse);
+    await until(() => engine.isConnected);
+    expect(engine.reconnecting, isFalse);
+    expect(sockets, hasLength(2));
+
+    await engine.disconnect();
+    await Future<void>.delayed(const Duration(seconds: 2));
+    expect(sockets, hasLength(2));
+    expect(engine.reconnecting, isFalse);
+    await server.close(force: true);
   });
 }
