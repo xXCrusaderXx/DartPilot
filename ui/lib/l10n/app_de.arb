@@ -82,6 +82,7 @@
   "engineRetry": "Erneut versuchen",
   "engineErrorDisconnected": "Die Verbindung zur Engine ist abgerissen.",
   "engineErrorTimeout": "Die Engine hat nicht geantwortet.",
+  "engineReconnecting": "Verbindung zur Engine verloren – verbinde neu…",
   "engineSimulated": "simuliert",
   "engineConnectedSimulated": "Verbunden (simuliert)",
   "labelValue": "{label}: {value}",

@@ -94,6 +94,7 @@ class _EngineCardState extends State<EngineCard> {
         StatusColors.of(context).good,
         engine.hello?.mode == 'simulate' ? l10n.engineConnectedSimulated : l10n.engineConnected,
       ),
+      _ when engine.reconnecting => (Icons.sync, StatusColors.of(context).warning, l10n.engineReconnecting),
       EngineConnectionState.connecting => (Icons.sync, theme.colorScheme.secondary, l10n.engineConnecting),
       EngineConnectionState.failed => (Icons.link_off, StatusColors.of(context).bad, l10n.engineFailed),
       EngineConnectionState.disconnected => (Icons.link_off, theme.disabledColor, l10n.engineDisconnected),
@@ -109,7 +110,7 @@ class _EngineCardState extends State<EngineCard> {
           children: [
             Row(
               children: [
-                if (engine.state == EngineConnectionState.connecting)
+                if (engine.state == EngineConnectionState.connecting || engine.reconnecting)
                   const SizedBox.square(
                     dimension: 24,
                     child: Padding(padding: EdgeInsets.all(3), child: CircularProgressIndicator(strokeWidth: 2)),
@@ -122,7 +123,7 @@ class _EngineCardState extends State<EngineCard> {
                 Expanded(child: Text(text, key: const ValueKey('engine-state'))),
               ],
             ),
-            if (engine.state == EngineConnectionState.failed && !onThisDevice) ...[
+            if (engine.state == EngineConnectionState.failed && !engine.reconnecting && !onThisDevice) ...[
               const SizedBox(height: 8),
               Row(
                 children: [

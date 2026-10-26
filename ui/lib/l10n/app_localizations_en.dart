@@ -285,6 +285,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get engineErrorTimeout => 'The engine did not answer.';
 
   @override
+  String get engineReconnecting => 'Connection to the engine lost – connecting again…';
+
+  @override
   String get engineSimulated => 'simulated';
 
   @override
