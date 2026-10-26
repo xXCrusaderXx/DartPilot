@@ -448,28 +448,30 @@ std::optional<DartObservation> observeDart (const cv::Mat& image, const cv::Mat&
     // Middles of the cross-sections along the main direction of the object
     const auto [centre, main] = fitLine(pixels);
     const cv::Point2f across(-main.y, main.x);
-    std::map<int, std::pair<float, float>> sections;
+    std::map<int, std::vector<float>> sections;
     for(const auto& p : pixels)
     {
         const cv::Point2f q = p - centre;
-        const int bin = static_cast<int>(std::floor(q.dot(main) / static_cast<float>(s.bin_px)));
-        const float t = q.dot(across);
-        const auto it = sections.find(bin);
-        if(it == sections.end())
-        {
-            sections[bin] = {t, t};
-        }
-        else
-        {
-            it->second.first = std::min(it->second.first, t);
-            it->second.second = std::max(it->second.second, t);
-        }
+        sections[static_cast<int>(std::floor(q.dot(main) / static_cast<float>(s.bin_px)))].push_back(q.dot(across));
     }
     std::vector<cv::Point2f> middles;
-    for(const auto& [bin, range] : sections)
+    for(auto& [bin, offsets] : sections)
     {
-        middles.push_back(centre + main * (static_cast<float>(s.bin_px) * bin + 0.5f * static_cast<float>(s.bin_px)) +
-                          across * (0.5f * (range.first + range.second)));
+        const cv::Point2f along = centre + main * (static_cast<float>(s.bin_px) * bin + 0.5f * static_cast<float>(s.bin_px));
+        std::sort(offsets.begin(), offsets.end());
+        float first = offsets.front();
+        for(std::size_t i = 1; i <= offsets.size(); ++i)
+        {
+            const bool split = i == offsets.size() || (s.section_gap_px > 0.0 && offsets[i] - offsets[i - 1] > static_cast<float>(s.section_gap_px));
+            if(split)
+            {
+                middles.push_back(along + across * (0.5f * (first + offsets[i - 1])));
+                if(i < offsets.size())
+                {
+                    first = offsets[i];
+                }
+            }
+        }
     }
     if(middles.size() < static_cast<std::size_t>(s.min_axis_points))
     {

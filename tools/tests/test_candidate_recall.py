@@ -83,3 +83,38 @@ def test_report_is_markdown_without_extra_packages():
     text = cr.report(rows, {"usb-1": 1.0, "usb-2": 2.0}, ["s"], "tracker-026", "corrections")
     assert "| source | views | <= 2 px |" in text
     assert "| any | 2 | 1.00 |" in text
+
+
+def test_axis_error_is_the_distance_of_the_truth_from_each_cameras_line():
+    t = throw("s/1", [{"pixel_xy": [3.0, 4.0]}], [])
+    # usb-1 sees the dart enter on x = 2 mm, usb-2 has no axis
+    t["camera_measurements"][0]["axis_line"] = {"a": 1.0, "b": 0.0, "c_mm": 2.0}
+    rows = cr.candidate_rows([t], {"s/1": (3.5, 4.0)}, identity_projector)
+    assert rows.set_index("camera").loc["usb-1", "axis_mm"] == 1.5
+    assert math.isnan(rows.set_index("camera").loc["usb-2", "axis_mm"])
+    table = cr.axis_table(rows).set_index("camera")
+    assert table.loc["all", "views"] == 1
+    assert table.loc["all", "<= 2 mm"] == 1.0
+
+
+def test_leave_one_out_measures_each_camera_against_the_others():
+    def measurement(camera, a, b, c):
+        return {"camera": camera, "axis_line": {"a": a, "b": b, "c_mm": c}}
+
+    # x = 0 and y = 0 cross at the origin; the third line x + y = 2 * sqrt(2) ... passes it by 2 mm
+    s = 2**0.5 / 2
+    t = {
+        "throw_id": "s/1",
+        "camera_measurements": [measurement("u1", 1, 0, 0), measurement("u2", 0, 1, 0), measurement("u3", s, s, 2)],
+    }
+    rows = cr.leave_one_out([t, {"throw_id": "s/2", "camera_measurements": []}]).set_index("camera")
+    assert math.isclose(rows.loc["u3", "axis_mm"], 2.0)
+    assert len(rows) == 3
+    # Two lines alone leave nothing to check against.
+    assert cr.leave_one_out([{"throw_id": "s/3", "camera_measurements": t["camera_measurements"][:2]}]).empty
+
+
+def test_no_truth_gives_an_empty_table_not_an_error():
+    rows = cr.candidate_rows([throw("s/1", [], [])], {}, identity_projector)
+    assert rows.empty
+    assert cr.recall_table(rows)["views"].tolist() == [0] * 6

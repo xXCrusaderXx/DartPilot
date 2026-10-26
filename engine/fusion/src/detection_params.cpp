@@ -67,6 +67,9 @@ std::vector<DetectionParam> makeParams ()
                         "Closing bridges gaps up to about this size inside the object, such as between the edges of a plain barrel."),
         DETECTION_PARAM("bin_px", "tip_candidates", "px", 0.5, 8, 0.5, tracker.observation.bin_px,
                         "Width of the cross-sections along the object whose middles make up its axis."),
+        DETECTION_PARAM("section_gap_px", "tip_candidates", "px", 0, 20, 0.5, tracker.observation.section_gap_px,
+                        "A cross-section of the object with a gap wider than this splits into parts with a middle each, so a dart beside "
+                        "another one is not pulled between them. 0 takes one middle per cross-section."),
         DETECTION_PARAM("axis_tolerance_px", "tip_candidates", "px", 0.5, 5, 0.1, tracker.observation.axis_tolerance_px,
                         "Middles within this distance of a line are on the axis."),
         DETECTION_PARAM("min_axis_span_px", "tip_candidates", "px", 5, 200, 1, tracker.observation.min_axis_span_px,
