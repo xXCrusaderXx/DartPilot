@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:dartpilot/src/app.dart';
 import 'package:dartpilot/src/board/dart_throw.dart';
 import 'package:dartpilot/src/board/scoring.dart';
+import 'package:dartpilot/src/games/checkout_trainer.dart';
+import 'package:dartpilot/src/games/doubles.dart';
 import 'package:dartpilot/src/games/grouping.dart';
 import 'package:dartpilot/src/stats/game_record.dart';
 import 'package:dartpilot/src/stats/player_stats.dart';
@@ -14,11 +16,39 @@ import 'package:flutter_test/flutter_test.dart';
 import 'navigation.dart';
 
 const t20 = PrecisionTarget(Ring.triple, 20);
+const t20d = PrecisionTarget(Ring.double, 20);
 
 /// A tapped dart [dx] mm right and [dy] mm up of the middle of T20
 DartThrow nearT20(double dx, double dy, {ThrowInput input = ThrowInput.board, double? confidence}) {
   final c = t20.centre();
   return DartThrow(BoardPoint(c.xMm + dx, c.yMm + dy), input, confidence: confidence);
+}
+
+/// Taps the drawn board where [point] is; the board is measured each time, as its size follows the panel.
+Future<void> tapBoard(WidgetTester tester, BoardPoint point) async {
+  final board = tester.getRect(find.byKey(const ValueKey('dartboard')));
+  final scale = board.shortestSide / (2 * (const BoardGeometry().doubleOuterRadiusMm + 30));
+  await tester.tapAt(board.center + Offset(point.xMm * scale, -point.yMm * scale));
+  await tester.pumpAndSettle();
+}
+
+Future<void> openTraining(WidgetTester tester, String title) async {
+  await tester.dragUntilVisible(find.text('Präzisionstraining'), find.byType(ListView).first, const Offset(0, -200));
+  await tester.tap(find.text('Präzisionstraining'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text(title));
+  await tester.pumpAndSettle();
+}
+
+Future<Statistics> startApp(WidgetTester tester) async {
+  tester.view.physicalSize = const Size(1400, 1000);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.reset);
+  final statistics = Statistics(MemoryGameStore(), MemoryProfileStore(['Anna']));
+  await statistics.load();
+  await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), statistics: statistics));
+  await playOffline(tester);
+  return statistics;
 }
 
 void main() {
@@ -66,13 +96,18 @@ void main() {
   });
 
   test('targets have labels that parse back, and their centre is the middle of the field', () {
-    for (final target in trainingTargets) {
+    for (final target in [...trainingTargets, ...allDoubles, PrecisionTarget.outerBull, PrecisionTarget.parse('S5')!]) {
       expect(PrecisionTarget.parse(target.label), target);
+      if (target == PrecisionTarget.outerBull) continue;
       final s = score(target.centre().xMm, target.centre().yMm);
       expect(s.ring, target.ring);
-      if (target.ring != Ring.innerBull) expect(s.sector, target.sector);
+      expect(target.isHit(s), isTrue);
     }
-    expect(PrecisionTarget.parse('S5'), isNull);
+    expect(PrecisionTarget.parse('50'), PrecisionTarget.bull);
+    expect(PrecisionTarget.outerBull.centre(), const BoardPoint(0, 0));
+    expect(PrecisionTarget.outerBull.isHit(score(0, 10)), isTrue);
+    expect(PrecisionTarget.parse('S5')!.isHit(score(0, 50)), isFalse);
+    expect(PrecisionTarget.parse('X5'), isNull);
     expect(PrecisionTarget.parse('T21'), isNull);
     expect(PrecisionTarget.parse(''), isNull);
   });
@@ -128,6 +163,92 @@ void main() {
     expect(stats.history.single.spreadMm, closeTo(game.spread!.spreadMm, 1e-9));
   });
 
+  test('doubles practice: one visit per double, ranked by hit rate, then spread', () {
+    final d16 = const PrecisionTarget(Ring.double, 16), d8 = const PrecisionTarget(Ring.double, 8);
+    final game = DoublesGame([t20d, d16, d8]);
+    DartThrow at(PrecisionTarget t, double dx) =>
+        DartThrow(BoardPoint(t.centre().xMm + dx, t.centre().yMm), ThrowInput.board);
+    // D20: one hit; D16: one hit in a tighter group; D8: three hits
+    for (final dx in [-30.0, 0.0, 30.0]) {
+      game.add(at(t20d, dx));
+    }
+    expect(game.current, d16);
+    for (final dx in [-12.0, 0.0, 12.0]) {
+      game.add(at(d16, dx));
+    }
+    for (final dx in [-1.0, 0.0, 1.0]) {
+      game.add(at(d8, dx));
+    }
+    expect(game.isFinished, isTrue);
+    expect(game.hits, 5);
+    expect(game.dartsAt(d16), hasLength(3));
+    final record = GameRecord(
+      id: 'd',
+      mode: GameMode.doubles,
+      started: DateTime(2026, 10, 26),
+      ended: DateTime(2026, 10, 26),
+      players: ['Anna'],
+      settings: {
+        'targets': ['D20', 'D16', 'D8'],
+        'darts_per_target': 3,
+      },
+      throws: game.throws,
+    );
+    final back = GameRecord.fromJson(record.toJson())!;
+    final ranking = doublesRanking(computePlayerPrecision([back], 'Anna'));
+    expect(ranking.map((p) => p.target.label), ['D8', 'D16', 'D20']);
+    expect(computePlayerStats([back], 'Anna').history.single.hitRate, closeTo(5 / 9, 1e-9));
+  });
+
+  test('checkout starts come from the seed and can all be finished with three darts', () {
+    expect(checkoutStarts(7, 20, CheckoutRange.high), checkoutStarts(7, 20, CheckoutRange.high));
+    for (final n in checkoutStarts(3, 200, CheckoutRange.high)) {
+      expect(n, inInclusiveRange(101, 170));
+      expect([159, 162, 163, 165, 166, 168, 169], isNot(contains(n)));
+    }
+  });
+
+  test('checkout trainer names the field before every dart and measures the miss against it', () {
+    DartThrow field(String label, {double dx = 0}) {
+      final c = PrecisionTarget.parse(label)!.centre();
+      return DartThrow(BoardPoint(c.xMm + dx, c.yMm), ThrowInput.board);
+    }
+
+    final game = CheckoutTrainer([40, 81], dartsPerAttempt: 3);
+    expect(game.aim, 'D20');
+    // 40: a miss into S20, then D10 to finish
+    game.add(field('S20', dx: 1));
+    expect(game.aim, 'D10');
+    game.add(field('D10'));
+    expect(game.attempts.first.checkedOut, isTrue);
+    expect(game.current.start, 81);
+    expect(game.aim, 'T19');
+    // 81: three darts that do not finish
+    game.add(field('S19'));
+    game.add(field('S20'));
+    game.add(field('S1'));
+    expect(game.isFinished, isTrue);
+    expect(game.checkouts, 1);
+    expect(game.checkoutRate, 0.5);
+    expect([for (var i = 0; i < 5; ++i) game.targetOf(i)?.label], ['D20', 'D10', 'T19', 'T10', 'S10']);
+
+    final record = GameRecord(
+      id: 'c',
+      mode: GameMode.checkout,
+      started: DateTime(2026, 10, 26),
+      ended: DateTime(2026, 10, 26),
+      players: ['Anna'],
+      settings: {
+        'starts': [40, 81],
+        'darts': 3,
+      },
+      throws: game.throws,
+    );
+    final precision = computePlayerPrecision([GameRecord.fromJson(record.toJson())!], 'Anna');
+    expect(precision.map((p) => p.target.label).toSet(), {'D20', 'D10', 'T19', 'T10', 'S10'});
+    expect(computePlayerStats([record], 'Anna').history.single.checkoutRate, 0.5);
+  });
+
   testWidgets('a grouping round on the board shows every miss and ends with the spread on the player page', (
     tester,
   ) async {
@@ -138,8 +259,7 @@ void main() {
     await statistics.load();
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), statistics: statistics));
     await playOffline(tester);
-    await tester.tap(find.text('Gruppieren'));
-    await tester.pumpAndSettle();
+    await openTraining(tester, 'Gruppieren');
     await tester.tap(find.byKey(const ValueKey('target-T20')));
     await tester.tap(find.byKey(const ValueKey('start-game')));
     await tester.pumpAndSettle();
@@ -167,6 +287,8 @@ void main() {
     expect(spread.offsetXMm, closeTo(-6, 1));
     expect(spread.offsetYMm, closeTo(-2, 1));
 
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.insights_outlined));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('stats-player-Anna')));
@@ -178,5 +300,53 @@ void main() {
     );
     expect(find.byKey(const ValueKey('precision-plot-T20')), findsOneWidget);
     expect(find.textContaining('6 mm links, 2 mm tief'), findsOneWidget);
+  });
+
+  testWidgets('doubles practice goes round the doubles and ranks them on its setup page afterwards', (tester) async {
+    final statistics = await startApp(tester);
+    await openTraining(tester, 'Doppel-Training');
+    expect(find.byKey(const ValueKey('doubles-set-weakest')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('start-game')));
+    await tester.pumpAndSettle();
+    for (var i = 0; i < 30; ++i) {
+      final next = find.byKey(const ValueKey('doubles-next'));
+      final shown = next.evaluate().isEmpty ? find.byKey(const ValueKey('doubles-target')) : next;
+      final centre = PrecisionTarget.parse(tester.widget<Text>(shown).data!.split(' ').last)!.centre();
+      // Every second dart a little high, still in the double
+      await tapBoard(tester, BoardPoint(centre.xMm, centre.yMm + (i.isEven ? 0 : 2)));
+    }
+    expect(find.byKey(const ValueKey('doubles-result-rate')), findsOneWidget);
+    expect(find.text('Trefferquote: 100 %'), findsOneWidget);
+    await tester.tap(find.text('Menü'));
+    await tester.pumpAndSettle();
+    expect(statistics.games.single.mode, GameMode.doubles);
+    expect(doublesRanking(computePlayerPrecision(statistics.games, 'Anna')), hasLength(10));
+
+    await openTraining(tester, 'Doppel-Training');
+    expect(find.text('Deine Doppel, die besten zuerst'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('doubles-set-weakest')));
+    await tester.pumpAndSettle();
+    expect(tester.widget<Text>(find.byKey(const ValueKey('doubles-targets'))).data!.split('  '), hasLength(5));
+  });
+
+  testWidgets('the checkout trainer shows the field to aim at and counts the checkouts', (tester) async {
+    final statistics = await startApp(tester);
+    await openTraining(tester, 'Checkout-Trainer');
+    await tester.tap(find.text('5'));
+    await tester.tap(find.text('3'));
+    await tester.tap(find.byKey(const ValueKey('start-game')));
+    await tester.pumpAndSettle();
+    // Always hitting the field shown checks every finish out.
+    for (var i = 0; i < 15 && find.byKey(const ValueKey('checkout-result')).evaluate().isEmpty; ++i) {
+      final label = tester.widget<Text>(find.byKey(const ValueKey('checkout-aim'))).data!.split(' ').last;
+      await tapBoard(tester, PrecisionTarget.parse(label)!.centre());
+    }
+    expect(find.text('Checkout-Quote: 5 / 5'), findsOneWidget);
+    await tester.tap(find.text('Menü'));
+    await tester.pumpAndSettle();
+    final record = statistics.games.single;
+    expect(record.mode, GameMode.checkout);
+    expect(computePlayerStats([record], 'Anna').history.single.checkoutRate, 1.0);
+    expect(computePlayerPrecision([record], 'Anna'), isNotEmpty);
   });
 }

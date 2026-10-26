@@ -2,13 +2,15 @@
 // figure is computed by replaying the game with the same rules as at the oche, also figures added later.
 import '../board/dart_throw.dart';
 import '../games/around_the_clock.dart';
+import '../games/checkout_trainer.dart';
 import '../games/cricket.dart';
 import '../games/dart_game.dart';
+import '../games/doubles.dart';
 import '../games/grouping.dart';
 import '../games/x01.dart';
 import 'precision.dart';
 
-enum GameMode { x01, cricket, aroundTheClock, grouping }
+enum GameMode { x01, cricket, aroundTheClock, grouping, doubles, checkout }
 
 class GameRecord {
   GameRecord({
@@ -29,7 +31,8 @@ class GameRecord {
   final List<String> players;
 
   /// Mode settings: X01 start score, double in/out, legs to win; Around the Clock: end with the bull; grouping: the
-  /// target and the number of darts
+  /// target and the number of darts; doubles practice: the doubles in order and the darts at each; checkout trainer:
+  /// the scores to check out and the darts for each
   final Map<String, Object?> settings;
   final List<DartThrow> throws;
 
@@ -63,7 +66,28 @@ class GameRecord {
         return (game: game, playerOf: playerOf);
       case GameMode.grouping:
         return (game: replayed(groupingGame, throws), playerOf: List.filled(throws.length, 0));
+      case GameMode.doubles:
+        return (game: replayed(doublesGame, throws), playerOf: List.filled(throws.length, 0));
+      case GameMode.checkout:
+        return (game: replayed(checkoutTrainer, throws), playerOf: List.filled(throws.length, 0));
     }
+  }
+
+  /// The empty doubles practice of this record's settings
+  DoublesGame get doublesGame {
+    final targets = [
+      for (final label in settings['targets'] as List? ?? const []) ?PrecisionTarget.parse(label as String),
+    ];
+    return DoublesGame(
+      targets.isEmpty ? allDoubles : targets,
+      dartsPerTarget: settings['darts_per_target'] as int? ?? 3,
+    );
+  }
+
+  /// The empty checkout trainer of this record's settings
+  CheckoutTrainer get checkoutTrainer {
+    final starts = [for (final s in settings['starts'] as List? ?? const []) (s as num).toInt()];
+    return CheckoutTrainer(starts.isEmpty ? const [40] : starts, dartsPerAttempt: settings['darts'] as int? ?? 9);
   }
 
   /// The empty grouping game of this record's settings

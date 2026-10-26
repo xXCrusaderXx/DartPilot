@@ -273,6 +273,22 @@ Iterable<List<_Field>> _setups(int points, int darts, int from) sync* {
   }
 }
 
+/// What is left after a setup dart, best first: doubles a player likes to finish on
+const List<int> _leaves = [32, 40, 16, 8, 24, 20, 36, 12, 4, 2];
+
+/// The field to aim at with `remaining` and `dartsLeft` in the visit: the first of the checkout route, T20 when there
+/// is none and more than 60 is left, else the single that leaves a good double.
+String aimField(int remaining, int dartsLeft, {bool doubleOut = true}) {
+  final route = suggestCheckout(remaining, dartsLeft, doubleOut: doubleOut);
+  if (route != null) return route.first;
+  if (remaining > 60) return 'T20';
+  for (final leave in _leaves) {
+    final single = remaining - leave;
+    if (single >= 1 && single <= 20) return 'S$single';
+  }
+  return 'S1';
+}
+
 /// Score of a field label as the keypad would enter it, for tests and suggestions
 Ring ringOf(String label) => switch (label[0]) {
   'T' => Ring.triple,

@@ -1765,4 +1765,76 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get statsPrecisionHelp =>
       'Streuung: wie weit die Darts im Mittel von ihrer eigenen Mitte liegen (quadratisches Mittel). Versatz: wie weit diese Mitte vom Ziel liegt. In der Ellipse liegen etwa zwei von fünf Darts.';
+
+  @override
+  String get modeDoubles => 'Doppel-Training';
+
+  @override
+  String get modeDoublesDescription => 'Eine Aufnahme pro Doppel; deine Doppel sortiert nach Trefferquote und Streuung';
+
+  @override
+  String get doublesSet => 'Doppel';
+
+  @override
+  String get doublesTop10 => 'Die 10 meistgespielten';
+
+  @override
+  String get doublesAll => 'Alle 20 und Bull';
+
+  @override
+  String get doublesWeakest => 'Deine 5 schwächsten';
+
+  @override
+  String get doublesRanking => 'Deine Doppel, die besten zuerst';
+
+  @override
+  String get doublesRound => 'Diese Runde';
+
+  @override
+  String get modeCheckout => 'Checkout-Trainer';
+
+  @override
+  String get modeCheckoutDescription =>
+      'Zufällige Finishes; jeder Fehlwurf gemessen am Feld, auf das du zielen solltest';
+
+  @override
+  String get checkoutRange => 'Finishes';
+
+  @override
+  String get checkoutCount => 'Checkouts pro Runde';
+
+  @override
+  String get checkoutDarts => 'Darts pro Checkout';
+
+  @override
+  String checkoutAim(String field) {
+    return 'Ziel: $field';
+  }
+
+  @override
+  String checkoutProgress(int number, int total) {
+    return 'Checkout $number von $total';
+  }
+
+  @override
+  String checkoutLeft(int points) {
+    return 'Rest $points';
+  }
+
+  @override
+  String get checkoutHit => 'Gecheckt';
+
+  @override
+  String get checkoutMissed => 'Nicht gecheckt';
+
+  @override
+  String aimedAt(String field) {
+    return 'auf $field';
+  }
+
+  @override
+  String get modePrecision => 'Präzisionstraining';
+
+  @override
+  String get modePrecisionDescription => 'Gruppieren, Doppel und Checkouts, gemessen in Millimetern';
 }

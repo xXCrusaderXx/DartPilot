@@ -6,7 +6,7 @@ import 'dart_game.dart';
 
 /// Grouping training (#125): a set number of darts at one target, scored by how tightly they group instead of by
 /// points. Pure logic, no UI.
-class GroupingGame implements DartGame {
+class GroupingGame implements DartGame, AimedGame {
   GroupingGame(this.target, {this.dartCount = 9});
 
   final PrecisionTarget target;
@@ -34,6 +34,9 @@ class GroupingGame implements DartGame {
 
   @override
   void replace(int index, DartThrow dart) => _throws[index] = dart;
+
+  @override
+  PrecisionTarget targetOf(int index) => target;
 
   /// The darts whose point was measured; only they count for the group.
   List<DartThrow> get measured => [

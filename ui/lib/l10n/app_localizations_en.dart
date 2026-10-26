@@ -1763,4 +1763,75 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get statsPrecisionHelp =>
       'Spread: how far the darts lie from their own middle (root mean square). Offset: how far that middle lies from the target. The ellipse holds about two in five darts.';
+
+  @override
+  String get modeDoubles => 'Doubles practice';
+
+  @override
+  String get modeDoublesDescription => 'One visit at each double; your doubles ranked by hit rate and spread';
+
+  @override
+  String get doublesSet => 'Doubles';
+
+  @override
+  String get doublesTop10 => 'The 10 most played';
+
+  @override
+  String get doublesAll => 'All 20 and the bull';
+
+  @override
+  String get doublesWeakest => 'Your 5 weakest';
+
+  @override
+  String get doublesRanking => 'Your doubles, best first';
+
+  @override
+  String get doublesRound => 'This round';
+
+  @override
+  String get modeCheckout => 'Checkout trainer';
+
+  @override
+  String get modeCheckoutDescription => 'Random finishes; every miss measured against the field to aim at';
+
+  @override
+  String get checkoutRange => 'Finishes';
+
+  @override
+  String get checkoutCount => 'Checkouts per round';
+
+  @override
+  String get checkoutDarts => 'Darts per checkout';
+
+  @override
+  String checkoutAim(String field) {
+    return 'Aim: $field';
+  }
+
+  @override
+  String checkoutProgress(int number, int total) {
+    return 'Checkout $number of $total';
+  }
+
+  @override
+  String checkoutLeft(int points) {
+    return '$points left';
+  }
+
+  @override
+  String get checkoutHit => 'Checked out';
+
+  @override
+  String get checkoutMissed => 'Not checked out';
+
+  @override
+  String aimedAt(String field) {
+    return 'at $field';
+  }
+
+  @override
+  String get modePrecision => 'Precision training';
+
+  @override
+  String get modePrecisionDescription => 'Grouping, doubles and checkouts, measured in millimetres';
 }

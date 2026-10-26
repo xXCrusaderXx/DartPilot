@@ -17,7 +17,7 @@ import '../widgets/average_trend.dart';
 import '../widgets/hit_heatmap.dart';
 import '../widgets/player_picker.dart';
 import '../widgets/precision_plot.dart';
-import 'grouping_screen.dart';
+import '../widgets/precision_text.dart';
 
 /// The player profiles of this device with their statistics; profiles are created and deleted here.
 class StatisticsScreen extends StatelessWidget {
@@ -412,15 +412,20 @@ class _HistoryTile extends StatelessWidget {
       GameMode.cricket => l10n.modeCricket,
       GameMode.aroundTheClock => l10n.modeAroundTheClock,
       GameMode.grouping => '${l10n.modeGrouping} ${record.groupingTarget.label}',
+      GameMode.doubles => l10n.modeDoubles,
+      GameMode.checkout => l10n.modeCheckout,
     };
     final figure = game.average != null
         ? '${l10n.average} ${_number(l10n, game.average!)}'
         : game.marksPerRound != null
         ? '${l10n.statsMarksPerRound} ${_number(l10n, game.marksPerRound!, 2)}'
         : game.hitRate != null
-        ? '${l10n.statsClockHitRate} ${_number(l10n, 100 * game.hitRate!, 0)} %'
+        ? '${record.mode == GameMode.doubles ? l10n.hitRate : l10n.statsClockHitRate} '
+              '${_number(l10n, 100 * game.hitRate!, 0)} %'
         : game.spreadMm != null
         ? '${l10n.precisionSpread} ${_number(l10n, game.spreadMm!)} mm'
+        : game.checkoutRate != null
+        ? '${l10n.statsCheckoutRate} ${_number(l10n, 100 * game.checkoutRate!, 0)} %'
         : '';
     final others = record.players.length - 1;
     return ListTile(

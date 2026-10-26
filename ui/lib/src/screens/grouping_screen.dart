@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../board/dart_throw.dart';
@@ -13,6 +12,7 @@ import '../stats/statistics.dart';
 import '../widgets/board_check.dart';
 import '../widgets/player_picker.dart';
 import '../widgets/precision_plot.dart';
+import '../widgets/precision_text.dart';
 import 'game_layout.dart';
 import 'my_darts_screen.dart';
 import 'watched_board.dart';
@@ -43,21 +43,6 @@ class GroupingScreen extends StatefulWidget {
   @override
   State<GroupingScreen> createState() => _GroupingScreenState();
 }
-
-/// The offset of a mean or a dart from the target in words: "6 mm left, 4 mm low"
-String offsetText(AppLocalizations l10n, double dxMm, double dyMm) {
-  String mm(double v) => NumberFormat.decimalPatternDigits(locale: l10n.localeName, decimalDigits: 0).format(v.abs());
-  final parts = [
-    if (mm(dxMm) != '0') dxMm > 0 ? l10n.offsetRight(mm(dxMm)) : l10n.offsetLeft(mm(dxMm)),
-    if (mm(dyMm) != '0') dyMm > 0 ? l10n.offsetHigh(mm(dyMm)) : l10n.offsetLow(mm(dyMm)),
-  ];
-  return parts.isEmpty ? l10n.precisionOnTarget : parts.join(', ');
-}
-
-String _number(AppLocalizations l10n, double value) =>
-    NumberFormat.decimalPatternDigits(locale: l10n.localeName, decimalDigits: 1).format(value);
-
-String _mm(AppLocalizations l10n, double value) => '${_number(l10n, value)} mm';
 
 class _GroupingScreenState extends State<GroupingScreen> with RecordsGame {
   @override
@@ -95,7 +80,7 @@ class _GroupingScreenState extends State<GroupingScreen> with RecordsGame {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${l10n.precisionSpread}: ${spread == null ? '–' : _mm(l10n, spread.spreadMm)}',
+              '${l10n.precisionSpread}: ${spread == null ? '–' : mmText(l10n, spread.spreadMm)}',
               key: const ValueKey('grouping-result-spread'),
             ),
             if (spread != null)
@@ -176,7 +161,7 @@ class _GroupingScreenState extends State<GroupingScreen> with RecordsGame {
           contentPadding: EdgeInsets.zero,
           title: Text(l10n.precisionSpread),
           trailing: Text(
-            spread == null ? '–' : _mm(l10n, spread.spreadMm),
+            spread == null ? '–' : mmText(l10n, spread.spreadMm),
             key: const ValueKey('grouping-spread'),
             style: theme.textTheme.titleLarge,
           ),
@@ -188,21 +173,7 @@ class _GroupingScreenState extends State<GroupingScreen> with RecordsGame {
         ),
         if (unmeasured > 0) Text(l10n.groupingNotMeasured, style: theme.textTheme.bodySmall),
         for (var i = throws.length - 1; i >= 0; --i)
-          Builder(
-            builder: (context) {
-              final miss = _game.miss(throws[i]);
-              return ListTile(
-                key: ValueKey('grouping-dart-$i'),
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                leading: Text('${i + 1}', style: theme.textTheme.titleMedium),
-                title: Text(throws[i].score.label),
-                subtitle: hasMeasuredPoint(throws[i])
-                    ? Text(l10n.missFromTarget(_number(l10n, miss.distanceMm), offsetText(l10n, miss.dxMm, miss.dyMm)))
-                    : null,
-              );
-            },
-          ),
+          MissTile(key: ValueKey('grouping-dart-$i'), number: i + 1, dart: throws[i], target: widget.target),
         const SizedBox(height: 8),
         OutlinedButton.icon(
           onPressed: throws.isEmpty || widget.watching ? null : () => setState(_game.undo),
@@ -256,32 +227,7 @@ class _GroupingSetupScreenState extends State<GroupingSetupScreen> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Text(l10n.players, style: theme.textTheme.titleMedium),
-              const SizedBox(height: 4),
-              Text(l10n.groupingPickPlayer, style: theme.textTheme.bodySmall),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final name in profiles)
-                    ChoiceChip(
-                      key: ValueKey('pick-$name'),
-                      label: Text(name),
-                      selected: name == player,
-                      onSelected: (_) => setState(() => _player = name),
-                    ),
-                  ActionChip(
-                    key: const ValueKey('pick-new-profile'),
-                    avatar: const Icon(Icons.person_add),
-                    label: Text(l10n.newProfile),
-                    onPressed: () async {
-                      final name = await createProfile(context);
-                      if (name != null) setState(() => _player = name);
-                    },
-                  ),
-                ],
-              ),
+              ProfileChoice(selected: player, onSelected: (name) => setState(() => _player = name)),
               const SizedBox(height: 24),
               Text(l10n.groupingTarget, style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),

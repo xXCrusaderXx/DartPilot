@@ -1158,5 +1158,57 @@
   "statsPrecision": "Precision",
   "statsPrecisionEmpty": "Play the grouping training to see your spread and offset per target.",
   "statsPrecisionTrend": "Spread per week",
-  "statsPrecisionHelp": "Spread: how far the darts lie from their own middle (root mean square). Offset: how far that middle lies from the target. The ellipse holds about two in five darts."
+  "statsPrecisionHelp": "Spread: how far the darts lie from their own middle (root mean square). Offset: how far that middle lies from the target. The ellipse holds about two in five darts.",
+  "modeDoubles": "Doubles practice",
+  "modeDoublesDescription": "One visit at each double; your doubles ranked by hit rate and spread",
+  "doublesSet": "Doubles",
+  "doublesTop10": "The 10 most played",
+  "doublesAll": "All 20 and the bull",
+  "doublesWeakest": "Your 5 weakest",
+  "doublesRanking": "Your doubles, best first",
+  "doublesRound": "This round",
+  "modeCheckout": "Checkout trainer",
+  "modeCheckoutDescription": "Random finishes; every miss measured against the field to aim at",
+  "checkoutRange": "Finishes",
+  "checkoutCount": "Checkouts per round",
+  "checkoutDarts": "Darts per checkout",
+  "checkoutAim": "Aim: {field}",
+  "@checkoutAim": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "checkoutProgress": "Checkout {number} of {total}",
+  "@checkoutProgress": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "checkoutLeft": "{points} left",
+  "@checkoutLeft": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "checkoutHit": "Checked out",
+  "checkoutMissed": "Not checked out",
+  "aimedAt": "at {field}",
+  "@aimedAt": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "modePrecision": "Precision training",
+  "modePrecisionDescription": "Grouping, doubles and checkouts, measured in millimetres"
 }

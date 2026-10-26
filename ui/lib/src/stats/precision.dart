@@ -4,35 +4,52 @@ import 'dart:math' as math;
 import '../board/dart_throw.dart';
 import '../board/scoring.dart';
 
-/// A field a player aims at: a triple, a double or the bull
+/// A field a player aims at: the middle of a triple, a double, the big single, or a bull
 class PrecisionTarget {
   const PrecisionTarget(this.ring, [this.sector = 0]);
 
   static const bull = PrecisionTarget(Ring.innerBull);
+  static const outerBull = PrecisionTarget(Ring.outerBull);
 
   final Ring ring;
 
-  /// 1 to 20; 0 for the bull
+  /// 1 to 20; 0 for the bulls
   final int sector;
 
-  /// T20, D16, BULL
+  /// T20, D16, S5, 25, BULL
   String get label => switch (ring) {
     Ring.innerBull => 'BULL',
+    Ring.outerBull => '25',
     Ring.triple => 'T$sector',
     Ring.double => 'D$sector',
     _ => 'S$sector',
   };
 
-  /// The point aimed at: the middle of the field
-  BoardPoint centre([BoardGeometry geometry = const BoardGeometry()]) =>
-      fieldCentre(ring, sector: sector, geometry: geometry);
+  /// The point aimed at: the middle of the field, for a single the middle of the big single, for both bulls the
+  /// middle of the board
+  BoardPoint centre([BoardGeometry geometry = const BoardGeometry()]) => switch (ring) {
+    Ring.innerBull || Ring.outerBull => const BoardPoint(0, 0),
+    Ring.innerSingle => fieldCentre(Ring.outerSingle, sector: sector, geometry: geometry),
+    _ => fieldCentre(ring, sector: sector, geometry: geometry),
+  };
 
+  /// Whether a dart scored in this field
+  bool isHit(Score score) => switch (ring) {
+    Ring.innerBull || Ring.outerBull => score.ring == ring,
+    Ring.innerSingle ||
+    Ring.outerSingle => (score.ring == Ring.innerSingle || score.ring == Ring.outerSingle) && score.sector == sector,
+    _ => score.ring == ring && score.sector == sector,
+  };
+
+  /// A target from its [label], or from a field label of a checkout route (50 for the bull); null for anything else
   static PrecisionTarget? parse(String label) {
-    if (label == 'BULL') return bull;
+    if (label == 'BULL' || label == '50') return bull;
+    if (label == '25') return outerBull;
     if (label.isEmpty) return null;
     final ring = switch (label[0]) {
       'T' => Ring.triple,
       'D' => Ring.double,
+      'S' => Ring.outerSingle,
       _ => null,
     };
     final sector = int.tryParse(label.substring(1));
@@ -45,6 +62,12 @@ class PrecisionTarget {
 
   @override
   int get hashCode => Object.hash(ring, sector);
+}
+
+/// A game that knows what each dart was aimed at, so its darts count for the precision statistics
+abstract interface class AimedGame {
+  /// The target of the dart at [index] in the game's throws; null where the game does not know it
+  PrecisionTarget? targetOf(int index);
 }
 
 /// The targets offered for training, most played first
@@ -157,7 +180,7 @@ List<TargetPrecision> computePrecision(Iterable<AimedDart> darts) {
     if (!hasMeasuredPoint(dart)) continue;
     final precision = byTarget.putIfAbsent(target, () => TargetPrecision(target));
     precision.points.add(dart.point);
-    if (_hits(dart.score, target)) precision.hits++;
+    if (target.isHit(dart.score)) precision.hits++;
     byWeek.putIfAbsent(target, () => {}).putIfAbsent(weekOf(thrown), () => []).add(dart.point);
   }
   for (final precision in byTarget.values) {
@@ -170,5 +193,15 @@ List<TargetPrecision> computePrecision(Iterable<AimedDart> darts) {
   return byTarget.values.toList()..sort((a, b) => b.points.length.compareTo(a.points.length));
 }
 
-bool _hits(Score score, PrecisionTarget target) =>
-    score.ring == target.ring && (target.ring == Ring.innerBull || score.sector == target.sector);
+/// The doubles and the bull, best first: the highest hit rate, then the smallest spread; targets without a spread last
+List<TargetPrecision> doublesRanking(List<TargetPrecision> precision) {
+  final doubles = [
+    for (final p in precision)
+      if (p.target.ring == Ring.double || p.target.ring == Ring.innerBull) p,
+  ];
+  return doubles..sort((a, b) {
+    final byRate = b.hitRate.compareTo(a.hitRate);
+    if (byRate != 0) return byRate;
+    return (a.spread?.spreadMm ?? double.infinity).compareTo(b.spread?.spreadMm ?? double.infinity);
+  });
+}

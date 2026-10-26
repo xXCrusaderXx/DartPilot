@@ -6,7 +6,9 @@ import '../engine/engine_events.dart';
 import '../games/x01.dart';
 import '../stats/game_record.dart';
 import 'around_the_clock_screen.dart';
+import 'checkout_screen.dart';
 import 'cricket_screen.dart';
+import 'doubles_screen.dart';
 import 'grouping_screen.dart';
 import 'x01_screen.dart';
 
@@ -65,6 +67,22 @@ class WatchGameScreen extends StatelessWidget {
         replay: record.throws,
         watching: true,
       ),
+      GameMode.doubles => DoublesScreen(
+        key: key,
+        player: record.players.first,
+        targets: record.doublesGame.targets,
+        dartsPerTarget: record.doublesGame.dartsPerTarget,
+        replay: record.throws,
+        watching: true,
+      ),
+      GameMode.checkout => CheckoutScreen(
+        key: key,
+        player: record.players.first,
+        starts: record.checkoutTrainer.starts,
+        dartsPerAttempt: record.checkoutTrainer.dartsPerAttempt,
+        replay: record.throws,
+        watching: true,
+      ),
     };
   }
 }
@@ -86,6 +104,8 @@ class SharedGameCard extends StatelessWidget {
       GameMode.cricket => l10n.modeCricket,
       GameMode.aroundTheClock => l10n.modeAroundTheClock,
       GameMode.grouping => '${l10n.modeGrouping} ${record.groupingTarget.label}',
+      GameMode.doubles => l10n.modeDoubles,
+      GameMode.checkout => l10n.modeCheckout,
     };
     return Card(
       key: const ValueKey('shared-game'),
