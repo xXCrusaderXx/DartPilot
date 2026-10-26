@@ -209,6 +209,40 @@ TEST(ObserveDart, SplitCrossSectionsKeepTheAxisOnOneOfTwoShaftsSideBySide)
     EXPECT_LT(offAxis(3.0), 1.0);
 }
 
+TEST(TipCandidates, AgreeingGeneratorsAreSureAndSpreadOnesAreNot)
+{
+    // A bar from x = 50 to 150 with a wide blob at its right end, as a flight seen across: at the left end every
+    // generator finds the same point, at the right end they spread over the blob.
+    dartpilot::tip_candidates::DartObservation observation;
+    observation.mask = cv::Mat::zeros(120, 220, CV_8U);
+    cv::rectangle(observation.mask, cv::Point(50, 58), cv::Point(150, 62), cv::Scalar(255), cv::FILLED);
+    cv::rectangle(observation.mask, cv::Point(150, 30), cv::Point(170, 90), cv::Scalar(255), cv::FILLED);
+    for(int x = 50; x <= 150; x += 2)
+    {
+        observation.axis_px.emplace_back(static_cast<float>(x), 60.0f);
+    }
+    observation.ends_px = {cv::Point2f(50.0f, 60.0f), cv::Point2f(150.0f, 60.0f)};
+    const auto candidates = dartpilot::tip_candidates::tipCandidates(observation);
+    float left = 0.0f, right = 1.0f;
+    for(const auto& c : candidates)
+    {
+        EXPECT_GT(c.confidence, 0.0f);
+        EXPECT_LE(c.confidence, 1.0f);
+        EXPECT_GT(c.covariance_px2(0, 0), 0.0f);
+        EXPECT_GT(c.covariance_px2(1, 1), 0.0f);
+        if(c.pixel_px.x < 100.0f)
+        {
+            left = c.confidence;
+        }
+        else
+        {
+            right = std::min(right, c.confidence);
+        }
+    }
+    EXPECT_GT(left, 0.6f);
+    EXPECT_LT(right, left);
+}
+
 TEST(ObserveDart, NothingOnAnEmptyBoard) { EXPECT_FALSE(dartpilot::tip_candidates::observeDart(scene(1), scene(2))); }
 
 TEST(LocateDart, AllCamerasAgreeOnWhereTheDartEntersTheBoard)

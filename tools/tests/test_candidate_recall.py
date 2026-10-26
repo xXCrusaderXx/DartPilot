@@ -118,3 +118,43 @@ def test_no_truth_gives_an_empty_table_not_an_error():
     rows = cr.candidate_rows([throw("s/1", [], [])], {}, identity_projector)
     assert rows.empty
     assert cr.recall_table(rows)["views"].tolist() == [0] * 6
+
+
+def test_confidence_rows_use_the_located_point_as_reference_at_the_nearer_end():
+    near = {
+        "pixel_xy": [11.0, 0.0],
+        "source": "axis_end",
+        "covariance_px2": [[4.0, 0.0], [0.0, 1.0]],
+        "confidence": 0.7,
+    }
+    same_end = {
+        "pixel_xy": [10.0, 3.0],
+        "source": "skeleton_end",
+        "covariance_px2": [[4.0, 0.0], [0.0, 1.0]],
+        "confidence": 0.7,
+    }
+    far_end = {
+        "pixel_xy": [90.0, 0.0],
+        "source": "axis_end",
+        "covariance_px2": [[1.0, 0.0], [0.0, 1.0]],
+        "confidence": 0.9,
+    }
+    t = {
+        "throw_id": "s/1",
+        "accepted": True,
+        "board_point": {"x_mm": 10.0, "y_mm": 0.0},
+        "diagnostics": {"cameras_agreeing": 3},
+        "camera_measurements": [
+            {"camera": "usb-1", "tip_candidates": [{"pixel_xy": [10.0, 0.0]}, near, same_end, far_end]},
+        ],
+    }
+    two_cameras = dict(t, throw_id="s/2", diagnostics={"cameras_agreeing": 2})
+    rows = cr.confidence_rows([t, two_cameras], identity_projector)
+    assert sorted(rows["source"]) == ["axis_end", "skeleton_end"]
+    by_source = rows.set_index("source")
+    assert by_source.loc["axis_end", "error_px"] == 1.0
+    assert math.isclose(by_source.loc["axis_end", "mahalanobis2"], 0.25)
+    assert math.isclose(by_source.loc["skeleton_end", "mahalanobis2"], 9.0)
+    by_confidence, coverage = cr.calibration_tables(rows)
+    assert by_confidence.set_index("confidence").loc["0.6 – 1", "candidates"] == 2
+    assert coverage.set_index("source").loc["all", "within 1 sigma"] == 0.5

@@ -60,6 +60,68 @@ cv::Mat skeleton (const cv::Mat& mask)
     return image;
 }
 
+// Uncertainty and confidence of each candidate from the candidates at the same end of the dart: where the generators
+// agree, the end is clear; where they spread along the axis, its fading point leaves the tip open. Across the axis,
+// the scatter of the axis points adds, as the axis itself carries that much error.
+void rateCandidates (std::vector<TipCandidate>& candidates, const DartObservation& observation)
+{
+    constexpr double kFloorPx = 0.5;
+    // An uncertainty of this many pixels (square root of the trace, before the calibration below) halves the confidence.
+    constexpr double kHalfConfidencePx = 4.0;
+    // The spread of the candidates understates how far the tip may lie: against the located point of throws seen by
+    // three cameras, errors fall within the stated ellipses as often as a normal error would only with twice the
+    // variance (measured on the development sessions of the 2026-10-25 dataset, checked on its test session; #28).
+    constexpr double kVarianceScale = 2.0;
+    const cv::Point2f origin = observation.axis_px.front();
+    cv::Point2f direction = observation.axis_px.back() - origin;
+    direction *= static_cast<float>(1.0 / cv::norm(direction));
+    const cv::Point2f middle = 0.5f * (observation.axis_px.front() + observation.axis_px.back());
+    double across_sum = 0.0;
+    for(const auto& p : observation.axis_px)
+    {
+        const double off = (p - origin).cross(direction);
+        across_sum += off * off;
+    }
+    const double across_px2 = across_sum / static_cast<double>(observation.axis_px.size());
+    for(int side = 0; side < 2; ++side)
+    {
+        std::vector<std::size_t> members;
+        for(std::size_t i = 0; i < candidates.size(); ++i)
+        {
+            if(((candidates[i].pixel_px - middle).dot(direction) > 0.0f) == (side == 0))
+            {
+                members.push_back(i);
+            }
+        }
+        if(members.empty())
+        {
+            continue;
+        }
+        cv::Point2d mean(0.0, 0.0);
+        for(const auto i : members)
+        {
+            mean += cv::Point2d(candidates[i].pixel_px);
+        }
+        mean *= 1.0 / static_cast<double>(members.size());
+        cv::Matx22d spread = cv::Matx22d::zeros();
+        for(const auto i : members)
+        {
+            const cv::Vec2d d(candidates[i].pixel_px.x - mean.x, candidates[i].pixel_px.y - mean.y);
+            spread += d * d.t();
+        }
+        spread *= 1.0 / static_cast<double>(members.size());
+        const cv::Vec2d across(-direction.y, direction.x);
+        cv::Matx22d covariance = spread + (across * across.t()) * across_px2 + cv::Matx22d::eye() * (kFloorPx * kFloorPx);
+        const double size_px = std::sqrt(covariance(0, 0) + covariance(1, 1));
+        const float confidence = static_cast<float>(1.0 / (1.0 + size_px / kHalfConfidencePx));
+        for(const auto i : members)
+        {
+            candidates[i].covariance_px2 = cv::Matx22f(covariance * kVarianceScale);
+            candidates[i].confidence = confidence;
+        }
+    }
+}
+
 bool nearBorder (const cv::Point2f& p, const cv::Size& size, int border_px)
 {
     return p.x < border_px || p.y < border_px || p.x > size.width - 1 - border_px || p.y > size.height - 1 - border_px;
@@ -217,6 +279,7 @@ std::vector<TipCandidate> tipCandidates (const DartObservation& observation, int
             add(*p, CandidateSource::SkeletonEnd);
         }
     }
+    rateCandidates(candidates, observation);
     return candidates;
 }
 }  // namespace dartpilot::tip_candidates
