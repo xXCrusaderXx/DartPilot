@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../display.dart';
 import '../theme.dart';
 import '../../l10n/app_localizations.dart';
 import '../engine/engine_connection.dart';
@@ -66,11 +67,12 @@ class HomeScreen extends StatelessWidget {
         () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const MoreGamesScreen())),
       ),
     ];
+    final window = WindowClass.of(context);
     return Scaffold(
       appBar: AppBar(title: Text(l10n.appTitle)),
       body: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 720),
+          constraints: BoxConstraints(maxWidth: window == WindowClass.large ? 1080 : 720),
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -92,17 +94,20 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(height: 24),
               Text(l10n.chooseGame, style: theme.textTheme.titleLarge),
               const SizedBox(height: 12),
-              for (final (icon, title, description, onTap) in modes)
-                Card(
-                  child: ListTile(
-                    key: ValueKey('mode-$title'),
-                    leading: Icon(icon, size: 32),
-                    title: Text(title),
-                    subtitle: Text(description),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: onTap,
-                  ),
-                ),
+              if (window == WindowClass.compact)
+                for (final (icon, title, description, onTap) in modes)
+                  Card(
+                    child: ListTile(
+                      key: ValueKey('mode-$title'),
+                      leading: Icon(icon, size: 32),
+                      title: Text(title),
+                      subtitle: Text(description),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: onTap,
+                    ),
+                  )
+              else
+                _ModeGrid(columns: window == WindowClass.large ? 3 : 2, modes: modes),
               const SizedBox(height: 24),
               Text(l10n.playTogether, style: theme.textTheme.titleLarge),
               const SizedBox(height: 12),
@@ -119,6 +124,63 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+typedef _Mode = (IconData icon, String title, String description, VoidCallback onTap);
+
+/// The games as tiles in rows of [columns], each row as high as its tallest tile
+class _ModeGrid extends StatelessWidget {
+  const _ModeGrid({required this.columns, required this.modes});
+
+  final int columns;
+  final List<_Mode> modes;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      children: [
+        for (var start = 0; start < modes.length; start += columns)
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var i = start; i < start + columns; ++i)
+                  Expanded(
+                    child: i >= modes.length
+                        ? const SizedBox.shrink()
+                        : Card(
+                            clipBehavior: Clip.antiAlias,
+                            child: InkWell(
+                              key: ValueKey('mode-${modes[i].$2}'),
+                              onTap: modes[i].$4,
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(modes[i].$1, size: 40, color: theme.colorScheme.primary),
+                                    const SizedBox(height: 12),
+                                    Text(modes[i].$2, style: theme.textTheme.titleMedium),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      modes[i].$3,
+                                      style: theme.textTheme.bodySmall?.copyWith(
+                                        color: theme.colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                  ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }
@@ -142,9 +204,13 @@ class _StatusCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final connected = engine.isConnected;
-    return Card(
+    // A flat line, not a card: cards are for what can be played
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: theme.dividerColor)),
+      ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+        padding: const EdgeInsets.fromLTRB(4, 0, 0, 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
