@@ -10,6 +10,7 @@
 
 #include "dartpilot/fusion/dart_tracker.hpp"
 #include "dartpilot/geometry/board_refinement.hpp"
+#include "dartpilot/tip_candidates/tip_candidates.hpp"
 
 // The throw detections a replay can run (#18) on the still moments of the board: "tracker", the live detection
 // (fusion::DartTracker), and "baseline", the plain frame differencing it is measured against.
@@ -25,6 +26,8 @@ struct CameraResult
     std::optional<cv::Point2f> board_mm;
     // How far the triangulated tip lies from tip_px in this camera's image (#23)
     std::optional<double> reprojection_px;
+    // Every place this camera's view may have its tip (#26), for measuring candidate recall
+    std::vector<tip_candidates::TipCandidate> candidates;
 };
 
 struct DetectedDart

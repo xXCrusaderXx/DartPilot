@@ -47,7 +47,9 @@ class TrackerPipeline : public Pipeline
             }
             for(const auto& view : update.dart->cameras)
             {
-                dart.cameras.push_back({view.state, view.used, std::nullopt, std::nullopt, std::nullopt});
+                dart.cameras.push_back(
+                    {view.state, view.used, std::nullopt, std::nullopt, std::nullopt,
+                     view.observation ? tip_candidates::tipCandidates(*view.observation) : std::vector<tip_candidates::TipCandidate>{}});
             }
             if(update.dart->location)
             {

@@ -153,9 +153,18 @@ std::string throwLine (const session::RecordedSession& session, const ReplayConf
         line << (c == 0 ? "" : ", ") << "{\"camera\": " << jsonString(session.cameras[c].id)
              << ", \"frames\": {\"baseline\": " << sequences(c < baseline_frames.size() ? baseline_frames[c] : std::vector<std::uint32_t>{})
              << ", \"after\": " << sequences(after_frames[c]) << "}, \"tip_candidates\": [";
+        // The selected tip first, then every generated candidate with its source (#26)
+        bool first_candidate = true;
         if(camera.tip_px)
         {
             line << "{\"pixel_xy\": [" << number(camera.tip_px->x, 1) << ", " << number(camera.tip_px->y, 1) << "]}";
+            first_candidate = false;
+        }
+        for(const auto& candidate : camera.candidates)
+        {
+            line << (first_candidate ? "" : ", ") << "{\"pixel_xy\": [" << number(candidate.pixel_px.x, 1) << ", " << number(candidate.pixel_px.y, 1)
+                 << "], \"source\": \"" << tip_candidates::sourceName(candidate.source) << "\"}";
+            first_candidate = false;
         }
         line << "], \"selected_candidate\": " << (camera.tip_px ? "0" : "null")
              << ", \"board_point\": " << (camera.board_mm ? boardPoint(*camera.board_mm, std::nullopt) : "null")
