@@ -221,6 +221,77 @@ def axis_table(rows: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(table)
 
 
+def confidence_rows(throws: list[dict], project: Projector, min_cameras: int = 3) -> pd.DataFrame:
+    """Calibration of the candidates' confidence and covariance (#28) without ground truth: for throws located by at
+    least `min_cameras` cameras, the located point's image in each camera stands in for the tip. The location comes
+    from the cameras' axis planes, not from the candidates, so it is an independent reference. Every generated
+    candidate at the end of the dart nearest that image gives one row: its error in pixels, its squared Mahalanobis
+    distance under its own covariance, and its confidence."""
+    located = [
+        t
+        for t in throws
+        if t.get("accepted")
+        and t.get("board_point")
+        and t.get("diagnostics", {}).get("cameras_agreeing", 0) >= min_cameras
+    ]
+    images = project([(t["board_point"]["x_mm"], t["board_point"]["y_mm"]) for t in located])
+    rows = []
+    for t, image in zip(located, images, strict=True):
+        for m in t.get("camera_measurements", []):
+            reference = image.get(m["camera"])
+            generated = [c for c in m.get("tip_candidates", []) if c.get("source") and "covariance_px2" in c]
+            if reference is None or not generated:
+                continue
+            nearest = min(generated, key=lambda c: math.dist(c["pixel_xy"], reference))
+            # The candidates at the same end share one covariance, so the nearest one picks the end.
+            for c in generated:
+                if c["covariance_px2"] != nearest["covariance_px2"]:
+                    continue
+                e = (c["pixel_xy"][0] - reference[0], c["pixel_xy"][1] - reference[1])
+                (a, b), (_, d) = c["covariance_px2"]
+                det = a * d - b * b
+                mahalanobis2 = (d * e[0] ** 2 - 2 * b * e[0] * e[1] + a * e[1] ** 2) / det if det > 0 else float("inf")
+                rows.append(
+                    {
+                        "throw_id": t["throw_id"],
+                        "camera": m["camera"],
+                        "source": c["source"],
+                        "error_px": math.hypot(*e),
+                        "mahalanobis2": mahalanobis2,
+                        "confidence": c["confidence"],
+                    }
+                )
+    return pd.DataFrame(rows, columns=["throw_id", "camera", "source", "error_px", "mahalanobis2", "confidence"])
+
+
+def calibration_tables(rows: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Error by confidence band, and how often the error lies within the stated 1 and 2 sigma ellipses (for a 2D
+    normal error 39 % and 86 %)."""
+    bands = [(0.6, 1.01, "0.6 – 1"), (0.4, 0.6, "0.4 – 0.6"), (0.2, 0.4, "0.2 – 0.4"), (0.0, 0.2, "0 – 0.2")]
+    by_confidence = []
+    for low, high, name in bands:
+        group = rows[(rows["confidence"] >= low) & (rows["confidence"] < high)]
+        by_confidence.append(
+            {
+                "confidence": name,
+                "candidates": len(group),
+                "median error px": float(group["error_px"].median()) if len(group) else float("nan"),
+                "P90 error px": float(group["error_px"].quantile(0.9)) if len(group) else float("nan"),
+            }
+        )
+    coverage = []
+    for name, group in [*rows.groupby("source"), ("all", rows)]:
+        coverage.append(
+            {
+                "source": name,
+                "candidates": len(group),
+                "within 1 sigma": float((group["mahalanobis2"] <= 1).mean()) if len(group) else float("nan"),
+                "within 2 sigma": float((group["mahalanobis2"] <= 4).mean()) if len(group) else float("nan"),
+            }
+        )
+    return pd.DataFrame(by_confidence), pd.DataFrame(coverage)
+
+
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -237,7 +308,7 @@ def main(argv: list[str] | None = None) -> int:
 
     project = engine_projector(args.extrinsics, args.dartpilot)
     digest = _sha256(args.extrinsics)
-    frames, names, points, consistency = [], [], [], []
+    frames, names, points, consistency, calibration = [], [], [], [], []
     for directory in args.sessions:
         session = load_session(directory)
         run = session.run(args.run)
@@ -251,6 +322,7 @@ def main(argv: list[str] | None = None) -> int:
         truths = truth_points(session.annotations(args.annotations)) if annotation_file.exists() else {}
         frames.append(candidate_rows(run.throws, truths, project))
         consistency.append(leave_one_out(run.throws))
+        calibration.append(confidence_rows(run.throws, project))
         names.append(session.id)
         points += list(truths.values())
     rows = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
@@ -260,6 +332,17 @@ def main(argv: list[str] | None = None) -> int:
         text += (
             "\nAxis consistency without ground truth: for throws with axis lines from three or more cameras, how far "
             "each camera's line passes the crossing of the others' (mm):\n\n" + _markdown(axis_table(loo)) + "\n"
+        )
+    rated = pd.concat(calibration, ignore_index=True) if calibration else pd.DataFrame()
+    if len(rated):
+        by_confidence, coverage = calibration_tables(rated)
+        text += (
+            "\nConfidence against error, on throws located by three or more cameras (the located point's image "
+            "stands in for the tip):\n\n"
+            + _markdown(by_confidence)
+            + "\n\nErrors within the candidates' own covariance:\n\n"
+            + _markdown(coverage)
+            + "\n"
         )
     print(text)
     if args.out:

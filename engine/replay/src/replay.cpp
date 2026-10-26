@@ -162,8 +162,11 @@ std::string throwLine (const session::RecordedSession& session, const ReplayConf
         }
         for(const auto& candidate : camera.candidates)
         {
+            const auto& c = candidate.covariance_px2;
             line << (first_candidate ? "" : ", ") << "{\"pixel_xy\": [" << number(candidate.pixel_px.x, 1) << ", " << number(candidate.pixel_px.y, 1)
-                 << "], \"source\": \"" << tip_candidates::sourceName(candidate.source) << "\"}";
+                 << "], \"covariance_px2\": [[" << number(c(0, 0), 2) << ", " << number(c(0, 1), 2) << "], [" << number(c(1, 0), 2) << ", "
+                 << number(c(1, 1), 2) << "]], \"confidence\": " << number(candidate.confidence, 3) << ", \"source\": \""
+                 << tip_candidates::sourceName(candidate.source) << "\"}";
             first_candidate = false;
         }
         line << "], \"selected_candidate\": " << (camera.tip_px ? "0" : "null")
