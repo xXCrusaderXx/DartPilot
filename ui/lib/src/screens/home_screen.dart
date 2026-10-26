@@ -91,24 +91,32 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
               ],
-              if (EngineScope.of(context).isConnected &&
-                  CameraOrderScope.of(context).needsAssignment(EngineScope.of(context).hello?.cameras ?? const [])) ...[
-                const SizedBox(height: 16),
-                Card(
-                  key: const ValueKey('assign-cameras-prompt'),
-                  child: ListTile(
-                    leading: const Icon(Icons.videocam_outlined, size: 32),
-                    title: Text(l10n.newCamerasTitle),
-                    subtitle: Text(l10n.newCamerasText),
-                    trailing: FilledButton(
-                      onPressed: () =>
-                          Navigator.of(context)
-                              .push(MaterialPageRoute<void>(builder: (_) => const CameraAssignScreen())),
-                      child: Text(l10n.assignCameras),
+              // Only the prompt follows the engine; the games below do not rebuild with every engine event.
+              EngineSelect(
+                select: (engine) => engine.isConnected ? engine.hello?.cameras : null,
+                builder: (context, cameras) {
+                  if (cameras == null || !CameraOrderScope.of(context).needsAssignment(cameras)) {
+                    return const SizedBox.shrink();
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: Card(
+                      key: const ValueKey('assign-cameras-prompt'),
+                      child: ListTile(
+                        leading: const Icon(Icons.videocam_outlined, size: 32),
+                        title: Text(l10n.newCamerasTitle),
+                        subtitle: Text(l10n.newCamerasText),
+                        trailing: FilledButton(
+                          onPressed: () =>
+                              Navigator.of(context)
+                                  .push(MaterialPageRoute<void>(builder: (_) => const CameraAssignScreen())),
+                          child: Text(l10n.assignCameras),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ],
+                  );
+                },
+              ),
               const SizedBox(height: 24),
               Text(l10n.chooseGame, style: theme.textTheme.titleLarge),
               const SizedBox(height: 12),
@@ -151,9 +159,16 @@ class _StatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return EngineSelect(
+      select: (engine) =>
+          (engine.isConnected, engine.hello, engine.detection, engine.detectionReason, engine.calibration),
+      builder: (context, _) => _card(context, EngineScope.read(context)),
+    );
+  }
+
+  Widget _card(BuildContext context, EngineConnection engine) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final engine = EngineScope.of(context);
     final connected = engine.isConnected;
     return Card(
       child: Padding(
@@ -205,7 +220,7 @@ class _StatusCard extends StatelessWidget {
               ),
             if (connected) const BoardStateRow(),
             if (connected)
-              for (final camera in orderedCameras(context))
+              for (final camera in CameraOrderScope.of(context).sorted(engine.hello?.cameras ?? const []))
                 if (engine.calibration?.of(camera)?.check?.needsCalibration ?? false)
                   Padding(
                     key: ValueKey('calibration-warning-$camera'),

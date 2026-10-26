@@ -58,7 +58,8 @@ class _GameInputState extends State<GameInput> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final engine = EngineScope.of(context);
+    // Events arrive through the stream; the input does not rebuild on every change of the connection.
+    final engine = EngineScope.read(context);
     if (!identical(engine, _engine)) {
       _subscription?.cancel();
       _engine = engine;
@@ -332,11 +333,14 @@ class _GameInputState extends State<GameInput> {
       children: [
         ?banner,
         Expanded(
-          child: ThrowInputPanel(
-            geometry: _geometry,
-            shownThrows: waiting ? widget.takeout!.darts(widget.game) : [...widget.shownThrows, ?pendingDart],
-            highlights: !waiting && candidates.length >= 2 ? [for (final c in candidates) c.score] : const [],
-            onThrow: _onInput,
+          child: EngineSelect(
+            select: (engine) => engine.geometry,
+            builder: (context, geometry) => ThrowInputPanel(
+              geometry: geometry,
+              shownThrows: waiting ? widget.takeout!.darts(widget.game) : [...widget.shownThrows, ?pendingDart],
+              highlights: !waiting && candidates.length >= 2 ? [for (final c in candidates) c.score] : const [],
+              onThrow: _onInput,
+            ),
           ),
         ),
         if (throws.isNotEmpty)

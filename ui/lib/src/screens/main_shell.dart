@@ -20,19 +20,41 @@ class RootScreen extends StatefulWidget {
 class _RootScreenState extends State<RootScreen> {
   bool _offline = false;
 
+  /// The main view's tab, kept here so that it survives a lost and regained connection
+  int _tab = 0;
+
   @override
   Widget build(BuildContext context) {
-    final engine = EngineScope.of(context);
-    final connected = engine.isConnected;
-    if (!connected && !_offline) return ConnectScreen(onPlayOffline: () => setState(() => _offline = true));
-    if (connected && engine.pairingRequired) return const PairingScreen();
-    return MainShell(onConnect: () => setState(() => _offline = false));
+    return EngineSelect(
+      select: (engine) => (engine.isConnected, engine.pairingRequired),
+      builder: (context, state) {
+        final (connected, pairingRequired) = state;
+        if (!connected && !_offline) return ConnectScreen(onPlayOffline: () => setState(() => _offline = true));
+        if (connected && pairingRequired) return const PairingScreen();
+        return MainShell(
+          connected: connected,
+          index: _tab,
+          onIndexChanged: (i) => setState(() => _tab = i),
+          onConnect: () => setState(() => _offline = false),
+        );
+      },
+    );
   }
 }
 
 /// Home, statistics and settings, with a navigation bar at the bottom on phones and a rail at the side on wide screens.
 class MainShell extends StatefulWidget {
-  const MainShell({super.key, required this.onConnect});
+  const MainShell({
+    super.key,
+    required this.connected,
+    required this.index,
+    required this.onIndexChanged,
+    required this.onConnect,
+  });
+
+  final bool connected;
+  final int index;
+  final ValueChanged<int> onIndexChanged;
 
   /// Back to the connection page, when playing without an engine
   final VoidCallback onConnect;
@@ -42,7 +64,7 @@ class MainShell extends StatefulWidget {
 }
 
 class _MainShellState extends State<MainShell> {
-  int _index = 0;
+  int get _index => widget.index;
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +75,7 @@ class _MainShellState extends State<MainShell> {
       SettingsScreen(onConnect: widget.onConnect),
     ];
     final body = IndexedStack(index: _index, children: pages);
-    final connected = EngineScope.of(context).isConnected;
+    final connected = widget.connected;
     // Back always leads home; from home it leads to the connection page only while no engine is connected, and
     // never out of the app.
     return PopScope(
@@ -61,7 +83,7 @@ class _MainShellState extends State<MainShell> {
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
         if (_index != 0) {
-          setState(() => _index = 0);
+          widget.onIndexChanged(0);
         } else if (!connected) {
           widget.onConnect();
         }
@@ -74,7 +96,7 @@ class _MainShellState extends State<MainShell> {
                 children: [
                   NavigationRail(
                     selectedIndex: _index,
-                    onDestinationSelected: (i) => setState(() => _index = i),
+                    onDestinationSelected: widget.onIndexChanged,
                     labelType: NavigationRailLabelType.all,
                     destinations: [
                       NavigationRailDestination(
@@ -104,7 +126,7 @@ class _MainShellState extends State<MainShell> {
             body: body,
             bottomNavigationBar: NavigationBar(
               selectedIndex: _index,
-              onDestinationSelected: (i) => setState(() => _index = i),
+              onDestinationSelected: widget.onIndexChanged,
               destinations: [
                 NavigationDestination(
                   icon: const Icon(Icons.home_outlined),

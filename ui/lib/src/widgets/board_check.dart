@@ -11,7 +11,7 @@ import 'overlay_preview.dart';
 /// Before a game starts: true when the board is empty, unknown or no engine is connected; otherwise asks the player
 /// to pull out the darts and is true once the board is empty or the player starts anyway.
 Future<bool> confirmBoardEmpty(BuildContext context) async {
-  final engine = EngineScope.of(context);
+  final engine = EngineScope.read(context);
   if (!engine.isConnected || !(engine.boardState?.occupied ?? false)) return true;
   final start = await showDialog<bool>(context: context, builder: (_) => const BoardOccupiedDialog());
   return start ?? false;
@@ -21,7 +21,7 @@ Future<bool> confirmBoardEmpty(BuildContext context) async {
 Future<void> storeEmptyBoard(BuildContext context, {bool force = false}) async {
   final l10n = AppLocalizations.of(context);
   final messenger = ScaffoldMessenger.of(context);
-  final error = await EngineScope.of(context).storeEmptyReference(force: force);
+  final error = await EngineScope.read(context).storeEmptyReference(force: force);
   messenger.showSnackBar(
     SnackBar(
       content: Text(switch (error) {
@@ -170,9 +170,12 @@ class BoardStateRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return EngineSelect(select: (engine) => engine.boardState, builder: _build);
+  }
+
+  Widget _build(BuildContext context, EngineBoardState? board) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final board = EngineScope.of(context).boardState;
     if (board == null) return const SizedBox.shrink();
     if (board.occupied) {
       return Row(

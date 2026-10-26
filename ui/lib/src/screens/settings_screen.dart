@@ -24,9 +24,16 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The page shows only these values of the connection; other engine events leave it alone.
+    return EngineSelect(
+      select: (engine) => (engine.isConnected, engine.url, engine.calibration),
+      builder: (context, _) => _page(context, EngineScope.read(context)),
+    );
+  }
+
+  Widget _page(BuildContext context, EngineConnection engine) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final engine = EngineScope.of(context);
     final local = LocalEngineScope.maybeOf(context);
     final connected = engine.isConnected;
     final onThisDevice = local?.settings.mode == EngineMode.thisDevice;

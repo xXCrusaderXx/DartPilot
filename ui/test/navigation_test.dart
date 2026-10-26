@@ -102,4 +102,22 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Engine verbinden'), findsOneWidget);
   });
+
+  testWidgets('the open tab stays open when the connection drops and comes back', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final engine = EngineConnection.forTest((_) {});
+    addTearDown(engine.dispose);
+    engine.receiveForTest(jsonEncode(hello));
+    await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
+    await openSettings(tester);
+
+    await engine.disconnect();
+    await tester.pumpAndSettle();
+    expect(find.byType(NavigationBar), findsNothing);
+    engine.receiveForTest(jsonEncode(hello));
+    await tester.pumpAndSettle();
+    expect(tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex, 2);
+  });
 }
