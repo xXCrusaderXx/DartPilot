@@ -79,6 +79,9 @@ class EngineConnection extends ChangeNotifier {
   /// calibrated)
   BoardImage? boardImage;
 
+  /// The camera views of throws this client asked for (#129), by throw ID
+  final Map<String, ThrowViews> throwViews = {};
+
   /// Latest state of the reference measurement; null before it ran
   ReferenceRun? referenceRun;
 
@@ -297,6 +300,10 @@ class EngineConnection extends ChangeNotifier {
     }
     if (event is BoardImage) {
       boardImage = event;
+      notifyListeners();
+    }
+    if (event is ThrowViews) {
+      throwViews[event.throwId] = event;
       notifyListeners();
     }
     // After a takeout the board is empty: the image follows changes of light without a dart in it.
@@ -545,6 +552,11 @@ class EngineConnection extends ChangeNotifier {
 
   /// Asks for the real board's image; it arrives as [boardImage]. Engines without one answer with an error.
   void requestBoardImage() => _send({'type': 'get_board_image'});
+
+  /// Asks for the camera views of a throw; they arrive in [throwViews]. Completes with the error code, e.g.
+  /// not_available for a throw without frames, or null.
+  Future<String?> requestThrowViews(String throwId) =>
+      _request({'type': 'get_throw_views', 'throw_id': throwId, 'max_width': 320});
 
   /// A dart the engine missed, entered by hand
   void addThrow(BoardPoint point) => _send({'type': 'add_throw', 'board_point': _pointJson(point)});

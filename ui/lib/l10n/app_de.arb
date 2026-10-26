@@ -562,5 +562,21 @@
   "modeKiller": "Killer",
   "modeKillerDescription": "Triff dreimal dein eigenes Doppel, dann wirst du Killer und nimmst den anderen Leben",
   "killerIsKiller": "Killer",
-  "killerMarks": "{marks} von {needed} auf {field}"
+  "killerMarks": "{marks} von {needed} auf {field}",
+  "throwViewTitle": "Dart {label}",
+  "throwViewBefore": "Vorher",
+  "throwViewAfter": "Nachher",
+  "throwViewLegend": "Linie: die Achse des Darts, wie die Kamera ihn sah. Ring: die gefundene Spitze. Kreuz: der berechnete Punkt.",
+  "throwViewNoEngine": "Kamerabilder kommen von der Engine. Verbinde dich mit der Engine, die diesen Dart erkannt hat.",
+  "throwViewNotAvailable": "Die Engine hat keine Kamerabilder dieses Darts, z. B. weil er von Hand eingegeben oder simuliert wurde.",
+  "throwViewFailed": "Die Kamerabilder konnten nicht geladen werden ({code}).",
+  "throwViewCorrect": "Diesen Dart korrigieren",
+  "throwViewUsed": "gezählt",
+  "throwViewNotUsed": "nicht gezählt",
+  "throwViewNotSeen": "hat den Dart nicht gesehen",
+  "throwViewCut": "Dart vom Bildrand abgeschnitten",
+  "throwViewDisagrees": "passt nicht zu den anderen Kameras",
+  "throwViewPlaneDistance": "{mm} mm neben dem Punkt",
+  "throwViewOpen": "Kamerabilder",
+  "gameThrowsTitle": "Darts des Spiels"
 }

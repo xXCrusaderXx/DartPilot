@@ -1933,4 +1933,61 @@ class AppLocalizationsDe extends AppLocalizations {
   String killerMarks(int marks, int needed, String field) {
     return '$marks von $needed auf $field';
   }
+
+  @override
+  String throwViewTitle(String label) {
+    return 'Dart $label';
+  }
+
+  @override
+  String get throwViewBefore => 'Vorher';
+
+  @override
+  String get throwViewAfter => 'Nachher';
+
+  @override
+  String get throwViewLegend =>
+      'Linie: die Achse des Darts, wie die Kamera ihn sah. Ring: die gefundene Spitze. Kreuz: der berechnete Punkt.';
+
+  @override
+  String get throwViewNoEngine =>
+      'Kamerabilder kommen von der Engine. Verbinde dich mit der Engine, die diesen Dart erkannt hat.';
+
+  @override
+  String get throwViewNotAvailable =>
+      'Die Engine hat keine Kamerabilder dieses Darts, z. B. weil er von Hand eingegeben oder simuliert wurde.';
+
+  @override
+  String throwViewFailed(String code) {
+    return 'Die Kamerabilder konnten nicht geladen werden ($code).';
+  }
+
+  @override
+  String get throwViewCorrect => 'Diesen Dart korrigieren';
+
+  @override
+  String get throwViewUsed => 'gezählt';
+
+  @override
+  String get throwViewNotUsed => 'nicht gezählt';
+
+  @override
+  String get throwViewNotSeen => 'hat den Dart nicht gesehen';
+
+  @override
+  String get throwViewCut => 'Dart vom Bildrand abgeschnitten';
+
+  @override
+  String get throwViewDisagrees => 'passt nicht zu den anderen Kameras';
+
+  @override
+  String throwViewPlaneDistance(String mm) {
+    return '$mm mm neben dem Punkt';
+  }
+
+  @override
+  String get throwViewOpen => 'Kamerabilder';
+
+  @override
+  String get gameThrowsTitle => 'Darts des Spiels';
 }
