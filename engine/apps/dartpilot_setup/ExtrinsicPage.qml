@@ -16,6 +16,9 @@ ColumnLayout {
     property int selected: 0
     readonly property var camera: selected >= 0 && selected < cameras.length ? cameras[selected] : null
 
+    // The board was found in the current detection, or a stored plane is shown and no new detection runs
+    readonly property bool boardFound: view.state === "pick" || view.state === "done" || (view.state === "idle" && view.hasPlane)
+
     signal saved
 
     spacing: Tokens.spacing
@@ -127,16 +130,19 @@ ColumnLayout {
                     anchors.fill: parent
                     devicePath: page.active && page.camera ? page.camera.path : ""
                     usbPort: page.camera ? page.camera.usbPort : ""
-                    onResultChanged: page.saved()
+                    onSaved: page.saved()
                 }
             }
 
             Rectangle {
+                // A failure reads as one, not as the next instruction
+                readonly property color tone: view.state === "failed" ? Tokens.bad : view.saveFailed ? Tokens.warning : Tokens.accent
+
                 Layout.fillWidth: true
                 implicitHeight: hintLabel.implicitHeight + 24
                 radius: Tokens.radius
-                color: Qt.rgba(Tokens.accent.r, Tokens.accent.g, Tokens.accent.b, 0.10)
-                border.color: Qt.rgba(Tokens.accent.r, Tokens.accent.g, Tokens.accent.b, 0.35)
+                color: Qt.rgba(tone.r, tone.g, tone.b, 0.10)
+                border.color: Qt.rgba(tone.r, tone.g, tone.b, 0.35)
 
                 Label {
                     id: hintLabel
@@ -168,7 +174,8 @@ ColumnLayout {
                     Layout.fillWidth: true
                     step: 1
                     title: "Empty board"
-                    done: view.state !== "idle" || view.hasPlane
+                    // Confirmed by a detection that found the board, not by trying one
+                    done: page.boardFound
 
                     Label {
                         Layout.fillWidth: true
@@ -182,7 +189,7 @@ ColumnLayout {
                     Layout.fillWidth: true
                     step: 2
                     title: "Detect the board"
-                    done: view.state === "pick" || view.state === "done" || view.hasPlane
+                    done: page.boardFound
 
                     Label {
                         Layout.fillWidth: true
@@ -204,7 +211,7 @@ ColumnLayout {
                     Layout.fillWidth: true
                     step: 3
                     title: "Click the sector 20"
-                    done: view.state === "done" || view.hasPlane
+                    done: view.hasPlane && !view.saveFailed && page.boardFound
 
                     Label {
                         Layout.fillWidth: true
@@ -225,7 +232,7 @@ ColumnLayout {
                     step: 4
                     title: "Check"
                     // Done once checked and saved; how good the fit is shows the board fit chip
-                    done: view.hasPlane
+                    done: view.hasPlane && !view.saveFailed && page.boardFound
 
                     Label {
                         Layout.fillWidth: true

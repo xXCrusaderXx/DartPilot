@@ -48,6 +48,7 @@ void ExtrinsicView::setUsbPort (const QString& usb_port)
     frames_summed_ = 0;
     detection_.reset();
     twenty_sector_.reset();
+    save_failed_ = false;
     setState("idle", QString());
     plane_ = usb_port.isEmpty() ? std::nullopt : geometry::loadBoardPlane(boardPlanePath(usb_port).toStdString());
     emit resultChanged();
@@ -71,7 +72,8 @@ void ExtrinsicView::detect ()
     frames_summed_ = 0;
     detection_.reset();
     twenty_sector_.reset();
-    setState("detecting", "Looking for the board ...");
+    save_failed_ = false;
+    setState("detecting", "Looking for the board…");
 }
 
 void ExtrinsicView::onFrame (const CameraSnapshot& snapshot)
@@ -136,10 +138,16 @@ void ExtrinsicView::orient (int twenty_sector)
     }
     plane.fit = *fit;
     QDir().mkpath(calibrationDirectory());
-    const bool saved = geometry::saveBoardPlane(boardPlanePath(usb_port_).toStdString(), plane);
+    const bool stored = geometry::saveBoardPlane(boardPlanePath(usb_port_).toStdString(), plane);
     plane_ = plane;
+    save_failed_ = !stored;
     emit resultChanged();
-    setState("done", saved ? "Saved. Check that the numbers match the board; if not, click the sector 20 again." : "Fitted, but saving failed.");
+    setState("done", stored ? "Saved. Check that the numbers match the board; if not, click the sector 20 again."
+                            : "Fitted, but saving failed. Check that the calibration directory is writable, then click the sector 20 again.");
+    if(stored)
+    {
+        emit saved();
+    }
 }
 
 void ExtrinsicView::mousePressEvent (QMouseEvent* event)

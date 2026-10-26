@@ -530,6 +530,11 @@ QString ValidationRun::instruction () const
                                : "Put a dart anywhere on the board, or move it, then take your hand away. Pull it out before the next one.";
 }
 
+int ValidationRun::locatedCount () const
+{
+    return static_cast<int>(std::ranges::count_if(darts_, [] (const QVariant& dart) { return dart.toMap().value("located").toBool(); }));
+}
+
 QString ValidationRun::summary () const
 {
     int located = 0, abstained = 0;

@@ -168,7 +168,7 @@ ColumnLayout {
                         text: "Save"
                         highlighted: true
                         enabled: check.count >= 2
-                        onClicked: check.save()
+                        onClicked: saveFailedLabel.visible = !check.save()
                         ToolTip.visible: hovered
                         ToolTip.text: "Keeps this measurement for the error budget (#48); then move the pin and measure again"
                     }
@@ -178,6 +178,15 @@ ColumnLayout {
                         enabled: check.count > 0
                         onClicked: check.clear()
                     }
+                }
+                Label {
+                    id: saveFailedLabel
+
+                    visible: false
+                    Layout.fillWidth: true
+                    wrapMode: Text.WordWrap
+                    color: Tokens.bad
+                    text: "Saving failed. Check that the calibration directory is writable."
                 }
                 Label {
                     Layout.fillWidth: true

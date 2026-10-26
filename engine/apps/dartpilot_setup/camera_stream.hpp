@@ -51,6 +51,8 @@ class CameraStream
     // Each view adds itself while it needs an analysis; the analysis runs while the count is positive.
     void addFocusUser (int delta) { focus_users_ += delta; }
     void addCharucoUser (int delta) { charuco_users_ += delta; }
+    // The camera could not be opened or stopped delivering; acquire() then opens a new stream.
+    bool ended () const { return ended_; }
 
    private:
     void run ();
@@ -61,6 +63,7 @@ class CameraStream
     std::atomic<bool> stop_{false};
     std::atomic<int> focus_users_{0};
     std::atomic<int> charuco_users_{0};
+    std::atomic<bool> ended_{false};
     mutable std::mutex mutex_;
     CameraSnapshot snapshot_;
     std::thread thread_;

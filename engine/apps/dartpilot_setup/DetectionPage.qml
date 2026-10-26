@@ -39,6 +39,9 @@ ColumnLayout {
         cameras: page.cameras
         active: page.active
         onProblem: message => problemLabel.text = message
+        // A value that could be set, or a profile that could be loaded or saved, ends the last problem.
+        onParamsChanged: problemLabel.text = ""
+        onProfilesChanged: problemLabel.text = ""
         onResultsChanged: if (page.selected >= test.darts.length) page.selected = -1
     }
 
@@ -49,7 +52,7 @@ ColumnLayout {
         PageHeader {
             Layout.fillWidth: true
             title: "Detection test"
-            description: "Throw, check each dart, pull, again. The live detection of `dartpilot serve` runs here on the cameras; every value below can be changed while it runs. Lines in the camera images: the axis each camera found (green seen, yellow cut by the border, red disagreeing)."
+            description: "Throw, check each dart, pull, again. The live detection of dartpilot serve runs here on the cameras; every value below can be changed while it runs. Lines in the camera images: the axis each camera found (green seen, yellow cut by the border, red disagreeing)."
         }
         Chip {
             text: test.status === "ready" ? "Ready" : test.status === "not_calibrated" ? "Not calibrated" : "Waiting for an empty board"
@@ -238,6 +241,8 @@ ColumnLayout {
                                             snapMode: Slider.SnapAlways
                                             value: row.modelData.value
                                             onPressedChanged: if (!pressed && Math.abs(value - row.modelData.value) > 1e-9) test.setParam(row.modelData.name, value)
+                                            // Arrow keys and the wheel move it without a press; a drag commits on release.
+                                            onMoved: if (!pressed) test.setParam(row.modelData.name, value)
                                         }
                                         Label {
                                             Layout.preferredWidth: 90

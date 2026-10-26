@@ -5,6 +5,12 @@
 
 namespace dartpilot::setup
 {
+namespace
+{
+// A camera that was unplugged or taken by another program is tried again this often.
+constexpr auto kReopenInterval = std::chrono::seconds(2);
+}  // namespace
+
 void drawLabel (QPainter* painter, const QPointF& origin, const QString& text, int pixel_size, bool bold)
 {
     QFont font = painter->font();
@@ -51,6 +57,7 @@ void StreamView::setDevicePath (const QString& path)
     last_frame_count_ = 0;
     fps_ = 0.0;
     error_.clear();
+    reopen_at_.reset();
     if(!path.isEmpty())
     {
         stream_ = CameraStream::acquire(path.toStdString());
@@ -74,6 +81,12 @@ void StreamView::poll ()
     {
         error_ = error;
         emit statsChanged();
+        update();
+    }
+    if(stream_->ended())
+    {
+        reopenEndedStream();
+        return;
     }
     if(snapshot.frame_count == last_frame_count_ || snapshot.frame.empty())
     {
@@ -90,6 +103,28 @@ void StreamView::poll ()
         fps_ = snapshot.fps;
         emit statsChanged();
     }
+    update();
+}
+
+void StreamView::reopenEndedStream ()
+{
+    const auto now = std::chrono::steady_clock::now();
+    if(!reopen_at_)
+    {
+        reopen_at_ = now + kReopenInterval;
+        return;
+    }
+    if(now < *reopen_at_)
+    {
+        return;
+    }
+    reopen_at_.reset();
+    detachStream(*stream_);
+    stream_ = CameraStream::acquire(device_path_.toStdString());
+    attachStream(*stream_);
+    last_frame_count_ = 0;
+    // The old image would look live until the first new frame arrives.
+    image_ = QImage();
     update();
 }
 
@@ -115,5 +150,11 @@ void StreamView::paint (QPainter* painter)
     painter->setRenderHint(QPainter::SmoothPixmapTransform);
     painter->drawImage(target, image_);
     paintOverlay(painter, target, target.width() / image_.width());
+    if(!error_.isEmpty())
+    {
+        // The last frame stays visible but dimmed, so a lost camera does not look like a still one.
+        painter->fillRect(target, QColor(15, 18, 22, 170));
+        drawLabel(painter, QPointF(16, 32), error_, 16);
+    }
 }
 }  // namespace dartpilot::setup
