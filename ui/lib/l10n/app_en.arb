@@ -212,7 +212,6 @@
   "checkBoardAgain": "Check again",
   "startAnyway": "Start anyway",
   "show": "Show",
-  "emptyReferenceMissing": "No image of the empty board stored",
   "storeEmptyReference": "Store empty board",
   "emptyReferenceStored": "Empty board stored",
   "boardNotEmpty": "The board is not empty; pull out the darts first.",
@@ -527,7 +526,13 @@
   "connectedNetwork": "Connected to an engine in the network",
   "playingWithoutEngine": "Without an engine – darts are entered by hand",
   "playingWithoutEngineHint": "Connect an engine to detect darts and use the cameras.",
-  "settingsCamerasBoard": "Cameras and board",
+  "settingsCamerasBoard": "Cameras and darts",
+  "settingsSetup": "Setup",
+  "setupAssignHint": "Which camera is camera 1, 2 and 3",
+  "setupDone": "Done",
+  "setupMissing": "To do",
+  "setupStale": "Out of date",
+  "setupProblem": "Check",
   "settingsCamerasHint": "Live images and the state of each camera",
   "settingsDiagnosisHint": "Find out what is wrong with the setup, step by step",
   "settingsEmptyBoardHint": "Store the cameras' images of the empty board for the board check",
@@ -865,22 +870,6 @@
   "checkNoBoard": "No board found – darts in the board or a hand in view?",
   "checkNotCalibrated": "Not calibrated yet.",
   "checkChecking": "Checking …",
-  "homeCameraMoved": "{camera} has moved – measure it again.",
-  "@homeCameraMoved": {
-    "placeholders": {
-      "camera": {
-        "type": "String"
-      }
-    }
-  },
-  "homeCameraWrongPort": "{camera} is on another USB port than when it was calibrated.",
-  "@homeCameraWrongPort": {
-    "placeholders": {
-      "camera": {
-        "type": "String"
-      }
-    }
-  },
   "referenceRun": "Reference measurement",
   "settingsReferenceHint": "How accurate is the detection? Darts in known positions show it in millimetres",
   "referenceIntro": "You push one dart after the other by hand into a known position: the centre of the bull, then corners where a radial wire meets a ring wire. The engine locates every dart, and the distance from the position is the error of the whole system, from calibration to tip. Ten darts take about five minutes; the board must be calibrated.",
@@ -960,8 +949,6 @@
   "simulateDarts": "Simulate darts",
   "simulateDartsHint": "For trying the app: the engine plays generated darts instead of detecting them.",
   "localEngineLiveUnavailable": "This engine cannot detect darts yet. Switch on \"Simulate darts\", or update the engine.",
-  "detectionNotCalibrated": "Not calibrated yet – darts are not detected. Calibrate the cameras under Settings.",
-  "detectionWaitingForEmptyBoard": "Waiting for an empty, still board before detecting darts.",
   "detectionPaused": "Detection paused",
   "detectionUnavailable": "Darts are not detected right now.",
   "shareEngine": "Share in the network",
@@ -981,8 +968,6 @@
   "moveCameraUp": "Move up",
   "moveCameraDown": "Move down",
   "saveCameraOrder": "Apply",
-  "newCamerasTitle": "New cameras found",
-  "newCamerasText": "Assign them once, so that camera 1, 2 and 3 are always the same.",
   "statsAverageTrend": "Average over games (X01)",
   "statsHitBoard": "Hit board",
   "statsMisses": "Misses: {count}",

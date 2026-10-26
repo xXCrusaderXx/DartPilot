@@ -2,14 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../theme.dart';
 import '../../l10n/app_localizations.dart';
-import '../engine/camera_order.dart';
 import '../engine/engine_connection.dart';
 import '../stats/statistics.dart';
 import '../widgets/board_check.dart';
 import '../widgets/player_picker.dart';
 import 'around_the_clock_screen.dart';
-import 'calibration_screen.dart';
-import 'camera_assign_screen.dart';
 import 'cricket_screen.dart';
 import 'more_games_screen.dart';
 import 'precision_training_screen.dart';
@@ -92,32 +89,6 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
               ],
-              // Only the prompt follows the engine; the games below do not rebuild with every engine event.
-              EngineSelect(
-                select: (engine) => engine.isConnected ? engine.hello?.cameras : null,
-                builder: (context, cameras) {
-                  if (cameras == null || !CameraOrderScope.of(context).needsAssignment(cameras)) {
-                    return const SizedBox.shrink();
-                  }
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 16),
-                    child: Card(
-                      key: const ValueKey('assign-cameras-prompt'),
-                      child: ListTile(
-                        leading: const Icon(Icons.videocam_outlined, size: 32),
-                        title: Text(l10n.newCamerasTitle),
-                        subtitle: Text(l10n.newCamerasText),
-                        trailing: FilledButton(
-                          onPressed: () =>
-                              Navigator.of(context)
-                                  .push(MaterialPageRoute<void>(builder: (_) => const CameraAssignScreen())),
-                          child: Text(l10n.assignCameras),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
               const SizedBox(height: 24),
               Text(l10n.chooseGame, style: theme.textTheme.titleLarge),
               const SizedBox(height: 12),
@@ -197,7 +168,11 @@ class _StatusCard extends StatelessWidget {
                 if (!connected) TextButton(onPressed: onConnect, child: Text(l10n.connect)),
               ],
             ),
-            if (connected && engine.detection != 'running')
+            // A setup step that is missing shows on the settings tab, not here; home keeps what matters while playing.
+            if (connected &&
+                engine.detection != 'running' &&
+                engine.detectionReason != 'not_calibrated' &&
+                engine.detectionReason != 'no_empty_reference')
               Padding(
                 key: const ValueKey('detection-state'),
                 padding: const EdgeInsets.only(top: 8, right: 8),
@@ -209,42 +184,12 @@ class _StatusCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Text(switch ((engine.detection, engine.detectionReason)) {
-                        (_, 'not_calibrated') => l10n.detectionNotCalibrated,
-                        (_, 'no_empty_reference') => l10n.detectionWaitingForEmptyBoard,
-                        ('paused', _) => l10n.detectionPaused,
-                        _ => l10n.detectionUnavailable,
-                      }),
+                      child: Text(engine.detection == 'paused' ? l10n.detectionPaused : l10n.detectionUnavailable),
                     ),
                   ],
                 ),
               ),
             if (connected) const BoardStateRow(),
-            if (connected)
-              for (final camera in CameraOrderScope.of(context).sorted(engine.hello?.cameras ?? const []))
-                if (engine.calibration?.of(camera)?.check?.needsCalibration ?? false)
-                  Padding(
-                    key: ValueKey('calibration-warning-$camera'),
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Row(
-                      children: [
-                        Icon(Icons.warning_amber, color: StatusColors.of(context).bad),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            engine.calibration!.of(camera)!.check!.state == 'wrong_port'
-                                ? l10n.homeCameraWrongPort(cameraLabel(context, camera))
-                                : l10n.homeCameraMoved(cameraLabel(context, camera)),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.of(context)
-                              .push(MaterialPageRoute<void>(builder: (_) => CalibrationScreen(startCamera: camera))),
-                          child: Text(l10n.calibMeasureAgain),
-                        ),
-                      ],
-                    ),
-                  ),
           ],
         ),
       ),

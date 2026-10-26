@@ -8,13 +8,17 @@ import '../sound/x01_calls.dart';
 import '../widgets/board_check.dart';
 import '../widgets/engine_card.dart';
 import '../widgets/paired_devices.dart';
-import '../display.dart';
 import 'calibration_check_screen.dart';
 import 'calibration_screen.dart';
 import 'cameras_screen.dart';
 import 'diagnosis_screen.dart';
 import 'my_darts_screen.dart';
 import 'reference_run_screen.dart';
+import '../engine/setup_status.dart';
+import 'camera_assign_screen.dart';
+import '../engine/camera_order.dart';
+import '../theme.dart';
+import '../display.dart';
 
 /// Everything that is set up rather than played: the connection, the cameras, the setup diagnosis and calibration.
 class SettingsScreen extends StatelessWidget {
@@ -27,7 +31,7 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     // The page shows only these values of the connection; other engine events leave it alone.
     return EngineSelect(
-      select: (engine) => (engine.isConnected, engine.url, engine.calibration),
+      select: (engine) => (engine.isConnected, engine.url, engine.calibration, engine.boardState, engine.hello),
       builder: (context, _) => _page(context, EngineScope.read(context)),
     );
   }
@@ -38,6 +42,7 @@ class SettingsScreen extends StatelessWidget {
     final local = LocalEngineScope.maybeOf(context);
     final connected = engine.isConnected;
     final onThisDevice = local?.settings.mode == EngineMode.thisDevice;
+    final status = SetupStatus.of(engine, CameraOrderScope.of(context));
     void open(Widget page) => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
 
     Widget section(String title) => Padding(
@@ -75,6 +80,62 @@ class SettingsScreen extends StatelessWidget {
                       )
                     : FilledButton(onPressed: onConnect, child: Text(l10n.connect)),
               ),
+              // The setup in the order it is done, each step with where it stands
+              section(l10n.settingsSetup),
+              _SetupTile(
+                tileKey: const ValueKey('settings-assign-cameras'),
+                enabled: connected && (engine.hello?.cameras.isNotEmpty ?? false),
+                icon: Icons.swap_vert,
+                title: l10n.assignCameras,
+                subtitle: l10n.setupAssignHint,
+                state: status.assignment,
+                onTap: () => open(const CameraAssignScreen()),
+              ),
+              _SetupTile(
+                tileKey: const ValueKey('settings-calibration'),
+                enabled: connected && engine.calibration != null,
+                icon: Icons.straighten,
+                title: l10n.calibration,
+                subtitle: engine.calibration == null ? l10n.calibNeedsCameras : l10n.calibrationHint,
+                state: status.calibration,
+                onTap: () => open(const CalibrationScreen()),
+              ),
+              _SetupTile(
+                tileKey: const ValueKey('settings-calibration-check'),
+                enabled: connected && engine.calibration != null,
+                icon: Icons.verified_outlined,
+                title: l10n.calibrationCheck,
+                subtitle: l10n.calibrationCheckHint,
+                state: status.check,
+                onTap: () => open(const CalibrationCheckScreen()),
+              ),
+              _SetupTile(
+                tileKey: const ValueKey('settings-empty-board'),
+                enabled: connected,
+                icon: Icons.crop_free,
+                title: l10n.storeEmptyReference,
+                subtitle: l10n.settingsEmptyBoardHint,
+                state: status.emptyBoard,
+                onTap: () => storeEmptyBoard(context),
+              ),
+              _SetupTile(
+                tileKey: const ValueKey('open-diagnosis'),
+                enabled: connected,
+                icon: Icons.troubleshoot,
+                title: l10n.diagnosis,
+                subtitle: l10n.settingsDiagnosisHint,
+                state: SetupState.none,
+                onTap: () => open(const DiagnosisScreen()),
+              ),
+              _SetupTile(
+                tileKey: const ValueKey('open-reference-run'),
+                enabled: connected,
+                icon: Icons.my_location,
+                title: l10n.referenceRun,
+                subtitle: l10n.settingsReferenceHint,
+                state: SetupState.none,
+                onTap: () => open(const ReferenceRunScreen()),
+              ),
               section(l10n.settingsCamerasBoard),
               ListTile(
                 key: const ValueKey('settings-cameras'),
@@ -94,55 +155,10 @@ class SettingsScreen extends StatelessWidget {
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => open(const MyDartsScreen()),
               ),
-              ListTile(
-                key: const ValueKey('open-diagnosis'),
-                enabled: connected,
-                leading: const Icon(Icons.troubleshoot),
-                title: Text(l10n.diagnosis),
-                subtitle: Text(l10n.settingsDiagnosisHint),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => open(const DiagnosisScreen()),
-              ),
-              ListTile(
-                key: const ValueKey('open-reference-run'),
-                enabled: connected,
-                leading: const Icon(Icons.my_location),
-                title: Text(l10n.referenceRun),
-                subtitle: Text(l10n.settingsReferenceHint),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => open(const ReferenceRunScreen()),
-              ),
-              ListTile(
-                key: const ValueKey('settings-empty-board'),
-                enabled: connected,
-                leading: const Icon(Icons.crop_free),
-                title: Text(l10n.storeEmptyReference),
-                subtitle: Text(l10n.settingsEmptyBoardHint),
-                onTap: () => storeEmptyBoard(context),
-              ),
               section(l10n.settingsDisplay),
               const DisplaySettingsTiles(),
               section(l10n.scoreCaller),
               const CallerSettings(),
-              section(l10n.settingsCalibration),
-              ListTile(
-                key: const ValueKey('settings-calibration'),
-                enabled: connected && engine.calibration != null,
-                leading: const Icon(Icons.straighten),
-                title: Text(l10n.calibration),
-                subtitle: Text(engine.calibration == null ? l10n.calibNeedsCameras : l10n.calibrationHint),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => open(const CalibrationScreen()),
-              ),
-              ListTile(
-                key: const ValueKey('settings-calibration-check'),
-                enabled: connected && engine.calibration != null,
-                leading: const Icon(Icons.verified_outlined),
-                title: Text(l10n.calibrationCheck),
-                subtitle: Text(l10n.calibrationCheckHint),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => open(const CalibrationCheckScreen()),
-              ),
             ],
           ),
         ),
@@ -219,6 +235,60 @@ class _CallerSettingsState extends State<CallerSettings> {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// A setup step: its page, and on the right where it stands
+class _SetupTile extends StatelessWidget {
+  const _SetupTile({
+    required this.tileKey,
+    required this.enabled,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.state,
+    required this.onTap,
+  });
+
+  /// On the list tile itself, where tests and the other settings entries have theirs
+  final Key tileKey;
+  final bool enabled;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final SetupState state;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colours = StatusColors.of(context);
+    // Shape as well as colour: a tick, an exclamation mark or a clock
+    final (IconData? mark, Color? colour, String? text) = switch (state) {
+      SetupState.done => (Icons.check_circle, colours.good, l10n.setupDone),
+      SetupState.missing => (Icons.error_outline, colours.warning, l10n.setupMissing),
+      SetupState.stale => (Icons.update, colours.warning, l10n.setupStale),
+      SetupState.problem => (Icons.report_problem_outlined, colours.bad, l10n.setupProblem),
+      SetupState.none => (null, null, null),
+    };
+    return ListTile(
+      key: tileKey,
+      enabled: enabled,
+      leading: Icon(icon),
+      title: Text(title),
+      subtitle: Text(subtitle),
+      trailing: mark == null || !enabled
+          ? const Icon(Icons.chevron_right)
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(mark, color: colour, size: 20),
+                const SizedBox(width: 4),
+                Text(text!, style: TextStyle(color: colour)),
+              ],
+            ),
+      onTap: onTap,
     );
   }
 }

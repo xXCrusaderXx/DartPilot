@@ -15,6 +15,16 @@ Future<void> openSettings(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+/// Scrolls the settings to an entry, which the list builds only once it comes near the screen
+Future<void> showSettingsEntry(WidgetTester tester, String key) async {
+  await tester.scrollUntilVisible(
+    find.byKey(ValueKey(key)),
+    200,
+    scrollable: find.descendant(of: find.byType(ListView), matching: find.byType(Scrollable)).last,
+  );
+  await tester.pumpAndSettle();
+}
+
 /// Picks the players of a game setup in this order, creating profiles that do not exist yet
 Future<void> pickPlayers(WidgetTester tester, List<String> names) async {
   for (final name in names) {

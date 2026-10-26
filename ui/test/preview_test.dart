@@ -64,6 +64,7 @@ void main() {
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
     await tester.pumpAndSettle();
     await openSettings(tester);
+    await showSettingsEntry(tester, 'settings-cameras');
     await tester.tap(find.byKey(const ValueKey('settings-cameras')));
     await tester.pumpAndSettle();
     expect(find.text('Warte auf das erste Bild…'), findsNWidgets(2));
@@ -125,6 +126,7 @@ void main() {
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
     await tester.pumpAndSettle();
     await openSettings(tester);
+    await showSettingsEntry(tester, 'settings-cameras');
     await tester.tap(find.byKey(const ValueKey('settings-cameras')));
     await tester.pumpAndSettle();
     expect(find.text('Unbekannt'), findsOneWidget);
@@ -152,6 +154,7 @@ void main() {
     engine.receiveForTest(jsonEncode(hello));
     await tester.pumpWidget(DartPilotApp(locale: const Locale('en'), engine: engine));
     await openSettings(tester);
+    await showSettingsEntry(tester, 'settings-cameras');
     await tester.tap(find.byKey(const ValueKey('settings-cameras')));
     await tester.pumpAndSettle();
     // One column of 368 px: the next step of 160 px is 480.

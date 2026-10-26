@@ -27,7 +27,7 @@ void main() {
     expect(detail.shiftPx, const Offset(6, -3));
   });
 
-  testWidgets('home warns about a moved camera and leads into the wizard at that camera', (tester) async {
+  testWidgets('a moved camera marks the settings tab and the check entry, and home stays free of it', (tester) async {
     tester.view.physicalSize = const Size(1000, 1800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -36,18 +36,18 @@ void main() {
     engine.receiveForTest(jsonEncode(fixtures['hello']));
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
     await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('calibration-warning-sim-2')), findsOneWidget);
-    expect(find.text('Kamera 2 hat sich bewegt – miss sie neu ein.'), findsOneWidget);
-    expect(find.byKey(const ValueKey('calibration-warning-sim-1')), findsNothing);
+    expect(find.textContaining('hat sich bewegt'), findsNothing);
+    expect(tester.widgetList<Badge>(find.byKey(const ValueKey('settings-attention'))).first.isLabelVisible, isTrue);
 
-    await tester.tap(
-      find.descendant(
-        of: find.byKey(const ValueKey('calibration-warning-sim-2')),
-        matching: find.text('Neu einmessen'),
-      ),
+    await openSettings(tester);
+    expect(
+      find.descendant(of: find.byKey(const ValueKey('settings-calibration-check')), matching: find.text('Prüfen')),
+      findsOneWidget,
     );
-    await tester.pumpAndSettle();
-    expect(find.text('Kamera 2 von 3'), findsOneWidget);
+    expect(
+      find.descendant(of: find.byKey(const ValueKey('settings-calibration')), matching: find.text('Erledigt')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('the check page subscribes while open and shows a verdict per camera', (tester) async {

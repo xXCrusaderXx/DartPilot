@@ -764,12 +764,6 @@ abstract class AppLocalizations {
   /// **'Show'**
   String get show;
 
-  /// No description provided for @emptyReferenceMissing.
-  ///
-  /// In en, this message translates to:
-  /// **'No image of the empty board stored'**
-  String get emptyReferenceMissing;
-
   /// No description provided for @storeEmptyReference.
   ///
   /// In en, this message translates to:
@@ -1409,8 +1403,44 @@ abstract class AppLocalizations {
   /// No description provided for @settingsCamerasBoard.
   ///
   /// In en, this message translates to:
-  /// **'Cameras and board'**
+  /// **'Cameras and darts'**
   String get settingsCamerasBoard;
+
+  /// No description provided for @settingsSetup.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup'**
+  String get settingsSetup;
+
+  /// No description provided for @setupAssignHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Which camera is camera 1, 2 and 3'**
+  String get setupAssignHint;
+
+  /// No description provided for @setupDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get setupDone;
+
+  /// No description provided for @setupMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'To do'**
+  String get setupMissing;
+
+  /// No description provided for @setupStale.
+  ///
+  /// In en, this message translates to:
+  /// **'Out of date'**
+  String get setupStale;
+
+  /// No description provided for @setupProblem.
+  ///
+  /// In en, this message translates to:
+  /// **'Check'**
+  String get setupProblem;
 
   /// No description provided for @settingsCamerasHint.
   ///
@@ -2318,18 +2348,6 @@ abstract class AppLocalizations {
   /// **'Checking …'**
   String get checkChecking;
 
-  /// No description provided for @homeCameraMoved.
-  ///
-  /// In en, this message translates to:
-  /// **'{camera} has moved – measure it again.'**
-  String homeCameraMoved(String camera);
-
-  /// No description provided for @homeCameraWrongPort.
-  ///
-  /// In en, this message translates to:
-  /// **'{camera} is on another USB port than when it was calibrated.'**
-  String homeCameraWrongPort(String camera);
-
   /// No description provided for @referenceRun.
   ///
   /// In en, this message translates to:
@@ -2498,18 +2516,6 @@ abstract class AppLocalizations {
   /// **'This engine cannot detect darts yet. Switch on \"Simulate darts\", or update the engine.'**
   String get localEngineLiveUnavailable;
 
-  /// No description provided for @detectionNotCalibrated.
-  ///
-  /// In en, this message translates to:
-  /// **'Not calibrated yet – darts are not detected. Calibrate the cameras under Settings.'**
-  String get detectionNotCalibrated;
-
-  /// No description provided for @detectionWaitingForEmptyBoard.
-  ///
-  /// In en, this message translates to:
-  /// **'Waiting for an empty, still board before detecting darts.'**
-  String get detectionWaitingForEmptyBoard;
-
   /// No description provided for @detectionPaused.
   ///
   /// In en, this message translates to:
@@ -2623,18 +2629,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Apply'**
   String get saveCameraOrder;
-
-  /// No description provided for @newCamerasTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'New cameras found'**
-  String get newCamerasTitle;
-
-  /// No description provided for @newCamerasText.
-  ///
-  /// In en, this message translates to:
-  /// **'Assign them once, so that camera 1, 2 and 3 are always the same.'**
-  String get newCamerasText;
 
   /// No description provided for @statsAverageTrend.
   ///
