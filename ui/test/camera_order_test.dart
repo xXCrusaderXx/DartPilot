@@ -64,6 +64,46 @@ void main() {
     expect(find.byKey(const ValueKey('assign-cameras-prompt')), findsNothing);
   });
 
+  testWidgets('the assignment page follows cameras that come and asks before dropping changes', (tester) async {
+    tester.view.physicalSize = const Size(1200, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final engine = EngineConnection.forTest((_) {});
+    addTearDown(engine.dispose);
+    final order = CameraOrder(MemoryCameraOrderStore());
+    await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine, cameraOrder: order));
+    engine.receiveForTest(jsonEncode(hello));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(of: find.byKey(const ValueKey('assign-cameras-prompt')), matching: find.byType(FilledButton)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('assign-down-usb-1')));
+    await tester.pumpAndSettle();
+
+    // A third camera appears; the player's order of the first two stays.
+    final cameras = [
+      ...hello['cameras']! as List<Object?>,
+      {'id': 'usb-3', 'name': 'Camera 3', 'state': 'ok'},
+    ];
+    engine.receiveForTest(jsonEncode({...hello, 'cameras': cameras}));
+    await tester.pumpAndSettle();
+    expect(tester.widget<Text>(find.byKey(const ValueKey('assign-number-usb-2'))).data, '1');
+    expect(tester.widget<Text>(find.byKey(const ValueKey('assign-number-usb-3'))).data, '3');
+
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(find.text('Geänderte Reihenfolge und Namen verwerfen?'), findsOneWidget);
+    await tester.tap(find.text('Abbrechen'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('assign-save')), findsOneWidget);
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Verwerfen'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('assign-save')), findsNothing);
+  });
+
   testWidgets('an engine that keeps the assignment is the source on every display', (tester) async {
     final sent = <Map<String, dynamic>>[];
     final engine = EngineConnection.forTest(sent.add);

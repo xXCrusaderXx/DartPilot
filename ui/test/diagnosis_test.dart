@@ -116,6 +116,9 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('diagnosis-start')));
     await tester.pump();
     expect(sent.last, {'type': 'start_diagnosis'});
+    // Until the engine answers, the buttons wait.
+    expect(tester.widget<FilledButton>(find.byKey(const ValueKey('diagnosis-start'))).onPressed, isNull);
+    engine.receiveForTest(jsonEncode({'type': 'result', 'request_id': '${sent.length}', 'ok': true}));
 
     engine.receiveForTest(jsonEncode(diagnosisJson(step: 'empty_board', state: 'moving')));
     await tester.pump();

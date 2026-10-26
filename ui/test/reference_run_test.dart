@@ -80,4 +80,30 @@ void main() {
     );
     expect(find.text('Dart 2 von 10'), findsOneWidget);
   });
+
+  testWidgets('a run stopped early gets no verdict, and a target without two wires names its field', (tester) async {
+    tester.view.physicalSize = const Size(1000, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final engine = EngineConnection.forTest((_) {});
+    addTearDown(engine.dispose);
+    engine.receiveForTest(jsonEncode(hello));
+    final remove = fixtures['remove'] as Map<String, dynamic>;
+    final odd = {
+      ...remove,
+      'step': 'insert_dart',
+      'target': {...remove['target'] as Map<String, dynamic>, 'wires': <int>[], 'hint_code': 'other'},
+    };
+    engine.receiveForTest(jsonEncode(odd));
+    await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
+    await openSettings(tester);
+    await tester.tap(find.byKey(const ValueKey('open-reference-run')));
+    await tester.pumpAndSettle();
+    expect(find.text('D20'), findsWidgets);
+
+    engine.receiveForTest(jsonEncode({...remove, 'running': false}));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('reference-verdict')), findsNothing);
+    expect(find.text('Nach 1 Dart abgebrochen. Starte neu für ein Urteil.'), findsOneWidget);
+  });
 }

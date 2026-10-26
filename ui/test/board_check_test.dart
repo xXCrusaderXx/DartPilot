@@ -81,7 +81,8 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('mode-Freies Werfen')));
     await tester.pumpAndSettle();
     expect(find.text('Darts aus der Scheibe ziehen'), findsOneWidget);
-    expect(find.textContaining('object on the board'), findsOneWidget);
+    // The engine's English reason is not shown in German; the marked image says where.
+    expect(find.textContaining('object on the board'), findsNothing);
     expect(sent.any((r) => r['type'] == 'subscribe_preview' && r['camera'] == 'usb-1'), isTrue);
     engine.receiveForTest(previewMessage('usb-1', 1, tinyJpeg));
     await tester.pump();
@@ -125,6 +126,31 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Leere Scheibe gespeichert'), findsOneWidget);
     expect(find.byType(TrainingScreen), findsOneWidget);
+  });
+
+  testWidgets('a board that becomes empty while the player is asked to store it stores nothing', (tester) async {
+    tester.view.physicalSize = const Size(1200, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final sent = <Map<String, dynamic>>[];
+    final engine = EngineConnection.forTest(sent.add);
+    addTearDown(engine.dispose);
+    engine.receiveForTest(jsonEncode({...hello, 'board_state': boardState('occupied')}));
+    await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('mode-Freies Werfen')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Die Scheibe ist leer'));
+    await tester.pumpAndSettle();
+    expect(find.text('Leere Scheibe neu speichern?'), findsOneWidget);
+
+    engine.receiveForTest(jsonEncode({'type': 'board_state', ...boardState('empty')}));
+    await tester.pumpAndSettle();
+    expect(find.text('Leere Scheibe neu speichern?'), findsNothing);
+    expect(find.text('Darts aus der Scheibe ziehen'), findsNothing);
+    expect(find.byType(TrainingScreen), findsOneWidget);
+    expect(sent.where((r) => r['type'] == 'store_empty_reference'), isEmpty);
   });
 
   testWidgets('offers to store the empty board when the engine has none', (tester) async {

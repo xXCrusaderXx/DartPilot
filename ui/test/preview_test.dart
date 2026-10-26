@@ -113,6 +113,35 @@ void main() {
     expect(find.byKey(const ValueKey('fullscreen-usb-1')), findsOneWidget);
   });
 
+  testWidgets('an image that stops says how old it is, and a camera without status is not shown as OK', (tester) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final engine = EngineConnection();
+    addTearDown(engine.dispose);
+    engine.receiveForTest(jsonEncode(hello));
+    engine.cameraStatus.remove('usb-2');
+
+    await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
+    await tester.pumpAndSettle();
+    await openSettings(tester);
+    await tester.tap(find.byKey(const ValueKey('settings-cameras')));
+    await tester.pumpAndSettle();
+    expect(find.text('Unbekannt'), findsOneWidget);
+
+    engine.receiveForTest(previewMessage('usb-1', 1, tinyJpeg));
+    await tester.pump();
+    await tester.pump();
+    expect(find.byKey(const ValueKey('camera-stale')), findsNothing);
+    await tester.pump(const Duration(seconds: 3));
+    expect(find.text('Kein Bild seit 3 s'), findsOneWidget);
+
+    engine.receiveForTest(previewMessage('usb-1', 2, tinyJpeg));
+    await tester.pump();
+    await tester.pump();
+    expect(find.byKey(const ValueKey('camera-stale')), findsNothing);
+  });
+
   testWidgets('narrow panels ask for small previews and pause under the full screen view', (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1.0;

@@ -117,6 +117,10 @@ mixin _PreviewWatcher<T extends StatefulWidget> on State<T> {
   StreamSubscription<PreviewFrame>? _frames;
   PreviewFrame? frame;
   final List<DateTime> _arrivals = [];
+  Timer? _tick;
+
+  /// Whole seconds since the last frame while watched; the image then shows that it is old
+  int secondsWithoutFrame = 0;
 
   String get watchedCamera;
   double get previewFps;
@@ -125,8 +129,7 @@ mixin _PreviewWatcher<T extends StatefulWidget> on State<T> {
   /// Frames per second over the last two seconds
   double get previewRate {
     final now = DateTime.now();
-    _arrivals.removeWhere((t) => now.difference(t) > const Duration(seconds: 2));
-    return _arrivals.length / 2.0;
+    return _arrivals.where((t) => now.difference(t) <= const Duration(seconds: 2)).length / 2.0;
   }
 
   void startWatching() {
@@ -141,11 +144,23 @@ mixin _PreviewWatcher<T extends StatefulWidget> on State<T> {
           (f) => setState(() {
             frame = f;
             _arrivals.add(DateTime.now());
+            secondsWithoutFrame = 0;
           }),
         );
+    // Rate and age change while no frame arrives, too.
+    _tick = Timer.periodic(const Duration(seconds: 1), (_) {
+      final now = DateTime.now();
+      setState(() {
+        _arrivals.removeWhere((t) => now.difference(t) > const Duration(seconds: 2));
+        secondsWithoutFrame++;
+      });
+    });
   }
 
   void stopWatching() {
+    _tick?.cancel();
+    _tick = null;
+    secondsWithoutFrame = 0;
     _frames?.cancel();
     _handle?.release();
     _frames = null;
@@ -228,7 +243,7 @@ class _CameraPanelState extends State<CameraPanel> with _PreviewWatcher<CameraPa
               padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
               child: Row(
                 children: [
-                  _StateDot(status?.state ?? 'ok'),
+                  _StateDot(status?.state),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text.rich(
@@ -266,14 +281,17 @@ class _CameraPanelState extends State<CameraPanel> with _PreviewWatcher<CameraPa
                                 .push(MaterialPageRoute<void>(builder: (_) => CameraFullscreen(camera: widget.camera))),
                         child: LayoutBuilder(
                           // Decoded at the size it is shown, not at the size it was sent
-                          builder: (context, constraints) => Image.memory(
-                            current.jpeg,
-                            key: ValueKey('preview-${widget.camera}'),
-                            fit: BoxFit.contain,
-                            gaplessPlayback: true,
-                            cacheWidth: _decodeWidth(
-                              constraints.maxWidth * MediaQuery.devicePixelRatioOf(context),
-                              current.width,
+                          builder: (context, constraints) => _StaleFrame(
+                            seconds: secondsWithoutFrame,
+                            child: Image.memory(
+                              current.jpeg,
+                              key: ValueKey('preview-${widget.camera}'),
+                              fit: BoxFit.contain,
+                              gaplessPlayback: true,
+                              cacheWidth: _decodeWidth(
+                                constraints.maxWidth * MediaQuery.devicePixelRatioOf(context),
+                                current.width,
+                              ),
                             ),
                           ),
                         ),
@@ -325,7 +343,7 @@ class _CameraFullscreenState extends State<CameraFullscreen> with _PreviewWatche
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: Row(children: [_StateDot(status?.state ?? 'ok'), const SizedBox(width: 8), Text(widget.camera)]),
+        title: Row(children: [_StateDot(status?.state), const SizedBox(width: 8), Text(widget.camera)]),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(28),
           child: Padding(
@@ -343,11 +361,14 @@ class _CameraFullscreenState extends State<CameraFullscreen> with _PreviewWatche
           : InteractiveViewer(
               maxScale: 6,
               child: Center(
-                child: Image.memory(
-                  current.jpeg,
-                  key: ValueKey('fullscreen-${widget.camera}'),
-                  fit: BoxFit.contain,
-                  gaplessPlayback: true,
+                child: _StaleFrame(
+                  seconds: secondsWithoutFrame,
+                  child: Image.memory(
+                    current.jpeg,
+                    key: ValueKey('fullscreen-${widget.camera}'),
+                    fit: BoxFit.contain,
+                    gaplessPlayback: true,
+                  ),
                 ),
               ),
             ),
@@ -355,18 +376,47 @@ class _CameraFullscreenState extends State<CameraFullscreen> with _PreviewWatche
   }
 }
 
+/// A camera image with a note over it once no new frame came for [seconds], so a frozen image does not look live
+class _StaleFrame extends StatelessWidget {
+  const _StaleFrame({required this.seconds, required this.child});
+
+  /// Shown from two seconds on, at a preview rate of 10 fps and more
+  static const int staleAfterSeconds = 2;
+
+  final int seconds;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (seconds < staleAfterSeconds) return child;
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Opacity(opacity: 0.4, child: child),
+        Chip(
+          key: const ValueKey('camera-stale'),
+          avatar: Icon(Icons.hourglass_empty, color: StatusColors.of(context).warning),
+          label: Text(AppLocalizations.of(context).cameraNoFrameFor(seconds)),
+        ),
+      ],
+    );
+  }
+}
+
 class _StateDot extends StatelessWidget {
   const _StateDot(this.state);
 
-  final String state;
+  /// null before the engine reported the camera
+  final String? state;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final (label, color) = switch (state) {
-      'lost' => (l10n.cameraLost, Theme.of(context).colorScheme.error),
+      'lost' => (l10n.cameraLost, StatusColors.of(context).bad),
       'degraded' => (l10n.cameraDegraded, StatusColors.of(context).warning),
-      _ => (l10n.cameraOk, StatusColors.of(context).good),
+      'ok' => (l10n.cameraOk, StatusColors.of(context).good),
+      _ => (l10n.cameraUnknown, Theme.of(context).disabledColor),
     };
     return Tooltip(
       message: label,

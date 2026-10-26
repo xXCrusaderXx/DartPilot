@@ -506,6 +506,12 @@ abstract class AppLocalizations {
   /// **'Discard'**
   String get discard;
 
+  /// No description provided for @discardCameraOrderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard the changed order and names?'**
+  String get discardCameraOrderTitle;
+
   /// No description provided for @tapToCorrect.
   ///
   /// In en, this message translates to:
@@ -595,6 +601,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Lost'**
   String get cameraLost;
+
+  /// No description provided for @cameraUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get cameraUnknown;
+
+  /// No description provided for @cameraNoFrameFor.
+  ///
+  /// In en, this message translates to:
+  /// **'No image for {seconds} s'**
+  String cameraNoFrameFor(int seconds);
 
   /// No description provided for @noCameras.
   ///
@@ -931,6 +949,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The diagnosis could not start ({code}).'**
   String diagnosisFailed(String code);
+
+  /// No description provided for @diagnosisStopFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The diagnosis could not be stopped ({code}).'**
+  String diagnosisStopFailed(String code);
 
   /// No description provided for @stepEmptyBoard.
   ///
@@ -2269,6 +2293,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You push one dart after the other by hand into a known position: the centre of the bull, then corners where a radial wire meets a ring wire. The engine locates every dart, and the distance from the position is the error of the whole system, from calibration to tip. Ten darts take about five minutes; the board must be calibrated.'**
   String get referenceIntro;
+
+  /// No description provided for @referenceWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the next position…'**
+  String get referenceWaiting;
+
+  /// No description provided for @referenceStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped after {count, plural, =1{1 dart} other{{count} darts}}. Start again for a verdict.'**
+  String referenceStopped(int count);
 
   /// No description provided for @referenceNotCalibrated.
   ///

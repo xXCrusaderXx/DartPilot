@@ -107,6 +107,7 @@
   "uncertainNoPoint": "A dart was detected, but not where",
   "confirm": "Confirm",
   "discard": "Discard",
+  "discardCameraOrderTitle": "Discard the changed order and names?",
   "tapToCorrect": "Tap the board where the dart is",
   "recentDarts": "Last darts",
   "correctingDart": "Correcting {label} – tap the board",
@@ -136,6 +137,15 @@
   "cameraOk": "OK",
   "cameraDegraded": "Degraded",
   "cameraLost": "Lost",
+  "cameraUnknown": "Unknown",
+  "cameraNoFrameFor": "No image for {seconds} s",
+  "@cameraNoFrameFor": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
   "noCameras": "The engine has no cameras",
   "fps": "{value} fps",
   "@fps": {
@@ -214,6 +224,14 @@
   "diagnosisNotAvailable": "This engine cannot run the diagnosis; it needs the cameras (start it with the cameras).",
   "diagnosisFailed": "The diagnosis could not start ({code}).",
   "@diagnosisFailed": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "diagnosisStopFailed": "The diagnosis could not be stopped ({code}).",
+  "@diagnosisStopFailed": {
     "placeholders": {
       "code": {
         "type": "String"
@@ -823,6 +841,15 @@
   "referenceRun": "Reference measurement",
   "settingsReferenceHint": "How accurate is the detection? Darts in known positions show it in millimetres",
   "referenceIntro": "You push one dart after the other by hand into a known position: the centre of the bull, then corners where a radial wire meets a ring wire. The engine locates every dart, and the distance from the position is the error of the whole system, from calibration to tip. Ten darts take about five minutes; the board must be calibrated.",
+  "referenceWaiting": "Waiting for the next position…",
+  "referenceStopped": "Stopped after {count, plural, =1{1 dart} other{{count} darts}}. Start again for a verdict.",
+  "@referenceStopped": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "referenceNotCalibrated": "Calibrate the cameras first (Settings → Calibration).",
   "referenceProgress": "Dart {number} of {total}",
   "@referenceProgress": {

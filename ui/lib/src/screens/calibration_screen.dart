@@ -29,8 +29,8 @@ class CalibrationScreen extends StatefulWidget {
 class _CalibrationScreenState extends State<CalibrationScreen> {
   late CalibrationStep _step = widget.startCamera == null ? CalibrationStep.overview : CalibrationStep.board;
 
-  /// Camera of the board step
-  late int _camera = math.max(0, orderedCameras(context).indexOf(widget.startCamera ?? ''));
+  /// Camera of the board step, by id: the engine's camera list can change while the wizard is open
+  late String? _camera = widget.startCamera;
 
   /// Error code of the last request, shown until the next one
   String? _error;
@@ -60,6 +60,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
     final l10n = AppLocalizations.of(context);
     final engine = EngineScope.of(context);
     final cameras = orderedCameras(context);
+    final index = math.max(0, cameras.indexOf(_camera ?? ''));
     final steps = [
       (CalibrationStep.light, l10n.calibStepLight),
       (CalibrationStep.board, l10n.calibStepBoard),
@@ -77,17 +78,17 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
               onNext: () => _go(CalibrationStep.board),
             ),
             CalibrationStep.board => _BoardStep(
-              key: ValueKey('board-${cameras[_camera]}'),
-              camera: cameras[_camera],
-              number: _camera + 1,
+              key: ValueKey('board-${cameras[index]}'),
+              camera: cameras[index],
+              number: index + 1,
               count: cameras.length,
               busy: _busy,
               error: _error,
-              onDetect: () => _run(() => engine.detectBoard(cameras[_camera])),
-              onTap: (point) => _run(() => engine.setSector20(cameras[_camera], point)),
-              onNext: () => _camera + 1 < cameras.length
+              onDetect: () => _run(() => engine.detectBoard(cameras[index])),
+              onTap: (point) => _run(() => engine.setSector20(cameras[index], point)),
+              onNext: () => index + 1 < cameras.length
                   ? setState(() {
-                      _camera++;
+                      _camera = cameras[index + 1];
                       _error = null;
                     })
                   : _go(CalibrationStep.refine),
@@ -97,7 +98,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
               error: _error,
               onRefine: () => _run(engine.refineCameras),
               onMeasureAgain: (camera) => setState(() {
-                _camera = cameras.indexOf(camera);
+                _camera = camera;
                 _step = CalibrationStep.board;
                 _error = null;
               }),

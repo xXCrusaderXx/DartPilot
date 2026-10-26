@@ -22,15 +22,25 @@ class DiagnosisScreen extends StatefulWidget {
 class _DiagnosisScreenState extends State<DiagnosisScreen> {
   String? _error;
 
-  Future<void> _start() async {
-    final error = await EngineScope.of(context).startDiagnosis();
-    if (mounted) setState(() => _error = error);
+  /// The error came from stopping, not starting
+  bool _stopFailed = false;
+  bool _busy = false;
+
+  Future<void> _request(Future<String?> Function() request, {required bool stop}) async {
+    setState(() => _busy = true);
+    final error = await request();
+    if (mounted) {
+      setState(() {
+        _busy = false;
+        _error = error;
+        _stopFailed = stop;
+      });
+    }
   }
 
-  Future<void> _stop() async {
-    final error = await EngineScope.of(context).stopDiagnosis();
-    if (mounted) setState(() => _error = error);
-  }
+  Future<void> _start() => _request(EngineScope.of(context).startDiagnosis, stop: false);
+
+  Future<void> _stop() => _request(EngineScope.of(context).stopDiagnosis, stop: true);
 
   @override
   Widget build(BuildContext context) {
@@ -48,13 +58,13 @@ class _DiagnosisScreenState extends State<DiagnosisScreen> {
               child: running
                   ? OutlinedButton.icon(
                       key: const ValueKey('diagnosis-stop'),
-                      onPressed: _stop,
+                      onPressed: _busy ? null : _stop,
                       icon: const Icon(Icons.stop),
                       label: Text(l10n.stopDiagnosis),
                     )
                   : FilledButton.icon(
                       key: const ValueKey('diagnosis-start'),
-                      onPressed: _start,
+                      onPressed: _busy ? null : _start,
                       icon: const Icon(Icons.play_arrow),
                       label: Text(diagnosis == null ? l10n.startDiagnosis : l10n.restartDiagnosis),
                     ),
@@ -72,7 +82,8 @@ class _DiagnosisScreenState extends State<DiagnosisScreen> {
                 Text(
                   _error == 'not_available'
                       ? l10n.diagnosisNotAvailable
-                      : engineErrorText(l10n, _error!) ?? l10n.diagnosisFailed(_error!),
+                      : engineErrorText(l10n, _error!) ??
+                            (_stopFailed ? l10n.diagnosisStopFailed(_error!) : l10n.diagnosisFailed(_error!)),
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               if (diagnosis == null && engine.isConnected && _error == null) Text(l10n.diagnosisIntro),
@@ -171,9 +182,9 @@ class _StepCard extends StatelessWidget {
       _ => (Icons.help_outline, diagnosis.step),
     };
     final (stateText, stateColor) = switch (diagnosis.state) {
-      'moving' => (l10n.diagnosisMoving, theme.colorScheme.error),
-      'settling' => (l10n.diagnosisSettling, theme.colorScheme.tertiary),
-      'measuring' => (l10n.diagnosisMeasuring, theme.colorScheme.secondary),
+      'moving' => (l10n.diagnosisMoving, StatusColors.of(context).warning),
+      'settling' => (l10n.diagnosisSettling, StatusColors.of(context).warning),
+      'measuring' => (l10n.diagnosisMeasuring, theme.colorScheme.primary),
       'measured' => (l10n.diagnosisMeasured, StatusColors.of(context).good),
       'stopped' => (l10n.diagnosisStopped, theme.disabledColor),
       _ => (diagnosis.state, theme.disabledColor),
@@ -369,7 +380,11 @@ class _PeriodsCard extends StatelessWidget {
         if (c.calibrationMm != null) l10n.periodCalibration(number.format(c.calibrationMm)),
         if (c.brightness != null) l10n.periodBrightness(c.brightness!.round()),
       ];
-      return '${l10n.cameraNumber(index + 1)}: ${parts.join(', ')}';
+      // Period cameras are in the order of the diagnosis' camera list.
+      final name = index < diagnosis.cameras.length
+          ? cameraName(context, diagnosis.cameras, diagnosis.cameras[index])
+          : l10n.cameraNumber(index + 1);
+      return '$name: ${parts.join(', ')}';
     }
 
     return ExpansionTile(
