@@ -45,6 +45,7 @@ class GameInput extends StatefulWidget {
 
 class _GameInputState extends State<GameInput> {
   EngineConnection? _engine;
+  ValueNotifier<Widget?>? _slot;
   StreamSubscription<EngineEvent>? _subscription;
   EngineThrow? _pending;
   int? _correcting;
@@ -61,6 +62,7 @@ class _GameInputState extends State<GameInput> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Events arrive through the stream; the input does not rebuild on every change of the connection.
+    _slot = GameNoticeSlot.maybeOf(context);
     final engine = EngineScope.read(context);
     if (!identical(engine, _engine)) {
       _subscription?.cancel();
@@ -72,6 +74,7 @@ class _GameInputState extends State<GameInput> {
   @override
   void dispose() {
     _subscription?.cancel();
+    _slot?.value = null;
     super.dispose();
   }
 
@@ -349,9 +352,16 @@ class _GameInputState extends State<GameInput> {
       );
     }
 
+    final slot = GameNoticeSlot.maybeOf(context);
+    if (slot != null) {
+      // After this frame: the slot's listener belongs to another part of the tree, built in the same frame
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) slot.value = banner;
+      });
+    }
     return Column(
       children: [
-        ?banner,
+        if (slot == null) ?banner,
         Expanded(
           child: EngineSelect(
             select: (engine) => engine.geometry,
@@ -448,4 +458,18 @@ class _Notice extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Where a game screen shows the input's notices (an uncertain dart, darts to pull): beside the board in the score
+/// panel, so the board keeps its size while the player taps it. Without a slot the input shows them above the board.
+class GameNoticeSlot extends InheritedWidget {
+  const GameNoticeSlot({super.key, required this.notice, required super.child});
+
+  final ValueNotifier<Widget?> notice;
+
+  static ValueNotifier<Widget?>? maybeOf(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<GameNoticeSlot>()?.notice;
+
+  @override
+  bool updateShouldNotify(GameNoticeSlot old) => !identical(old.notice, notice);
 }
