@@ -38,6 +38,7 @@ Regenerate the table with `dartpilot detection-params`; `DetectionParams.Documen
 | `merge_passes` | tip_candidates | 3 | 0–10 |  | How often parts are joined in turn. |
 | `close_px` | tip_candidates | 9 | 1–31 | px | Closing bridges gaps up to about this size inside the object, such as between the edges of a plain barrel. |
 | `bin_px` | tip_candidates | 2 | 0.5–8 | px | Width of the cross-sections along the object whose middles make up its axis. |
+| `section_gap_px` | tip_candidates | 0 | 0–20 | px | A cross-section of the object with a gap wider than this splits into parts with a middle each, so a dart beside another one is not pulled between them. 0 takes one middle per cross-section. |
 | `axis_tolerance_px` | tip_candidates | 1.5 | 0.5–5 | px | Middles within this distance of a line are on the axis. |
 | `min_axis_span_px` | tip_candidates | 30 | 5–200 | px | The axis spans at least this length. |
 | `min_axis_points` | tip_candidates | 8 | 2–50 |  | The axis needs at least this many middles. |

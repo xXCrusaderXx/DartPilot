@@ -28,6 +28,8 @@ struct CameraResult
     std::optional<double> reprojection_px;
     // Every place this camera's view may have its tip (#26), for measuring candidate recall
     std::vector<tip_candidates::TipCandidate> candidates;
+    // The line on the board on which this camera sees the dart enter, a x + b y = c (mm), for measuring axis errors (#27)
+    std::optional<cv::Vec3d> axis_line;
 };
 
 struct DetectedDart

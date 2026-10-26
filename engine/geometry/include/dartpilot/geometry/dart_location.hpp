@@ -51,4 +51,8 @@ struct LocateSettings
 // where the point lies in its image; two views must cross at a usable angle. Views of a short, cut-off object are not
 // used. Nothing if no two views agree: the engine abstains rather than guess.
 std::optional<DartLocation> locateDart (const std::vector<DartView>& views, const LocateSettings& settings = {});
+
+// The plane through a view's camera centre and the dart's axis, met with the board: the line a x + b y = c (mm,
+// a^2 + b^2 = 1) on which this camera sees the dart enter. Nothing without a camera or a usable axis.
+std::optional<cv::Vec3d> axisBoardLine (const DartView& view, const LocateSettings& settings = {});
 }  // namespace dartpilot::geometry

@@ -6,10 +6,7 @@
 
 namespace dartpilot::geometry
 {
-namespace
-{
-// The axis plane of a view as a line on the board, a x + b y = c with a^2 + b^2 = 1
-std::optional<cv::Vec3d> boardLine (const DartView& view, const LocateSettings& s)
+std::optional<cv::Vec3d> axisBoardLine (const DartView& view, const LocateSettings& s)
 {
     const auto& observation = view.observation;
     if(!view.camera || observation.axis_px.size() < 2 || (observation.cut && observation.axis_length_px < s.min_cut_axis_px))
@@ -36,7 +33,6 @@ std::optional<cv::Vec3d> boardLine (const DartView& view, const LocateSettings& 
     }
     return cv::Vec3d(normal[0] / length, normal[1] / length, normal.dot(cameraCentre(*view.camera)) / length);
 }
-}  // namespace
 
 std::optional<DartLocation> locateDart (const std::vector<DartView>& views, const LocateSettings& s)
 {
@@ -44,7 +40,7 @@ std::optional<DartLocation> locateDart (const std::vector<DartView>& views, cons
     std::vector<cv::Vec3d> lines;
     for(std::size_t i = 0; i < views.size(); ++i)
     {
-        if(const auto line = boardLine(views[i], s))
+        if(const auto line = axisBoardLine(views[i], s))
         {
             usable.push_back(static_cast<int>(i));
             lines.push_back(*line);

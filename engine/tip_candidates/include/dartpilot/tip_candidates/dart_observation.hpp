@@ -27,6 +27,9 @@ struct ObservationSettings
     double min_weak = 6.0;
     // Width of the cross-sections along the object whose middles make up the axis
     double bin_px = 2.0;
+    // A cross-section with a gap wider than this splits into parts, each with its own middle (#27), so the axis of a
+    // dart beside another one in the same cross-section is not pulled between them; 0 takes one middle per section.
+    double section_gap_px = 0.0;
     // The largest shift between image and empty board that is taken for a drifting camera and compensated
     double max_drift_px = 5.0;
     // A slight zoom or rotation of a drifting camera is measured in tiles x by y: tiles plainer than min_tile_contrast,

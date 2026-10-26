@@ -168,7 +168,10 @@ std::string throwLine (const session::RecordedSession& session, const ReplayConf
         }
         line << "], \"selected_candidate\": " << (camera.tip_px ? "0" : "null")
              << ", \"board_point\": " << (camera.board_mm ? boardPoint(*camera.board_mm, std::nullopt) : "null")
-             << ", \"reprojection_error_px\": " << (camera.reprojection_px ? number(*camera.reprojection_px, 2) : "null")
+             << ", \"reprojection_error_px\": " << (camera.reprojection_px ? number(*camera.reprojection_px, 2) : "null") << ", \"axis_line\": "
+             << (camera.axis_line ? "{\"a\": " + number((*camera.axis_line)[0], 6) + ", \"b\": " + number((*camera.axis_line)[1], 6) +
+                                        ", \"c_mm\": " + number((*camera.axis_line)[2], 3) + "}"
+                                  : std::string("null"))
              << ", \"state\": " << jsonString(camera.state) << ", \"used\": " << (camera.used ? "true" : "false") << "}";
     }
     line << "], \"diagnostics\": {\"pipeline\": " << jsonString(config.pipeline) << ", \"event_ns\": " << event.event_ns

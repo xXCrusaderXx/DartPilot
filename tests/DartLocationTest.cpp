@@ -181,6 +181,34 @@ TEST(TipCandidates, NoneAtTheImageBorderAndNoneWithoutAnAxis)
     }
 }
 
+TEST(ObserveDart, SplitCrossSectionsKeepTheAxisOnOneOfTwoShaftsSideBySide)
+{
+    // A long shaft and a shorter one beside it, 25 px apart: one object in the difference, whose cross-sections
+    // reach across both where they run side by side
+    cv::Mat image = scene(1);
+    cv::line(image, cv::Point(300, 200), cv::Point(700, 260), cv::Scalar(40, 40, 40), 5, cv::LINE_AA);
+    cv::line(image, cv::Point(300, 225), cv::Point(560, 264), cv::Scalar(40, 40, 40), 5, cv::LINE_AA);
+    const auto offAxis = [&] (double gap_px)
+    {
+        dartpilot::tip_candidates::ObservationSettings settings;
+        settings.section_gap_px = gap_px;
+        const auto observation = dartpilot::tip_candidates::observeDart(image, scene(2), settings);
+        EXPECT_TRUE(observation);
+        if(!observation)
+        {
+            return 1e9;
+        }
+        // Distance of the axis from the long shaft's two ends
+        const cv::Point2f base = observation->axis_px.front();
+        cv::Point2f dir = observation->axis_px.back() - base;
+        dir *= 1.0f / static_cast<float>(cv::norm(dir));
+        return std::max(std::abs(static_cast<double>((cv::Point2f(300, 200) - base).cross(dir))),
+                        std::abs(static_cast<double>((cv::Point2f(700, 260) - base).cross(dir))));
+    };
+    EXPECT_GT(offAxis(0.0), 2.0);
+    EXPECT_LT(offAxis(3.0), 1.0);
+}
+
 TEST(ObserveDart, NothingOnAnEmptyBoard) { EXPECT_FALSE(dartpilot::tip_candidates::observeDart(scene(1), scene(2))); }
 
 TEST(LocateDart, AllCamerasAgreeOnWhereTheDartEntersTheBoard)

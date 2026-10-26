@@ -21,6 +21,7 @@ class TrackerPipeline : public Pipeline
     TrackerPipeline (const std::vector<const geometry::RefinedCamera*>& cameras, const geometry::BoardModel& board,
                      const fusion::TrackerSettings& settings)
         : tracker_(trackerCameras(cameras), board, settings)
+        , locate_(settings.locate)
         , cameras_(cameras)
     {
     }
@@ -45,11 +46,19 @@ class TrackerPipeline : public Pipeline
                 dart.covariance_mm2 = update.dart->location->covariance_mm2;
                 dart.cameras_agreeing = static_cast<int>(update.dart->location->views.size());
             }
-            for(const auto& view : update.dart->cameras)
+            for(std::size_t c = 0; c < update.dart->cameras.size(); ++c)
             {
-                dart.cameras.push_back(
-                    {view.state, view.used, std::nullopt, std::nullopt, std::nullopt,
-                     view.observation ? tip_candidates::tipCandidates(*view.observation) : std::vector<tip_candidates::TipCandidate>{}});
+                const auto& view = update.dart->cameras[c];
+                CameraResult camera{view.state, view.used, std::nullopt, std::nullopt, std::nullopt, {}, std::nullopt};
+                if(view.observation)
+                {
+                    camera.candidates = tip_candidates::tipCandidates(*view.observation);
+                    if(c < cameras_.size() && cameras_[c])
+                    {
+                        camera.axis_line = geometry::axisBoardLine({cameras_[c], *view.observation}, locate_);
+                    }
+                }
+                dart.cameras.push_back(std::move(camera));
             }
             if(update.dart->location)
             {
@@ -95,6 +104,7 @@ class TrackerPipeline : public Pipeline
     }
 
     fusion::DartTracker tracker_;
+    geometry::LocateSettings locate_;
     std::vector<const geometry::RefinedCamera*> cameras_;
 };
 

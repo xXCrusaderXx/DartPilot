@@ -4,12 +4,14 @@ Candidate recall (#26): for every annotated throw and every camera, whether one 
 within N pixels of where the true entry point appears in its image. The true point is projected with the engine's own
 camera model (`dartpilot project`), so the tool and the engine never disagree on the lens. Candidates come from a
 tracker replay (`dartpilot replay --pipeline tracker`), which writes the selected tip first and then every generated
-candidate with its source. Writes report.md and candidates.csv.
+candidate with its source. Also the axis error (#27): how far the true point lies from the line on the board on which
+each camera sees the dart enter, which is what the location is made of. Writes report.md and candidates.csv.
 """
 
 import argparse
 import hashlib
 import json
+import math
 import os
 import subprocess
 import sys
@@ -64,13 +66,17 @@ def candidate_rows(throws: list[dict], truths: dict[str, tuple[float, float]], p
     pairs = [(t, truths[t["throw_id"]]) for t in throws if t.get("throw_id") in truths and "correction" not in t]
     images = project([point for _, point in pairs])
     rows = []
-    for (result, _), image in zip(pairs, images, strict=True):
+    for (result, truth_mm), image in zip(pairs, images, strict=True):
         for m in result.get("camera_measurements", []):
             truth_px = image.get(m["camera"])
             if truth_px is None:
                 continue
             row = {"throw_id": result["throw_id"], "camera": m["camera"], "state": m.get("state", "")}
             nearest: dict[str, float] = {}
+            line = m.get("axis_line")
+            row["axis_mm"] = (
+                abs(line["a"] * truth_mm[0] + line["b"] * truth_mm[1] - line["c_mm"]) if line else float("nan")
+            )
             for i, c in enumerate(m.get("tip_candidates", [])):
                 source = c.get("source", SELECTED if i == m.get("selected_candidate") else "unknown")
                 dx, dy = c["pixel_xy"][0] - truth_px[0], c["pixel_xy"][1] - truth_px[1]
@@ -82,7 +88,7 @@ def candidate_rows(throws: list[dict], truths: dict[str, tuple[float, float]], p
             row["generated"] = min(generated) if generated else float("nan")
             row["any"] = min(nearest.values()) if nearest else float("nan")
             rows.append(row)
-    return pd.DataFrame(rows)
+    return pd.DataFrame(rows, columns=["throw_id", "camera", "state", "axis_mm", *SOURCES, "generated", "any"])
 
 
 def recall_table(rows: pd.DataFrame, radii: tuple[int, ...] = RADII_PX) -> pd.DataFrame:
@@ -153,7 +159,66 @@ def report(rows: pd.DataFrame, scale: dict[str, float], sessions: list[str], run
             }
         )
     lines += [_markdown(pd.DataFrame(per_camera)), ""]
+    if "axis_mm" in rows and rows["axis_mm"].notna().any():
+        lines += [
+            "Axis error: distance of the true point from the line on which each camera sees the dart enter (mm):",
+            "",
+            _markdown(axis_table(rows)),
+            "",
+        ]
     return "\n".join(lines)
+
+
+def leave_one_out(throws: list[dict], min_crossing_deg: float = 15.0) -> pd.DataFrame:
+    """Axis consistency without ground truth (#27): for every throw with axis lines from three or more cameras, how far
+    each camera's line passes the point where the other cameras' lines cross. One row per throw and camera."""
+    rows = []
+    for t in throws:
+        if "correction" in t:
+            continue
+        lines = {m["camera"]: m["axis_line"] for m in t.get("camera_measurements", []) if m.get("axis_line")}
+        if len(lines) < 3:
+            continue
+        for camera, own in lines.items():
+            others = [line for name, line in lines.items() if name != camera]
+            point = _crossing(others, min_crossing_deg)
+            if point is None:
+                continue
+            distance = abs(own["a"] * point[0] + own["b"] * point[1] - own["c_mm"])
+            rows.append({"throw_id": t["throw_id"], "camera": camera, "axis_mm": distance})
+    return pd.DataFrame(rows, columns=["throw_id", "camera", "axis_mm"])
+
+
+def _crossing(lines: list[dict], min_crossing_deg: float) -> tuple[float, float] | None:
+    """Least-squares crossing of lines a x + b y = c, or None if they cross too flatly to fix a point."""
+    sxx = sxy = syy = sx = sy = 0.0
+    for line in lines:
+        a, b, c = line["a"], line["b"], line["c_mm"]
+        sxx, sxy, syy, sx, sy = sxx + a * a, sxy + a * b, syy + b * b, sx + a * c, sy + b * c
+    flattest = min(abs(p["a"] * q["b"] - p["b"] * q["a"]) for i, p in enumerate(lines) for q in lines[i + 1 :])
+    det = sxx * syy - sxy * sxy
+    if flattest < math.sin(math.radians(min_crossing_deg)) or abs(det) < 1e-12:
+        return None
+    return ((syy * sx - sxy * sy) / det, (sxx * sy - sxy * sx) / det)
+
+
+def axis_table(rows: pd.DataFrame) -> pd.DataFrame:
+    """Per camera and over all: views with an axis, median and 90th percentile of the axis error, share within 1 and
+    2 mm."""
+    table = []
+    for name, group in [*rows.groupby("camera"), ("all", rows)]:
+        errors = group["axis_mm"].dropna()
+        table.append(
+            {
+                "camera": name,
+                "views": len(errors),
+                "median mm": float(errors.median()) if len(errors) else float("nan"),
+                "P90 mm": float(errors.quantile(0.9)) if len(errors) else float("nan"),
+                "<= 1 mm": float((errors <= 1).mean()) if len(errors) else float("nan"),
+                "<= 2 mm": float((errors <= 2).mean()) if len(errors) else float("nan"),
+            }
+        )
+    return pd.DataFrame(table)
 
 
 def _sha256(path: Path) -> str:
@@ -172,7 +237,7 @@ def main(argv: list[str] | None = None) -> int:
 
     project = engine_projector(args.extrinsics, args.dartpilot)
     digest = _sha256(args.extrinsics)
-    frames, names, points = [], [], []
+    frames, names, points, consistency = [], [], [], []
     for directory in args.sessions:
         session = load_session(directory)
         run = session.run(args.run)
@@ -182,12 +247,20 @@ def main(argv: list[str] | None = None) -> int:
                 f"warning: {session.id} was replayed with another board refinement than {args.extrinsics}",
                 file=sys.stderr,
             )
-        truths = truth_points(session.annotations(args.annotations))
+        annotation_file = session.directory / "annotations" / f"{args.annotations}.jsonl"
+        truths = truth_points(session.annotations(args.annotations)) if annotation_file.exists() else {}
         frames.append(candidate_rows(run.throws, truths, project))
+        consistency.append(leave_one_out(run.throws))
         names.append(session.id)
         points += list(truths.values())
     rows = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
     text = report(rows, px_per_mm(project, points), names, args.run, args.annotations)
+    loo = pd.concat(consistency, ignore_index=True)
+    if len(loo):
+        text += (
+            "\nAxis consistency without ground truth: for throws with axis lines from three or more cameras, how far "
+            "each camera's line passes the crossing of the others' (mm):\n\n" + _markdown(axis_table(loo)) + "\n"
+        )
     print(text)
     if args.out:
         args.out.mkdir(parents=True, exist_ok=True)
