@@ -142,9 +142,8 @@ void ExtrinsicView::orient (int twenty_sector)
     plane_ = plane;
     save_failed_ = !stored;
     emit resultChanged();
-    setState("done",
-             stored ? "Saved. Check that the numbers match the board; if not, click the sector 20 again."
-                   : "Fitted, but saving failed. Check that the calibration directory is writable, then click the sector 20 again.");
+    setState("done", stored ? "Saved. Check that the numbers match the board; if not, click the sector 20 again."
+                            : "Fitted, but saving failed. Check that the calibration directory is writable, then click the sector 20 again.");
     if(stored)
     {
         emit saved();
