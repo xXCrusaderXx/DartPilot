@@ -205,6 +205,23 @@ class _GameInputState extends State<GameInput> {
     _add(_engineDart(pending!.point!, pending.throwId, pending.confidence));
   }
 
+  /// The player picked one of the fields an uncertain dart may be in; the engine keeps the choice with the throw.
+  void _pickCandidate(int index) {
+    final pending = _pending;
+    if (pending == null || index >= pending.candidates.length) return;
+    final point = pending.candidates[index].point;
+    _engine?.correctThrow(pending.throwId, point, candidate: index);
+    setState(() => _pending = null);
+    _add(_engineDart(point, pending.throwId, null));
+  }
+
+  String _candidateLabel(EngineThrow pending, int index) {
+    final c = pending.candidates[index];
+    return '${_scoreAt(c.point).label} (${(100 * c.probability).round()} %)';
+  }
+
+  Score _scoreAt(BoardPoint point) => DartThrow(point, ThrowInput.engine, geometry: _geometry).score;
+
   void _discardPending() {
     final pending = _pending;
     if (pending == null) return;
@@ -220,6 +237,10 @@ class _GameInputState extends State<GameInput> {
     final pendingDart = pending?.point == null
         ? null
         : _engineDart(pending!.point!, pending.throwId, pending.confidence);
+    final candidates = [
+      for (final c in pending?.candidates ?? const <ThrowCandidate>[])
+        DartThrow(c.point, ThrowInput.engine, geometry: _geometry),
+    ];
     final throws = widget.game.throws;
     final recentStart = throws.length > 3 ? throws.length - 3 : 0;
     final correcting = _correcting;
@@ -235,6 +256,30 @@ class _GameInputState extends State<GameInput> {
         subtitle: l10n.removeDartsHint,
         actions: [
           TextButton(key: const ValueKey('darts-removed'), onPressed: _dartsRemoved, child: Text(l10n.dartsRemoved)),
+        ],
+      );
+    } else if (pending != null && candidates.length >= 2) {
+      banner = _Notice(
+        key: const ValueKey('uncertain-candidates'),
+        color: theme.colorScheme.tertiaryContainer,
+        icon: Icons.help_outline,
+        title: '${candidates.map((c) => c.score.label).join(' ${l10n.or} ')}?',
+        subtitle: l10n.pickCandidate,
+        actions: [
+          TextButton(onPressed: _discardPending, child: Text(l10n.discard)),
+          for (var i = 0; i < candidates.length; ++i)
+            if (i == 0)
+              FilledButton(
+                key: const ValueKey('candidate-0'),
+                onPressed: () => _pickCandidate(0),
+                child: Text(_candidateLabel(pending, 0)),
+              )
+            else
+              OutlinedButton(
+                key: ValueKey('candidate-$i'),
+                onPressed: () => _pickCandidate(i),
+                child: Text(_candidateLabel(pending, i)),
+              ),
         ],
       );
     } else if (pending != null) {
@@ -267,6 +312,7 @@ class _GameInputState extends State<GameInput> {
           child: ThrowInputPanel(
             geometry: _geometry,
             shownThrows: waiting ? widget.takeout!.darts(widget.game) : [...widget.shownThrows, ?pendingDart],
+            highlights: !waiting && candidates.length >= 2 ? [for (final c in candidates) c.score] : const [],
             onThrow: _onInput,
           ),
         ),

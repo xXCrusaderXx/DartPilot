@@ -533,5 +533,7 @@
   "checkoutMissed": "Nicht gecheckt",
   "aimedAt": "auf {field}",
   "modePrecision": "Präzisionstraining",
-  "modePrecisionDescription": "Gruppieren, Doppel und Checkouts, gemessen in Millimetern"
+  "modePrecisionDescription": "Gruppieren, Doppel und Checkouts, gemessen in Millimetern",
+  "or": "oder",
+  "pickCandidate": "Tipp auf das richtige Feld oder auf die Stelle im Board, wo der Dart steckt."
 }

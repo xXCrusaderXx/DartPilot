@@ -76,8 +76,27 @@ A dart has landed and the engine has a result.
 
 - `throw_id` is the throw ID of the recorded session (`<session id>/<n>`); without a recording the engine still numbers throws the same way.
 - `accepted: false` means the engine **abstains**: it detected a dart but is not sure enough of its position. It then sends its best `board_point` and `score` if it has one (or `null`), and a `reason`. The client decides: ask the player, or offer the uncertain result for confirmation. It never treats an abstention as a miss.
+- `candidates` (optional, only with `accepted: false`): when the uncertainty of the board point covers more than one field (a dart on a wire or a ring), the fields it may be in, most likely first. Each has a `board_point`, its `score` and a `probability` from `covariance_mm2` and `board_geometry`. The `board_point` is the dart's most likely point within that field, the one the engine keeps if the player picks it. Fields below 5 % are left out, at most three are sent. The client shows them to choose from ("T20 or S1?") and sends the choice as `correct_throw` with the candidate's `board_point` and its index as `candidate`. The engine keeps that with the throw as a labelled example (#115). Without `candidates` the client offers `board_point` for confirmation.
 - `score` is derived from `board_point` with `board_geometry`; a client can recompute it and must get the same result.
 - A dart that bounced out or landed off the board is a `throw` with `board_point: null`, `score` of ring `miss` and a `reason`.
+
+An uncertain dart on the wire between T20 and the outer single 1 (shortened):
+
+```json
+{
+  "type": "throw",
+  "throw_id": "20261024T190000Z-7c1e/18",
+  "accepted": false,
+  "reason": "near_wire",
+  "board_point": { "x_mm": 16.1, "y_mm": 102.9, "covariance_mm2": { "xx": 1.2, "xy": 0.2, "yy": 1.0 } },
+  "score": { "ring": "triple", "sector": 20, "multiplier": 3, "points": 60, "label": "T20" },
+  "confidence": 0.58,
+  "candidates": [
+    { "board_point": { "x_mm": 16.1, "y_mm": 102.9 }, "score": { "ring": "triple", "sector": 20, "multiplier": 3, "points": 60, "label": "T20" }, "probability": 0.58 },
+    { "board_point": { "x_mm": 16.9, "y_mm": 102.6 }, "score": { "ring": "triple", "sector": 1, "multiplier": 3, "points": 3, "label": "T1" }, "probability": 0.42 }
+  ]
+}
+```
 
 ### throw_corrected
 
@@ -363,7 +382,7 @@ Every request carries a `request_id` chosen by the client and is answered with `
 | `hello` | `client`, `protocol` | Names the client for logs and corrections; optional |
 | `pair` | `pin` or `token` | Pairs a client in the network; see [Pairing](#pairing) |
 | `get_pairing_pin`, `list_paired_clients`, `unpair` | –, –, `id` | Only on the engine's computer; see [Pairing](#pairing) |
-| `correct_throw` | `throw_id`, `board_point` | Replaces the board point of a throw; broadcast as `throw_corrected` |
+| `correct_throw` | `throw_id`, `board_point`, `candidate` (optional) | Replaces the board point of a throw; broadcast as `throw_corrected`. `candidate` is the index of the throw's candidate the player picked |
 | `reject_throw` | `throw_id`, `reason` | Marks a throw as not having happened |
 | `add_throw` | `board_point` | Adds a dart the engine missed |
 | `pause_detection` / `resume_detection` | – | E.g. while the user calibrates or retrieves a dart that fell out |

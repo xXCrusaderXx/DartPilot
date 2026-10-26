@@ -1837,4 +1837,10 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get modePrecisionDescription => 'Gruppieren, Doppel und Checkouts, gemessen in Millimetern';
+
+  @override
+  String get or => 'oder';
+
+  @override
+  String get pickCandidate => 'Tipp auf das richtige Feld oder auf die Stelle im Board, wo der Dart steckt.';
 }

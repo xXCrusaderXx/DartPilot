@@ -343,8 +343,9 @@ class EngineConnection extends ChangeNotifier {
 
   static Map<String, dynamic> _pointJson(BoardPoint p) => {'x_mm': p.xMm, 'y_mm': p.yMm};
 
-  void correctThrow(String throwId, BoardPoint point) =>
-      _send({'type': 'correct_throw', 'throw_id': throwId, 'board_point': _pointJson(point)});
+  /// [candidate] is the index of the throw's candidate the player picked, kept by the engine as a labelled example.
+  void correctThrow(String throwId, BoardPoint point, {int? candidate}) =>
+      _send({'type': 'correct_throw', 'throw_id': throwId, 'board_point': _pointJson(point), 'candidate': ?candidate});
 
   void rejectThrow(String throwId, String reason) =>
       _send({'type': 'reject_throw', 'throw_id': throwId, 'reason': reason});

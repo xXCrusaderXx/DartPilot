@@ -123,6 +123,7 @@ class EngineThrow extends EngineEvent {
     required this.point,
     required this.confidence,
     this.reason = '',
+    this.candidates = const [],
   });
 
   final String throwId;
@@ -133,13 +134,30 @@ class EngineThrow extends EngineEvent {
   final double confidence;
   final String reason;
 
+  /// For an uncertain dart on a wire: the fields it may be in, most likely first (#126)
+  final List<ThrowCandidate> candidates;
+
   factory EngineThrow.fromJson(Map<String, dynamic> json) => EngineThrow(
     throwId: json['throw_id'] as String,
     accepted: json['accepted'] as bool,
     point: _point(json['board_point']),
     confidence: (json['confidence'] as num? ?? 0).toDouble(),
     reason: json['reason'] as String? ?? '',
+    candidates: [
+      for (final c in json['candidates'] as List? ?? const [])
+        if (_point((c as Map)['board_point']) case final point?)
+          ThrowCandidate(point, (c['probability'] as num? ?? 0).toDouble()),
+    ],
   );
+}
+
+/// One field an uncertain dart may be in: the dart's most likely point within it, and how likely that field is.
+/// The score is derived from the point, as for every dart.
+class ThrowCandidate {
+  const ThrowCandidate(this.point, this.probability);
+
+  final BoardPoint point;
+  final double probability;
 }
 
 class EngineThrowCorrected extends EngineEvent {

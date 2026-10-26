@@ -3295,6 +3295,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Grouping, doubles and checkouts, measured in millimetres'**
   String get modePrecisionDescription;
+
+  /// No description provided for @or.
+  ///
+  /// In en, this message translates to:
+  /// **'or'**
+  String get or;
+
+  /// No description provided for @pickCandidate.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the right field, or tap the board where the dart is.'**
+  String get pickCandidate;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
