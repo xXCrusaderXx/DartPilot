@@ -1,6 +1,6 @@
 # ADR 0012: Remote play – peer to peer, the leading player hosts
 
-- **Status:** accepted
+- **Status:** proposed; the whole online mode is to be discussed with the maintainer first
 - **Date:** 2026-10-26
 - **Issues:** #124
 
