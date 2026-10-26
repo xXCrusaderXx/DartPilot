@@ -42,11 +42,10 @@ void main() {
   String remaining(WidgetTester tester, String player) =>
       tester.widget<Text>(find.byKey(ValueKey('remaining-$player'))).data!;
 
-  /// The player whose card is marked as at the oche
+  /// The player shown as at the oche
   String atOche(WidgetTester tester) {
-    final card = find.ancestor(of: find.byIcon(Icons.arrow_right), matching: find.byType(Card));
     final remainingText = find.descendant(
-      of: card,
+      of: find.byKey(const ValueKey('active-player')),
       matching: find.byWidgetPredicate((w) => w.key.toString().contains('remaining-')),
     );
     return (tester.widget<Text>(remainingText).key! as ValueKey<String>).value.substring('remaining-'.length);

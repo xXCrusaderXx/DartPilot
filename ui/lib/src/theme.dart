@@ -75,7 +75,21 @@ ThemeData dartPilotTheme() {
     outlineVariant: AppColors.border,
   );
   final base = ThemeData(colorScheme: scheme, useMaterial3: true);
+  // Scores and figures keep their width while they change, so 141 → 111 does not jitter.
+  const tabular = [FontFeature.tabularFigures()];
+  TextStyle? figures(TextStyle? style) => style?.copyWith(fontFeatures: tabular);
+  final text = base.textTheme;
   return base.copyWith(
+    textTheme: text.copyWith(
+      displayLarge: figures(text.displayLarge),
+      displayMedium: figures(text.displayMedium),
+      displaySmall: figures(text.displaySmall),
+      headlineLarge: figures(text.headlineLarge),
+      headlineMedium: figures(text.headlineMedium),
+      headlineSmall: figures(text.headlineSmall),
+      titleLarge: figures(text.titleLarge),
+      titleMedium: figures(text.titleMedium),
+    ),
     scaffoldBackgroundColor: AppColors.background,
     appBarTheme: const AppBarTheme(backgroundColor: AppColors.background, surfaceTintColor: Colors.transparent),
     cardTheme: CardThemeData(

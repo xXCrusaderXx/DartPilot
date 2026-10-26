@@ -14,10 +14,11 @@ import '../stats/statistics.dart';
 import '../widgets/winner_dialog.dart';
 import 'my_darts_screen.dart';
 import 'game_layout.dart';
+import 'x01_panel.dart';
+import '../display.dart';
 import 'game_scaffold.dart';
 import 'x01_setup_screen.dart';
 import '../board/score_text.dart';
-import '../widgets/precision_text.dart';
 
 class X01Screen extends StatefulWidget {
   const X01Screen({
@@ -110,52 +111,24 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
       if (mounted && !_game.isFinished) useDartsOf(context, _game.players[_game.current].name);
     });
     final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
     // While its darts are in the board, the visit that ended stays on the scoreboard with its player.
     final waiting = _takeout.isClosed(_game);
     final visit = waiting ? _game.visits[_game.visits.length - 2] : _game.currentVisit;
     final checkout = waiting ? null : _game.checkoutSuggestion;
 
+    final display = DisplayScope.of(context);
+    final window = WindowClass.of(context);
     final scoreboard = ScrollingPanel(
       top: [
-        Text(l10n.leg(_game.legNumber), style: theme.textTheme.titleMedium),
-        const SizedBox(height: 8),
-        for (var i = 0; i < _game.players.length; ++i) _PlayerCard(_game.players[i], active: i == visit.player),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            for (var i = 0; i < 3; ++i)
-              Expanded(
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Text(
-                      i < visit.darts.length ? _dartText(l10n, visit.darts[i]) : '–',
-                      key: ValueKey('visit-dart-$i'),
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.titleLarge,
-                    ),
-                  ),
-                ),
-              ),
-          ],
+        X01Panel(
+          game: _game,
+          visit: visit,
+          dartTexts: [for (final d in visit.darts) _dartText(l10n, d)],
+          checkout: checkout,
+          onCallCheckout: () => CallerScope.read(context).say([callRoute(checkout!)], callLanguage),
+          style: display.styleFor(window),
+          far: display.farFor(window),
         ),
-        if (visit.isBust) Text(l10n.bust, style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.error)),
-        if (checkout != null)
-          Card(
-            color: theme.colorScheme.primaryContainer,
-            child: ListTile(
-              leading: const Icon(Icons.flag),
-              title: Text(l10n.checkout),
-              subtitle: Text(checkout.join('  '), key: const ValueKey('checkout'), style: theme.textTheme.titleLarge),
-              trailing: IconButton(
-                key: const ValueKey('call-checkout'),
-                icon: const Icon(Icons.volume_up),
-                tooltip: l10n.callCheckout,
-                onPressed: () => CallerScope.read(context).say([callRoute(checkout)], callLanguage),
-              ),
-            ),
-          ),
       ],
       bottom: [
         OutlinedButton.icon(
@@ -184,41 +157,4 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
     DartResult.notIn => '${dart.dart.score.text(l10n)} (${l10n.notIn})',
     _ => dart.dart.score.text(l10n),
   };
-}
-
-class _PlayerCard extends StatelessWidget {
-  const _PlayerCard(this.player, {required this.active});
-
-  final X01PlayerState player;
-  final bool active;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context);
-    return Card(
-      color: active ? theme.colorScheme.secondaryContainer : null,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Row(
-          children: [
-            if (active) const Icon(Icons.arrow_right),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(player.name, style: theme.textTheme.titleMedium),
-                  Text(
-                    '${l10n.legs} ${player.legsWon} · Ø ${decimal(l10n, player.threeDartAverage)}',
-                    style: theme.textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-            Text('${player.remaining}', key: ValueKey('remaining-${player.name}'), style: theme.textTheme.displaySmall),
-          ],
-        ),
-      ),
-    );
-  }
 }

@@ -1,4 +1,8 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+
+import '../display.dart';
 
 /// Input on the left and the score panel on the right in landscape; stacked in portrait.
 class GameLayout extends StatelessWidget {
@@ -19,7 +23,13 @@ class GameLayout extends StatelessWidget {
                 children: [
                   Expanded(flex: 3, child: input),
                   const SizedBox(width: 24),
-                  SizedBox(width: panelWidth, child: panel),
+                  // On a monitor or TV the score takes about half the room, and the board keeps the rest.
+                  SizedBox(
+                    width: constraints.maxWidth >= WindowClass.largeFrom
+                        ? math.max(panelWidth, constraints.maxWidth * 0.42)
+                        : panelWidth,
+                    child: panel,
+                  ),
                 ],
               )
             : Column(

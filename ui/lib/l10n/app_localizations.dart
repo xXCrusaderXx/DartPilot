@@ -332,6 +332,24 @@ abstract class AppLocalizations {
   /// **'Legs'**
   String get legs;
 
+  /// No description provided for @x01LegOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Leg {number} · first to {total}'**
+  String x01LegOf(int number, int total);
+
+  /// No description provided for @x01PlayerFigures.
+  ///
+  /// In en, this message translates to:
+  /// **'Ø {average}'**
+  String x01PlayerFigures(String average);
+
+  /// No description provided for @x01PlayerFiguresLegs.
+  ///
+  /// In en, this message translates to:
+  /// **'{legs, plural, =1{1 leg} other{{legs} legs}} · Ø {average}'**
+  String x01PlayerFiguresLegs(int legs, String average);
+
   /// No description provided for @checkout.
   ///
   /// In en, this message translates to:
@@ -2983,6 +3001,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Score caller'**
   String get scoreCaller;
+
+  /// No description provided for @settingsDisplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Display'**
+  String get settingsDisplay;
+
+  /// No description provided for @displayStyle.
+  ///
+  /// In en, this message translates to:
+  /// **'Game display'**
+  String get displayStyle;
+
+  /// No description provided for @displayStyleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear shows the remaining score large in the app\'s colours; the scoreboard fits more on less room. Automatic: scoreboard on phones, clear elsewhere.'**
+  String get displayStyleHint;
+
+  /// No description provided for @displayAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get displayAuto;
+
+  /// No description provided for @displayStyleClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get displayStyleClear;
+
+  /// No description provided for @displayStyleScoreboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Scoreboard'**
+  String get displayStyleScoreboard;
+
+  /// No description provided for @viewingDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Viewing distance'**
+  String get viewingDistance;
+
+  /// No description provided for @viewingDistanceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Far shows only what matters, very large, for a screen at the board or a TV. Automatic: far on large screens.'**
+  String get viewingDistanceHint;
+
+  /// No description provided for @viewingNear.
+  ///
+  /// In en, this message translates to:
+  /// **'Near'**
+  String get viewingNear;
+
+  /// No description provided for @viewingFar.
+  ///
+  /// In en, this message translates to:
+  /// **'Far'**
+  String get viewingFar;
 
   /// No description provided for @scoreCallerHint.
   ///

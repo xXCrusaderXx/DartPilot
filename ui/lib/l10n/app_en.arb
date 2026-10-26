@@ -61,6 +61,36 @@
     }
   },
   "legs": "Legs",
+  "x01LegOf": "Leg {number} · first to {total}",
+  "@x01LegOf": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "x01PlayerFigures": "Ø {average}",
+  "@x01PlayerFigures": {
+    "placeholders": {
+      "average": {
+        "type": "String"
+      }
+    }
+  },
+  "x01PlayerFiguresLegs": "{legs, plural, =1{1 leg} other{{legs} legs}} · Ø {average}",
+  "@x01PlayerFiguresLegs": {
+    "placeholders": {
+      "legs": {
+        "type": "int"
+      },
+      "average": {
+        "type": "String"
+      }
+    }
+  },
   "checkout": "Checkout",
   "bust": "Bust",
   "notIn": "not in",
@@ -1101,6 +1131,16 @@
     }
   },
   "scoreCaller": "Score caller",
+  "settingsDisplay": "Display",
+  "displayStyle": "Game display",
+  "displayStyleHint": "Clear shows the remaining score large in the app's colours; the scoreboard fits more on less room. Automatic: scoreboard on phones, clear elsewhere.",
+  "displayAuto": "Automatic",
+  "displayStyleClear": "Clear",
+  "displayStyleScoreboard": "Scoreboard",
+  "viewingDistance": "Viewing distance",
+  "viewingDistanceHint": "Far shows only what matters, very large, for a screen at the board or a TV. Automatic: far on large screens.",
+  "viewingNear": "Near",
+  "viewingFar": "Far",
   "scoreCallerHint": "Announces each visit's score, like a caller",
   "callerVolume": "Caller volume",
   "callerTest": "Test",
