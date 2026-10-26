@@ -21,8 +21,12 @@ class WatchGameScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Only a change of the shared game rebuilds it; other engine events, such as camera status, do not.
+    return EngineSelect(select: (engine) => engine.sharedGame, builder: _build);
+  }
+
+  Widget _build(BuildContext context, SharedGame? shared) {
     final l10n = AppLocalizations.of(context);
-    final shared = EngineScope.of(context).sharedGame;
     final record = shared?.game == null ? null : GameRecord.fromJson(shared!.game!);
     if (record == null) {
       return Scaffold(
@@ -114,10 +118,14 @@ class SharedGameCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return EngineSelect(select: (engine) => engine.sharedGame, builder: _build);
+  }
+
+  Widget _build(BuildContext context, SharedGame? shared) {
     final l10n = AppLocalizations.of(context);
-    final engine = EngineScope.of(context);
-    final SharedGame? shared = engine.sharedGame;
-    if (shared == null || shared.client == engine.clientName || shared.game == null) return const SizedBox.shrink();
+    if (shared == null || shared.client == EngineScope.read(context).clientName || shared.game == null) {
+      return const SizedBox.shrink();
+    }
     final record = GameRecord.fromJson(shared.game!);
     if (record == null) return const SizedBox.shrink();
     final mode = switch (record.mode) {

@@ -593,8 +593,60 @@ class EngineScope extends InheritedNotifier<EngineConnection> {
   const EngineScope({super.key, required EngineConnection connection, required super.child})
     : super(notifier: connection);
 
+  /// The connection, rebuilding the caller on every engine event; prefer [read] or [EngineSelect] where a widget
+  /// needs only some of its values.
   static EngineConnection of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<EngineScope>()!.notifier!;
+
+  /// The connection without rebuilding the caller when it changes, for requests and event streams
+  static EngineConnection read(BuildContext context) => context.getInheritedWidgetOfExactType<EngineScope>()!.notifier!;
+}
+
+/// Builds from a value of the connection and rebuilds only when that value changes, not on every engine event.
+/// [select] should return values that compare equal while nothing shown changed, e.g. a record of fields.
+class EngineSelect<T> extends StatefulWidget {
+  const EngineSelect({super.key, required this.select, required this.builder});
+
+  final T Function(EngineConnection engine) select;
+  final Widget Function(BuildContext context, T value) builder;
+
+  @override
+  State<EngineSelect<T>> createState() => _EngineSelectState<T>();
+}
+
+class _EngineSelectState<T> extends State<EngineSelect<T>> {
+  EngineConnection? _engine;
+  late T _value;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final engine = EngineScope.read(context);
+    if (identical(engine, _engine)) return;
+    _engine?.removeListener(_changed);
+    _engine = engine..addListener(_changed);
+    _value = widget.select(engine);
+  }
+
+  @override
+  void didUpdateWidget(EngineSelect<T> old) {
+    super.didUpdateWidget(old);
+    _value = widget.select(_engine!);
+  }
+
+  @override
+  void dispose() {
+    _engine?.removeListener(_changed);
+    super.dispose();
+  }
+
+  void _changed() {
+    final value = widget.select(_engine!);
+    if (value != _value) setState(() => _value = value);
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.builder(context, _value);
 }
 
 /// A widget's interest in a camera preview; release it when the widget goes away.

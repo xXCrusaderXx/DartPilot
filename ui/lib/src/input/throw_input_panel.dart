@@ -60,13 +60,16 @@ class _ThrowInputPanelState extends State<ThrowInputPanel> {
                       ),
                     ),
                   )
-                : Dartboard(
-                    key: const ValueKey('dartboard'),
-                    geometry: widget.geometry,
-                    throws: widget.shownThrows,
-                    highlights: widget.highlights,
-                    image: EngineScope.of(context).boardImage,
-                    onTap: (point) => widget.onThrow(DartThrow(point, ThrowInput.board, geometry: widget.geometry)),
+                : EngineSelect(
+                    select: (engine) => engine.boardImage,
+                    builder: (context, image) => Dartboard(
+                      key: const ValueKey('dartboard'),
+                      geometry: widget.geometry,
+                      throws: widget.shownThrows,
+                      highlights: widget.highlights,
+                      image: image,
+                      onTap: (point) => widget.onThrow(DartThrow(point, ThrowInput.board, geometry: widget.geometry)),
+                    ),
                   ),
           ),
         ),
