@@ -17,7 +17,7 @@ ColumnLayout {
     readonly property var camera: selected >= 0 && selected < cameras.length ? cameras[selected] : null
 
     // The board was found in the current detection, or a stored plane is shown and no new detection runs
-    readonly property bool boardFound: view.state === "pick" || view.state === "done" || (view.state === "idle" && view.hasPlane)
+    readonly property bool boardFound: view.phase === "pick" || view.phase === "done" || (view.phase === "idle" && view.hasPlane)
 
     signal saved
 
@@ -136,8 +136,8 @@ ColumnLayout {
 
             HintBanner {
                 // A failure reads as one, not as the next instruction
-                tone: view.state === "failed" ? Tokens.bad : view.saveFailed ? Tokens.warning : Tokens.accent
-                text: view.state === "idle" ? (view.hasPlane ? "This camera is calibrated. Detect again after moving the camera or the board." : "Empty the board, then press \"Detect board\".") : view.message
+                tone: view.phase === "failed" ? Tokens.bad : view.saveFailed ? Tokens.warning : Tokens.accent
+                text: view.phase === "idle" ? (view.hasPlane ? "This camera is calibrated. Detect again after moving the camera or the board." : "Empty the board, then press \"Detect board\".") : view.message
             }
         }
 
@@ -180,9 +180,9 @@ ColumnLayout {
                         text: "Averages ten frames and finds the rings and the 20 radial wires: 60 calibration points."
                     }
                     Button {
-                        text: view.state === "detecting" ? "Detecting …" : view.hasPlane ? "Detect again" : "Detect board"
+                        text: view.phase === "detecting" ? "Detecting …" : view.hasPlane ? "Detect again" : "Detect board"
                         highlighted: !view.hasPlane
-                        enabled: view.state !== "detecting" && page.active
+                        enabled: view.phase !== "detecting" && page.active
                         onClicked: view.detect()
                         ToolTip.visible: hovered
                         ToolTip.text: "Takes about a second; the board must be empty"

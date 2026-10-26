@@ -48,8 +48,12 @@ QImage PatternImageProvider::requestImage (const QString& id, QSize* size, const
         }
         return image;
     }
-    // Keep the target's aspect ratio; the width decides.
-    const int width = requested_size.width() > 0 ? requested_size.width() : 1000;
+    // Keep the target's aspect ratio and fit the requested box, so the item shows the pattern without scaling it again.
+    int width = requested_size.width() > 0 ? requested_size.width() : 1000;
+    if(requested_size.height() > 0)
+    {
+        width = std::min(width, requested_size.height() * target.squares_x / target.squares_y);
+    }
     const int height = width * target.squares_y / target.squares_x;
     const cv::Mat pattern = geometry::CharucoFinder(target).patternImage(cv::Size(width, height));
     QImage image;

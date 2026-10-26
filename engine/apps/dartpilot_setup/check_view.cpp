@@ -66,13 +66,13 @@ void CheckView::startMeasuring ()
     measuring_ = calibrated;
     if(!calibrated)
     {
-        state_ = "nocalibration";
+        check_state_ = "nocalibration";
         emit resultChanged();
         update();
     }
-    else if(state_ == "nocalibration")
+    else if(check_state_ == "nocalibration")
     {
-        state_ = "measuring";
+        check_state_ = "measuring";
         emit resultChanged();
     }
 }
@@ -135,7 +135,7 @@ void CheckView::onChecked ()
         detection_ = result.detection;
         check_ = result.check;
         swapped_with_ = result.swapped_with;
-        state_ = !detection_ ? "noboard" : check_ ? "checked" : "nocalibration";
+        check_state_ = !detection_ ? "noboard" : check_ ? "checked" : "nocalibration";
         ++checks_;
         emit resultChanged();
         update();
@@ -145,7 +145,7 @@ void CheckView::onChecked ()
 
 QString CheckView::quality () const
 {
-    if(state_ != "checked" || !check_)
+    if(check_state_ != "checked" || !check_)
     {
         return {};
     }
@@ -158,15 +158,15 @@ QString CheckView::quality () const
 
 QString CheckView::qualityText () const
 {
-    if(state_ == "nocalibration")
+    if(check_state_ == "nocalibration")
     {
         return "No refinement for this camera yet: run step 5 on the extrinsic page.";
     }
-    if(state_ == "noboard")
+    if(check_state_ == "noboard")
     {
         return "Board not found: remove the darts, or something covers the board.";
     }
-    if(state_ != "checked" || !check_)
+    if(check_state_ != "checked" || !check_)
     {
         return "Checking …";
     }

@@ -196,25 +196,30 @@ ColumnLayout {
                                     color: Tokens.accent
                                 }
                                 Repeater {
-                                    model: test.params.filter(p => p.group === group.modelData)
+                                    // Names only: a change of a value must not rebuild the rows, or a slider moved by keyboard loses its focus.
+                                    model: test.paramNames(group.modelData)
 
                                     delegate: RowLayout {
                                         id: row
 
-                                        required property var modelData
-                                        readonly property bool changed: Math.abs(modelData.value - modelData.defaultValue) > 1e-9
+                                        required property string modelData
+                                        readonly property var param: test.param(modelData, test.revision)
+                                        readonly property bool changed: Math.abs(param.value - param.defaultValue) > 1e-9
+
+                                        // Moving the slider replaces its binding; a reset or a loaded profile still has to reach it.
+                                        onParamChanged: slider.value = param.value
 
                                         Layout.fillWidth: true
                                         spacing: Tokens.spaceSm
 
                                         Label {
                                             Layout.preferredWidth: 210
-                                            text: row.modelData.name
+                                            text: row.modelData
                                             font.weight: row.changed ? Font.Bold : Font.Normal
                                             color: row.changed ? Tokens.warning : Tokens.text
                                             elide: Text.ElideRight
                                             ToolTip.visible: hoverArea.containsMouse
-                                            ToolTip.text: row.modelData.description + "  Default " + row.modelData.defaultValue + (row.modelData.unit !== "" ? " " + row.modelData.unit : "") + "."
+                                            ToolTip.text: row.param.description + "  Default " + row.param.defaultValue + (row.param.unit !== "" ? " " + row.param.unit : "") + "."
 
                                             MouseArea {
                                                 id: hoverArea
@@ -227,27 +232,27 @@ ColumnLayout {
                                             id: slider
 
                                             Layout.fillWidth: true
-                                            from: row.modelData.min
-                                            to: row.modelData.max
-                                            stepSize: row.modelData.step
+                                            from: row.param.min
+                                            to: row.param.max
+                                            stepSize: row.param.step
                                             snapMode: Slider.SnapAlways
-                                            value: row.modelData.value
-                                            onPressedChanged: if (!pressed && Math.abs(value - row.modelData.value) > 1e-9) test.setParam(row.modelData.name, value)
+                                            value: row.param.value
+                                            onPressedChanged: if (!pressed && Math.abs(value - row.param.value) > 1e-9) test.setParam(row.modelData, value)
                                             // Arrow keys and the wheel move it without a press; a drag commits on release.
-                                            onMoved: if (!pressed) test.setParam(row.modelData.name, value)
+                                            onMoved: if (!pressed) test.setParam(row.modelData, value)
                                         }
                                         Label {
                                             Layout.preferredWidth: 90
                                             horizontalAlignment: Text.AlignRight
-                                            text: (slider.pressed ? slider.value : row.modelData.value).toFixed(row.modelData.step >= 1 ? 0 : row.modelData.step >= 0.1 ? 1 : row.modelData.step >= 0.01 ? 2 : 4) + (row.modelData.unit !== "" ? " " + row.modelData.unit : "")
+                                            text: (slider.pressed ? slider.value : row.param.value).toFixed(row.param.step >= 1 ? 0 : row.param.step >= 0.1 ? 1 : row.param.step >= 0.01 ? 2 : 4) + (row.param.unit !== "" ? " " + row.param.unit : "")
                                         }
                                         Button {
                                             text: "↺"
                                             flat: true
                                             enabled: row.changed
-                                            onClicked: test.resetParam(row.modelData.name)
+                                            onClicked: test.resetParam(row.modelData)
                                             ToolTip.visible: hovered
-                                            ToolTip.text: "Back to " + row.modelData.defaultValue
+                                            ToolTip.text: "Back to " + row.param.defaultValue
                                         }
                                     }
                                 }

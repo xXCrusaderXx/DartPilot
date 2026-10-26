@@ -27,7 +27,7 @@ QtObject {
     readonly property color gridLine: Qt.rgba(1, 1, 1, 0.06)
     // The calibration pattern needs white paper and a plain grey for its caption
     readonly property color paper: "white"
-    readonly property color paperCaption: "#777777"
+    readonly property color paperCaption: "#595959"
     // Dims the page behind a dialog
     readonly property color scrim: Qt.rgba(0, 0, 0, 0.6)
 

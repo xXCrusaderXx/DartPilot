@@ -56,7 +56,7 @@ ColumnLayout {
                             usbPort: pane.modelData.usbPort
 
                             Chip {
-                                text: view.state === "checked" ? (view.swappedWith !== "" ? "Wrong port?" : view.rmsMm.toFixed(2) + " mm") : view.state === "noboard" ? "No board" : view.state === "nocalibration" ? "Not calibrated" : "Checking"
+                                text: view.checkState === "checked" ? (view.swappedWith !== "" ? "Wrong port?" : view.rmsMm.toFixed(2) + " mm") : view.checkState === "noboard" ? "No board" : view.checkState === "nocalibration" ? "Not calibrated" : "Checking"
                                 tone: pane.tone
                                 dot: true
 
@@ -84,7 +84,7 @@ ColumnLayout {
                             text: view.qualityText
                         }
                         Label {
-                            visible: view.state === "checked"
+                            visible: view.checkState === "checked"
                             Layout.fillWidth: true
                             wrapMode: Text.WordWrap
                             font.pixelSize: Tokens.captionSize

@@ -9,6 +9,8 @@ Dialog {
     anchors.centerIn: parent
     width: Math.min(parent.width - 80, 1100)
     modal: true
+    // Esc closes a popup only while it has the focus; the guide opens by itself on a page's first visit.
+    focus: true
     padding: Tokens.spaceXl
 
     background: Rectangle {

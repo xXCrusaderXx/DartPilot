@@ -586,17 +586,47 @@ QVariantList DetectionTest::params () const
     QVariantList list;
     for(const auto& param : fusion::detectionParams())
     {
-        list.append(QVariantMap{{"name", QString::fromStdString(param.name)},
-                                {"group", QString::fromStdString(param.group)},
-                                {"description", QString::fromStdString(param.description)},
-                                {"unit", QString::fromStdString(param.unit)},
-                                {"min", param.min},
-                                {"max", param.max},
-                                {"step", param.step},
-                                {"value", param.get(settings_)},
-                                {"defaultValue", param.defaultValue()}});
+        list.append(paramMap(param));
     }
     return list;
+}
+
+QVariantMap DetectionTest::paramMap (const fusion::DetectionParam& param) const
+{
+    return QVariantMap{{"name", QString::fromStdString(param.name)},
+                       {"group", QString::fromStdString(param.group)},
+                       {"description", QString::fromStdString(param.description)},
+                       {"unit", QString::fromStdString(param.unit)},
+                       {"min", param.min},
+                       {"max", param.max},
+                       {"step", param.step},
+                       {"value", param.get(settings_)},
+                       {"defaultValue", param.defaultValue()}};
+}
+
+QStringList DetectionTest::paramNames (const QString& group) const
+{
+    QStringList names;
+    for(const auto& param : fusion::detectionParams())
+    {
+        if(QString::fromStdString(param.group) == group)
+        {
+            names.append(QString::fromStdString(param.name));
+        }
+    }
+    return names;
+}
+
+QVariantMap DetectionTest::param (const QString& name, int /*revision*/) const
+{
+    for(const auto& param : fusion::detectionParams())
+    {
+        if(QString::fromStdString(param.name) == name)
+        {
+            return paramMap(param);
+        }
+    }
+    return {};
 }
 
 void DetectionTest::applyParams (const fusion::DetectionSettings& settings)

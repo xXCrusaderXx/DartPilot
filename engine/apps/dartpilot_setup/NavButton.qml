@@ -17,6 +17,9 @@ ItemDelegate {
     background: Rectangle {
         radius: Tokens.radiusSmall
         color: nav.selected ? Tokens.tint(Tokens.accent, Tokens.tintFill) : nav.hovered ? Tokens.surface : "transparent"
+        // Tab moves through the pages; the entry with the focus must show it.
+        border.width: nav.visualFocus ? 2 : 0
+        border.color: Tokens.accent
 
         Rectangle {
             visible: nav.selected
@@ -52,7 +55,6 @@ ItemDelegate {
                 text: nav.subtitle
                 font.pixelSize: Tokens.captionSize
                 color: Tokens.textMuted
-                opacity: 0.8
             }
         }
     }

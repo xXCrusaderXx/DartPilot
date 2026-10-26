@@ -17,11 +17,11 @@ class ExtrinsicView : public StreamView
     Q_OBJECT
     QML_ELEMENT
     Q_PROPERTY(QString usbPort READ usbPort WRITE setUsbPort NOTIFY resultChanged)
-    // idle, detecting, failed, pick (board found, waiting for the click on 20) or done
-    Q_PROPERTY(QString state READ state NOTIFY stateChanged)
-    Q_PROPERTY(QString message READ message NOTIFY stateChanged)
+    // idle, detecting, failed, pick (board found, waiting for the click on 20) or done; not "state", which QQuickItem has
+    Q_PROPERTY(QString phase READ phase NOTIFY phaseChanged)
+    Q_PROPERTY(QString message READ message NOTIFY phaseChanged)
     // The last fitted plane could not be written; it is shown but not stored
-    Q_PROPERTY(bool saveFailed READ saveFailed NOTIFY stateChanged)
+    Q_PROPERTY(bool saveFailed READ saveFailed NOTIFY phaseChanged)
     Q_PROPERTY(bool hasPlane READ hasPlane NOTIFY resultChanged)
     Q_PROPERTY(double rmsMm READ rmsMm NOTIFY resultChanged)
     Q_PROPERTY(double worstMm READ worstMm NOTIFY resultChanged)
@@ -35,7 +35,7 @@ class ExtrinsicView : public StreamView
 
     QString usbPort () const { return usb_port_; }
     void setUsbPort (const QString& usb_port);
-    QString state () const { return state_; }
+    QString phase () const { return phase_; }
     QString message () const { return message_; }
     bool saveFailed () const { return save_failed_; }
     bool hasPlane () const { return plane_.has_value(); }
@@ -48,7 +48,7 @@ class ExtrinsicView : public StreamView
     Q_INVOKABLE void detect ();
 
    signals:
-    void stateChanged ();
+    void phaseChanged ();
     void resultChanged ();
     // A board plane was written to the calibration directory
     void saved ();
@@ -59,12 +59,12 @@ class ExtrinsicView : public StreamView
     void mousePressEvent (QMouseEvent* event) override;
 
    private:
-    void setState (const QString& state, const QString& message);
+    void setPhase (const QString& phase, const QString& message);
     void onDetected ();
     void orient (int twenty_sector);
 
     QString usb_port_;
-    QString state_ = "idle";
+    QString phase_ = "idle";
     QString message_;
     bool save_failed_ = false;
     // Frames summed for the detection; averaging lowers the noise of the colour edges
