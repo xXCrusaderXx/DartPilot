@@ -41,8 +41,7 @@ ExtrinsicView::~ExtrinsicView ()
 
 QString ExtrinsicView::fitQuality () const
 {
-    if(!plane_)
-        return "";
+    if(!plane_) return "";
     return rmsMm() <= kGoodFit_mm ? "good" : rmsMm() <= kFairFit_mm ? "fair" : "poor";
 }
 

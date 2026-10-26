@@ -151,22 +151,19 @@ double IntrinsicView::coverage () const
 
 QString IntrinsicView::cornersQuality () const
 {
-    if(cornersInFrame() >= std::ceil(kMinCornerShare * totalCorners()))
-        return "good";
+    if(cornersInFrame() >= std::ceil(kMinCornerShare * totalCorners())) return "good";
     return cornersInFrame() > 0 ? "fair" : "";
 }
 
 QString IntrinsicView::viewsQuality () const
 {
-    if(views_.size() >= kGoodViews)
-        return "good";
+    if(views_.size() >= kGoodViews) return "good";
     return views_.size() >= kFairViews ? "fair" : "";
 }
 
 QString IntrinsicView::coverageQuality () const
 {
-    if(coverage() >= kGoodCoverage)
-        return "good";
+    if(coverage() >= kGoodCoverage) return "good";
     return coverage() >= kFairCoverage ? "fair" : "";
 }
 

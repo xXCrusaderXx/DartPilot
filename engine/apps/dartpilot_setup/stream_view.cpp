@@ -49,10 +49,8 @@ void StreamView::releaseStream ()
 
 QString StreamView::fpsQuality () const
 {
-    if(!error_.isEmpty())
-        return "poor";
-    if(fps_ <= 0.0)
-        return "";
+    if(!error_.isEmpty()) return "poor";
+    if(fps_ <= 0.0) return "";
     return fps_ >= kFullRateFps ? "good" : "fair";
 }
 
