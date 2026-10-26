@@ -79,6 +79,7 @@ class HomeScreen extends StatelessWidget {
             children: [
               _StatusCard(onConnect: onConnect),
               const SharedGameCard(),
+              const _InterruptedGameCard(),
               if (StatisticsScope.maybeOf(context)?.profiles.isEmpty ?? false) ...[
                 const SizedBox(height: 16),
                 Card(
@@ -244,6 +245,46 @@ class _StatusCard extends StatelessWidget {
                       ],
                     ),
                   ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A game the app was killed in: played on from where it stopped, or ended and kept as unfinished
+class _InterruptedGameCard extends StatelessWidget {
+  const _InterruptedGameCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final statistics = StatisticsScope.maybeOf(context);
+    final game = statistics?.interrupted;
+    if (statistics == null || game == null) return const SizedBox.shrink();
+    return Card(
+      key: const ValueKey('interrupted-game'),
+      child: ListTile(
+        leading: const Icon(Icons.restore, size: 32),
+        title: Text(l10n.interruptedGameTitle(gameTitle(l10n, game))),
+        subtitle: Text(game.players.join(' · ')),
+        trailing: Wrap(
+          spacing: 8,
+          children: [
+            TextButton(
+              key: const ValueKey('end-interrupted'),
+              onPressed: () => statistics.settleInterrupted(resume: false),
+              child: Text(l10n.endInterruptedGame),
+            ),
+            FilledButton(
+              key: const ValueKey('resume-interrupted'),
+              onPressed: () {
+                statistics.settleInterrupted(resume: true);
+                Navigator.of(context)
+                    .push(MaterialPageRoute<void>(builder: (_) => gameScreenFor(game, watching: false)));
+              },
+              child: Text(l10n.resumeGame),
+            ),
           ],
         ),
       ),

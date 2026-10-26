@@ -70,6 +70,17 @@ class AppLocalizationsDe extends AppLocalizations {
   String get leaveGame => 'Verlassen';
 
   @override
+  String interruptedGameTitle(String game) {
+    return 'Unterbrochenes Spiel: $game';
+  }
+
+  @override
+  String get resumeGame => 'Weiterspielen';
+
+  @override
+  String get endInterruptedGame => 'Beenden';
+
+  @override
   String get visit => 'Aufnahme';
 
   @override

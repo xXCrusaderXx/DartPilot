@@ -20,6 +20,16 @@
   "leaveGameTitle": "Leave the game?",
   "leaveGameText": "It is kept in the statistics as unfinished.",
   "leaveGame": "Leave",
+  "interruptedGameTitle": "Interrupted game: {game}",
+  "@interruptedGameTitle": {
+    "placeholders": {
+      "game": {
+        "type": "String"
+      }
+    }
+  },
+  "resumeGame": "Play on",
+  "endInterruptedGame": "End",
   "visit": "Visit",
   "darts": "Darts",
   "points": "Points",

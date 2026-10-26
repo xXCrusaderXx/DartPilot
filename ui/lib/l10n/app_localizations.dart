@@ -212,6 +212,24 @@ abstract class AppLocalizations {
   /// **'Leave'**
   String get leaveGame;
 
+  /// No description provided for @interruptedGameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Interrupted game: {game}'**
+  String interruptedGameTitle(String game);
+
+  /// No description provided for @resumeGame.
+  ///
+  /// In en, this message translates to:
+  /// **'Play on'**
+  String get resumeGame;
+
+  /// No description provided for @endInterruptedGame.
+  ///
+  /// In en, this message translates to:
+  /// **'End'**
+  String get endInterruptedGame;
+
   /// No description provided for @visit.
   ///
   /// In en, this message translates to:
