@@ -42,7 +42,7 @@ void main() {
     // An uncertain dart waits for confirmation.
     engine.receiveForTest(throwJson('s/2', 0, 103, accepted: false, confidence: 0.4));
     await tester.pumpAndSettle();
-    expect(find.text('Unsicher: T20 (40 %)'), findsOneWidget);
+    expect(find.text('Unsicher: T20 (40\u00a0%)'), findsOneWidget);
     expect(remaining(), '241');
     await tester.tap(find.text('Bestätigen'));
     await tester.pumpAndSettle();
@@ -108,7 +108,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('T20 oder T1?'), findsOneWidget);
-    expect(find.text('T1 (42 %)'), findsOneWidget);
+    expect(find.text('T1 (42\u00a0%)'), findsOneWidget);
     expect(tester.widget<Dartboard>(find.byType(Dartboard)).highlights.map((s) => s.label), ['T20', 'T1']);
     expect(remaining(), '301');
 

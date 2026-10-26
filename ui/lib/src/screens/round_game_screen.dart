@@ -17,6 +17,7 @@ import 'game_layout.dart';
 import 'my_darts_screen.dart';
 import 'players_setup_screen.dart';
 import 'watched_board.dart';
+import '../widgets/precision_text.dart';
 
 /// Shanghai, Bob's 27 and Halve-It (#118): a round's target, every player's score, and the darts of the visit.
 class RoundGameScreen extends StatefulWidget {
@@ -175,7 +176,7 @@ class _RoundGameScreenState extends State<RoundGameScreen> with RecordsGame, Bot
               subtitle: Text(
                 [
                   '${_game.players[i].dartsThrown} ${l10n.darts}',
-                  '${l10n.hitRate} ${(100 * _game.players[i].hitRate).toStringAsFixed(0)} %',
+                  '${l10n.hitRate} ${percentText(l10n, _game.players[i].hitRate)}',
                   if (_game.players[i].out) l10n.playerOut,
                 ].join(' · '),
               ),

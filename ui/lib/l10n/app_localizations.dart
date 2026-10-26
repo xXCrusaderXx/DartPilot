@@ -90,7 +90,7 @@ abstract class AppLocalizations {
   ];
 
   /// A list of this localizations delegate's supported locales.
-  static const List<Locale> supportedLocales = <Locale>[Locale('de'), Locale('en')];
+  static const List<Locale> supportedLocales = <Locale>[Locale('en'), Locale('de')];
 
   /// No description provided for @appTitle.
   ///
@@ -485,8 +485,8 @@ abstract class AppLocalizations {
   /// No description provided for @uncertainDart.
   ///
   /// In en, this message translates to:
-  /// **'Uncertain: {label} ({percent} %)'**
-  String uncertainDart(String label, int percent);
+  /// **'Uncertain: {label} ({percent})'**
+  String uncertainDart(String label, String percent);
 
   /// No description provided for @uncertainNoPoint.
   ///
@@ -1019,7 +1019,7 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosisSummary.
   ///
   /// In en, this message translates to:
-  /// **'{time} · {empty} empty boards · {darts} darts'**
+  /// **'{time} · {empty, plural, =1{1 empty board} other{{empty} empty boards}} · {darts, plural, =1{1 dart} other{{darts} darts}}'**
   String diagnosisSummary(String time, int empty, int darts);
 
   /// No description provided for @diagnosisFindings.
@@ -1199,7 +1199,7 @@ abstract class AppLocalizations {
   /// No description provided for @findingBoardChanged.
   ///
   /// In en, this message translates to:
-  /// **'The empty board changed {count} times between darts.'**
+  /// **'The empty board changed {count, plural, =1{once} other{{count} times}} between darts.'**
   String findingBoardChanged(int count);
 
   /// No description provided for @hintBoardChanged.
@@ -2357,7 +2357,7 @@ abstract class AppLocalizations {
   /// No description provided for @referenceCamerasUsed.
   ///
   /// In en, this message translates to:
-  /// **'{count} cameras'**
+  /// **'{count, plural, =1{1 camera} other{{count} cameras}}'**
   String referenceCamerasUsed(int count);
 
   /// No description provided for @referenceLocated.

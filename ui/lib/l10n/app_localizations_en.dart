@@ -213,8 +213,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get engineSimulated => 'simulated';
 
   @override
-  String uncertainDart(String label, int percent) {
-    return 'Uncertain: $label ($percent %)';
+  String uncertainDart(String label, String percent) {
+    return 'Uncertain: $label ($percent)';
   }
 
   @override
@@ -509,7 +509,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String diagnosisSummary(String time, int empty, int darts) {
-    return '$time · $empty empty boards · $darts darts';
+    String _temp0 = intl.Intl.pluralLogic(
+      empty,
+      locale: localeName,
+      other: '$empty empty boards',
+      one: '1 empty board',
+    );
+    String _temp1 = intl.Intl.pluralLogic(darts, locale: localeName, other: '$darts darts', one: '1 dart');
+    return '$time · $_temp0 · $_temp1';
   }
 
   @override
@@ -626,7 +633,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String findingBoardChanged(int count) {
-    return 'The empty board changed $count times between darts.';
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count times', one: 'once');
+    return 'The empty board changed $_temp0 between darts.';
   }
 
   @override
@@ -1312,7 +1320,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String referenceCamerasUsed(int count) {
-    return '$count cameras';
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count cameras', one: '1 camera');
+    return '$_temp0';
   }
 
   @override

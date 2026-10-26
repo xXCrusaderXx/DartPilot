@@ -316,7 +316,7 @@ void main() {
       await tapBoard(tester, BoardPoint(centre.xMm, centre.yMm + (i.isEven ? 0 : 2)));
     }
     expect(find.byKey(const ValueKey('doubles-result-rate')), findsOneWidget);
-    expect(find.text('Trefferquote: 100 %'), findsOneWidget);
+    expect(find.text('Trefferquote: 100\u00a0%'), findsOneWidget);
     await tester.tap(find.text('Menü'));
     await tester.pumpAndSettle();
     expect(statistics.games.single.mode, GameMode.doubles);

@@ -11,6 +11,7 @@ import '../games/dart_game.dart';
 import '../screens/throw_views_screen.dart';
 import 'takeout_gate.dart';
 import 'throw_input_panel.dart';
+import '../widgets/precision_text.dart';
 
 /// Input of a game screen: darts from the engine when connected, manual input otherwise, uncertain darts as a
 /// suggestion to confirm or correct, corrections of the last darts, and the takeout that ends a visit. While an engine
@@ -218,7 +219,7 @@ class _GameInputState extends State<GameInput> {
 
   String _candidateLabel(EngineThrow pending, int index) {
     final c = pending.candidates[index];
-    return '${_scoreAt(c.point).label} (${(100 * c.probability).round()} %)';
+    return '${_scoreAt(c.point).label} (${percentText(AppLocalizations.of(context), c.probability)})';
   }
 
   Score _scoreAt(BoardPoint point) => DartThrow(point, ThrowInput.engine, geometry: _geometry).score;
@@ -304,7 +305,7 @@ class _GameInputState extends State<GameInput> {
         icon: Icons.help_outline,
         title: pendingDart == null
             ? l10n.uncertainNoPoint
-            : l10n.uncertainDart(pendingDart.score.label, (100 * pending.confidence).round()),
+            : l10n.uncertainDart(pendingDart.score.label, percentText(l10n, pending.confidence)),
         subtitle: l10n.tapToCorrect,
         actions: [
           TextButton(onPressed: _discardPending, child: Text(l10n.discard)),
