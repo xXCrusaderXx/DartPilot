@@ -78,7 +78,7 @@ void main() {
     await playOffline(tester);
     await tester.tap(find.byIcon(Icons.insights_outlined));
     await tester.pumpAndSettle();
-    expect(find.text('2 Spiele  ·  3-Dart-Schnitt 69,0'), findsOneWidget);
+    expect(find.text('2 Spiele  ·  3-Dart-Schnitt: 69,0'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('stats-player-Anna')));
     await tester.pumpAndSettle();
 

@@ -399,7 +399,7 @@ class _PeriodsCard extends StatelessWidget {
             leading: Icon(period.empty ? Icons.crop_free : Icons.ads_click),
             title: Text(
               [
-                '${period.startS.round()}–${period.endS.round()} s',
+                l10n.secondsRange(period.startS.round(), period.endS.round()),
                 period.empty
                     ? l10n.periodEmpty
                     : period.boardMm == null

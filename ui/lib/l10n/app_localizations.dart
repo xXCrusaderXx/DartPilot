@@ -590,6 +590,42 @@ abstract class AppLocalizations {
   /// **'simulated'**
   String get engineSimulated;
 
+  /// No description provided for @engineConnectedSimulated.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected (simulated)'**
+  String get engineConnectedSimulated;
+
+  /// No description provided for @labelValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{label}: {value}'**
+  String labelValue(String label, String value);
+
+  /// No description provided for @mmValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} mm'**
+  String mmValue(String value);
+
+  /// No description provided for @msValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} ms'**
+  String msValue(String value);
+
+  /// No description provided for @secondsRange.
+  ///
+  /// In en, this message translates to:
+  /// **'{from}–{to} s'**
+  String secondsRange(int from, int to);
+
+  /// No description provided for @countOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total}'**
+  String countOf(int done, int total);
+
   /// No description provided for @uncertainDart.
   ///
   /// In en, this message translates to:

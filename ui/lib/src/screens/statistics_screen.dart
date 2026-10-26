@@ -121,7 +121,7 @@ class StatisticsScreen extends StatelessWidget {
                                     ? l10n.statsNoGamesYet
                                     : [
                                         l10n.statsGamesCount(stats.games),
-                                        if (average != null) '${l10n.average} ${_number(l10n, average)}',
+                                        if (average != null) l10n.labelValue(l10n.average, _number(l10n, average)),
                                       ].join('  ·  '),
                               ),
                               trailing: PopupMenuButton<void>(
@@ -341,15 +341,18 @@ class _TargetPrecisionCard extends StatelessWidget {
         Text(label, style: theme.textTheme.headlineSmall),
         Text(
           '${l10n.statsDartsCount(precision.points.length)}  ·  '
-          '${l10n.hitRate} ${percentText(l10n, precision.hitRate)}',
+          '${l10n.labelValue(l10n.hitRate, percentText(l10n, precision.hitRate))}',
         ),
         const SizedBox(height: 8),
         Text(
-          '${l10n.precisionSpread}: ${spread == null ? '–' : '${_number(l10n, spread.spreadMm)} mm'}',
+          l10n.labelValue(l10n.precisionSpread, spread == null ? '–' : mmText(l10n, spread.spreadMm)),
           key: ValueKey('precision-spread-$label'),
         ),
         Text(
-          '${l10n.precisionOffset}: ${spread == null ? '–' : offsetText(l10n, spread.offsetXMm, spread.offsetYMm)}',
+          l10n.labelValue(
+            l10n.precisionOffset,
+            spread == null ? '–' : offsetText(l10n, spread.offsetXMm, spread.offsetYMm),
+          ),
           key: ValueKey('precision-offset-$label'),
         ),
       ],
@@ -422,18 +425,20 @@ class _HistoryTile extends StatelessWidget {
       GameMode.killer => l10n.modeKiller,
     };
     final figure = game.average != null
-        ? '${l10n.average} ${_number(l10n, game.average!)}'
+        ? l10n.labelValue(l10n.average, _number(l10n, game.average!))
         : game.marksPerRound != null
-        ? '${l10n.statsMarksPerRound} ${_number(l10n, game.marksPerRound!, 2)}'
+        ? l10n.labelValue(l10n.statsMarksPerRound, _number(l10n, game.marksPerRound!, 2))
         : game.hitRate != null
-        ? '${record.mode == GameMode.doubles ? l10n.hitRate : l10n.statsClockHitRate} '
-              '${percentText(l10n, game.hitRate!)}'
+        ? l10n.labelValue(
+            record.mode == GameMode.doubles ? l10n.hitRate : l10n.statsClockHitRate,
+            percentText(l10n, game.hitRate!),
+          )
         : game.spreadMm != null
-        ? '${l10n.precisionSpread} ${_number(l10n, game.spreadMm!)} mm'
+        ? l10n.labelValue(l10n.precisionSpread, mmText(l10n, game.spreadMm!))
         : game.checkoutRate != null
-        ? '${l10n.statsCheckoutRate} ${percentText(l10n, game.checkoutRate!)}'
+        ? l10n.labelValue(l10n.statsCheckoutRate, percentText(l10n, game.checkoutRate!))
         : game.points != null
-        ? '${l10n.points} ${game.points}'
+        ? l10n.labelValue(l10n.points, '${game.points}')
         : '';
     final others = record.players.length - 1;
     return ListTile(

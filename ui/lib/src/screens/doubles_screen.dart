@@ -183,7 +183,7 @@ class _DoublesScreenState extends State<DoublesScreen> with RecordsGame {
         ),
         Text(
           '${l10n.groupingProgress((throws.length + 1).clamp(1, _game.dartCount), _game.dartCount)}  ·  '
-          '${l10n.hitRate} ${percentText(l10n, _game.hitRate)}',
+          '${l10n.labelValue(l10n.hitRate, percentText(l10n, _game.hitRate))}',
           key: const ValueKey('doubles-progress'),
         ),
         if (next != null)

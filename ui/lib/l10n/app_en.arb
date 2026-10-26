@@ -162,6 +162,56 @@
   "engineErrorDisconnected": "The connection to the engine was lost.",
   "engineErrorTimeout": "The engine did not answer.",
   "engineSimulated": "simulated",
+  "engineConnectedSimulated": "Connected (simulated)",
+  "labelValue": "{label}: {value}",
+  "@labelValue": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "mmValue": "{value} mm",
+  "@mmValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "msValue": "{value} ms",
+  "@msValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "secondsRange": "{from}–{to} s",
+  "@secondsRange": {
+    "placeholders": {
+      "from": {
+        "type": "int"
+      },
+      "to": {
+        "type": "int"
+      }
+    }
+  },
+  "countOf": "{done} of {total}",
+  "@countOf": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "uncertainDart": "Uncertain: {label} ({percent})",
   "@uncertainDart": {
     "placeholders": {

@@ -159,7 +159,7 @@ class _StatusCard extends StatelessWidget {
                   child: Text(
                     connected
                         ? engine.hello?.mode == 'simulate'
-                              ? '${l10n.engineConnected} (${l10n.engineSimulated})'
+                              ? l10n.engineConnectedSimulated
                               : l10n.engineConnected
                         : l10n.playingWithoutEngine,
                     key: const ValueKey('engine-state'),

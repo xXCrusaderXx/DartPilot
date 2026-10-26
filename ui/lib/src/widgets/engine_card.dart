@@ -92,7 +92,7 @@ class _EngineCardState extends State<EngineCard> {
       EngineConnectionState.connected => (
         Icons.link,
         StatusColors.of(context).good,
-        engine.hello?.mode == 'simulate' ? '${l10n.engineConnected} (${l10n.engineSimulated})' : l10n.engineConnected,
+        engine.hello?.mode == 'simulate' ? l10n.engineConnectedSimulated : l10n.engineConnected,
       ),
       EngineConnectionState.connecting => (Icons.sync, theme.colorScheme.secondary, l10n.engineConnecting),
       EngineConnectionState.failed => (Icons.link_off, StatusColors.of(context).bad, l10n.engineFailed),

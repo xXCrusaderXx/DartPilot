@@ -10,6 +10,7 @@ import '../engine/engine_events.dart';
 import 'camera_assign_screen.dart';
 import '../widgets/live_jpeg.dart';
 import '../widgets/preview_watcher.dart';
+import '../widgets/precision_text.dart';
 
 /// Live images of the engine's cameras with their status. Each camera is a panel that can be collapsed, which also
 /// stops its preview; tapping an image opens it full screen.
@@ -351,12 +352,12 @@ class _StatusLine extends StatelessWidget {
     final style = Theme.of(context).textTheme.bodySmall;
     final s = status;
     final parts = [
-      if (s?.effectiveFps != null) l10n.fps(s!.effectiveFps!.toStringAsFixed(1)),
-      if (s?.lostFrames != null) '${l10n.lostFrames} ${s!.lostFrames}',
-      if (s?.overflowDrops != null) '${l10n.droppedFrames} ${s!.overflowDrops}',
-      if (s?.brightness != null) '${l10n.brightness} ${s!.brightness!.toStringAsFixed(0)}',
-      if (s?.latencyMs != null) '${l10n.latency} ${s!.latencyMs!.toStringAsFixed(1)} ms',
-      if (previewRate != null) '${l10n.preview} ${l10n.fps(previewRate!.toStringAsFixed(1))}',
+      if (s?.effectiveFps != null) l10n.fps(decimal(l10n, s!.effectiveFps!)),
+      if (s?.lostFrames != null) l10n.labelValue(l10n.lostFrames, '${s!.lostFrames}'),
+      if (s?.overflowDrops != null) l10n.labelValue(l10n.droppedFrames, '${s!.overflowDrops}'),
+      if (s?.brightness != null) l10n.labelValue(l10n.brightness, decimal(l10n, s!.brightness!, digits: 0)),
+      if (s?.latencyMs != null) l10n.labelValue(l10n.latency, l10n.msValue(decimal(l10n, s!.latencyMs!))),
+      if (previewRate != null) l10n.labelValue(l10n.preview, l10n.fps(decimal(l10n, previewRate!))),
       ?frameSize,
     ];
     // One line under the title bar of the full view and on a narrow panel; the whole line as a tooltip

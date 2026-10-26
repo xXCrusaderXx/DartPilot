@@ -172,7 +172,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
         ),
         Text(
           '${l10n.checkoutProgress(_game.attempts.length, widget.starts.length)}  ·  '
-          '${l10n.statsCheckoutRate} ${_game.checkouts} / ${_game.attemptsDone}',
+          '${l10n.labelValue(l10n.statsCheckoutRate, l10n.countOf(_game.checkouts, _game.attemptsDone))}',
           key: const ValueKey('checkout-progress'),
         ),
         if (route != null) ...[
