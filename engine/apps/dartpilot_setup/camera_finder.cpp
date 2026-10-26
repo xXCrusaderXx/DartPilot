@@ -44,7 +44,16 @@ void CameraFinder::refresh ()
             }
         }
         const auto board = geometry::loadBoardPlane(boardPlanePath(usb_port).toStdString());
+        // The texts the pages show for a camera, so that every page names it the same way
+        const int number = static_cast<int>(cameras_.size()) + 1;
+        const QString label = QString("Camera %1  ·  USB %2").arg(number).arg(usb_port);
+        const QString lens = !has_intrinsics ? QString() : warning.isEmpty() ? "  ·  calibrated" : "  ·  calibration not valid";
+        const QString plane = board ? QString("  ·  board %1 mm").arg(board->fit.rms_mm, 0, 'f', 2) : QString("  ·  not yet");
         cameras_.append(QVariantMap{{"path", QString::fromStdString(camera.path)},
+                                    {"number", number},
+                                    {"label", label},
+                                    {"lensChoice", label + lens},
+                                    {"boardChoice", label + plane},
                                     {"hasBoardPlane", board.has_value()},
                                     {"boardRmsMm", board ? board->fit.rms_mm : 0.0},
                                     {"usbPort", usb_port},

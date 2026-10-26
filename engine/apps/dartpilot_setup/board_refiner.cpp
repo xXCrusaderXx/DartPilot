@@ -92,7 +92,7 @@ void BoardRefiner::refine ()
         emit resultChanged();
         return;
     }
-    message_ = "Refining …";
+    message_ = "Refining…";
     emit resultChanged();
     watcher_.setFuture(QtConcurrent::run([inputs = running_inputs_] { return geometry::refineBoardCameras(inputs); }));
     emit runningChanged();

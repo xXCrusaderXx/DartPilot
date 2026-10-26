@@ -168,7 +168,7 @@ QString CheckView::qualityText () const
     }
     if(check_state_ != "checked" || !check_)
     {
-        return "Checking …";
+        return "Checking…";
     }
     if(!swapped_with_.isEmpty())
     {

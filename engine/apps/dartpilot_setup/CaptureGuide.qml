@@ -65,7 +65,7 @@ ColumnLayout {
             pitch: 0,
             scale: 0.95,
             zone: 3,
-            caption: "Tilt the pattern by 30 to 45 degrees to the left and right ..."
+            caption: "Tilt the pattern by 30 to 45 degrees to the left and right…"
         },
         {
             x: 0.74,
@@ -74,7 +74,7 @@ ColumnLayout {
             pitch: 0,
             scale: 0.95,
             zone: 5,
-            caption: "Tilt the pattern by 30 to 45 degrees to the left and right ..."
+            caption: "Tilt the pattern by 30 to 45 degrees to the left and right…"
         },
         {
             x: 0.5,
@@ -101,7 +101,7 @@ ColumnLayout {
             pitch: -10,
             scale: 1.45,
             zone: 4,
-            caption: "Come closer until the pattern fills most of the image ..."
+            caption: "Come closer until the pattern fills most of the image…"
         },
         {
             x: 0.5,

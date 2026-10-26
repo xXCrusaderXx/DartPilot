@@ -62,7 +62,8 @@ ColumnLayout {
             id: cameraBox
 
             Layout.preferredWidth: 340
-            model: page.cameras.map((c, i) => "Camera " + (i + 1) + "  ·  USB " + c.usbPort + (c.hasIntrinsics ? (c.intrinsicsWarning === "" ? "  ·  calibrated" : "  ·  calibration not valid") : ""))
+            model: page.cameras
+            textRole: "lensChoice"
             currentIndex: page.selected
             // A new model resets the index and choosing an entry breaks the binding, so the selection is set again.
             onModelChanged: Qt.callLater(() => currentIndex = page.selected)
@@ -293,6 +294,14 @@ ColumnLayout {
                             highlighted: true
                             enabled: view.cornersInFrame >= 6
                             onClicked: view.capture()
+                            ToolTip.visible: hovered
+                            ToolTip.text: "Shortcut: C"
+
+                            Shortcut {
+                                sequence: "C"
+                                enabled: page.active && view.cornersInFrame >= 6
+                                onActivated: view.capture()
+                            }
                         }
                         Button {
                             text: "Clear all"
@@ -333,6 +342,9 @@ ColumnLayout {
                                 }
                                 ToolButton {
                                     text: "✕"
+                                    Accessible.name: "Remove view " + (entry.modelData.index + 1)
+                                    ToolTip.visible: hovered
+                                    ToolTip.text: "Remove this view"
                                     onClicked: view.removeView(entry.modelData.index)
                                 }
                             }
@@ -402,7 +414,15 @@ ColumnLayout {
                             implicitHeight: 40
                             radius: Tokens.radiusSmall
                             color: selected ? Tokens.tint(Tokens.accent, Tokens.tintFill) : Tokens.surfaceRaised
-                            border.color: selected ? Tokens.accent : "transparent"
+                            border.color: selected || activeFocus ? Tokens.accent : "transparent"
+                            border.width: activeFocus ? 2 : 1
+                            // A choice like a radio button: reachable with Tab, chosen with Space or Enter
+                            activeFocusOnTab: true
+                            Accessible.role: Accessible.RadioButton
+                            Accessible.name: "Lens model " + modelData.model
+                            Accessible.checked: selected
+                            Keys.onSpacePressed: view.model = modelRow.modelData.model
+                            Keys.onReturnPressed: view.model = modelRow.modelData.model
 
                             RowLayout {
                                 anchors.fill: parent
