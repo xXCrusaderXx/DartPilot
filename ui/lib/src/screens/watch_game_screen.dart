@@ -7,6 +7,7 @@ import '../games/x01.dart';
 import '../stats/game_record.dart';
 import 'around_the_clock_screen.dart';
 import 'cricket_screen.dart';
+import 'grouping_screen.dart';
 import 'x01_screen.dart';
 
 /// The game another app leads, as that app shows it (#116). Every shared update rebuilds it from the record with the
@@ -56,6 +57,14 @@ class WatchGameScreen extends StatelessWidget {
         replay: record.throws,
         watching: true,
       ),
+      GameMode.grouping => GroupingScreen(
+        key: key,
+        player: record.players.first,
+        target: record.groupingTarget,
+        dartCount: record.groupingGame.dartCount,
+        replay: record.throws,
+        watching: true,
+      ),
     };
   }
 }
@@ -76,6 +85,7 @@ class SharedGameCard extends StatelessWidget {
       GameMode.x01 => '${record.x01Settings.startScore}',
       GameMode.cricket => l10n.modeCricket,
       GameMode.aroundTheClock => l10n.modeAroundTheClock,
+      GameMode.grouping => '${l10n.modeGrouping} ${record.groupingTarget.label}',
     };
     return Card(
       key: const ValueKey('shared-game'),

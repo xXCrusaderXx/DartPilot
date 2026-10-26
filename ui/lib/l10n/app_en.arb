@@ -1089,5 +1089,74 @@
   "dartPhotoMeasuring": "Measuring the photo …",
   "dartPhotoDone": "Photo measured – the dimensions are with the set.",
   "dartPhotoNoSheet": "The sheet was not found. All four markers must be fully in the picture.",
-  "dartPhotoNoDart": "No dart was found on the sheet. Put it in the middle, without shadow."
+  "dartPhotoNoDart": "No dart was found on the sheet. Put it in the middle, without shadow.",
+  "modeGrouping": "Grouping",
+  "modeGroupingDescription": "Darts at one target, scored by how tightly they group",
+  "groupingTarget": "Target",
+  "groupingDartCount": "Darts per round",
+  "groupingPickPlayer": "Who throws? Only profiles keep their precision.",
+  "groupingProgress": "Dart {thrown} of {total}",
+  "@groupingProgress": {
+    "placeholders": {
+      "thrown": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "precisionSpread": "Spread",
+  "precisionOffset": "Offset",
+  "precisionOnTarget": "on target",
+  "offsetRight": "{mm} mm right",
+  "@offsetRight": {
+    "placeholders": {
+      "mm": {
+        "type": "String"
+      }
+    }
+  },
+  "offsetLeft": "{mm} mm left",
+  "@offsetLeft": {
+    "placeholders": {
+      "mm": {
+        "type": "String"
+      }
+    }
+  },
+  "offsetHigh": "{mm} mm high",
+  "@offsetHigh": {
+    "placeholders": {
+      "mm": {
+        "type": "String"
+      }
+    }
+  },
+  "offsetLow": "{mm} mm low",
+  "@offsetLow": {
+    "placeholders": {
+      "mm": {
+        "type": "String"
+      }
+    }
+  },
+  "missFromTarget": "{mm} mm off: {direction}",
+  "@missFromTarget": {
+    "placeholders": {
+      "mm": {
+        "type": "String"
+      },
+      "direction": {
+        "type": "String"
+      }
+    }
+  },
+  "groupingNotMeasured": "Keypad darts and corrected darts have no measured point and do not count for the group.",
+  "groupingDone": "Round done",
+  "groupingAgain": "Another round",
+  "statsPrecision": "Precision",
+  "statsPrecisionEmpty": "Play the grouping training to see your spread and offset per target.",
+  "statsPrecisionTrend": "Spread per week",
+  "statsPrecisionHelp": "Spread: how far the darts lie from their own middle (root mean square). Offset: how far that middle lies from the target. The ellipse holds about two in five darts."
 }

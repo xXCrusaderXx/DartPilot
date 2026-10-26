@@ -2,8 +2,10 @@
 import '../board/scoring.dart';
 import '../games/around_the_clock.dart';
 import '../games/cricket.dart';
+import '../games/grouping.dart';
 import '../games/x01.dart';
 import 'game_record.dart';
+import 'precision.dart';
 
 /// One game of the player, for the history
 class PlayedGame {
@@ -14,6 +16,7 @@ class PlayedGame {
     this.average,
     this.marksPerRound,
     this.hitRate,
+    this.spreadMm,
   });
 
   final GameRecord record;
@@ -24,6 +27,9 @@ class PlayedGame {
   final double? average;
   final double? marksPerRound;
   final double? hitRate;
+
+  /// Grouping training: the size of the group in mm
+  final double? spreadMm;
 }
 
 class PlayerStats {
@@ -119,6 +125,8 @@ PlayerStats computePlayerStats(List<GameRecord> games, String player, {DateTime?
         stats.clockDarts += state.dartsThrown;
         stats.clockHits += state.hits;
         played = PlayedGame(record, won: game.winner == index, darts: mine.length, hitRate: state.hitRate);
+      case GroupingGame():
+        played = PlayedGame(record, won: false, darts: mine.length, spreadMm: game.spread?.spreadMm);
       default:
         continue;
     }
@@ -187,3 +195,14 @@ PlayedGame _addX01(PlayerStats stats, GameRecord record, X01Game game, int index
 }
 
 bool _hasSector(Ring ring) => ring != Ring.innerBull && ring != Ring.outerBull && ring != Ring.miss;
+
+/// The precision per target of [player] from the training games that name their target; games before [since] are
+/// left out.
+List<TargetPrecision> computePlayerPrecision(List<GameRecord> games, String player, {DateTime? since}) =>
+    computePrecision([
+      for (final record in games)
+        if (record.mode == GameMode.grouping &&
+            record.players.contains(player) &&
+            (since == null || !record.ended.isBefore(since)))
+          for (final dart in record.throws) (target: record.groupingTarget, dart: dart, thrown: record.ended),
+    ]);

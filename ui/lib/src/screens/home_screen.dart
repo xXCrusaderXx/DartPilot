@@ -11,6 +11,7 @@ import 'around_the_clock_screen.dart';
 import 'calibration_screen.dart';
 import 'camera_assign_screen.dart';
 import 'cricket_screen.dart';
+import 'grouping_screen.dart';
 import 'training_screen.dart';
 import 'watch_game_screen.dart';
 import 'x01_setup_screen.dart';
@@ -53,6 +54,12 @@ class HomeScreen extends StatelessWidget {
           if (!await confirmBoardEmpty(context) || !context.mounted) return;
           Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const TrainingScreen()));
         },
+      ),
+      (
+        Icons.blur_circular,
+        l10n.modeGrouping,
+        l10n.modeGroupingDescription,
+        () => Navigator.of(context).push(MaterialPageRoute<void>(builder: GroupingScreen.setup)),
       ),
     ];
     return Scaffold(

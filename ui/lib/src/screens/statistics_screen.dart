@@ -11,10 +11,13 @@ import '../engine/engine_connection.dart';
 import '../stats/export.dart';
 import '../stats/game_record.dart';
 import '../stats/player_stats.dart';
+import '../stats/precision.dart';
 import '../stats/statistics.dart';
 import '../widgets/average_trend.dart';
 import '../widgets/hit_heatmap.dart';
 import '../widgets/player_picker.dart';
+import '../widgets/precision_plot.dart';
+import 'grouping_screen.dart';
 
 /// The player profiles of this device with their statistics; profiles are created and deleted here.
 class StatisticsScreen extends StatelessWidget {
@@ -180,7 +183,9 @@ class _PlayerStatsScreenState extends State<PlayerStatsScreen> {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final games = StatisticsScope.maybeOf(context)?.games ?? const <GameRecord>[];
-    final stats = computePlayerStats(games, widget.player, since: _since(games));
+    final since = _since(games);
+    final stats = computePlayerStats(games, widget.player, since: since);
+    final precision = computePlayerPrecision(games, widget.player, since: since);
     String n(double? v, [int decimals = 1]) => v == null ? '–' : _number(l10n, v, decimals);
     String percent(double? v) => v == null ? '–' : '${_number(l10n, 100 * v, 0)} %';
     // X01 games, oldest first, the last 30
@@ -259,6 +264,16 @@ class _PlayerStatsScreenState extends State<PlayerStatsScreen> {
                   AverageTrend(key: const ValueKey('average-trend'), averages: averages),
                 ],
                 const SizedBox(height: 24),
+                Text(l10n.statsPrecision, style: theme.textTheme.titleMedium),
+                const SizedBox(height: 4),
+                if (precision.isEmpty)
+                  Text(l10n.statsPrecisionEmpty, key: const ValueKey('precision-empty'))
+                else ...[
+                  Text(l10n.statsPrecisionHelp, style: theme.textTheme.bodySmall),
+                  const SizedBox(height: 8),
+                  for (final target in precision) _TargetPrecisionCard(precision: target),
+                ],
+                const SizedBox(height: 24),
                 Text(l10n.statsHitBoard, style: theme.textTheme.titleMedium),
                 const SizedBox(height: 8),
                 Center(
@@ -304,6 +319,63 @@ class _PlayerStatsScreenState extends State<PlayerStatsScreen> {
   }
 }
 
+/// Spread and offset of the darts at one target, their plot, and the spread week by week
+class _TargetPrecisionCard extends StatelessWidget {
+  const _TargetPrecisionCard({required this.precision});
+
+  final TargetPrecision precision;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final spread = precision.spread;
+    final label = precision.target.label;
+    final figures = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: theme.textTheme.headlineSmall),
+        Text(
+          '${l10n.statsDartsCount(precision.points.length)}  ·  '
+          '${l10n.hitRate} ${_number(l10n, 100 * precision.hitRate, 0)} %',
+        ),
+        const SizedBox(height: 8),
+        Text(
+          '${l10n.precisionSpread}: ${spread == null ? '–' : '${_number(l10n, spread.spreadMm)} mm'}',
+          key: ValueKey('precision-spread-$label'),
+        ),
+        Text(
+          '${l10n.precisionOffset}: ${spread == null ? '–' : offsetText(l10n, spread.offsetXMm, spread.offsetYMm)}',
+          key: ValueKey('precision-offset-$label'),
+        ),
+      ],
+    );
+    final plot = SizedBox(
+      width: 180,
+      child: PrecisionPlot(key: ValueKey('precision-plot-$label'), target: precision.target, points: precision.points),
+    );
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Wrap(spacing: 16, runSpacing: 12, children: [plot, figures]),
+            if (precision.weeks.length >= 2) ...[
+              const SizedBox(height: 12),
+              Text(l10n.statsPrecisionTrend, style: theme.textTheme.titleSmall),
+              AverageTrend(
+                key: ValueKey('precision-trend-$label'),
+                averages: [for (final w in precision.weeks) w.spread.spreadMm],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ShareBar extends StatelessWidget {
   const _ShareBar({required this.label, required this.share, required this.text});
 
@@ -339,6 +411,7 @@ class _HistoryTile extends StatelessWidget {
       GameMode.x01 => '${record.x01Settings.startScore}',
       GameMode.cricket => l10n.modeCricket,
       GameMode.aroundTheClock => l10n.modeAroundTheClock,
+      GameMode.grouping => '${l10n.modeGrouping} ${record.groupingTarget.label}',
     };
     final figure = game.average != null
         ? '${l10n.average} ${_number(l10n, game.average!)}'
@@ -346,6 +419,8 @@ class _HistoryTile extends StatelessWidget {
         ? '${l10n.statsMarksPerRound} ${_number(l10n, game.marksPerRound!, 2)}'
         : game.hitRate != null
         ? '${l10n.statsClockHitRate} ${_number(l10n, 100 * game.hitRate!, 0)} %'
+        : game.spreadMm != null
+        ? '${l10n.precisionSpread} ${_number(l10n, game.spreadMm!)} mm'
         : '';
     final others = record.players.length - 1;
     return ListTile(

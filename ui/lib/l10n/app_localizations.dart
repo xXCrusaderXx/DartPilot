@@ -3043,6 +3043,132 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No dart was found on the sheet. Put it in the middle, without shadow.'**
   String get dartPhotoNoDart;
+
+  /// No description provided for @modeGrouping.
+  ///
+  /// In en, this message translates to:
+  /// **'Grouping'**
+  String get modeGrouping;
+
+  /// No description provided for @modeGroupingDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Darts at one target, scored by how tightly they group'**
+  String get modeGroupingDescription;
+
+  /// No description provided for @groupingTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Target'**
+  String get groupingTarget;
+
+  /// No description provided for @groupingDartCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Darts per round'**
+  String get groupingDartCount;
+
+  /// No description provided for @groupingPickPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Who throws? Only profiles keep their precision.'**
+  String get groupingPickPlayer;
+
+  /// No description provided for @groupingProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Dart {thrown} of {total}'**
+  String groupingProgress(int thrown, int total);
+
+  /// No description provided for @precisionSpread.
+  ///
+  /// In en, this message translates to:
+  /// **'Spread'**
+  String get precisionSpread;
+
+  /// No description provided for @precisionOffset.
+  ///
+  /// In en, this message translates to:
+  /// **'Offset'**
+  String get precisionOffset;
+
+  /// No description provided for @precisionOnTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'on target'**
+  String get precisionOnTarget;
+
+  /// No description provided for @offsetRight.
+  ///
+  /// In en, this message translates to:
+  /// **'{mm} mm right'**
+  String offsetRight(String mm);
+
+  /// No description provided for @offsetLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{mm} mm left'**
+  String offsetLeft(String mm);
+
+  /// No description provided for @offsetHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'{mm} mm high'**
+  String offsetHigh(String mm);
+
+  /// No description provided for @offsetLow.
+  ///
+  /// In en, this message translates to:
+  /// **'{mm} mm low'**
+  String offsetLow(String mm);
+
+  /// No description provided for @missFromTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'{mm} mm off: {direction}'**
+  String missFromTarget(String mm, String direction);
+
+  /// No description provided for @groupingNotMeasured.
+  ///
+  /// In en, this message translates to:
+  /// **'Keypad darts and corrected darts have no measured point and do not count for the group.'**
+  String get groupingNotMeasured;
+
+  /// No description provided for @groupingDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Round done'**
+  String get groupingDone;
+
+  /// No description provided for @groupingAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Another round'**
+  String get groupingAgain;
+
+  /// No description provided for @statsPrecision.
+  ///
+  /// In en, this message translates to:
+  /// **'Precision'**
+  String get statsPrecision;
+
+  /// No description provided for @statsPrecisionEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Play the grouping training to see your spread and offset per target.'**
+  String get statsPrecisionEmpty;
+
+  /// No description provided for @statsPrecisionTrend.
+  ///
+  /// In en, this message translates to:
+  /// **'Spread per week'**
+  String get statsPrecisionTrend;
+
+  /// No description provided for @statsPrecisionHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Spread: how far the darts lie from their own middle (root mean square). Offset: how far that middle lies from the target. The ellipse holds about two in five darts.'**
+  String get statsPrecisionHelp;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

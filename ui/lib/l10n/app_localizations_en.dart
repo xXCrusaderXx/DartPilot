@@ -1686,4 +1686,81 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dartPhotoNoDart => 'No dart was found on the sheet. Put it in the middle, without shadow.';
+
+  @override
+  String get modeGrouping => 'Grouping';
+
+  @override
+  String get modeGroupingDescription => 'Darts at one target, scored by how tightly they group';
+
+  @override
+  String get groupingTarget => 'Target';
+
+  @override
+  String get groupingDartCount => 'Darts per round';
+
+  @override
+  String get groupingPickPlayer => 'Who throws? Only profiles keep their precision.';
+
+  @override
+  String groupingProgress(int thrown, int total) {
+    return 'Dart $thrown of $total';
+  }
+
+  @override
+  String get precisionSpread => 'Spread';
+
+  @override
+  String get precisionOffset => 'Offset';
+
+  @override
+  String get precisionOnTarget => 'on target';
+
+  @override
+  String offsetRight(String mm) {
+    return '$mm mm right';
+  }
+
+  @override
+  String offsetLeft(String mm) {
+    return '$mm mm left';
+  }
+
+  @override
+  String offsetHigh(String mm) {
+    return '$mm mm high';
+  }
+
+  @override
+  String offsetLow(String mm) {
+    return '$mm mm low';
+  }
+
+  @override
+  String missFromTarget(String mm, String direction) {
+    return '$mm mm off: $direction';
+  }
+
+  @override
+  String get groupingNotMeasured =>
+      'Keypad darts and corrected darts have no measured point and do not count for the group.';
+
+  @override
+  String get groupingDone => 'Round done';
+
+  @override
+  String get groupingAgain => 'Another round';
+
+  @override
+  String get statsPrecision => 'Precision';
+
+  @override
+  String get statsPrecisionEmpty => 'Play the grouping training to see your spread and offset per target.';
+
+  @override
+  String get statsPrecisionTrend => 'Spread per week';
+
+  @override
+  String get statsPrecisionHelp =>
+      'Spread: how far the darts lie from their own middle (root mean square). Offset: how far that middle lies from the target. The ellipse holds about two in five darts.';
 }
