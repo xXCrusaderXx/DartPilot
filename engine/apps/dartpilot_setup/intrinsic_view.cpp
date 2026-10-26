@@ -31,6 +31,7 @@ constexpr double kOutlierFactor = 2.0;
 constexpr double kGoodHeldOut_px = 0.5;
 constexpr double kFairHeldOut_px = 1.0;
 constexpr double kGoodCoverage = 0.75;
+constexpr double kFairCoverage = 0.4;
 constexpr std::size_t kGoodViews = 15;
 constexpr std::size_t kFairViews = 8;
 
@@ -146,6 +147,24 @@ double IntrinsicView::coverage () const
 {
     const auto covered = std::count_if(coverage_.begin(), coverage_.end(), [] (int count) { return count > 0; });
     return static_cast<double>(covered) / coverage_.size();
+}
+
+QString IntrinsicView::cornersQuality () const
+{
+    if(cornersInFrame() >= std::ceil(kMinCornerShare * totalCorners())) return "good";
+    return cornersInFrame() > 0 ? "fair" : "";
+}
+
+QString IntrinsicView::viewsQuality () const
+{
+    if(views_.size() >= kGoodViews) return "good";
+    return views_.size() >= kFairViews ? "fair" : "";
+}
+
+QString IntrinsicView::coverageQuality () const
+{
+    if(coverage() >= kGoodCoverage) return "good";
+    return coverage() >= kFairCoverage ? "fair" : "";
 }
 
 const IntrinsicView::ModelResult* IntrinsicView::selected () const

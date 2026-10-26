@@ -39,7 +39,7 @@ class ValidationRun : public QObject
     Q_PROPERTY(bool calibrated READ calibrated NOTIFY camerasChanged)
     // Per camera on the empty board: usbPort, number, found, rmsMm, quality (good, fair, poor)
     Q_PROPERTY(QVariantList calibrationChecks READ calibrationChecks NOTIFY resultsChanged)
-    // The dart in the bull centre: located, xMm, yMm, errorMm, cameras, worstPlaneMm; empty before
+    // The dart in the bull centre: located, xMm, yMm, errorMm, quality, cameras, worstPlaneMm; empty before
     Q_PROPERTY(QVariantMap bull READ bull NOTIFY resultsChanged)
     // Every further dart, newest first: located, xMm, yMm, label, cameras, worstPlaneMm, sdMm
     Q_PROPERTY(QVariantList darts READ darts NOTIFY resultsChanged)

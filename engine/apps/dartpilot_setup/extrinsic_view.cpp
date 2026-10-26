@@ -17,6 +17,9 @@ namespace dartpilot::setup
 namespace
 {
 constexpr int kFramesToAverage = 10;
+// Provisional, in board millimetres; #48 sets the error budget
+constexpr double kGoodFit_mm = 0.5;
+constexpr double kFairFit_mm = 1.0;
 // Sector numbers counter-clockwise from 20, the order of the image sectors after the one the user clicked
 constexpr std::array<int, 20> kSectorsCounterClockwiseFromTwenty = {20, 5, 12, 9, 14, 11, 8, 16, 7, 19, 3, 17, 2, 15, 10, 6, 13, 4, 18, 1};
 
@@ -34,6 +37,12 @@ ExtrinsicView::~ExtrinsicView ()
 {
     watcher_.waitForFinished();
     releaseStream();
+}
+
+QString ExtrinsicView::fitQuality () const
+{
+    if(!plane_) return "";
+    return rmsMm() <= kGoodFit_mm ? "good" : rmsMm() <= kFairFit_mm ? "fair" : "poor";
 }
 
 void ExtrinsicView::setUsbPort (const QString& usb_port)

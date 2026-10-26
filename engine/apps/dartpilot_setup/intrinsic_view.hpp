@@ -28,11 +28,16 @@ class IntrinsicView : public StreamView
     Q_PROPERTY(QString model READ model WRITE setModel NOTIFY modelChanged)
     Q_PROPERTY(bool autoCapture MEMBER auto_capture_ NOTIFY autoCaptureChanged)
     Q_PROPERTY(int cornersInFrame READ cornersInFrame NOTIFY detectionChanged)
+    // good when enough corners for a view are in the frame, fair with some, empty with none
+    Q_PROPERTY(QString cornersQuality READ cornersQuality NOTIFY detectionChanged)
     // tablet (10x7, also for prints and second displays) or phone (8x4); views of both can be mixed
     Q_PROPERTY(QString target READ target WRITE setTarget NOTIFY targetChanged)
     Q_PROPERTY(int totalCorners READ totalCorners NOTIFY targetChanged)
     Q_PROPERTY(int viewCount READ viewCount NOTIFY viewsChanged)
     Q_PROPERTY(double coverage READ coverage NOTIFY viewsChanged)
+    // good, fair or empty, by the thresholds the calibration quality uses
+    Q_PROPERTY(QString viewsQuality READ viewsQuality NOTIFY viewsChanged)
+    Q_PROPERTY(QString coverageQuality READ coverageQuality NOTIFY viewsChanged)
     Q_PROPERTY(QString hint READ hint NOTIFY detectionChanged)
     Q_PROPERTY(bool calibrating READ calibrating NOTIFY resultChanged)
     Q_PROPERTY(bool calibrated READ calibrated NOTIFY resultChanged)
@@ -55,11 +60,14 @@ class IntrinsicView : public StreamView
     QString model () const;
     void setModel (const QString& model);
     int cornersInFrame () const { return detection_ ? static_cast<int>(detection_->ids.size()) : 0; }
+    QString cornersQuality () const;
     QString target () const;
     void setTarget (const QString& target);
     int totalCorners () const { return target_.cornerCount(); }
     int viewCount () const { return static_cast<int>(views_.size()); }
     double coverage () const;
+    QString viewsQuality () const;
+    QString coverageQuality () const;
     QString hint () const { return hint_; }
     bool calibrating () const { return watcher_.isRunning(); }
     bool calibrated () const { return selected() && selected()->calibration.has_value(); }

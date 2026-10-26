@@ -25,6 +25,8 @@ class StreamView : public QQuickPaintedItem
     // Empty stops the camera
     Q_PROPERTY(QString devicePath READ devicePath WRITE setDevicePath NOTIFY devicePathChanged)
     Q_PROPERTY(double fps READ fps NOTIFY statsChanged)
+    // good at the camera's full rate, fair below it, poor on an error, empty while starting
+    Q_PROPERTY(QString fpsQuality READ fpsQuality NOTIFY statsChanged)
     Q_PROPERTY(QString error READ error NOTIFY statsChanged)
 
    public:
@@ -34,6 +36,7 @@ class StreamView : public QQuickPaintedItem
     QString devicePath () const { return device_path_; }
     void setDevicePath (const QString& path);
     double fps () const { return fps_; }
+    QString fpsQuality () const;
     QString error () const { return error_; }
 
     void paint (QPainter* painter) override;

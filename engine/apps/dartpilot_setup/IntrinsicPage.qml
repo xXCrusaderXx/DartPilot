@@ -100,24 +100,22 @@ ColumnLayout {
 
                 Chip {
                     text: "Corners " + view.cornersInFrame + " / " + view.totalCorners
-                    tone: view.cornersInFrame >= view.totalCorners * 0.4 ? Tokens.good : view.cornersInFrame > 0 ? Tokens.warning : Tokens.textMuted
+                    tone: Tokens.qualityTone(view.cornersQuality)
                     dot: true
                 }
                 Chip {
                     text: view.viewCount + (view.viewCount === 1 ? " view" : " views")
-                    tone: view.viewCount >= 15 ? Tokens.good : Tokens.accent
+                    tone: view.viewsQuality === "" ? Tokens.accent : Tokens.qualityTone(view.viewsQuality)
                 }
                 Chip {
                     text: "Coverage " + Math.round(view.coverage * 100) + "%"
-                    tone: view.coverage >= 0.75 ? Tokens.good : view.coverage >= 0.4 ? Tokens.warning : Tokens.textMuted
+                    tone: Tokens.qualityTone(view.coverageQuality)
                 }
                 Item {
                     Layout.fillWidth: true
                 }
-                Chip {
-                    text: view.error !== "" ? "Error" : view.fps > 0 ? view.fps.toFixed(1) + " fps" : "Starting"
-                    tone: view.error !== "" ? Tokens.bad : view.fps >= 29 ? Tokens.good : Tokens.warning
-                    dot: true
+                FpsChip {
+                    stream: view
                 }
             }
 

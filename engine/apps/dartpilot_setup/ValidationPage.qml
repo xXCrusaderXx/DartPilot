@@ -157,7 +157,7 @@ ColumnLayout {
                         visible: run.bull.located !== undefined
                         Layout.fillWidth: true
                         wrapMode: Text.WordWrap
-                        color: run.bull.located ? (run.bull.errorMm <= 1.0 ? Tokens.good : run.bull.errorMm <= 2.0 ? Tokens.warning : Tokens.bad) : Tokens.bad
+                        color: Tokens.qualityTone(run.bull.quality)
                         text: run.bull.located ? run.bull.errorMm.toFixed(2) + " mm from the centre, cameras " + run.bull.cameras + ", planes within " + run.bull.worstPlaneMm.toFixed(2) + " mm" : "Not located: the cameras do not agree on the dart."
                     }
                     Label {

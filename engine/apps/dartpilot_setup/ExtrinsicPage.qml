@@ -97,7 +97,7 @@ ColumnLayout {
                 }
                 Chip {
                     text: view.hasPlane ? "Board fit " + view.rmsMm.toFixed(2) + " mm" : "Board: not yet"
-                    tone: !view.hasPlane ? Tokens.textMuted : view.rmsMm <= 0.5 ? Tokens.good : view.rmsMm <= 1.0 ? Tokens.warning : Tokens.bad
+                    tone: Tokens.qualityTone(view.fitQuality)
                     dot: true
 
                     HoverHandler {
@@ -109,10 +109,8 @@ ColumnLayout {
                 Item {
                     Layout.fillWidth: true
                 }
-                Chip {
-                    text: view.error !== "" ? "Error" : view.fps > 0 ? view.fps.toFixed(1) + " fps" : "Starting"
-                    tone: view.error !== "" ? Tokens.bad : view.fps >= 29 ? Tokens.good : Tokens.warning
-                    dot: true
+                FpsChip {
+                    stream: view
                 }
             }
 
