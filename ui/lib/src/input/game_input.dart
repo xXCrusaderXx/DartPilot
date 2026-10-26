@@ -11,6 +11,7 @@ import '../games/dart_game.dart';
 import '../screens/throw_views_screen.dart';
 import 'takeout_gate.dart';
 import 'throw_input_panel.dart';
+import '../board/score_text.dart';
 import '../widgets/precision_text.dart';
 
 /// Input of a game screen: darts from the engine when connected, manual input otherwise, uncertain darts as a
@@ -148,9 +149,22 @@ class _GameInputState extends State<GameInput> {
     }
   }
 
+  /// A takeout while a dart was uncertain waits until the player settled that dart.
+  bool _takeoutWaiting = false;
+
+  void _pendingSettled() {
+    if (!_takeoutWaiting) return;
+    _takeoutWaiting = false;
+    _onTakeout();
+  }
+
   Future<void> _onTakeout() async {
     final inVisit = widget.game.dartsInVisit;
-    if (inVisit == 0 || _pending != null) return;
+    if (_pending != null) {
+      _takeoutWaiting = true;
+      return;
+    }
+    if (inVisit == 0) return;
     final missing = 3 - inVisit;
     final l10n = AppLocalizations.of(context);
     final countAsMiss = await showDialog<bool>(
@@ -180,6 +194,7 @@ class _GameInputState extends State<GameInput> {
       engine?.correctThrow(pending.throwId, dart.point);
       setState(() => _pending = null);
       _add(_engineDart(dart.point, pending.throwId, null));
+      _pendingSettled();
     } else if (correcting != null && correcting < widget.game.throws.length) {
       final old = widget.game.throws[correcting];
       final id = old.engineThrowId;
@@ -206,6 +221,7 @@ class _GameInputState extends State<GameInput> {
     if (pending?.point == null) return;
     setState(() => _pending = null);
     _add(_engineDart(pending!.point!, pending.throwId, pending.confidence));
+    _pendingSettled();
   }
 
   /// The player picked one of the fields an uncertain dart may be in; the engine keeps the choice with the throw.
@@ -216,11 +232,12 @@ class _GameInputState extends State<GameInput> {
     _engine?.correctThrow(pending.throwId, point, candidate: index);
     setState(() => _pending = null);
     _add(_engineDart(point, pending.throwId, null));
+    _pendingSettled();
   }
 
   String _candidateLabel(EngineThrow pending, int index) {
     final c = pending.candidates[index];
-    return '${_scoreAt(c.point).label} (${percentText(AppLocalizations.of(context), c.probability)})';
+    return '${_scoreAt(c.point).text(AppLocalizations.of(context))} (${percentText(AppLocalizations.of(context), c.probability)})';
   }
 
   Score _scoreAt(BoardPoint point) => DartThrow(point, ThrowInput.engine, geometry: _geometry).score;
@@ -232,7 +249,8 @@ class _GameInputState extends State<GameInput> {
     if (id == null) return;
     final correct = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) => ThrowViewsScreen(throwId: id, label: dart.score.label, canCorrect: true),
+        builder: (_) =>
+            ThrowViewsScreen(throwId: id, label: dart.score.text(AppLocalizations.of(context)), canCorrect: true),
       ),
     );
     if (!mounted) return;
@@ -244,6 +262,7 @@ class _GameInputState extends State<GameInput> {
     if (pending == null) return;
     _engine?.rejectThrow(pending.throwId, 'rejected by the player');
     setState(() => _pending = null);
+    _pendingSettled();
   }
 
   @override
@@ -280,7 +299,7 @@ class _GameInputState extends State<GameInput> {
         key: const ValueKey('uncertain-candidates'),
         color: theme.colorScheme.tertiaryContainer,
         icon: Icons.help_outline,
-        title: '${candidates.map((c) => c.score.label).join(' ${l10n.or} ')}?',
+        title: '${candidates.map((c) => c.score.text(l10n)).join(' ${l10n.or} ')}?',
         subtitle: l10n.pickCandidate,
         actions: [
           TextButton(onPressed: _discardPending, child: Text(l10n.discard)),
@@ -306,7 +325,7 @@ class _GameInputState extends State<GameInput> {
         icon: Icons.help_outline,
         title: pendingDart == null
             ? l10n.uncertainNoPoint
-            : l10n.uncertainDart(pendingDart.score.label, percentText(l10n, pending.confidence)),
+            : l10n.uncertainDart(pendingDart.score.text(l10n), percentText(l10n, pending.confidence)),
         subtitle: l10n.tapToCorrect,
         actions: [
           TextButton(onPressed: _discardPending, child: Text(l10n.discard)),
@@ -317,7 +336,7 @@ class _GameInputState extends State<GameInput> {
       banner = _Notice(
         color: theme.colorScheme.tertiaryContainer,
         icon: Icons.edit_location_alt,
-        title: l10n.correctingDart(throws[correcting].score.label),
+        title: l10n.correctingDart(throws[correcting].score.text(l10n)),
         actions: [
           if (throws[correcting].engineThrowId != null)
             TextButton(
@@ -356,7 +375,7 @@ class _GameInputState extends State<GameInput> {
                   ChoiceChip(
                     key: ValueKey('recent-$i'),
                     avatar: Icon(throws[i].input == ThrowInput.engine ? Icons.videocam : Icons.touch_app, size: 16),
-                    label: Text(throws[i].score.label),
+                    label: Text(throws[i].score.text(l10n)),
                     selected: correcting == i,
                     onSelected: (_) => setState(() => _correcting = correcting == i ? null : i),
                   ),

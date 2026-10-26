@@ -17,6 +17,8 @@ import 'my_darts_screen.dart';
 import 'watched_board.dart';
 import 'game_layout.dart';
 import 'players_setup_screen.dart';
+import '../board/score_text.dart';
+import '../widgets/leave_game_guard.dart';
 
 class CricketScreen extends StatefulWidget {
   const CricketScreen({
@@ -137,9 +139,8 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
       ],
     );
 
-    final panel = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
+    final panel = ScrollingPanel(
+      top: [
         Table(
           border: TableBorder.symmetric(inside: BorderSide(color: theme.dividerColor)),
           children: [
@@ -150,8 +151,9 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
           ],
         ),
         const SizedBox(height: 12),
-        VisitDarts([for (final d in _game.currentVisit) d.dart.score.label]),
-        const Spacer(),
+        VisitDarts([for (final d in _game.currentVisit) d.dart.score.text(l10n)]),
+      ],
+      bottom: [
         OutlinedButton.icon(
           onPressed: _game.canUndo && !widget.watching ? () => setState(_game.undo) : null,
           icon: const Icon(Icons.undo),
@@ -159,23 +161,26 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
         ),
       ],
     );
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.modeCricket)),
-      body: GameLayout(
-        input: widget.watching
-            ? WatchedBoard(throws: [for (final d in _game.currentVisit) d.dart])
-            : GameInput(
-                game: _game,
-                takeout: _takeout,
-                shownThrows: [for (final d in _game.currentVisit) d.dart],
-                onDart: (dart) {
-                  // While a bot is at the oche, its darts are its own.
-                  if (!isBotTurn) _add(dart);
-                },
-                onChanged: () => setState(() {}),
-              ),
-        panel: panel,
-        panelWidth: 120.0 + 90.0 * players.length.clamp(2, 4),
+    return LeaveGameGuard(
+      canLeave: widget.watching || _game.isFinished || currentRecord.throws.isEmpty,
+      child: Scaffold(
+        appBar: AppBar(title: Text(l10n.modeCricket)),
+        body: GameLayout(
+          input: widget.watching
+              ? WatchedBoard(throws: [for (final d in _game.currentVisit) d.dart])
+              : GameInput(
+                  game: _game,
+                  takeout: _takeout,
+                  shownThrows: [for (final d in _game.currentVisit) d.dart],
+                  onDart: (dart) {
+                    // While a bot is at the oche, its darts are its own.
+                    if (!isBotTurn) _add(dart);
+                  },
+                  onChanged: () => setState(() {}),
+                ),
+          panel: panel,
+          panelWidth: 120.0 + 90.0 * players.length.clamp(2, 4),
+        ),
       ),
     );
   }

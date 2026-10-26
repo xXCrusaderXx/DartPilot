@@ -57,7 +57,7 @@ class GameSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    String n(double? v, [int decimals = 1]) => v == null ? '–' : v.toStringAsFixed(decimals);
+    String n(double? v, [int decimals = 1]) => v == null ? '–' : decimal(l10n, v, digits: decimals);
     String percent(double? v) => v == null ? '–' : percentText(l10n, v);
     return Column(
       mainAxisSize: MainAxisSize.min,

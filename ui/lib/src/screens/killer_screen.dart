@@ -19,6 +19,8 @@ import 'game_layout.dart';
 import 'my_darts_screen.dart';
 import 'players_setup_screen.dart';
 import 'watched_board.dart';
+import '../board/score_text.dart';
+import '../widgets/leave_game_guard.dart';
 
 /// Killer (#118): every player's number, marks on the way to killer, and lives.
 class KillerScreen extends StatefulWidget {
@@ -157,7 +159,7 @@ class _KillerScreenState extends State<KillerScreen> with RecordsGame, BotTurns 
           ),
         ),
         const SizedBox(height: 12),
-        VisitDarts([for (final dart in _game.currentVisit) dart.score.label]),
+        VisitDarts([for (final dart in _game.currentVisit) dart.score.text(l10n)]),
         const SizedBox(height: 8),
         OutlinedButton.icon(
           onPressed: _game.canUndo && !widget.watching ? () => setState(_game.undo) : null,
@@ -166,22 +168,25 @@ class _KillerScreenState extends State<KillerScreen> with RecordsGame, BotTurns 
         ),
       ],
     );
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.modeKiller)),
-      body: GameLayout(
-        input: widget.watching
-            ? WatchedBoard(throws: _game.currentVisit)
-            : GameInput(
-                game: _game,
-                takeout: _takeout,
-                shownThrows: _game.currentVisit,
-                onDart: (dart) {
-                  // While a bot is at the oche, its darts are its own.
-                  if (!isBotTurn) _add(dart);
-                },
-                onChanged: () => setState(() {}),
-              ),
-        panel: panel,
+    return LeaveGameGuard(
+      canLeave: widget.watching || _game.isFinished || currentRecord.throws.isEmpty,
+      child: Scaffold(
+        appBar: AppBar(title: Text(l10n.modeKiller)),
+        body: GameLayout(
+          input: widget.watching
+              ? WatchedBoard(throws: _game.currentVisit)
+              : GameInput(
+                  game: _game,
+                  takeout: _takeout,
+                  shownThrows: _game.currentVisit,
+                  onDart: (dart) {
+                    // While a bot is at the oche, its darts are its own.
+                    if (!isBotTurn) _add(dart);
+                  },
+                  onChanged: () => setState(() {}),
+                ),
+          panel: panel,
+        ),
       ),
     );
   }

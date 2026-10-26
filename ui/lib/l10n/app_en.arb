@@ -17,6 +17,9 @@
   "triple": "Triple",
   "miss": "Miss",
   "undo": "Undo",
+  "leaveGameTitle": "Leave the game?",
+  "leaveGameText": "It is kept in the statistics as unfinished.",
+  "leaveGame": "Leave",
   "visit": "Visit",
   "darts": "Darts",
   "points": "Points",
@@ -977,6 +980,15 @@
   "noDartSets": "No dart set measured yet.",
   "addDartSet": "Add dart set",
   "renameDartSet": "Rename",
+  "deleteDartSetTitle": "Delete {name}?",
+  "@deleteDartSetTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteDartSetText": "Its dimensions and reference images are deleted on the engine; players who throw it keep their games.",
   "dartSetName": "Name of the set",
   "dartSetNameHint": "e.g. Anna's darts",
   "dartSetStart": "Next",

@@ -34,6 +34,37 @@ class GameLayout extends StatelessWidget {
   }
 }
 
+/// A score panel: [top] from the top, [bottom] at its foot when there is room; the whole panel scrolls when there is not
+class ScrollingPanel extends StatelessWidget {
+  const ScrollingPanel({super.key, required this.top, this.bottom = const []});
+
+  final List<Widget> top;
+  final List<Widget> bottom;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: top),
+              if (bottom.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: bottom),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// The darts of the current visit as three cards
 class VisitDarts extends StatelessWidget {
   const VisitDarts(this.labels, {super.key});

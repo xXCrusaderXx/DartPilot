@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../board/score_text.dart';
 import '../board/dart_throw.dart';
 import '../bots/bot_turns.dart';
 import '../games/dart_game.dart';
@@ -17,6 +18,7 @@ import 'game_layout.dart';
 import 'my_darts_screen.dart';
 import 'players_setup_screen.dart';
 import 'watched_board.dart';
+import '../widgets/leave_game_guard.dart';
 import '../widgets/precision_text.dart';
 
 /// Shanghai, Bob's 27 and Halve-It (#118): a round's target, every player's score, and the darts of the visit.
@@ -147,9 +149,8 @@ class _RoundGameScreenState extends State<RoundGameScreen> with RecordsGame, Bot
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final visit = [for (final (dart, _) in _game.currentVisit) dart];
-    final panel = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
+    final panel = ScrollingPanel(
+      top: [
         Row(
           children: [
             Expanded(
@@ -188,8 +189,9 @@ class _RoundGameScreenState extends State<RoundGameScreen> with RecordsGame, Bot
             ),
           ),
         const SizedBox(height: 12),
-        VisitDarts([for (final (dart, hit) in _game.currentVisit) '${dart.score.label} ${hit ? '✓' : '✗'}']),
-        const Spacer(),
+        VisitDarts([for (final (dart, hit) in _game.currentVisit) '${dart.score.text(l10n)} ${hit ? '✓' : '✗'}']),
+      ],
+      bottom: [
         OutlinedButton.icon(
           onPressed: _game.canUndo && !widget.watching ? () => setState(_game.undo) : null,
           icon: const Icon(Icons.undo),
@@ -197,22 +199,25 @@ class _RoundGameScreenState extends State<RoundGameScreen> with RecordsGame, Bot
         ),
       ],
     );
-    return Scaffold(
-      appBar: AppBar(title: Text(RoundGameScreen.title(l10n, widget.mode))),
-      body: GameLayout(
-        input: widget.watching
-            ? WatchedBoard(throws: visit)
-            : GameInput(
-                game: _game,
-                takeout: _takeout,
-                shownThrows: visit,
-                onDart: (dart) {
-                  // While a bot is at the oche, its darts are its own.
-                  if (!isBotTurn) _add(dart);
-                },
-                onChanged: () => setState(() {}),
-              ),
-        panel: panel,
+    return LeaveGameGuard(
+      canLeave: widget.watching || _game.isFinished || currentRecord.throws.isEmpty,
+      child: Scaffold(
+        appBar: AppBar(title: Text(RoundGameScreen.title(l10n, widget.mode))),
+        body: GameLayout(
+          input: widget.watching
+              ? WatchedBoard(throws: visit)
+              : GameInput(
+                  game: _game,
+                  takeout: _takeout,
+                  shownThrows: visit,
+                  onDart: (dart) {
+                    // While a bot is at the oche, its darts are its own.
+                    if (!isBotTurn) _add(dart);
+                  },
+                  onChanged: () => setState(() {}),
+                ),
+          panel: panel,
+        ),
       ),
     );
   }

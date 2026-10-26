@@ -14,8 +14,12 @@ import '../stats/game_record.dart';
 import '../stats/statistics.dart';
 import '../widgets/winner_dialog.dart';
 import 'my_darts_screen.dart';
+import 'game_layout.dart';
 import 'watched_board.dart';
 import 'x01_setup_screen.dart';
+import '../board/score_text.dart';
+import '../widgets/precision_text.dart';
+import '../widgets/leave_game_guard.dart';
 
 class X01Screen extends StatefulWidget {
   const X01Screen({
@@ -114,9 +118,8 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
     final visit = waiting ? _game.visits[_game.visits.length - 2] : _game.currentVisit;
     final checkout = waiting ? null : _game.checkoutSuggestion;
 
-    final scoreboard = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
+    final scoreboard = ScrollingPanel(
+      top: [
         Text(l10n.leg(_game.legNumber), style: theme.textTheme.titleMedium),
         const SizedBox(height: 8),
         for (var i = 0; i < _game.players.length; ++i) _PlayerCard(_game.players[i], active: i == visit.player),
@@ -155,7 +158,8 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
               ),
             ),
           ),
-        const Spacer(),
+      ],
+      bottom: [
         OutlinedButton.icon(
           onPressed: _game.canUndo && !widget.watching ? () => setState(_game.undo) : null,
           icon: const Icon(Icons.undo),
@@ -176,38 +180,18 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
             onChanged: () => setState(() {}),
           );
 
-    return Scaffold(
-      appBar: AppBar(title: Text('${widget.settings.startScore}')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: LayoutBuilder(
-          builder: (context, constraints) => constraints.maxWidth > constraints.maxHeight
-              ? Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(flex: 3, child: input),
-                    const SizedBox(width: 24),
-                    SizedBox(width: 340, child: scoreboard),
-                  ],
-                )
-              : Column(
-                  children: [
-                    Expanded(flex: 3, child: input),
-                    const SizedBox(height: 16),
-                    Expanded(
-                      flex: 3,
-                      child: SingleChildScrollView(child: SizedBox(height: 420, child: scoreboard)),
-                    ),
-                  ],
-                ),
-        ),
+    return LeaveGameGuard(
+      canLeave: widget.watching || _game.isFinished || currentRecord.throws.isEmpty,
+      child: Scaffold(
+        appBar: AppBar(title: Text('${widget.settings.startScore}')),
+        body: GameLayout(input: input, panel: scoreboard),
       ),
     );
   }
 
   String _dartText(AppLocalizations l10n, X01Dart dart) => switch (dart.result) {
-    DartResult.notIn => '${dart.dart.score.label} (${l10n.notIn})',
-    _ => dart.dart.score.label,
+    DartResult.notIn => '${dart.dart.score.text(l10n)} (${l10n.notIn})',
+    _ => dart.dart.score.text(l10n),
   };
 }
 
@@ -234,7 +218,7 @@ class _PlayerCard extends StatelessWidget {
                 children: [
                   Text(player.name, style: theme.textTheme.titleMedium),
                   Text(
-                    '${l10n.legs} ${player.legsWon} · Ø ${player.threeDartAverage.toStringAsFixed(1)}',
+                    '${l10n.legs} ${player.legsWon} · Ø ${decimal(l10n, player.threeDartAverage)}',
                     style: theme.textTheme.bodySmall,
                   ),
                 ],

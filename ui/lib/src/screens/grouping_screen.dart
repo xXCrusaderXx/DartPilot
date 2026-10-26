@@ -16,6 +16,7 @@ import '../widgets/precision_text.dart';
 import 'game_layout.dart';
 import 'my_darts_screen.dart';
 import 'watched_board.dart';
+import '../widgets/leave_game_guard.dart';
 
 /// Grouping training (#125): darts at one target, with the miss of every dart and the group's spread in mm.
 class GroupingScreen extends StatefulWidget {
@@ -182,19 +183,22 @@ class _GroupingScreenState extends State<GroupingScreen> with RecordsGame {
         ),
       ],
     );
-    return Scaffold(
-      appBar: AppBar(title: Text('${l10n.modeGrouping} ${widget.target.label}')),
-      body: GameLayout(
-        input: widget.watching
-            ? WatchedBoard(throws: _game.currentVisit)
-            : GameInput(
-                game: _game,
-                takeout: _takeout,
-                shownThrows: throws,
-                onDart: _add,
-                onChanged: () => setState(() {}),
-              ),
-        panel: panel,
+    return LeaveGameGuard(
+      canLeave: widget.watching || _game.isFinished || currentRecord.throws.isEmpty,
+      child: Scaffold(
+        appBar: AppBar(title: Text('${l10n.modeGrouping} ${widget.target.label}')),
+        body: GameLayout(
+          input: widget.watching
+              ? WatchedBoard(throws: throws)
+              : GameInput(
+                  game: _game,
+                  takeout: _takeout,
+                  shownThrows: throws,
+                  onDart: _add,
+                  onChanged: () => setState(() {}),
+                ),
+          panel: panel,
+        ),
       ),
     );
   }

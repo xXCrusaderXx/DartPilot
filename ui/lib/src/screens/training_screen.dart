@@ -4,6 +4,8 @@ import '../../l10n/app_localizations.dart';
 import '../games/training.dart';
 import '../input/game_input.dart';
 import '../input/takeout_gate.dart';
+import '../board/score_text.dart';
+import '../widgets/precision_text.dart';
 
 class TrainingScreen extends StatefulWidget {
   const TrainingScreen({super.key});
@@ -35,7 +37,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     child: Text(
-                      i < visit.length ? visit[i].score.label : '–',
+                      i < visit.length ? visit[i].score.text(l10n) : '–',
                       key: ValueKey('visit-dart-$i'),
                       textAlign: TextAlign.center,
                       style: theme.textTheme.headlineSmall,
@@ -48,7 +50,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
         const SizedBox(height: 16),
         _Stat(l10n.darts, '${_training.dartCount}'),
         _Stat(l10n.points, '${_training.totalPoints}', key: const ValueKey('total-points')),
-        _Stat(l10n.average, _training.threeDartAverage.toStringAsFixed(1)),
+        _Stat(l10n.average, decimal(l10n, _training.threeDartAverage)),
         const SizedBox(height: 16),
         if (_training.dartCount == 0) Text(l10n.noThrowsYet, style: theme.textTheme.bodyMedium),
         const Spacer(),

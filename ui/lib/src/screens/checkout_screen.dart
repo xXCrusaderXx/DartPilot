@@ -19,6 +19,7 @@ import '../widgets/precision_text.dart';
 import 'game_layout.dart';
 import 'my_darts_screen.dart';
 import 'watched_board.dart';
+import '../widgets/leave_game_guard.dart';
 
 /// Checkout trainer (#125): random finishes, the field to aim at before every dart, and how far each dart missed it.
 class CheckoutScreen extends StatefulWidget {
@@ -208,19 +209,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
         ),
       ],
     );
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.modeCheckout)),
-      body: GameLayout(
-        input: widget.watching
-            ? WatchedBoard(throws: shown.darts)
-            : GameInput(
-                game: _game,
-                takeout: _takeout,
-                shownThrows: shown.darts,
-                onDart: _add,
-                onChanged: () => setState(() {}),
-              ),
-        panel: panel,
+    return LeaveGameGuard(
+      canLeave: widget.watching || _game.isFinished || currentRecord.throws.isEmpty,
+      child: Scaffold(
+        appBar: AppBar(title: Text(l10n.modeCheckout)),
+        body: GameLayout(
+          input: widget.watching
+              ? WatchedBoard(throws: shown.darts)
+              : GameInput(
+                  game: _game,
+                  takeout: _takeout,
+                  shownThrows: shown.darts,
+                  onDart: _add,
+                  onChanged: () => setState(() {}),
+                ),
+          panel: panel,
+        ),
       ),
     );
   }
