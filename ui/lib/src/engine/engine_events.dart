@@ -18,6 +18,7 @@ sealed class EngineEvent {
     'camera_status' => EngineCameraStatus.fromJson(json),
     'board_state' => EngineBoardState.fromJson(json),
     'board_image' => BoardImage.fromJson(json),
+    'throw_views' => ThrowViews.fromJson(json),
     'reference_run' => ReferenceRun.fromJson(json),
     'shared_game' => SharedGame(json['client'] as String? ?? '', json['game'] as Map<String, dynamic>?),
     'diagnosis' => EngineDiagnosis.fromJson(json),
@@ -1078,3 +1079,73 @@ Map<String, double> _dims(Object? json) => {
     for (final MapEntry(:key, :value) in json.entries)
       if (value is num) key: value.toDouble(),
 };
+
+/// The camera views of one throw (#129, docs/engine-api.md, "throw_views"): a crop per camera before and after the
+/// throw, with what the detection found in it. Points are in pixels of the crops.
+class ThrowViews extends EngineEvent {
+  const ThrowViews({required this.throwId, required this.point, required this.cameras});
+
+  final String throwId;
+  final BoardPoint? point;
+  final List<ThrowView> cameras;
+
+  factory ThrowViews.fromJson(Map<String, dynamic> json) => ThrowViews(
+    throwId: json['throw_id'] as String,
+    point: _point(json['board_point']),
+    cameras: [for (final c in json['cameras'] as List? ?? const []) ThrowView.fromJson(c as Map<String, dynamic>)],
+  );
+}
+
+class ThrowView {
+  const ThrowView({
+    required this.camera,
+    required this.used,
+    this.reason = '',
+    this.planeDistanceMm,
+    required this.imageSizePx,
+    this.before,
+    this.after,
+    this.tipPx,
+    this.axisPx,
+    this.locatedPx,
+  });
+
+  final String camera;
+  final bool used;
+
+  /// Why the camera did not count: not_seen, cut, disagrees
+  final String reason;
+  final double? planeDistanceMm;
+
+  /// Size of the crops, which the points refer to
+  final Size imageSizePx;
+  final Uint8List? before;
+  final Uint8List? after;
+  final Offset? tipPx;
+  final (Offset, Offset)? axisPx;
+  final Offset? locatedPx;
+
+  static Offset? _offset(Object? json) =>
+      json is List && json.length == 2 ? Offset((json[0] as num).toDouble(), (json[1] as num).toDouble()) : null;
+
+  static Uint8List? _jpeg(Object? json) => json is String && json.isNotEmpty ? base64Decode(json) : null;
+
+  factory ThrowView.fromJson(Map<String, dynamic> json) {
+    final size = json['image_size_px'] as List? ?? const [0, 0];
+    final axis = json['axis_px'];
+    final from = axis is List && axis.length == 2 ? _offset(axis[0]) : null;
+    final to = axis is List && axis.length == 2 ? _offset(axis[1]) : null;
+    return ThrowView(
+      camera: json['camera'] as String,
+      used: json['used'] as bool? ?? false,
+      reason: json['reason'] as String? ?? '',
+      planeDistanceMm: _number(json['plane_distance_mm']),
+      imageSizePx: Size((size[0] as num).toDouble(), (size[1] as num).toDouble()),
+      before: _jpeg(json['before_jpeg_base64']),
+      after: _jpeg(json['after_jpeg_base64']),
+      tipPx: _offset(json['tip_px']),
+      axisPx: from != null && to != null ? (from, to) : null,
+      locatedPx: _offset(json['located_px']),
+    );
+  }
+}

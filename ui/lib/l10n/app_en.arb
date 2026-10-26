@@ -1269,5 +1269,42 @@
         "type": "String"
       }
     }
-  }
+  },
+  "throwViewTitle": "Dart {label}",
+  "@throwViewTitle": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "throwViewBefore": "Before",
+  "throwViewAfter": "After",
+  "throwViewLegend": "Line: the dart's axis as the camera saw it. Ring: the tip it found. Cross: the located point.",
+  "throwViewNoEngine": "Camera views come from the engine. Connect to the engine that detected this dart.",
+  "throwViewNotAvailable": "The engine has no camera images of this dart, e.g. because it was entered by hand or simulated.",
+  "throwViewFailed": "The camera views could not be loaded ({code}).",
+  "@throwViewFailed": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "throwViewCorrect": "Correct this dart",
+  "throwViewUsed": "counted",
+  "throwViewNotUsed": "not counted",
+  "throwViewNotSeen": "did not see the dart",
+  "throwViewCut": "dart cut by the image border",
+  "throwViewDisagrees": "disagrees with the other cameras",
+  "throwViewPlaneDistance": "{mm} mm off the point",
+  "@throwViewPlaneDistance": {
+    "placeholders": {
+      "mm": {
+        "type": "String"
+      }
+    }
+  },
+  "throwViewOpen": "Camera views",
+  "gameThrowsTitle": "Darts of the game"
 }

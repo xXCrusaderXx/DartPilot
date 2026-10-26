@@ -18,6 +18,7 @@ import '../widgets/hit_heatmap.dart';
 import '../widgets/player_picker.dart';
 import '../widgets/precision_plot.dart';
 import '../widgets/precision_text.dart';
+import 'game_throws_screen.dart';
 import 'round_game_screen.dart';
 
 /// The player profiles of this device with their statistics; profiles are created and deleted here.
@@ -434,7 +435,11 @@ class _HistoryTile extends StatelessWidget {
         : '';
     final others = record.players.length - 1;
     return ListTile(
+      key: ValueKey('history-${record.id}'),
       contentPadding: EdgeInsets.zero,
+      onTap: () =>
+          Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => GameThrowsScreen(record: record))),
+      trailing: const Icon(Icons.chevron_right),
       leading: Icon(
         game.won ? Icons.emoji_events : Icons.sports_score,
         color: game.won ? StatusColors.of(context).warning : null,

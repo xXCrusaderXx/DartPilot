@@ -3469,6 +3469,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{marks} of {needed} on {field}'**
   String killerMarks(int marks, int needed, String field);
+
+  /// No description provided for @throwViewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Dart {label}'**
+  String throwViewTitle(String label);
+
+  /// No description provided for @throwViewBefore.
+  ///
+  /// In en, this message translates to:
+  /// **'Before'**
+  String get throwViewBefore;
+
+  /// No description provided for @throwViewAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'After'**
+  String get throwViewAfter;
+
+  /// No description provided for @throwViewLegend.
+  ///
+  /// In en, this message translates to:
+  /// **'Line: the dart\'s axis as the camera saw it. Ring: the tip it found. Cross: the located point.'**
+  String get throwViewLegend;
+
+  /// No description provided for @throwViewNoEngine.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera views come from the engine. Connect to the engine that detected this dart.'**
+  String get throwViewNoEngine;
+
+  /// No description provided for @throwViewNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The engine has no camera images of this dart, e.g. because it was entered by hand or simulated.'**
+  String get throwViewNotAvailable;
+
+  /// No description provided for @throwViewFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The camera views could not be loaded ({code}).'**
+  String throwViewFailed(String code);
+
+  /// No description provided for @throwViewCorrect.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct this dart'**
+  String get throwViewCorrect;
+
+  /// No description provided for @throwViewUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'counted'**
+  String get throwViewUsed;
+
+  /// No description provided for @throwViewNotUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'not counted'**
+  String get throwViewNotUsed;
+
+  /// No description provided for @throwViewNotSeen.
+  ///
+  /// In en, this message translates to:
+  /// **'did not see the dart'**
+  String get throwViewNotSeen;
+
+  /// No description provided for @throwViewCut.
+  ///
+  /// In en, this message translates to:
+  /// **'dart cut by the image border'**
+  String get throwViewCut;
+
+  /// No description provided for @throwViewDisagrees.
+  ///
+  /// In en, this message translates to:
+  /// **'disagrees with the other cameras'**
+  String get throwViewDisagrees;
+
+  /// No description provided for @throwViewPlaneDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'{mm} mm off the point'**
+  String throwViewPlaneDistance(String mm);
+
+  /// No description provided for @throwViewOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera views'**
+  String get throwViewOpen;
+
+  /// No description provided for @gameThrowsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Darts of the game'**
+  String get gameThrowsTitle;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

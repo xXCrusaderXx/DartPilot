@@ -8,6 +8,7 @@ import '../board/scoring.dart';
 import '../engine/engine_connection.dart';
 import '../engine/engine_events.dart';
 import '../games/dart_game.dart';
+import '../screens/throw_views_screen.dart';
 import 'takeout_gate.dart';
 import 'throw_input_panel.dart';
 
@@ -222,6 +223,20 @@ class _GameInputState extends State<GameInput> {
 
   Score _scoreAt(BoardPoint point) => DartThrow(point, ThrowInput.engine, geometry: _geometry).score;
 
+  /// The camera views of a detected dart (#129); the player may go on to correct it from there.
+  Future<void> _openViews(int index) async {
+    final dart = widget.game.throws[index];
+    final id = dart.engineThrowId;
+    if (id == null) return;
+    final correct = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => ThrowViewsScreen(throwId: id, label: dart.score.label, canCorrect: true),
+      ),
+    );
+    if (!mounted) return;
+    setState(() => _correcting = correct == true ? index : null);
+  }
+
   void _discardPending() {
     final pending = _pending;
     if (pending == null) return;
@@ -301,7 +316,15 @@ class _GameInputState extends State<GameInput> {
         color: theme.colorScheme.tertiaryContainer,
         icon: Icons.edit_location_alt,
         title: l10n.correctingDart(throws[correcting].score.label),
-        actions: [TextButton(onPressed: () => setState(() => _correcting = null), child: Text(l10n.cancel))],
+        actions: [
+          if (throws[correcting].engineThrowId != null)
+            TextButton(
+              key: const ValueKey('open-throw-views'),
+              onPressed: () => _openViews(correcting),
+              child: Text(l10n.throwViewOpen),
+            ),
+          TextButton(onPressed: () => setState(() => _correcting = null), child: Text(l10n.cancel)),
+        ],
       );
     }
 

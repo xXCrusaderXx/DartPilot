@@ -357,6 +357,40 @@ One game on several displays (#116, ADR 0010): the app that leads the game share
 { "type": "shared_game", "client": "kitchen-tablet", "game": { "mode": "x01", "current_player": 1, "...": "..." } }
 ```
 
+### throw_views
+
+The camera views of one throw (#129), the answer to `get_throw_views`: for every camera a crop of the board around the dart before and after the throw, and what the detection made of it, so a player can see why a dart was scored where it was.
+
+```json
+{
+  "type": "throw_views",
+  "throw_id": "20261024T190000Z-7c1e/17",
+  "board_point": { "x_mm": 12.4, "y_mm": 98.1, "covariance_mm2": { "xx": 0.6, "xy": 0.1, "yy": 0.9 } },
+  "cameras": [
+    {
+      "camera": "usb-2.4.3.1.2",
+      "used": true,
+      "reason": "",
+      "plane_distance_mm": 0.4,
+      "crop_px": [ 512, 180, 240, 240 ],
+      "image_size_px": [ 240, 240 ],
+      "before_jpeg_base64": "/9j/4AAQ...",
+      "after_jpeg_base64": "/9j/4AAQ...",
+      "tip_px": [ 118.5, 131.0 ],
+      "axis_px": [ [ 118.5, 131.0 ], [ 201.0, 40.5 ] ],
+      "located_px": [ 119.2, 130.1 ]
+    }
+  ]
+}
+```
+
+- `crop_px`: where the crop lies in the camera's full image (x, y, width, height); `image_size_px`: the size of the JPEGs, which may be scaled down to `max_width`. All other points are in pixels of the JPEGs, so a client draws them as they are.
+- `tip_px`: where this camera found the dart's tip; `axis_px`: two points on the dart's axis as the camera saw it; `located_px`: the located board point projected into this camera. Each is `null` when there is none, e.g. for a camera that did not see the dart.
+- `used`, `reason` and `plane_distance_mm` as in `throw` and the diagnosis: whether the camera counted, why not (`not_seen`, `cut`, `disagrees`), and how far its axis plane passes the located point.
+- `board_point` is the throw's point as it stands now, after corrections; `null` for an abstention without a point.
+
+Fails with `unknown_throw`, and with `not_available` for a throw without frames: one added by a client, one from `--simulate` alone, or one whose frames the engine no longer holds.
+
 ### engine_status
 
 ```json
@@ -397,6 +431,7 @@ Every request carries a `request_id` chosen by the client and is answered with `
 | `start_reference_run` / `stop_reference_run` | – | The guided reference measurement; its state comes as `reference_run` |
 | `subscribe_calibration_check` / `unsubscribe_calibration_check` | – | Detailed calibration checks every 2 s as `calibration_check` |
 | `get_board_image` | `size_px`, `radius_mm` (optional) | The real board from the front; answered with `board_image` |
+| `get_throw_views` | `throw_id`, `max_width` (optional, default 320) | The camera views of a throw; answered with `throw_views` |
 | `get_detection_params` | – | The detection values; answered with `detection_params` |
 | `set_detection_params` | `params` (name → number or `null`) | Changes detection values; `detection_params` goes to every client |
 | `share_game` | `game` (an object of up to 256 KB) | Shares the game with every display; sent on as `shared_game` |
