@@ -8,6 +8,8 @@ Rectangle {
 
     property string text
     property color tone: Tokens.accent
+    // Read from the board while placing darts: larger
+    property bool glance: false
     default property alias trailing: extra.data
 
     Layout.fillWidth: true
@@ -27,7 +29,7 @@ Rectangle {
         Label {
             Layout.fillWidth: true
             text: "→  " + banner.text
-            font.pixelSize: Tokens.headingSize
+            font.pixelSize: banner.glance ? Tokens.glanceSize : Tokens.headingSize
             color: Tokens.text
             wrapMode: Text.WordWrap
             verticalAlignment: Text.AlignVCenter

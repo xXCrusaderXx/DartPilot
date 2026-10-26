@@ -49,6 +49,8 @@ QtObject {
     readonly property int bodySize: 14
     readonly property int captionSize: 12
     readonly property int iconSize: 20
+    // Text read standing at the board, about 1.5 m away
+    readonly property int glanceSize: 26
     readonly property string codeFont: "monospace"
 
     readonly property int sidebarWidth: 260

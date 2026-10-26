@@ -71,19 +71,42 @@ Item {
     Repeater {
         model: picker.marks
 
-        delegate: Rectangle {
-            required property var modelData
+        // Shape as well as colour, so the outcomes stay apart without telling red from green
+        delegate: Item {
+            id: mark
 
+            required property var modelData
             readonly property point at: picker.toItem(modelData.xMm, modelData.yMm)
+            readonly property string shape: modelData.shape || "dot"
 
             x: at.x - width / 2
             y: at.y - height / 2
-            width: modelData.selected ? 16 : 11
+            width: modelData.selected ? 18 : 13
             height: width
-            radius: width / 2
-            color: modelData.colour
-            border.color: modelData.selected ? Tokens.text : Tokens.background
-            border.width: 2
+
+            Rectangle {
+                visible: mark.shape !== "cross"
+                anchors.fill: parent
+                radius: mark.shape === "square" ? 2 : width / 2
+                color: mark.shape === "ring" ? "transparent" : mark.modelData.colour
+                border.color: mark.shape === "ring" ? mark.modelData.colour : mark.modelData.selected ? Tokens.text : Tokens.background
+                border.width: mark.shape === "ring" ? 3 : 2
+            }
+            Repeater {
+                model: mark.shape === "cross" ? [45, -45] : []
+
+                delegate: Rectangle {
+                    required property int modelData
+
+                    anchors.centerIn: parent
+                    width: mark.width * 1.2
+                    height: 3
+                    radius: 1.5
+                    rotation: modelData
+                    color: mark.modelData.colour
+                    border.color: mark.modelData.selected ? Tokens.text : "transparent"
+                }
+            }
         }
     }
 

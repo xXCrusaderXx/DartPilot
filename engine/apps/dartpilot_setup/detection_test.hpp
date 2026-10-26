@@ -86,6 +86,8 @@ class DetectionTest : public QObject
     // The names of one group's parameters, in order. They do not change while the app runs, so a list of them is a
     // model whose rows, and the focus inside them, survive a change of the values.
     Q_INVOKABLE QStringList paramNames (const QString& group) const;
+    // A parameter group's heading: "Event detection" for event_detection
+    Q_INVOKABLE QString groupTitle (const QString& group) const;
     // One parameter as in params; revision is passed only so that a binding reads it again after every change.
     Q_INVOKABLE QVariantMap param (const QString& name, int revision) const;
 
