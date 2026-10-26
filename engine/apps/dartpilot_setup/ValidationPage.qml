@@ -66,8 +66,8 @@ ColumnLayout {
                 wrapMode: Text.WordWrap
             }
             Chip {
-                text: run.status === "measuring" ? "Measuring" : run.status === "moving" ? "Movement" : "Still"
-                tone: run.status === "measuring" ? Tokens.accent : run.status === "moving" ? Tokens.warning : Tokens.good
+                text: run.status === "measuring" ? "Measuring" : run.status === "moving" ? "Movement" : run.status === "waiting" ? "Waiting" : "Still"
+                tone: run.status === "measuring" ? Tokens.accent : run.status === "moving" ? Tokens.warning : run.status === "waiting" ? Tokens.textMuted : Tokens.good
                 dot: true
             }
         }
@@ -171,7 +171,7 @@ ColumnLayout {
                     Layout.fillWidth: true
                     step: 2
                     title: "Dart in the bull centre"
-                    done: run.step === "darts"
+                    done: run.bull.located === true
 
                     Label {
                         Layout.fillWidth: true
@@ -185,6 +185,13 @@ ColumnLayout {
                         wrapMode: Text.WordWrap
                         color: run.bull.located ? (run.bull.errorMm <= 1.0 ? Tokens.good : run.bull.errorMm <= 2.0 ? Tokens.warning : Tokens.bad) : Tokens.bad
                         text: run.bull.located ? run.bull.errorMm.toFixed(2) + " mm from the centre, cameras " + run.bull.cameras + ", planes within " + run.bull.worstPlaneMm.toFixed(2) + " mm" : "Not located: the cameras do not agree on the dart."
+                    }
+                    Label {
+                        visible: run.step === "darts" && run.bull.located === undefined
+                        Layout.fillWidth: true
+                        wrapMode: Text.WordWrap
+                        color: Tokens.warning
+                        text: "Skipped: the darts below show how well the cameras agree, not how far off they are."
                     }
                     Button {
                         visible: run.step === "bull"
@@ -200,7 +207,7 @@ ColumnLayout {
                     Layout.fillWidth: true
                     step: 3
                     title: "Darts anywhere"
-                    done: run.darts.length >= 8
+                    done: run.locatedCount >= 8
 
                     Label {
                         Layout.fillWidth: true

@@ -15,6 +15,9 @@ ColumnLayout {
     property int selected: 0
     readonly property var camera: selected >= 0 && selected < cameras.length ? cameras[selected] : null
 
+    // The last press of "Save calibration" wrote nothing
+    property bool saveFailed: false
+
     signal saved
 
     spacing: Tokens.spacing
@@ -66,9 +69,19 @@ ColumnLayout {
             // The views belong to one camera; switching starts over.
             onActivated: index => {
                 page.selected = index;
+                page.saveFailed = false;
                 view.clearViews();
             }
         }
+    }
+
+    // Why the stored calibration of this camera does not apply, e.g. taken in another mode
+    Label {
+        visible: page.camera !== null && page.camera.intrinsicsWarning !== ""
+        Layout.fillWidth: true
+        wrapMode: Text.WordWrap
+        color: Tokens.warning
+        text: page.camera ? "The stored calibration does not apply: " + page.camera.intrinsicsWarning : ""
     }
 
     RowLayout {
@@ -159,7 +172,8 @@ ColumnLayout {
                     Layout.fillWidth: true
                     step: 1
                     title: "Pattern"
-                    done: patternPath.text !== "" && patternPath.text !== "Saving failed"
+                    // Shown, printed or on another device: the pattern is ready once the camera captured a view of it
+                    done: view.viewCount > 0
 
                     RowLayout {
                         spacing: 8
@@ -496,7 +510,8 @@ ColumnLayout {
                         text: "Save calibration"
                         enabled: view.calibrated
                         onClicked: {
-                            if (view.save() !== "")
+                            page.saveFailed = view.save() === "";
+                            if (!page.saveFailed)
                                 page.saved();
                         }
                     }
@@ -504,8 +519,8 @@ ColumnLayout {
                         Layout.fillWidth: true
                         wrapMode: Text.WrapAnywhere
                         font.pixelSize: Tokens.captionSize
-                        color: view.savedPath !== "" ? Tokens.good : Tokens.textMuted
-                        text: view.savedPath !== "" ? "Saved to " + view.savedPath : "Saved to " + view.calibrationDirectory()
+                        color: page.saveFailed ? Tokens.bad : view.savedPath !== "" ? Tokens.good : Tokens.textMuted
+                        text: page.saveFailed ? "Saving failed. Check that " + view.calibrationDirectory() + " is writable." : view.savedPath !== "" ? "Saved to " + view.savedPath : "Will be saved to " + view.calibrationDirectory()
                     }
                 }
             }

@@ -24,7 +24,7 @@ std::shared_ptr<CameraStream> CameraStream::acquire (const std::string& path)
 {
     // Views are created and destroyed on the GUI thread only.
     static std::map<std::string, std::weak_ptr<CameraStream>> streams;
-    if(auto stream = streams[path].lock())
+    if(auto stream = streams[path].lock(); stream && !stream->ended())
     {
         return stream;
     }
@@ -79,6 +79,7 @@ void CameraStream::run ()
     {
         std::lock_guard lock(mutex_);
         snapshot_.error = "Cannot open " + path_;
+        ended_ = true;
         return;
     }
     // Reference mode, see docs/hardware.md. The FOURCC must be set before the size.
@@ -97,6 +98,7 @@ void CameraStream::run ()
         {
             std::lock_guard lock(mutex_);
             snapshot_.error = "No frame from " + path_;
+            ended_ = true;
             return;
         }
         ++frame_count;

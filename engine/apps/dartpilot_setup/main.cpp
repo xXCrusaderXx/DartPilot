@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include <QCommandLineParser>
 #include <QGuiApplication>
 #include <QIcon>
@@ -7,6 +9,12 @@
 #include <QTimer>
 
 #include "pattern_image_provider.hpp"
+
+namespace
+{
+// Index of the last page of Main.qml's StackLayout
+constexpr int kLastPage = 6;
+}  // namespace
 
 int main (int argc, char* argv[])
 {
@@ -19,7 +27,10 @@ int main (int argc, char* argv[])
     QCommandLineParser parser;
     parser.setApplicationDescription("DartPilot camera setup and diagnostics");
     parser.addHelpOption();
-    const QCommandLineOption page_option("page", "Page shown at start: 0 cameras, 1 intrinsic, 2 extrinsic.", "index", "0");
+    const QCommandLineOption page_option("page",
+                                         "Page shown at start: 0 cameras, 1 intrinsic, 2 extrinsic, 3 calibration check, 4 pin check, 5 validation, "
+                                         "6 detection test.",
+                                         "index", "0");
     // For documentation and for checking the layout without a display, e.g. with QT_QPA_PLATFORM=offscreen
     const QCommandLineOption screenshot_option("screenshot", "Save the window as an image after --delay milliseconds and quit.", "file");
     const QCommandLineOption delay_option("delay", "Delay before --screenshot, in milliseconds.", "ms", "3000");
@@ -30,7 +41,7 @@ int main (int argc, char* argv[])
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed, &app, [] { QCoreApplication::exit(1); }, Qt::QueuedConnection);
     // The engine takes ownership of the provider.
     engine.addImageProvider("charuco", new dartpilot::setup::PatternImageProvider);
-    engine.setInitialProperties({{"initialPage", parser.value(page_option).toInt()}});
+    engine.setInitialProperties({{"initialPage", std::clamp(parser.value(page_option).toInt(), 0, kLastPage)}});
     engine.loadFromModule("DartPilotSetup", "Main");
 
     if(parser.isSet(screenshot_option) && !engine.rootObjects().isEmpty())

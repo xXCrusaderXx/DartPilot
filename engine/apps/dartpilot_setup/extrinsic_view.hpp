@@ -20,6 +20,8 @@ class ExtrinsicView : public StreamView
     // idle, detecting, failed, pick (board found, waiting for the click on 20) or done
     Q_PROPERTY(QString state READ state NOTIFY stateChanged)
     Q_PROPERTY(QString message READ message NOTIFY stateChanged)
+    // The last fitted plane could not be written; it is shown but not stored
+    Q_PROPERTY(bool saveFailed READ saveFailed NOTIFY stateChanged)
     Q_PROPERTY(bool hasPlane READ hasPlane NOTIFY resultChanged)
     Q_PROPERTY(double rmsMm READ rmsMm NOTIFY resultChanged)
     Q_PROPERTY(double worstMm READ worstMm NOTIFY resultChanged)
@@ -35,6 +37,7 @@ class ExtrinsicView : public StreamView
     void setUsbPort (const QString& usb_port);
     QString state () const { return state_; }
     QString message () const { return message_; }
+    bool saveFailed () const { return save_failed_; }
     bool hasPlane () const { return plane_.has_value(); }
     double rmsMm () const { return plane_ ? plane_->fit.rms_mm : 0.0; }
     double worstMm () const { return plane_ ? plane_->fit.worst_mm : 0.0; }
@@ -47,6 +50,8 @@ class ExtrinsicView : public StreamView
    signals:
     void stateChanged ();
     void resultChanged ();
+    // A board plane was written to the calibration directory
+    void saved ();
 
    protected:
     void onFrame (const CameraSnapshot& snapshot) override;
@@ -61,6 +66,7 @@ class ExtrinsicView : public StreamView
     QString usb_port_;
     QString state_ = "idle";
     QString message_;
+    bool save_failed_ = false;
     // Frames summed for the detection; averaging lowers the noise of the colour edges
     cv::Mat frame_sum_;
     int frames_summed_ = 0;

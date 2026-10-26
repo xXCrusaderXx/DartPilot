@@ -43,6 +43,8 @@ class ValidationRun : public QObject
     Q_PROPERTY(QVariantMap bull READ bull NOTIFY resultsChanged)
     // Every further dart, newest first: located, xMm, yMm, label, cameras, worstPlaneMm, sdMm
     Q_PROPERTY(QVariantList darts READ darts NOTIFY resultsChanged)
+    // Darts the cameras located; abstained ones do not count towards a good set
+    Q_PROPERTY(int locatedCount READ locatedCount NOTIFY resultsChanged)
     // Per USB port the image points to mark in that camera: x, y and kind (dart, or end for a visible end)
     Q_PROPERTY(QVariantMap markers READ markers NOTIFY resultsChanged)
     Q_PROPERTY(QString summary READ summary NOTIFY resultsChanged)
@@ -62,6 +64,7 @@ class ValidationRun : public QObject
     QVariantList calibrationChecks () const { return calibration_checks_; }
     QVariantMap bull () const { return bull_; }
     QVariantList darts () const { return darts_; }
+    int locatedCount () const;
     QVariantMap markers () const { return markers_; }
     QString summary () const;
 

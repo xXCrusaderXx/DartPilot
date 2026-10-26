@@ -1,7 +1,9 @@
 #pragma once
 
+#include <chrono>
 #include <cstdint>
 #include <memory>
+#include <optional>
 
 #include <QtQml/qqmlregistration.h>
 #include <QImage>
@@ -57,6 +59,7 @@ class StreamView : public QQuickPaintedItem
 
    private:
     void poll ();
+    void reopenEndedStream ();
 
     QString device_path_;
     std::shared_ptr<CameraStream> stream_;
@@ -65,5 +68,7 @@ class StreamView : public QQuickPaintedItem
     std::uint64_t last_frame_count_ = 0;
     double fps_ = 0.0;
     QString error_;
+    // When a stream that ended is opened again; unset while the stream runs
+    std::optional<std::chrono::steady_clock::time_point> reopen_at_;
 };
 }  // namespace dartpilot::setup
