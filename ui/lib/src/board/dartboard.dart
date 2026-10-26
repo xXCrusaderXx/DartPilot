@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../engine/engine_events.dart';
 import 'dart_throw.dart';
 import 'scoring.dart';
+import '../widgets/live_jpeg.dart';
 
 /// Interactive dartboard drawn in board coordinates. A tap reports the board point in mm, so manual input goes
 /// through the same scorer as engine results.
@@ -47,6 +48,7 @@ class Dartboard extends StatelessWidget {
                 ? null
                 : (details) => onTap!(toBoard(details.localPosition, size, geometry, image: image)),
             child: _withImage(
+              context,
               size,
               CustomPaint(
                 size: size,
@@ -66,7 +68,7 @@ class Dartboard extends StatelessWidget {
   }
 
   /// The image placed by its board coordinates, the throws on top
-  Widget _withImage(Size size, Widget overlay) {
+  Widget _withImage(BuildContext context, Size size, Widget overlay) {
     final board = image;
     if (board == null) return overlay;
     final scale = scaleFor(size, geometry, image: board);
@@ -80,11 +82,12 @@ class Dartboard extends StatelessWidget {
             top: size.height / 2 - half,
             width: 2 * half,
             height: 2 * half,
-            child: Image.memory(
+            // A new image comes after every takeout; decoded at the size it is shown.
+            child: LiveJpeg(
               board.jpeg,
               key: const ValueKey('board-image'),
               fit: BoxFit.fill,
-              gaplessPlayback: true,
+              cacheWidth: (2 * half * MediaQuery.devicePixelRatioOf(context)).ceil(),
             ),
           ),
           overlay,

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../engine/engine_connection.dart';
 import '../engine/engine_events.dart';
+import 'live_jpeg.dart';
 
 /// Draws on top of a camera image. [scale] maps the camera's full-image pixels (the engine's coordinates) to the
 /// widget, so `Offset(x, y) * scale` is where the image pixel (x, y) appears.
@@ -110,7 +111,7 @@ class _OverlayPreviewState extends State<OverlayPreview> {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Image.memory(frame.jpeg, fit: BoxFit.fill, gaplessPlayback: true),
+                      LiveJpeg(frame.jpeg, fit: BoxFit.fill),
                       if (painter != null) CustomPaint(painter: _Overlay(painter, scale, widget.repaintKey)),
                     ],
                   ),

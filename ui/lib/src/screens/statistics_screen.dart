@@ -109,7 +109,7 @@ class StatisticsScreen extends StatelessWidget {
                     for (final player in players)
                       Builder(
                         builder: (context) {
-                          final stats = computePlayerStats(statistics!.games, player);
+                          final stats = statistics!.statsOf(player);
                           final average = stats.threeDartAverage;
                           return Card(
                             child: ListTile(
@@ -184,10 +184,12 @@ class _PlayerStatsScreenState extends State<PlayerStatsScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final games = StatisticsScope.maybeOf(context)?.games ?? const <GameRecord>[];
+    final statistics = StatisticsScope.maybeOf(context);
+    final games = statistics?.games ?? const <GameRecord>[];
     final since = _since(games);
-    final stats = computePlayerStats(games, widget.player, since: since);
-    final precision = computePlayerPrecision(games, widget.player, since: since);
+    final stats = statistics?.statsOf(widget.player, since: since) ?? computePlayerStats(games, widget.player);
+    final precision =
+        statistics?.precisionOf(widget.player, since: since) ?? computePlayerPrecision(games, widget.player);
     String n(double? v, [int decimals = 1]) => v == null ? '–' : _number(l10n, v, decimals);
     String percent(double? v) => v == null ? '–' : percentText(l10n, v);
     // X01 games, oldest first, the last 30
