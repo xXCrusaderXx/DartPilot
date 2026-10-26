@@ -127,6 +127,17 @@ class _ScanPageState extends State<_ScanPage> {
         fit: StackFit.expand,
         children: [
           MobileScanner(
+            // Without the camera, for instance when its permission is denied, the address field remains.
+            errorBuilder: (context, error) => Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  AppLocalizations.of(context).scanEngineQrUnavailable,
+                  key: const ValueKey('qr-scanner-error'),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
             onDetect: (capture) {
               if (_done) return;
               for (final code in capture.barcodes) {

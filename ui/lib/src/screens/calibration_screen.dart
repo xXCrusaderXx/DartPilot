@@ -332,6 +332,15 @@ class _KelvinBar extends StatelessWidget {
   final CameraWhiteBalance? camera;
   final int? stored;
 
+  /// The bar in words: the range of colour temperatures the board was found in
+  String _foundText(AppLocalizations l10n) {
+    final found = [
+      for (final e in (camera?.foundAt ?? const <int, bool>{}).entries)
+        if (e.value) e.key,
+    ]..sort();
+    return found.isEmpty ? l10n.calibLightNoneFound : l10n.calibLightFoundRange(found.first, found.last);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -343,16 +352,19 @@ class _KelvinBar extends StatelessWidget {
         children: [
           SizedBox(width: 90, child: Text(label)),
           Expanded(
-            child: SizedBox(
-              height: 18,
-              child: CustomPaint(
-                painter: _KelvinPainter(
-                  found: camera?.foundAt ?? const {},
-                  chosen: chosen,
-                  good: status.good,
-                  bad: status.bad.withValues(alpha: 0.5),
-                  track: Theme.of(context).colorScheme.outline,
-                  marker: Theme.of(context).colorScheme.primary,
+            child: Semantics(
+              label: _foundText(l10n),
+              child: SizedBox(
+                height: 18,
+                child: CustomPaint(
+                  painter: _KelvinPainter(
+                    found: camera?.foundAt ?? const {},
+                    chosen: chosen,
+                    good: status.good,
+                    bad: status.bad.withValues(alpha: 0.5),
+                    track: Theme.of(context).colorScheme.outline,
+                    marker: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
               ),
             ),

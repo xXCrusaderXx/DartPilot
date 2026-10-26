@@ -181,7 +181,10 @@ class _RoundGameScreenState extends State<RoundGameScreen> with RecordsGame, Bot
             valueKey: ValueKey('score-${_game.players[i].name}'),
           ),
         const SizedBox(height: 12),
-        VisitDarts([for (final (dart, hit) in _game.currentVisit) '${dart.score.text(l10n)} ${hit ? '✓' : '✗'}']),
+        VisitDarts(
+          [for (final (dart, _) in _game.currentVisit) dart.score.text(l10n)],
+          hits: [for (final (_, hit) in _game.currentVisit) hit],
+        ),
       ],
       bottom: [
         OutlinedButton.icon(

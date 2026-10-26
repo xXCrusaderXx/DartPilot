@@ -314,6 +314,18 @@ abstract class AppLocalizations {
   /// **'Legs to win'**
   String get legsToWin;
 
+  /// No description provided for @fewerLegs.
+  ///
+  /// In en, this message translates to:
+  /// **'One leg fewer'**
+  String get fewerLegs;
+
+  /// No description provided for @moreLegs.
+  ///
+  /// In en, this message translates to:
+  /// **'One leg more'**
+  String get moreLegs;
+
   /// No description provided for @startGame.
   ///
   /// In en, this message translates to:
@@ -361,6 +373,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Bust'**
   String get bust;
+
+  /// No description provided for @dartboardLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Dartboard'**
+  String get dartboardLabel;
+
+  /// No description provided for @dartboardTapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap where the dart is'**
+  String get dartboardTapHint;
+
+  /// No description provided for @calibLightNoneFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Board not found yet'**
+  String get calibLightNoneFound;
+
+  /// No description provided for @calibLightFoundRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Board found from {from} to {to} K'**
+  String calibLightFoundRange(int from, int to);
+
+  /// No description provided for @visitHit.
+  ///
+  /// In en, this message translates to:
+  /// **'Hit'**
+  String get visitHit;
+
+  /// No description provided for @visitNoHit.
+  ///
+  /// In en, this message translates to:
+  /// **'No hit'**
+  String get visitNoHit;
+
+  /// No description provided for @cricketMarksLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No marks} =1{1 mark} =2{2 marks} other{Closed}}'**
+  String cricketMarksLabel(int count);
 
   /// No description provided for @notIn.
   ///
@@ -2569,6 +2623,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Scan QR code'**
   String get scanEngineQr;
+
+  /// No description provided for @scanEngineQrUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The camera cannot be used to scan. Allow the camera for DartPilot, or type the address shown under the QR code.'**
+  String get scanEngineQrUnavailable;
 
   /// No description provided for @scanEngineQrHint.
   ///

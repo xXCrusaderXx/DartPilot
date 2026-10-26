@@ -6,6 +6,8 @@ import '../engine/engine_events.dart';
 import 'dart_throw.dart';
 import 'scoring.dart';
 import '../widgets/live_jpeg.dart';
+import '../../l10n/app_localizations.dart';
+import 'score_text.dart';
 
 /// Interactive dartboard drawn in board coordinates. A tap reports the board point in mm, so manual input goes
 /// through the same scorer as engine results.
@@ -37,32 +39,41 @@ class Dartboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 1,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final size = constraints.biggest;
-          return GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTapUp: onTap == null
-                ? null
-                : (details) => onTap!(toBoard(details.localPosition, size, geometry, image: image)),
-            child: _withImage(
-              context,
-              size,
-              CustomPaint(
-                size: size,
-                painter: _DartboardPainter(
-                  geometry,
-                  throws,
-                  Theme.of(context).colorScheme,
-                  image: image,
-                  highlights: highlights,
+    // Also drawn outside the app's localisations, for instance on its own in a test
+    final l10n = Localizations.of<AppLocalizations>(context, AppLocalizations);
+    // A painting to the eye; to a screen reader the board, its darts and, where it takes input, what a tap does
+    return Semantics(
+      label: l10n?.dartboardLabel,
+      value: l10n == null ? null : throws.map((t) => t.score.text(l10n)).join(', '),
+      hint: onTap == null ? null : l10n?.dartboardTapHint,
+      container: true,
+      child: AspectRatio(
+        aspectRatio: 1,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final size = constraints.biggest;
+            return GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTapUp: onTap == null
+                  ? null
+                  : (details) => onTap!(toBoard(details.localPosition, size, geometry, image: image)),
+              child: _withImage(
+                context,
+                size,
+                CustomPaint(
+                  size: size,
+                  painter: _DartboardPainter(
+                    geometry,
+                    throws,
+                    Theme.of(context).colorScheme,
+                    image: image,
+                    highlights: highlights,
+                  ),
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

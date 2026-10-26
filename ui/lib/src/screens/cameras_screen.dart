@@ -287,6 +287,7 @@ class _CameraPanelState extends State<CameraPanel> with _PreviewWatcher<CameraPa
                             child: LiveJpeg(
                               current.jpeg,
                               key: ValueKey('preview-${widget.camera}'),
+                              semanticLabel: cameraLabel(context, widget.camera),
                               cacheWidth: _decodeWidth(
                                 constraints.maxWidth * MediaQuery.devicePixelRatioOf(context),
                                 current.width,
@@ -362,7 +363,11 @@ class _CameraFullscreenState extends State<CameraFullscreen> with _PreviewWatche
               child: Center(
                 child: _StaleFrame(
                   seconds: secondsWithoutFrame,
-                  child: LiveJpeg(current.jpeg, key: ValueKey('fullscreen-${widget.camera}')),
+                  child: LiveJpeg(
+                    current.jpeg,
+                    key: ValueKey('fullscreen-${widget.camera}'),
+                    semanticLabel: cameraLabel(context, widget.camera),
+                  ),
                 ),
               ),
             ),

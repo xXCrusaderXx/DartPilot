@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../display.dart';
+import '../../l10n/app_localizations.dart';
+import '../theme.dart';
 
 /// Input on the left and the score panel on the right in landscape; stacked in portrait.
 class GameLayout extends StatelessWidget {
@@ -77,13 +79,19 @@ class ScrollingPanel extends StatelessWidget {
 
 /// The darts of the current visit as three cards
 class VisitDarts extends StatelessWidget {
-  const VisitDarts(this.labels, {super.key});
+  const VisitDarts(this.labels, {super.key, this.hits});
 
   final List<String> labels;
+
+  /// Whether each dart hit its target, in games that have one; shown as a tick or a cross beside the dart
+  final List<bool>? hits;
 
   @override
   Widget build(BuildContext context) {
     final style = Theme.of(context).textTheme.titleLarge;
+    final l10n = AppLocalizations.of(context);
+    final colours = StatusColors.of(context);
+    final hits = this.hits;
     return Row(
       children: [
         for (var i = 0; i < 3; ++i)
@@ -91,11 +99,25 @@ class VisitDarts extends StatelessWidget {
             child: Card(
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text(
-                  i < labels.length ? labels[i] : '–',
-                  key: ValueKey('visit-dart-$i'),
-                  textAlign: TextAlign.center,
-                  style: style,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      i < labels.length ? labels[i] : '–',
+                      key: ValueKey('visit-dart-$i'),
+                      textAlign: TextAlign.center,
+                      style: style,
+                    ),
+                    if (hits != null && i < hits.length) ...[
+                      const SizedBox(width: 6),
+                      Icon(
+                        hits[i] ? Icons.check : Icons.close,
+                        key: ValueKey('visit-hit-$i'),
+                        color: hits[i] ? colours.good : colours.bad,
+                        semanticLabel: hits[i] ? l10n.visitHit : l10n.visitNoHit,
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ),

@@ -241,7 +241,11 @@ class _CameraThumbnailState extends State<CameraThumbnail> {
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
           child: frame == null
               ? Center(child: Text(AppLocalizations.of(context).waitingForImage))
-              : LiveJpeg(frame.jpeg, key: ValueKey('thumbnail-${widget.camera}')),
+              : LiveJpeg(
+                  frame.jpeg,
+                  key: ValueKey('thumbnail-${widget.camera}'),
+                  semanticLabel: cameraLabel(context, widget.camera),
+                ),
         ),
       ),
     );

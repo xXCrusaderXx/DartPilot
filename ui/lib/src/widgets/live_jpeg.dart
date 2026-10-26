@@ -5,13 +5,16 @@ import 'package:flutter/widgets.dart';
 /// An image that is replaced often, such as a camera frame or the board image after each takeout. Each one leaves the
 /// image cache once the next one takes its place, so a live preview does not keep every frame it showed.
 class LiveJpeg extends StatefulWidget {
-  const LiveJpeg(this.jpeg, {super.key, this.fit = BoxFit.contain, this.cacheWidth});
+  const LiveJpeg(this.jpeg, {super.key, this.fit = BoxFit.contain, this.cacheWidth, this.semanticLabel});
 
   final Uint8List jpeg;
   final BoxFit fit;
 
   /// Pixels to decode into; null keeps the image's size
   final int? cacheWidth;
+
+  /// What the image shows, for screen readers: which camera
+  final String? semanticLabel;
 
   @override
   State<LiveJpeg> createState() => _LiveJpegState();
@@ -40,5 +43,6 @@ class _LiveJpegState extends State<LiveJpeg> {
   }
 
   @override
-  Widget build(BuildContext context) => Image(image: _provider, fit: widget.fit, gaplessPlayback: true);
+  Widget build(BuildContext context) =>
+      Image(image: _provider, fit: widget.fit, gaplessPlayback: true, semanticLabel: widget.semanticLabel);
 }
