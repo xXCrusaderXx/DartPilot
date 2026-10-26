@@ -15,6 +15,8 @@ import '../widgets/board_check.dart';
 import '../widgets/player_picker.dart';
 import '../widgets/precision_plot.dart';
 import '../widgets/precision_text.dart';
+import 'game_layout.dart';
+import '../widgets/player_row.dart';
 import 'game_scaffold.dart';
 import 'my_darts_screen.dart';
 import '../widgets/winner_dialog.dart';
@@ -126,22 +128,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
     final lastAim = shown.aims.isEmpty ? null : PrecisionTarget.parse(shown.aims.last);
     final route = _game.isFinished ? null : suggestCheckout(attempt.remaining, 3 - _game.dartsInVisit) ?? [_game.aim];
 
-    final panel = ListView(
-      children: [
-        Row(
-          children: [
-            Expanded(child: Text(widget.player, style: theme.textTheme.titleMedium)),
-            Text(
-              '${_game.isFinished ? 0 : attempt.remaining}',
-              key: const ValueKey('checkout-remaining'),
-              style: theme.textTheme.displaySmall,
-            ),
-          ],
-        ),
-        Text(
-          '${l10n.checkoutProgress(_game.attempts.length, widget.starts.length)}  ·  '
-          '${l10n.labelValue(l10n.statsCheckoutRate, l10n.countOf(_game.checkouts, _game.attemptsDone))}',
-          key: const ValueKey('checkout-progress'),
+    final panel = ScrollingPanel(
+      top: [
+        PlayerRow(
+          name: widget.player,
+          value: '${_game.isFinished ? 0 : attempt.remaining}',
+          valueKey: const ValueKey('checkout-remaining'),
+          details:
+              '${l10n.checkoutProgress(_game.attempts.length, widget.starts.length)}  ·  '
+              '${l10n.labelValue(l10n.statsCheckoutRate, l10n.countOf(_game.checkouts, _game.attemptsDone))}',
+          detailsKey: const ValueKey('checkout-progress'),
+          detailsFromAfar: true,
+          active: true,
         ),
         if (route != null) ...[
           const SizedBox(height: 8),
@@ -170,7 +168,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
             target: PrecisionTarget.parse(shown.aims[i]),
             showTarget: true,
           ),
-        const SizedBox(height: 8),
+      ],
+      bottom: [
         OutlinedButton.icon(
           onPressed: _game.throws.isEmpty || widget.watching ? null : () => setState(_game.undo),
           icon: const Icon(Icons.undo),

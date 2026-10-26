@@ -39,5 +39,36 @@ void main() {
         expect(tester.getRect(undo).bottom, lessThanOrEqualTo(size.height));
       });
     }
+    for (final training in ['Gruppieren', 'Doppel-Training', 'Checkout-Trainer']) {
+      testWidgets('$training fits $device, Undo included', (tester) async {
+        tester.view.physicalSize = size;
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+        final statistics = Statistics(MemoryGameStore(), MemoryProfileStore(['Anna']));
+        await statistics.load();
+        await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), statistics: statistics));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.byKey(const ValueKey('play-offline'), skipOffstage: false));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('play-offline')));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text('Präzisionstraining', skipOffstage: false));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Präzisionstraining'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(training));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.byKey(const ValueKey('start-game'), skipOffstage: false));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('start-game')));
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        final undo = find.widgetWithText(OutlinedButton, 'Rückgängig');
+        await tester.ensureVisible(undo);
+        await tester.pumpAndSettle();
+        expect(tester.getRect(undo).bottom, lessThanOrEqualTo(size.height));
+      });
+    }
   }
 }

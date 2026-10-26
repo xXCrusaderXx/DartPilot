@@ -12,6 +12,8 @@ import '../widgets/board_check.dart';
 import '../widgets/player_picker.dart';
 import '../widgets/precision_plot.dart';
 import '../widgets/precision_text.dart';
+import 'game_layout.dart';
+import '../widgets/player_row.dart';
 import 'game_scaffold.dart';
 import 'my_darts_screen.dart';
 import '../widgets/winner_dialog.dart';
@@ -100,17 +102,16 @@ class _GroupingScreenState extends State<GroupingScreen> with RecordsGame {
     final spread = _game.spread;
     final unmeasured = throws.length - _game.measured.length;
 
-    final panel = ListView(
-      children: [
-        Row(
-          children: [
-            Expanded(child: Text(widget.player, style: theme.textTheme.titleMedium)),
-            Text(widget.target.label, key: const ValueKey('grouping-target'), style: theme.textTheme.displaySmall),
-          ],
-        ),
-        Text(
-          l10n.groupingProgress((throws.length + 1).clamp(1, widget.dartCount), widget.dartCount),
-          key: const ValueKey('grouping-progress'),
+    final panel = ScrollingPanel(
+      top: [
+        PlayerRow(
+          name: widget.player,
+          value: widget.target.label,
+          valueKey: const ValueKey('grouping-target'),
+          details: l10n.groupingProgress((throws.length + 1).clamp(1, widget.dartCount), widget.dartCount),
+          detailsKey: const ValueKey('grouping-progress'),
+          detailsFromAfar: true,
+          active: true,
         ),
         const SizedBox(height: 12),
         Center(
@@ -141,7 +142,8 @@ class _GroupingScreenState extends State<GroupingScreen> with RecordsGame {
         if (unmeasured > 0) Text(l10n.groupingNotMeasured, style: theme.textTheme.bodySmall),
         for (var i = throws.length - 1; i >= 0; --i)
           MissTile(key: ValueKey('grouping-dart-$i'), number: i + 1, dart: throws[i], target: widget.target),
-        const SizedBox(height: 8),
+      ],
+      bottom: [
         OutlinedButton.icon(
           onPressed: throws.isEmpty || widget.watching ? null : () => setState(_game.undo),
           icon: const Icon(Icons.undo),
