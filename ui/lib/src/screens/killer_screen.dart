@@ -9,6 +9,9 @@ import '../games/dart_game.dart';
 import '../games/killer.dart';
 import '../input/game_input.dart';
 import '../input/takeout_gate.dart';
+import '../sound/caller.dart';
+import '../sound/game_calls.dart';
+import '../sound/x01_calls.dart';
 import '../stats/game_record.dart';
 import '../stats/statistics.dart';
 import '../widgets/winner_dialog.dart';
@@ -88,7 +91,13 @@ class _KillerScreenState extends State<KillerScreen> with RecordsGame, BotTurns 
   void addBotDart(DartThrow dart) => _add(dart);
 
   void _add(DartThrow dart) {
+    final livesBefore = [for (final p in _game.players) p.lives];
+    final killersBefore = [for (final p in _game.players) p.isKiller];
     setState(() => _game.add(dart));
+    if (!widget.watching) {
+      CallerScope.read(context)
+          .call(killerCalls(_game, livesBefore: livesBefore, killersBefore: killersBefore), callLanguage);
+    }
     if (!_game.isFinished) return;
     showWinnerDialog(
       context,

@@ -3,6 +3,8 @@ import 'package:dartpilot/src/board/dart_throw.dart';
 import 'package:dartpilot/src/board/scoring.dart';
 import 'package:dartpilot/src/games/around_the_clock.dart';
 import 'package:dartpilot/src/games/cricket.dart';
+import 'package:dartpilot/src/games/killer.dart';
+import 'package:dartpilot/src/games/round_games.dart';
 import 'package:dartpilot/src/games/x01.dart';
 import 'package:dartpilot/src/sound/caller.dart';
 import 'package:dartpilot/src/sound/game_calls.dart';
@@ -149,5 +151,52 @@ void main() {
     expect(voice.spoken, isEmpty);
     await tester.tap(find.byKey(const ValueKey('call-checkout')));
     expect(voice.spoken.single, callRoute(suggestCheckout(121, 3)!));
+  });
+
+  test('Shanghai, Bob\'s 27 and Halve-It call what each visit did to the score', () {
+    List<String> visit(RoundGame game, List<DartThrow> darts) {
+      var calls = <String>[];
+      for (final d in darts) {
+        final player = game.current;
+        final before = game.players[player].score;
+        game.add(d);
+        calls = roundCalls(game, player: player, scoreBefore: before);
+      }
+      return calls;
+    }
+
+    final halve = HalveItGame(['Anna']);
+    expect(visit(halve, [at(Ring.triple, 15), at(Ring.miss), at(Ring.miss)]), ['45']);
+    expect(visit(halve, [at(Ring.miss), at(Ring.miss), at(Ring.miss)]), ['Halved, 42']);
+
+    final bobs = Bobs27Game(['Anna']);
+    expect(visit(bobs, [at(Ring.double, 1), at(Ring.miss), at(Ring.miss)]), ['Plus 2, 29']);
+    expect(visit(bobs, [at(Ring.miss), at(Ring.miss), at(Ring.miss)]), ['Minus 4, 25']);
+
+    final shanghai = ShanghaiGame(['Anna', 'Ben']);
+    expect(visit(shanghai, [at(Ring.miss), at(Ring.miss), at(Ring.miss)]), ['No score']);
+    expect(visit(shanghai, [at(Ring.outerSingle, 1), at(Ring.double, 1), at(Ring.triple, 1)]), [
+      'Shanghai!',
+      'Game shot, and the match!',
+    ]);
+  });
+
+  test('Killer calls a new killer, every life taken and a player out', () {
+    final game = KillerGame(['Anna', 'Ben'], [20, 3], lives: 2);
+    List<String> dart(DartThrow d) {
+      final lives = [for (final p in game.players) p.lives];
+      final killers = [for (final p in game.players) p.isKiller];
+      game.add(d);
+      return killerCalls(game, livesBefore: lives, killersBefore: killers);
+    }
+
+    expect(dart(at(Ring.double, 20)), isEmpty);
+    expect(dart(at(Ring.double, 20)), isEmpty);
+    expect(dart(at(Ring.double, 20)), ['Anna is a killer!']);
+    for (var i = 0; i < 3; ++i) {
+      dart(at(Ring.miss));
+    }
+    expect(dart(at(Ring.double, 3)), ['Ben, 1 life left']);
+    expect(dart(at(Ring.double, 3)), ['Game shot, and the match!']);
   });
 }
