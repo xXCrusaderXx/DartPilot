@@ -7,10 +7,12 @@ import '../games/cricket.dart';
 import '../games/dart_game.dart';
 import '../games/doubles.dart';
 import '../games/grouping.dart';
+import '../games/killer.dart';
+import '../games/round_games.dart';
 import '../games/x01.dart';
 import 'precision.dart';
 
-enum GameMode { x01, cricket, aroundTheClock, grouping, doubles, checkout }
+enum GameMode { x01, cricket, aroundTheClock, grouping, doubles, checkout, shanghai, bobs27, halveIt, killer }
 
 class GameRecord {
   GameRecord({
@@ -30,9 +32,9 @@ class GameRecord {
   final DateTime ended;
   final List<String> players;
 
-  /// Mode settings: X01 start score, double in/out, legs to win; Around the Clock: end with the bull; grouping: the
+  /// Mode settings: X01 start score, double in/out, legs to win; Cricket: cut-throat; Around the Clock: end with the bull; grouping: the
   /// target and the number of darts; doubles practice: the doubles in order and the darts at each; checkout trainer:
-  /// the scores to check out and the darts for each
+  /// the scores to check out, the darts for each and whether it is the 121 ladder; Shanghai: the number of rounds; Killer: each player's number and the lives
   final Map<String, Object?> settings;
   final List<DartThrow> throws;
 
@@ -51,7 +53,7 @@ class GameRecord {
         }
         return (game: game, playerOf: playerOf);
       case GameMode.cricket:
-        final game = CricketGame(players);
+        final game = CricketGame(players, cutThroat: settings['cut_throat'] == true);
         for (final t in throws) {
           playerOf.add(game.current);
           game.add(t);
@@ -70,8 +72,39 @@ class GameRecord {
         return (game: replayed(doublesGame, throws), playerOf: List.filled(throws.length, 0));
       case GameMode.checkout:
         return (game: replayed(checkoutTrainer, throws), playerOf: List.filled(throws.length, 0));
+      case GameMode.killer:
+        final game = killerGame;
+        for (final t in throws) {
+          playerOf.add(game.current);
+          game.add(t);
+        }
+        return (game: game, playerOf: playerOf);
+      case GameMode.shanghai || GameMode.bobs27 || GameMode.halveIt:
+        final game = roundGame;
+        for (final t in throws) {
+          playerOf.add(game.current);
+          game.add(t);
+        }
+        return (game: game, playerOf: playerOf);
     }
   }
+
+  /// The empty Killer game of this record's numbers and lives
+  KillerGame get killerGame {
+    final numbers = [for (final n in settings['numbers'] as List? ?? const []) (n as num).toInt()];
+    return KillerGame(
+      players,
+      numbers.length == players.length ? numbers : killerNumbers(0, players.length),
+      lives: settings['lives'] as int? ?? 3,
+    );
+  }
+
+  /// The empty game of rounds of this record's mode and settings
+  RoundGame get roundGame => switch (mode) {
+    GameMode.bobs27 => Bobs27Game(players),
+    GameMode.halveIt => HalveItGame(players),
+    _ => ShanghaiGame(players, rounds: settings['rounds'] as int? ?? 7),
+  };
 
   /// The empty doubles practice of this record's settings
   DoublesGame get doublesGame {
@@ -87,7 +120,11 @@ class GameRecord {
   /// The empty checkout trainer of this record's settings
   CheckoutTrainer get checkoutTrainer {
     final starts = [for (final s in settings['starts'] as List? ?? const []) (s as num).toInt()];
-    return CheckoutTrainer(starts.isEmpty ? const [40] : starts, dartsPerAttempt: settings['darts'] as int? ?? 9);
+    return CheckoutTrainer(
+      starts.isEmpty ? const [40] : starts,
+      dartsPerAttempt: settings['darts'] as int? ?? 9,
+      ladder: settings['ladder'] == true,
+    );
   }
 
   /// The empty grouping game of this record's settings

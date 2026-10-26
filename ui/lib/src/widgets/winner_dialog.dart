@@ -84,6 +84,10 @@ class GameSummary extends StatelessWidget {
                   GameMode.grouping => [(l10n.precisionSpread, '${n(s.history.firstOrNull?.spreadMm)} mm')],
                   GameMode.doubles => [(l10n.hitRate, percent(s.history.firstOrNull?.hitRate))],
                   GameMode.checkout => [(l10n.statsCheckoutRate, percent(s.history.firstOrNull?.checkoutRate))],
+                  GameMode.killer => <(String, String)>[],
+                  GameMode.shanghai ||
+                  GameMode.bobs27 ||
+                  GameMode.halveIt => [(l10n.points, '${s.history.firstOrNull?.points ?? '–'}')],
                 },
               ];
               return Padding(

@@ -11,6 +11,7 @@ import 'around_the_clock_screen.dart';
 import 'calibration_screen.dart';
 import 'camera_assign_screen.dart';
 import 'cricket_screen.dart';
+import 'more_games_screen.dart';
 import 'precision_training_screen.dart';
 import 'training_screen.dart';
 import 'watch_game_screen.dart';
@@ -60,6 +61,12 @@ class HomeScreen extends StatelessWidget {
         l10n.modePrecision,
         l10n.modePrecisionDescription,
         () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PrecisionTrainingScreen())),
+      ),
+      (
+        Icons.casino_outlined,
+        l10n.modeMoreGames,
+        l10n.modeMoreGamesDescription,
+        () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const MoreGamesScreen())),
       ),
     ];
     return Scaffold(

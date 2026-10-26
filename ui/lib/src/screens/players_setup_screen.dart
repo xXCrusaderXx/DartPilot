@@ -6,9 +6,18 @@ import '../widgets/player_picker.dart';
 
 /// Setup for games that only need the players and a few switches.
 class PlayersSetupScreen extends StatefulWidget {
-  const PlayersSetupScreen({super.key, required this.title, required this.start, this.options = const []});
+  const PlayersSetupScreen({
+    super.key,
+    required this.title,
+    required this.start,
+    this.options = const [],
+    this.minPlayers = 1,
+  });
 
   final String title;
+
+  /// Players the game needs at least, bots included
+  final int minPlayers;
 
   /// Switches shown under the players, with their default values
   final List<(String, bool)> options;
@@ -52,7 +61,7 @@ class _PlayersSetupScreenState extends State<PlayersSetupScreen> {
               const SizedBox(height: 24),
               FilledButton.icon(
                 key: const ValueKey('start-game'),
-                onPressed: _players.isEmpty
+                onPressed: _players.players.length < widget.minPlayers
                     ? null
                     : () async {
                         if (!await confirmBoardEmpty(context) || !context.mounted) return;

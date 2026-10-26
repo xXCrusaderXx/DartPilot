@@ -1816,7 +1816,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get modeCheckoutDescription =>
-      'Zufällige Finishes; jeder Fehlwurf gemessen am Feld, auf das du zielen solltest';
+      'Zufällige Finishes oder die 121-Leiter; jeder Fehlwurf gemessen am Feld, auf das du zielen solltest';
 
   @override
   String get checkoutRange => 'Finishes';
@@ -1867,4 +1867,70 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get callCheckout => 'Checkout ansagen';
+
+  @override
+  String get modeMoreGames => 'Weitere Spiele';
+
+  @override
+  String get modeMoreGamesDescription => 'Shanghai, Bob\'s 27, Halve-It und Killer';
+
+  @override
+  String get modeShanghai => 'Shanghai';
+
+  @override
+  String get modeShanghaiDescription =>
+      'Runden 1 bis 7 auf die jeweilige Zahl; Single, Double und Triple in einer Aufnahme gewinnen sofort';
+
+  @override
+  String get shanghaiAllNumbers => 'Alle 20 Zahlen statt 7';
+
+  @override
+  String get modeBobs27 => 'Bob\'s 27';
+
+  @override
+  String get modeBobs27Description =>
+      'Doppel-Training: Start mit 27, D1 bis Bull; eine Aufnahme ohne Treffer kostet das Doppel';
+
+  @override
+  String get modeHalveIt => 'Halve-It';
+
+  @override
+  String get modeHalveItDescription => 'Start mit 40; eine Aufnahme ohne Treffer auf das Ziel halbiert deine Punkte';
+
+  @override
+  String roundOf(int round, int total) {
+    return 'Runde $round von $total';
+  }
+
+  @override
+  String get playerOut => 'raus';
+
+  @override
+  String get targetAnyDouble => 'beliebiges Doppel';
+
+  @override
+  String get targetAnyTriple => 'beliebiges Triple';
+
+  @override
+  String get cutThroat => 'Cut-Throat: Punkte gehen an die Gegner, die wenigsten Punkte gewinnen';
+
+  @override
+  String ladderBest(String score) {
+    return 'Höchster Checkout: $score';
+  }
+
+  @override
+  String get modeKiller => 'Killer';
+
+  @override
+  String get modeKillerDescription =>
+      'Triff dreimal dein eigenes Doppel, dann wirst du Killer und nimmst den anderen Leben';
+
+  @override
+  String get killerIsKiller => 'Killer';
+
+  @override
+  String killerMarks(int marks, int needed, String field) {
+    return '$marks von $needed auf $field';
+  }
 }
