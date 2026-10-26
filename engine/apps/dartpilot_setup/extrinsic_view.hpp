@@ -24,6 +24,8 @@ class ExtrinsicView : public StreamView
     Q_PROPERTY(bool saveFailed READ saveFailed NOTIFY phaseChanged)
     Q_PROPERTY(bool hasPlane READ hasPlane NOTIFY resultChanged)
     Q_PROPERTY(double rmsMm READ rmsMm NOTIFY resultChanged)
+    // good, fair or poor by the board fit's RMS; empty before a fit
+    Q_PROPERTY(QString fitQuality READ fitQuality NOTIFY resultChanged)
     Q_PROPERTY(double worstMm READ worstMm NOTIFY resultChanged)
     Q_PROPERTY(double rmsPx READ rmsPx NOTIFY resultChanged)
     // Whether the stored intrinsics of this camera were used to remove the lens distortion first
@@ -40,6 +42,7 @@ class ExtrinsicView : public StreamView
     bool saveFailed () const { return save_failed_; }
     bool hasPlane () const { return plane_.has_value(); }
     double rmsMm () const { return plane_ ? plane_->fit.rms_mm : 0.0; }
+    QString fitQuality () const;
     double worstMm () const { return plane_ ? plane_->fit.worst_mm : 0.0; }
     double rmsPx () const { return plane_ ? plane_->fit.rms_px : 0.0; }
     bool undistorted () const { return plane_ && plane_->fit.undistorted; }

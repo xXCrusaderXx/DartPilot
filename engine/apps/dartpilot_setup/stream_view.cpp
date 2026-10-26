@@ -9,6 +9,8 @@ namespace
 {
 // A camera that was unplugged or taken by another program is tried again this often.
 constexpr auto kReopenInterval = std::chrono::seconds(2);
+// The cameras run at 30 fps; a little below still counts as the full rate
+constexpr double kFullRateFps = 29.0;
 }  // namespace
 
 void drawLabel (QPainter* painter, const QPointF& origin, const QString& text, int pixel_size, bool bold)
@@ -43,6 +45,15 @@ void StreamView::releaseStream ()
         detachStream(*stream_);
         stream_.reset();
     }
+}
+
+QString StreamView::fpsQuality () const
+{
+    if(!error_.isEmpty())
+        return "poor";
+    if(fps_ <= 0.0)
+        return "";
+    return fps_ >= kFullRateFps ? "good" : "fair";
 }
 
 void StreamView::setDevicePath (const QString& path)

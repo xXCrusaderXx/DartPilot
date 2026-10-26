@@ -12,8 +12,6 @@ Card {
     // False while the page is hidden, so the camera is released
     property bool active: true
 
-    readonly property color statusTone: view.error !== "" ? Tokens.bad : !running.checked ? Tokens.textMuted : view.fps >= 29 ? Tokens.good : Tokens.warning
-
     ColumnLayout {
         anchors.fill: parent
         spacing: Tokens.spaceMd
@@ -22,10 +20,9 @@ Card {
             number: pane.index + 1
             usbPort: pane.modelData.usbPort
 
-            Chip {
-                text: view.error !== "" ? "Error" : !running.checked ? "Off" : view.fps > 0 ? view.fps.toFixed(1) + " fps" : "Starting"
-                tone: pane.statusTone
-                dot: true
+            FpsChip {
+                stream: view
+                live: running.checked
             }
             Switch {
                 id: running

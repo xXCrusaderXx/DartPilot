@@ -33,6 +33,9 @@ constexpr double kSameDart_mm = 3.0;
 // Provisional, as on the calibration check page
 constexpr double kGoodCheck_mm = 1.0;
 constexpr double kFairCheck_mm = 2.5;
+// Absolute error of the dart in the bull centre
+constexpr double kGoodBull_mm = 1.0;
+constexpr double kFairBull_mm = 2.0;
 
 QString validationPath () { return calibrationDirectory() + "/validation.jsonl"; }
 
@@ -478,7 +481,13 @@ void ValidationRun::onMeasured ()
     {
         if(location)
         {
-            result.insert("errorMm", std::hypot(location->board_mm.x, location->board_mm.y));
+            const double error_mm = std::hypot(location->board_mm.x, location->board_mm.y);
+            result.insert("errorMm", error_mm);
+            result.insert("quality", error_mm <= kGoodBull_mm ? "good" : error_mm <= kFairBull_mm ? "fair" : "poor");
+        }
+        else
+        {
+            result.insert("quality", "poor");
         }
         entry.insert("reference", "bull");
         bull_ = result;
