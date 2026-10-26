@@ -83,6 +83,12 @@ class DetectionTest : public QObject
     // The field of a board point, e.g. T20
     Q_INVOKABLE QString label (double x_mm, double y_mm) const;
 
+    // The names of one group's parameters, in order. They do not change while the app runs, so a list of them is a
+    // model whose rows, and the focus inside them, survive a change of the values.
+    Q_INVOKABLE QStringList paramNames (const QString& group) const;
+    // One parameter as in params; revision is passed only so that a binding reads it again after every change.
+    Q_INVOKABLE QVariantMap param (const QString& name, int revision) const;
+
     Q_INVOKABLE void setParam (const QString& name, double value);
     Q_INVOKABLE void resetParam (const QString& name);
     Q_INVOKABLE void resetAllParams ();
@@ -100,6 +106,8 @@ class DetectionTest : public QObject
     void problem (const QString& message);
 
    private:
+    QVariantMap paramMap (const fusion::DetectionParam& param) const;
+
     struct Camera
     {
         QString usb_port;

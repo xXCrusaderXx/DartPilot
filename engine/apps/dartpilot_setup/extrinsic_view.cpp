@@ -49,16 +49,16 @@ void ExtrinsicView::setUsbPort (const QString& usb_port)
     detection_.reset();
     twenty_sector_.reset();
     save_failed_ = false;
-    setState("idle", QString());
+    setPhase("idle", QString());
     plane_ = usb_port.isEmpty() ? std::nullopt : geometry::loadBoardPlane(boardPlanePath(usb_port).toStdString());
     emit resultChanged();
 }
 
-void ExtrinsicView::setState (const QString& state, const QString& message)
+void ExtrinsicView::setPhase (const QString& phase, const QString& message)
 {
-    state_ = state;
+    phase_ = phase;
     message_ = message;
-    emit stateChanged();
+    emit phaseChanged();
     update();
 }
 
@@ -73,12 +73,12 @@ void ExtrinsicView::detect ()
     detection_.reset();
     twenty_sector_.reset();
     save_failed_ = false;
-    setState("detecting", "Looking for the board…");
+    setPhase("detecting", "Looking for the board…");
 }
 
 void ExtrinsicView::onFrame (const CameraSnapshot& snapshot)
 {
-    if(state_ != "detecting" || watcher_.isRunning())
+    if(phase_ != "detecting" || watcher_.isRunning())
     {
         return;
     }
@@ -106,10 +106,10 @@ void ExtrinsicView::onDetected ()
     detection_ = watcher_.result();
     if(!detection_)
     {
-        setState("failed", "Board not found. Remove all darts, make sure nothing covers it, and check the light.");
+        setPhase("failed", "Board not found. Remove all darts, make sure nothing covers it, and check the light.");
         return;
     }
-    setState("pick", "Click into the sector 20.");
+    setPhase("pick", "Click into the sector 20.");
 }
 
 void ExtrinsicView::orient (int twenty_sector)
@@ -133,7 +133,7 @@ void ExtrinsicView::orient (int twenty_sector)
     const auto fit = geometry::fitBoardPlane(plane.correspondences, intrinsics ? &*intrinsics : nullptr);
     if(!fit)
     {
-        setState("failed", "The board plane could not be fitted.");
+        setPhase("failed", "The board plane could not be fitted.");
         return;
     }
     plane.fit = *fit;
@@ -142,7 +142,7 @@ void ExtrinsicView::orient (int twenty_sector)
     plane_ = plane;
     save_failed_ = !stored;
     emit resultChanged();
-    setState("done", stored ? "Saved. Check that the numbers match the board; if not, click the sector 20 again."
+    setPhase("done", stored ? "Saved. Check that the numbers match the board; if not, click the sector 20 again."
                             : "Fitted, but saving failed. Check that the calibration directory is writable, then click the sector 20 again.");
     if(stored)
     {
@@ -153,7 +153,7 @@ void ExtrinsicView::orient (int twenty_sector)
 void ExtrinsicView::mousePressEvent (QMouseEvent* event)
 {
     const QRectF target = imageRect();
-    if(!detection_ || (state_ != "pick" && state_ != "done") || target.isEmpty())
+    if(!detection_ || (phase_ != "pick" && phase_ != "done") || target.isEmpty())
     {
         event->ignore();
         return;
@@ -164,7 +164,7 @@ void ExtrinsicView::mousePressEvent (QMouseEvent* event)
     const auto sector = geometry::sectorAt(*detection_, image_px);
     if(!sector)
     {
-        setState(state_, "Click inside the scoring area, into the sector 20.");
+        setPhase(phase_, "Click inside the scoring area, into the sector 20.");
         return;
     }
     orient(*sector);

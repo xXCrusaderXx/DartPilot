@@ -20,7 +20,7 @@ class CheckView : public StreamView
     QML_ELEMENT
     Q_PROPERTY(QString usbPort READ usbPort WRITE setUsbPort NOTIFY resultChanged)
     // nocalibration, measuring, noboard or checked
-    Q_PROPERTY(QString state READ state NOTIFY resultChanged)
+    Q_PROPERTY(QString checkState READ checkState NOTIFY resultChanged)
     Q_PROPERTY(double rmsMm READ rmsMm NOTIFY resultChanged)
     Q_PROPERTY(double rmsPx READ rmsPx NOTIFY resultChanged)
     Q_PROPERTY(double shiftPx READ shiftPx NOTIFY resultChanged)
@@ -38,7 +38,7 @@ class CheckView : public StreamView
 
     QString usbPort () const { return usb_port_; }
     void setUsbPort (const QString& usb_port);
-    QString state () const { return state_; }
+    QString checkState () const { return check_state_; }
     double rmsMm () const { return check_ ? check_->rms_mm : 0.0; }
     double rmsPx () const { return check_ ? check_->rms_px : 0.0; }
     double shiftPx () const { return check_ ? std::hypot(check_->mean_shift_px.x, check_->mean_shift_px.y) : 0.0; }
@@ -66,7 +66,7 @@ class CheckView : public StreamView
     void startMeasuring ();
 
     QString usb_port_;
-    QString state_ = "nocalibration";
+    QString check_state_ = "nocalibration";
     std::optional<geometry::StoredExtrinsics> extrinsics_;
     cv::Mat frame_sum_;
     int frames_summed_ = 0;

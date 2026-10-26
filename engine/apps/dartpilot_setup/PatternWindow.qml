@@ -12,11 +12,14 @@ Window {
     title: "DartPilot calibration pattern"
 
     Image {
+        id: pattern
+
         anchors.fill: parent
         anchors.margins: Tokens.spaceXl
         fillMode: Image.PreserveAspectFit
         source: "image://charuco/pattern/" + patternWindow.target
-        sourceSize.width: patternWindow.width
+        // Rendered at the size it is shown: smooth: false must not resample the squares unevenly.
+        sourceSize: Qt.size(pattern.width, pattern.height)
         smooth: false
     }
 
@@ -35,9 +38,12 @@ Window {
             PauseAnimation {
                 duration: 2500
             }
+            // From full opacity each time, or the hint stays hidden on every later opening
             NumberAnimation {
+                from: 1
                 to: 0
-                duration: 800
+                duration: 400
+                easing.type: Easing.InQuad
             }
         }
     }
