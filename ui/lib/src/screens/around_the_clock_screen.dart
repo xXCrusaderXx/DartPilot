@@ -122,8 +122,8 @@ class _AroundTheClockScreenState extends State<AroundTheClockScreen> with Record
             name: _game.players[i].name,
             active: i == atOche,
             details:
-                '${_game.players[i].dartsThrown} ${l10n.darts} · '
-                '${l10n.hitRate} ${percentText(l10n, _game.players[i].hitRate)}',
+                '${l10n.statsDartsCount(_game.players[i].dartsThrown)} · '
+                '${l10n.labelValue(l10n.hitRate, percentText(l10n, _game.players[i].hitRate))}',
             value: _game.targetLabel(_game.players[i].position.clamp(0, _game.targetCount - 1)),
             valueKey: ValueKey('target-${_game.players[i].name}'),
           ),

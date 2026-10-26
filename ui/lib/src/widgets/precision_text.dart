@@ -30,7 +30,7 @@ String percentText(AppLocalizations l10n, double fraction) =>
     NumberFormat.percentPattern(l10n.localeName).format(fraction);
 
 /// A length with one decimal and its unit: "12,5 mm"
-String mmText(AppLocalizations l10n, double valueMm) => '${mmNumber(l10n, valueMm)} mm';
+String mmText(AppLocalizations l10n, double valueMm) => l10n.mmValue(mmNumber(l10n, valueMm));
 
 /// One dart of a training: what it scored, what it was aimed at, and how far it missed and to where
 class MissTile extends StatelessWidget {

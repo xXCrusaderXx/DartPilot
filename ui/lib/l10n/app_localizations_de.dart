@@ -288,6 +288,34 @@ class AppLocalizationsDe extends AppLocalizations {
   String get engineSimulated => 'simuliert';
 
   @override
+  String get engineConnectedSimulated => 'Verbunden (simuliert)';
+
+  @override
+  String labelValue(String label, String value) {
+    return '$label: $value';
+  }
+
+  @override
+  String mmValue(String value) {
+    return '$value mm';
+  }
+
+  @override
+  String msValue(String value) {
+    return '$value ms';
+  }
+
+  @override
+  String secondsRange(int from, int to) {
+    return '$from–$to s';
+  }
+
+  @override
+  String countOf(int done, int total) {
+    return '$done von $total';
+  }
+
+  @override
   String uncertainDart(String label, String percent) {
     return 'Unsicher: $label ($percent)';
   }

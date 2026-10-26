@@ -87,7 +87,7 @@ void main() {
     await tester.pump();
     expect(find.text('Gestört'), findsOneWidget);
     expect(
-      find.textContaining('29.9 fps  ·  Verloren 3  ·  Verworfen 0  ·  Helligkeit 112  ·  Latenz 31.3 ms'),
+      find.textContaining('29,9 fps  ·  Verloren: 3  ·  Verworfen: 0  ·  Helligkeit: 112  ·  Latenz: 31,3 ms'),
       findsOneWidget,
     );
     expect(find.byKey(const ValueKey('preview-usb-1')), findsOneWidget);

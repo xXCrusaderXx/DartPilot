@@ -57,7 +57,7 @@ void main() {
     engine.receiveForTest(jsonEncode(fixtures['done']));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('reference-verdict')), findsOneWidget);
-    expect(find.text('9 / 10'), findsOneWidget);
+    expect(find.text('9 von 10'), findsOneWidget);
     expect(find.text('Nicht geortet'), findsOneWidget);
   });
 

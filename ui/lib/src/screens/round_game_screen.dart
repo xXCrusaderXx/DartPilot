@@ -173,8 +173,8 @@ class _RoundGameScreenState extends State<RoundGameScreen> with RecordsGame, Bot
             active: i == _game.current && !_game.isFinished,
             enabled: !_game.players[i].out,
             details: [
-              '${_game.players[i].dartsThrown} ${l10n.darts}',
-              '${l10n.hitRate} ${percentText(l10n, _game.players[i].hitRate)}',
+              l10n.statsDartsCount(_game.players[i].dartsThrown),
+              l10n.labelValue(l10n.hitRate, percentText(l10n, _game.players[i].hitRate)),
               if (_game.players[i].out) l10n.playerOut,
             ].join(' · '),
             value: '${_game.players[i].score}',

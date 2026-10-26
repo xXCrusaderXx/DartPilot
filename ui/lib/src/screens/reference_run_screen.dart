@@ -420,10 +420,10 @@ class _Verdict extends StatelessWidget {
     final figures = summary == null
         ? <(String, String)>[]
         : [
-            (l10n.referenceLocated, '${summary.located} / ${summary.located + summary.abstained}'),
-            (l10n.referenceMedian, median == null ? '–' : '${_mm(l10n, median)} mm'),
-            (l10n.referenceP90, summary.p90ErrorMm == null ? '–' : '${_mm(l10n, summary.p90ErrorMm!)} mm'),
-            (l10n.referenceMax, worst == null ? '–' : '${_mm(l10n, worst)} mm'),
+            (l10n.referenceLocated, l10n.countOf(summary.located, summary.located + summary.abstained)),
+            (l10n.referenceMedian, median == null ? '–' : l10n.mmValue(_mm(l10n, median))),
+            (l10n.referenceP90, summary.p90ErrorMm == null ? '–' : l10n.mmValue(_mm(l10n, summary.p90ErrorMm!))),
+            (l10n.referenceMax, worst == null ? '–' : l10n.mmValue(_mm(l10n, worst))),
           ];
     return Card(
       key: const ValueKey('reference-verdict'),
