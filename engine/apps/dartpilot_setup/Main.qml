@@ -30,6 +30,26 @@ ApplicationWindow {
         id: finder
     }
 
+    // Ctrl+1 to Ctrl+7 open the pages in sidebar order; Ctrl+R searches the cameras again.
+    Repeater {
+        model: 7
+
+        delegate: Item {
+            id: slot
+
+            required property int index
+
+            Shortcut {
+                sequence: "Ctrl+" + (slot.index + 1)
+                onActivated: window.page = slot.index
+            }
+        }
+    }
+    Shortcut {
+        sequence: "Ctrl+R"
+        onActivated: finder.refresh()
+    }
+
     // One refiner for the whole app: the extrinsic page runs it, the progress reads it.
     BoardRefiner {
         id: boardRefiner

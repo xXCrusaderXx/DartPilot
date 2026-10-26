@@ -185,7 +185,13 @@ ColumnLayout {
                             enabled: view.phase !== "detecting" && page.active
                             onClicked: view.detect()
                             ToolTip.visible: hovered
-                            ToolTip.text: "Takes about a second; the board must be empty"
+                            ToolTip.text: "Takes about a second; the board must be empty. Shortcut: D"
+
+                            Shortcut {
+                                sequence: "D"
+                                enabled: page.active && view.phase !== "detecting"
+                                onActivated: view.detect()
+                            }
                         }
                         BusyIndicator {
                             running: view.phase === "detecting"

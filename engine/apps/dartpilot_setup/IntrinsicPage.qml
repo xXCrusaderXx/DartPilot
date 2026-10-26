@@ -294,6 +294,14 @@ ColumnLayout {
                             highlighted: true
                             enabled: view.cornersInFrame >= 6
                             onClicked: view.capture()
+                            ToolTip.visible: hovered
+                            ToolTip.text: "Shortcut: C"
+
+                            Shortcut {
+                                sequence: "C"
+                                enabled: page.active && view.cornersInFrame >= 6
+                                onActivated: view.capture()
+                            }
                         }
                         Button {
                             text: "Clear all"
