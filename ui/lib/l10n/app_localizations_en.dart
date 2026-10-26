@@ -1840,4 +1840,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pickCandidate => 'Tap the right field, or tap the board where the dart is.';
+
+  @override
+  String get callCheckout => 'Say the checkout';
 }

@@ -4,6 +4,7 @@ import '../../l10n/app_localizations.dart';
 import '../board/dart_throw.dart';
 import '../games/x01.dart';
 import '../sound/caller.dart';
+import '../sound/game_calls.dart';
 import '../sound/x01_calls.dart';
 import '../bots/bot_turns.dart';
 import '../games/dart_game.dart';
@@ -146,6 +147,12 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
               leading: const Icon(Icons.flag),
               title: Text(l10n.checkout),
               subtitle: Text(checkout.join('  '), key: const ValueKey('checkout'), style: theme.textTheme.titleLarge),
+              trailing: IconButton(
+                key: const ValueKey('call-checkout'),
+                icon: const Icon(Icons.volume_up),
+                tooltip: l10n.callCheckout,
+                onPressed: () => CallerScope.read(context).say([callRoute(checkout)], callLanguage),
+              ),
             ),
           ),
         const Spacer(),
