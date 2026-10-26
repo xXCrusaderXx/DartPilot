@@ -30,21 +30,7 @@ ApplicationWindow {
         id: finder
     }
 
-    // Ctrl+1 to Ctrl+7 open the pages in sidebar order; Ctrl+R searches the cameras again.
-    Repeater {
-        model: 7
-
-        delegate: Item {
-            id: slot
-
-            required property int index
-
-            Shortcut {
-                sequence: "Ctrl+" + (slot.index + 1)
-                onActivated: window.page = slot.index
-            }
-        }
-    }
+    // Ctrl+R searches the cameras again; Ctrl+1 to Ctrl+7 open the pages, set on the sidebar entries.
     Shortcut {
         sequence: "Ctrl+R"
         onActivated: finder.refresh()
@@ -120,6 +106,11 @@ ApplicationWindow {
                     selected: window.page === 0
                     progress: setupProgress.states[0]
                     onClicked: window.page = 0
+
+                    Shortcut {
+                        sequence: "Ctrl+1"
+                        onActivated: window.page = 0
+                    }
                 }
                 NavButton {
                     text: "Intrinsic calibration"
@@ -128,6 +119,11 @@ ApplicationWindow {
                     selected: window.page === 1
                     progress: setupProgress.states[1]
                     onClicked: window.page = 1
+
+                    Shortcut {
+                        sequence: "Ctrl+2"
+                        onActivated: window.page = 1
+                    }
                 }
                 NavButton {
                     text: "Extrinsic calibration"
@@ -136,6 +132,11 @@ ApplicationWindow {
                     selected: window.page === 2
                     progress: setupProgress.states[2]
                     onClicked: window.page = 2
+
+                    Shortcut {
+                        sequence: "Ctrl+3"
+                        onActivated: window.page = 2
+                    }
                 }
                 NavButton {
                     text: "Calibration check"
@@ -144,6 +145,11 @@ ApplicationWindow {
                     selected: window.page === 3
                     progress: setupProgress.states[3]
                     onClicked: window.page = 3
+
+                    Shortcut {
+                        sequence: "Ctrl+4"
+                        onActivated: window.page = 3
+                    }
                 }
                 NavButton {
                     text: "Pin check"
@@ -152,6 +158,11 @@ ApplicationWindow {
                     selected: window.page === 4
                     progress: setupProgress.states[4]
                     onClicked: window.page = 4
+
+                    Shortcut {
+                        sequence: "Ctrl+5"
+                        onActivated: window.page = 4
+                    }
                 }
                 NavButton {
                     text: "Validation"
@@ -160,6 +171,11 @@ ApplicationWindow {
                     selected: window.page === 5
                     progress: setupProgress.states[5]
                     onClicked: window.page = 5
+
+                    Shortcut {
+                        sequence: "Ctrl+6"
+                        onActivated: window.page = 5
+                    }
                 }
                 NavButton {
                     text: "Detection test"
@@ -168,6 +184,11 @@ ApplicationWindow {
                     selected: window.page === 6
                     progress: setupProgress.states[6]
                     onClicked: window.page = 6
+
+                    Shortcut {
+                        sequence: "Ctrl+7"
+                        onActivated: window.page = 6
+                    }
                 }
 
                 Item {
