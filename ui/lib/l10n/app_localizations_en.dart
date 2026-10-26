@@ -70,6 +70,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get leaveGame => 'Leave';
 
   @override
+  String interruptedGameTitle(String game) {
+    return 'Interrupted game: $game';
+  }
+
+  @override
+  String get resumeGame => 'Play on';
+
+  @override
+  String get endInterruptedGame => 'End';
+
+  @override
   String get visit => 'Visit';
 
   @override

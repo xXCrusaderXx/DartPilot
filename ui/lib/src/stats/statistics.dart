@@ -16,6 +16,10 @@ import 'precision.dart';
 abstract interface class GameStore {
   Future<List<GameRecord>> load();
   Future<void> add(GameRecord record);
+
+  /// The game being played, kept after every dart so that it survives the app being killed; null when none is
+  Future<GameRecord?> loadRunning();
+  Future<void> saveRunning(GameRecord? record);
 }
 
 /// One JSON line per game in the app's support directory, appended at the end of every game; lines this version
@@ -51,6 +55,38 @@ class FileGameStore implements GameStore {
     await f.parent.create(recursive: true);
     await f.writeAsString('${jsonEncode(record.toJson())}\n', mode: FileMode.append, flush: true);
   }
+
+  Future<File> get _running async => File('${(await file).parent.path}${Platform.pathSeparator}running_game.json');
+
+  @override
+  Future<GameRecord?> loadRunning() async {
+    final f = await _running;
+    if (!await f.exists()) return null;
+    try {
+      return GameRecord.fromJson(jsonDecode(await f.readAsString()) as Map<String, dynamic>);
+    } on FormatException {
+      return null;
+    }
+  }
+
+  /// Writes one after the other: a dart can follow before the previous state is on disk.
+  Future<void> _writing = Future.value();
+
+  @override
+  Future<void> saveRunning(GameRecord? record) => _writing = _writing.then((_) => _writeRunning(record));
+
+  Future<void> _writeRunning(GameRecord? record) async {
+    final f = await _running;
+    if (record == null) {
+      if (await f.exists()) await f.delete();
+      return;
+    }
+    await f.parent.create(recursive: true);
+    // Written aside and renamed, so a kill while writing leaves the previous state, not half a file.
+    final temp = File('${f.path}.tmp');
+    await temp.writeAsString(jsonEncode(record.toJson()), flush: true);
+    await temp.rename(f.path);
+  }
 }
 
 class MemoryGameStore implements GameStore {
@@ -63,6 +99,14 @@ class MemoryGameStore implements GameStore {
 
   @override
   Future<void> add(GameRecord record) async => records.add(record);
+
+  GameRecord? running;
+
+  @override
+  Future<GameRecord?> loadRunning() async => running;
+
+  @override
+  Future<void> saveRunning(GameRecord? record) async => running = record;
 }
 
 /// The player profiles of this device, in the order they were created
@@ -126,8 +170,12 @@ class Statistics extends ChangeNotifier {
   List<String> profiles = [];
   bool loaded = false;
 
+  /// A game the app was killed in, to resume or end; null when there is none
+  GameRecord? interrupted;
+
   Future<void> load() async {
     games = await store.load();
+    interrupted = await store.loadRunning();
     profiles = await profileStore.load();
     // Players of games kept before profiles existed become profiles, so their statistics stay reachable.
     final known = {for (final p in profiles) p.toLowerCase()};
@@ -170,6 +218,19 @@ class Statistics extends ChangeNotifier {
     ];
     notifyListeners();
     await profileStore.save(profiles);
+  }
+
+  /// Keeps the game being played after every dart; null when it ended normally.
+  Future<void> keepRunning(GameRecord? record) => store.saveRunning(record);
+
+  /// The interrupted game is played on, or ended: then it counts as the unfinished game it is.
+  Future<void> settleInterrupted({required bool resume}) async {
+    final game = interrupted;
+    if (game == null) return;
+    interrupted = null;
+    notifyListeners();
+    await store.saveRunning(null);
+    if (!resume) await record(game);
   }
 
   /// Keeps a game; games without darts are not worth keeping.
@@ -232,6 +293,7 @@ mixin RecordsGame<T extends StatefulWidget> on State<T> {
   EngineConnection? _engine;
   final String _shareId = Statistics.newId();
   int? _sharedSignature;
+  bool _shared = false;
 
   @override
   void didChangeDependencies() {
@@ -240,24 +302,30 @@ mixin RecordsGame<T extends StatefulWidget> on State<T> {
     _engine = context.getInheritedWidgetOfExactType<EngineScope>()?.notifier;
   }
 
-  /// Call after every build: shares the game with other displays through the engine when it changed (#116).
+  /// Call after every build: when the game changed, keeps it so it survives the app being killed, and shares it with
+  /// other displays through the engine (#116).
   void shareGame() {
-    final engine = _engine;
-    if (watching || engine == null || !engine.isConnected) return;
+    if (watching) return;
     final record = buildRecord(_shareId, _started, DateTime.now());
     // Corrections replace a dart without changing the count; the last dart's point tells them apart.
     final signature = Object.hashAll([record.throws.length, for (final t in record.throws) t.point]);
     if (signature == _sharedSignature) return;
     _sharedSignature = signature;
-    engine.shareGame(record.toJson());
+    if (record.throws.isNotEmpty) _statistics?.keepRunning(record);
+    final engine = _engine;
+    if (engine != null && engine.isConnected) {
+      engine.shareGame(record.toJson());
+      _shared = true;
+    }
   }
 
   @override
   void dispose() {
-    if (!watching && _sharedSignature != null) _engine?.endSharedGame();
+    if (!watching && _shared) _engine?.endSharedGame();
     final statistics = _statistics;
     if (statistics != null && !watching) {
       final record = buildRecord(Statistics.newId(), _started, DateTime.now());
+      statistics.keepRunning(null);
       // Listeners may not rebuild while the tree is being torn down.
       scheduleMicrotask(() => statistics.record(record));
     }
