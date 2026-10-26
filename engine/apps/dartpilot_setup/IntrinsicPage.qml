@@ -457,7 +457,7 @@ ColumnLayout {
 
                         visible: view.quality !== ""
                         Layout.fillWidth: true
-                        implicitHeight: qualityColumn.implicitHeight + 20
+                        implicitHeight: qualityColumn.implicitHeight + 2 * Tokens.spaceMd
                         radius: Tokens.radiusSmall
                         readonly property color tone: Tokens.qualityTone(view.quality)
                         color: Tokens.tint(tone, Tokens.tintFillSoft)
@@ -492,7 +492,7 @@ ColumnLayout {
                     Rectangle {
                         visible: view.resultText !== ""
                         Layout.fillWidth: true
-                        implicitHeight: resultLabel.implicitHeight + 20
+                        implicitHeight: resultLabel.implicitHeight + 2 * Tokens.spaceMd
                         radius: Tokens.radiusSmall
                         color: Tokens.surfaceRaised
 
