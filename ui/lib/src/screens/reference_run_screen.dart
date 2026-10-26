@@ -7,6 +7,7 @@ import '../board/dartboard.dart';
 import '../engine/engine_connection.dart';
 import '../engine/engine_events.dart';
 import '../theme.dart';
+import '../engine/engine_errors.dart';
 
 /// The guided reference measurement (#14): one dart after the other is pushed by hand into a known position, and the
 /// error of the located point shows how accurate the whole chain from calibration to tip is.
@@ -66,7 +67,9 @@ class _ReferenceRunScreenState extends State<ReferenceRunScreen> {
             children: [
               if (_error != null)
                 Text(
-                  _error == 'not_calibrated' ? l10n.referenceNotCalibrated : l10n.calibErrorOther(_error!),
+                  _error == 'not_calibrated'
+                      ? l10n.referenceNotCalibrated
+                      : engineErrorText(l10n, _error!) ?? l10n.calibErrorOther(_error!),
                   style: TextStyle(color: StatusColors.of(context).bad),
                 ),
               if (run == null) Text(l10n.referenceIntro),

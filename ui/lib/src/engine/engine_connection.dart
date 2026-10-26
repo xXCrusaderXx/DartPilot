@@ -20,14 +20,17 @@ class EngineConnection extends ChangeNotifier {
     : _connector = connector ?? WebSocketChannel.connect,
       discovery = discovery ?? EngineDiscovery.network(),
       tokens = tokens ?? MemoryPairingTokens(),
+      requestTimeout = defaultRequestTimeout,
       clientName = 'dartpilot-app-${math.Random().nextInt(0x7fffffff).toRadixString(16)}';
 
-  /// For tests: requests go to `onSend` instead of a socket
+  /// For tests: requests go to `onSend` instead of a socket; without [requestTimeout] they wait for their result for
+  /// ever.
   @visibleForTesting
   EngineConnection.forTest(
     void Function(Map<String, dynamic>) onSend, {
     EngineDiscovery? discovery,
     PairingTokens? tokens,
+    this.requestTimeout,
   }) : _connector = WebSocketChannel.connect,
        discovery = discovery ?? EngineDiscovery(const []),
        tokens = tokens ?? MemoryPairingTokens(),
@@ -59,6 +62,11 @@ class EngineConnection extends ChangeNotifier {
   final String clientName;
 
   static const String defaultUrl = 'ws://localhost:8484/';
+
+  /// How long connecting and each request may take before they count as failed
+  static const Duration connectTimeout = Duration(seconds: 10);
+  static const Duration defaultRequestTimeout = Duration(seconds: 15);
+  final Duration? requestTimeout;
 
   String url = defaultUrl;
   EngineConnectionState state = EngineConnectionState.disconnected;
@@ -147,11 +155,14 @@ class EngineConnection extends ChangeNotifier {
     try {
       final channel = _connector(Uri.parse(newUrl));
       _channel = channel;
-      await channel.ready;
+      await channel.ready.timeout(connectTimeout);
       _subscription = channel.stream.listen(
         _onMessage,
         onError: (Object e) => _fail('$e'),
         onDone: () {
+          // The engine went away: nothing it sent before still holds, and no result will come.
+          _closeChannel();
+          _clearEngineState();
           if (state != EngineConnectionState.failed) {
             state = EngineConnectionState.disconnected;
             notifyListeners();
@@ -166,6 +177,14 @@ class EngineConnection extends ChangeNotifier {
 
   Future<void> disconnect() async {
     await _closeChannel();
+    _clearEngineState();
+    if (state != EngineConnectionState.disconnected) {
+      state = EngineConnectionState.disconnected;
+      notifyListeners();
+    }
+  }
+
+  void _clearEngineState() {
     hello = null;
     boardState = null;
     cameraAssignment = null;
@@ -179,14 +198,12 @@ class EngineConnection extends ChangeNotifier {
     referenceRun = null;
     sharedGame = null;
     diagnosis = null;
+    cameraStatus.clear();
     _clearCalibration();
-    if (state != EngineConnectionState.disconnected) {
-      state = EngineConnectionState.disconnected;
-      notifyListeners();
-    }
   }
 
   void _fail(String message) {
+    _closeChannel();
     state = EngineConnectionState.failed;
     error = message;
     notifyListeners();
@@ -336,9 +353,19 @@ class EngineConnection extends ChangeNotifier {
 
   /// Sends a request and completes with the error code of its result, or null when it succeeded
   Future<String?> _request(Map<String, dynamic> request) {
+    if (_testSink == null && _channel == null) return Future.value('disconnected');
     final completer = Completer<String?>();
-    _pending[_send(request)] = completer;
-    return completer.future;
+    final id = _send(request);
+    _pending[id] = completer;
+    final timeout = requestTimeout;
+    if (timeout == null) return completer.future;
+    return completer.future.timeout(
+      timeout,
+      onTimeout: () {
+        _pending.remove(id);
+        return 'timeout';
+      },
+    );
   }
 
   static Map<String, dynamic> _pointJson(BoardPoint p) => {'x_mm': p.xMm, 'y_mm': p.yMm};

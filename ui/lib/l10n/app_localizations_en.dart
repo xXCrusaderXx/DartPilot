@@ -189,6 +189,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get engineFailed => 'Connection failed';
 
   @override
+  String get engineFailedRefused => 'Nothing answers at this address. Is the engine running?';
+
+  @override
+  String get engineFailedTimeout => 'The engine could not be reached in time. Check the address and the network.';
+
+  @override
+  String get engineFailedHost => 'This address was not found in the network.';
+
+  @override
+  String get engineFailedAddress => 'This is not an engine address; it looks like ws://192.168.1.20:8484/.';
+
+  @override
+  String get engineRetry => 'Try again';
+
+  @override
+  String get engineErrorDisconnected => 'The connection to the engine was lost.';
+
+  @override
+  String get engineErrorTimeout => 'The engine did not answer.';
+
+  @override
   String get engineSimulated => 'simulated';
 
   @override

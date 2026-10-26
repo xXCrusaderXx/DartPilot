@@ -8,6 +8,7 @@ import '../../l10n/app_localizations.dart';
 import '../engine/camera_order.dart';
 import '../engine/engine_connection.dart';
 import '../engine/engine_events.dart';
+import '../engine/engine_errors.dart';
 
 /// The live setup diagnosis (#137): the engine watches the cameras while the player follows the steps (empty board,
 /// one dart in, pull it, …) and lists what is wrong with the setup, each finding with what to do about it.
@@ -69,7 +70,9 @@ class _DiagnosisScreenState extends State<DiagnosisScreen> {
               if (!engine.isConnected) Text(l10n.diagnosisNeedsEngine),
               if (_error != null)
                 Text(
-                  _error == 'not_available' ? l10n.diagnosisNotAvailable : l10n.diagnosisFailed(_error!),
+                  _error == 'not_available'
+                      ? l10n.diagnosisNotAvailable
+                      : engineErrorText(l10n, _error!) ?? l10n.diagnosisFailed(_error!),
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               if (diagnosis == null && engine.isConnected && _error == null) Text(l10n.diagnosisIntro),

@@ -6,6 +6,7 @@ import '../../l10n/app_localizations.dart';
 import '../engine/camera_order.dart';
 import '../engine/engine_connection.dart';
 import '../engine/engine_events.dart';
+import '../engine/engine_errors.dart';
 
 /// All cameras of the engine with a live image, to put them in the player's order and name them: once when new
 /// cameras appear, and whenever two should swap places.
@@ -51,7 +52,8 @@ class _CameraAssignScreenState extends State<CameraAssignScreen> {
         .assign(_order!, {for (final MapEntry(:key, :value) in _names.entries) key: value.text});
     if (!mounted) return;
     if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.cameraAssignFailed(error))));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(engineErrorText(l10n, error) ?? l10n.cameraAssignFailed(error))));
       return;
     }
     Navigator.of(context).pop();
