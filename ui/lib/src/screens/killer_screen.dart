@@ -19,6 +19,7 @@ import 'game_scaffold.dart';
 import 'my_darts_screen.dart';
 import 'players_setup_screen.dart';
 import '../board/score_text.dart';
+import '../widgets/player_row.dart';
 
 /// Killer (#118): every player's number, marks on the way to killer, and lives.
 class KillerScreen extends StatefulWidget {
@@ -130,26 +131,21 @@ class _KillerScreenState extends State<KillerScreen> with RecordsGame, BotTurns 
                   builder: (context) {
                     final p = _game.players[i];
                     final current = atOche && i == _game.current;
-                    return Card(
-                      color: current ? theme.colorScheme.secondaryContainer : null,
-                      child: ListTile(
-                        enabled: !p.out,
-                        leading: CircleAvatar(child: Text('${p.number}')),
-                        title: Text(p.name),
-                        subtitle: Text(
-                          p.out
-                              ? l10n.playerOut
-                              : p.isKiller
-                              ? l10n.killerIsKiller
-                              : l10n.killerMarks(p.marks, KillerGame.marksToKill, 'D${p.number}'),
-                          key: ValueKey('killer-state-${p.name}'),
-                        ),
-                        trailing: Text(
-                          '♥' * p.lives.clamp(0, _game.lives),
-                          key: ValueKey('lives-${p.name}'),
-                          style: theme.textTheme.titleLarge?.copyWith(color: theme.colorScheme.error),
-                        ),
-                      ),
+                    return PlayerRow(
+                      name: p.name,
+                      active: current,
+                      enabled: !p.out,
+                      leading: CircleAvatar(child: Text('${p.number}')),
+                      details: p.out
+                          ? l10n.playerOut
+                          : p.isKiller
+                          ? l10n.killerIsKiller
+                          : l10n.killerMarks(p.marks, KillerGame.marksToKill, 'D${p.number}'),
+                      detailsKey: ValueKey('killer-state-${p.name}'),
+                      detailsFromAfar: true,
+                      value: '♥' * p.lives.clamp(0, _game.lives),
+                      valueKey: ValueKey('lives-${p.name}'),
+                      valueColour: theme.colorScheme.error,
                     );
                   },
                 ),

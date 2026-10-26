@@ -17,6 +17,8 @@ import 'game_layout.dart';
 import 'game_scaffold.dart';
 import 'players_setup_screen.dart';
 import '../board/score_text.dart';
+import '../display.dart';
+import '../theme.dart';
 
 class CricketScreen extends StatefulWidget {
   const CricketScreen({
@@ -122,17 +124,35 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
         : _game.current;
     final players = _game.players;
 
+    // The column at the oche in the display style: a bright block on the scoreboard, a tint in the clear style
+    final display = DisplayScope.of(context);
+    final window = WindowClass.of(context);
+    final scoreboard = display.styleFor(window) == DisplayStyle.scoreboard;
+    final far = display.farFor(window);
+    final activeFill = scoreboard ? AppColors.warning : theme.colorScheme.primary.withValues(alpha: 0.18);
+    final markStyle = far ? theme.textTheme.displaySmall : theme.textTheme.titleLarge;
     TableRow row(String label, List<String> cells, {TextStyle? style}) => TableRow(
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Text(label, textAlign: TextAlign.center, style: theme.textTheme.titleMedium),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: far ? theme.textTheme.headlineSmall : theme.textTheme.titleMedium,
+          ),
         ),
         for (var i = 0; i < cells.length; ++i)
           Container(
-            color: i == atOche ? theme.colorScheme.secondaryContainer : null,
+            color: i == atOche ? activeFill : null,
             padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Text(cells[i], textAlign: TextAlign.center, style: style ?? theme.textTheme.titleLarge),
+            child: Text(
+              cells[i],
+              textAlign: TextAlign.center,
+              style: (style ?? markStyle)?.copyWith(
+                fontWeight: i == atOche ? FontWeight.w800 : null,
+                color: i == atOche && scoreboard ? AppColors.background : null,
+              ),
+            ),
           ),
       ],
     );
