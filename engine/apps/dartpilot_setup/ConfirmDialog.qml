@@ -1,5 +1,5 @@
 import QtQuick
-import QtQuick.Controls
+import QtQuick.Controls.Material
 
 // Asks before a step that cannot be undone; Enter confirms, Esc cancels.
 Dialog {

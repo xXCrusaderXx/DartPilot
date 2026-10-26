@@ -22,8 +22,12 @@ class IntrinsicView : public StreamView
     Q_OBJECT
     QML_ELEMENT
     Q_PROPERTY(bool charucoAvailable READ charucoAvailable CONSTANT)
-    Q_PROPERTY(QString usbPort MEMBER usb_port_)
-    Q_PROPERTY(QString cameraName MEMBER camera_name_)
+    Q_PROPERTY(QString usbPort READ usbPort WRITE setUsbPort NOTIFY usbPortChanged)
+    Q_PROPERTY(QString cameraName MEMBER camera_name_ NOTIFY cameraNameChanged)
+    // Summary of the calibration stored for this camera, or an empty string if there is none
+    Q_PROPERTY(QString savedSummary READ savedSummary NOTIFY savedChanged)
+    Q_PROPERTY(QString calibrationDirectory READ calibrationDirectory CONSTANT)
+    Q_PROPERTY(QString patternDownloadUrl READ patternDownloadUrl NOTIFY targetChanged)
     // standard, rational or fisheye
     Q_PROPERTY(QString model READ model WRITE setModel NOTIFY modelChanged)
     Q_PROPERTY(bool autoCapture MEMBER auto_capture_ NOTIFY autoCaptureChanged)
@@ -74,6 +78,11 @@ class IntrinsicView : public StreamView
     QString resultText () const { return result_text_; }
     QVariantList views () const;
     QString savedPath () const { return saved_path_; }
+    QString usbPort () const { return usb_port_; }
+    void setUsbPort (const QString& usb_port);
+    QString savedSummary () const;
+    QString calibrationDirectory () const;
+    QString patternDownloadUrl () const;
     QVariantList modelResults () const;
     QString recommendedModel () const;
     QString quality () const;
@@ -84,18 +93,18 @@ class IntrinsicView : public StreamView
     Q_INVOKABLE void clearViews ();
     // Removes the views whose error is more than twice the median of the selected model
     Q_INVOKABLE void removeOutlierViews ();
-    // Summary of the calibration stored for this camera, or an empty string if there is none
-    Q_INVOKABLE QString savedSummary () const;
     // Replaces the views with those of the stored calibration and calibrates again
     Q_INVOKABLE bool loadSaved ();
     Q_INVOKABLE void calibrate ();
     // Returns the written file, or an empty string on failure
     Q_INVOKABLE QString save ();
     Q_INVOKABLE QString savePattern ();
-    Q_INVOKABLE QString calibrationDirectory () const;
-    Q_INVOKABLE QString patternDownloadUrl () const;
 
    signals:
+    void usbPortChanged ();
+    void cameraNameChanged ();
+    // The calibration stored for this camera may have changed: another camera, or a save
+    void savedChanged ();
     void modelChanged ();
     void targetChanged ();
     void autoCaptureChanged ();

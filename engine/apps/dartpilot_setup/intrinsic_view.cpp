@@ -409,6 +409,14 @@ void IntrinsicView::removeOutlierViews ()
     emit viewsChanged();
 }
 
+void IntrinsicView::setUsbPort (const QString& usb_port)
+{
+    if(usb_port == usb_port_) return;
+    usb_port_ = usb_port;
+    emit usbPortChanged();
+    emit savedChanged();
+}
+
 QString IntrinsicView::savedSummary () const
 {
     if(usb_port_.isEmpty())
@@ -657,6 +665,7 @@ QString IntrinsicView::save ()
     }
     saved_path_ = path;
     emit resultChanged();
+    emit savedChanged();
     return path;
 }
 

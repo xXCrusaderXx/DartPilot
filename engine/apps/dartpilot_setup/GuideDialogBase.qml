@@ -1,5 +1,5 @@
 import QtQuick
-import QtQuick.Controls
+import QtQuick.Controls.Material
 
 // Frame of the guide dialogs: a large modal card with its title and a "Got it" button.
 Dialog {
