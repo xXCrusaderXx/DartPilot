@@ -9,10 +9,20 @@ import 'scoring.dart';
 /// Interactive dartboard drawn in board coordinates. A tap reports the board point in mm, so manual input goes
 /// through the same scorer as engine results.
 class Dartboard extends StatelessWidget {
-  const Dartboard({super.key, this.onTap, this.throws = const [], this.geometry = const BoardGeometry(), this.image});
+  const Dartboard({
+    super.key,
+    this.onTap,
+    this.throws = const [],
+    this.highlights = const [],
+    this.geometry = const BoardGeometry(),
+    this.image,
+  });
 
   final ValueChanged<BoardPoint>? onTap;
   final List<DartThrow> throws;
+
+  /// Fields to mark, e.g. the fields an uncertain dart may be in
+  final List<Score> highlights;
   final BoardGeometry geometry;
 
   /// The player's real board from the engine, drawn instead of the painted board when there is one
@@ -40,7 +50,13 @@ class Dartboard extends StatelessWidget {
               size,
               CustomPaint(
                 size: size,
-                painter: _DartboardPainter(geometry, throws, Theme.of(context).colorScheme, image: image),
+                painter: _DartboardPainter(
+                  geometry,
+                  throws,
+                  Theme.of(context).colorScheme,
+                  image: image,
+                  highlights: highlights,
+                ),
               ),
             ),
           );
@@ -91,11 +107,12 @@ class Dartboard extends StatelessWidget {
 }
 
 class _DartboardPainter extends CustomPainter {
-  _DartboardPainter(this.geometry, this.throws, this.colors, {this.image});
+  _DartboardPainter(this.geometry, this.throws, this.colors, {this.image, this.highlights = const []});
 
   final BoardGeometry geometry;
   final List<DartThrow> throws;
   final ColorScheme colors;
+  final List<Score> highlights;
 
   /// The real board's image underneath; the painted board is left out then
   final BoardImage? image;
@@ -169,6 +186,19 @@ class _DartboardPainter extends CustomPainter {
       }
     }
 
+    for (final field in highlights) {
+      final path = _fieldPath(field, centre, scale);
+      if (path == null) continue;
+      canvas.drawPath(path, Paint()..color = colors.primary.withValues(alpha: 0.45));
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = colors.primary
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.5,
+      );
+    }
+
     for (var i = 0; i < throws.length; ++i) {
       final point = throws[i].point;
       final position = centre + Offset(point.xMm * scale, -point.yMm * scale);
@@ -187,6 +217,35 @@ class _DartboardPainter extends CustomPainter {
           ..strokeWidth = 1.5,
       );
     }
+  }
+
+  /// The outline of a field on the canvas; null for a miss, which has no field
+  Path? _fieldPath(Score field, Offset centre, double scale) {
+    final g = geometry;
+    Rect circle(double radiusMm) => Rect.fromCircle(center: centre, radius: radiusMm * scale);
+    final (inner, outer) = switch (field.ring) {
+      Ring.innerBull => (0.0, g.bullRadiusMm),
+      Ring.outerBull => (g.bullRadiusMm, g.outerBullRadiusMm),
+      Ring.innerSingle => (g.outerBullRadiusMm, g.tripleInnerRadiusMm),
+      Ring.triple => (g.tripleInnerRadiusMm, g.tripleOuterRadiusMm),
+      Ring.outerSingle => (g.tripleOuterRadiusMm, g.doubleInnerRadiusMm),
+      Ring.double => (g.doubleInnerRadiusMm, g.doubleOuterRadiusMm),
+      Ring.miss => (0.0, 0.0),
+    };
+    if (field.ring == Ring.miss) return null;
+    if (field.ring == Ring.innerBull || field.ring == Ring.outerBull) {
+      return Path()
+        ..fillType = PathFillType.evenOdd
+        ..addOval(circle(outer))
+        ..addOval(circle(inner));
+    }
+    // Canvas angles run clockwise from +x, board angles counter-clockwise, so the sign flips.
+    final start = -(sectorMiddleDeg(field.sector, g) + 9.0) * math.pi / 180.0;
+    const sweep = 18.0 * math.pi / 180.0;
+    return Path()
+      ..arcTo(circle(outer), start, sweep, true)
+      ..arcTo(circle(inner), start + sweep, -sweep, false)
+      ..close();
   }
 
   void _drawNumber(Canvas canvas, Offset centre, double scale, int sector, {double? radiusMm, double sizeMm = 13}) {
@@ -210,5 +269,9 @@ class _DartboardPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_DartboardPainter old) =>
-      old.throws != throws || old.geometry != geometry || old.colors != colors || old.image != image;
+      old.throws != throws ||
+      old.highlights != highlights ||
+      old.geometry != geometry ||
+      old.colors != colors ||
+      old.image != image;
 }

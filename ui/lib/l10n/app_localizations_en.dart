@@ -1834,4 +1834,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get modePrecisionDescription => 'Grouping, doubles and checkouts, measured in millimetres';
+
+  @override
+  String get or => 'or';
+
+  @override
+  String get pickCandidate => 'Tap the right field, or tap the board where the dart is.';
 }

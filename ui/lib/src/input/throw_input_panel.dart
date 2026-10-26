@@ -13,6 +13,7 @@ class ThrowInputPanel extends StatefulWidget {
     super.key,
     required this.onThrow,
     this.shownThrows = const [],
+    this.highlights = const [],
     this.geometry = const BoardGeometry(),
   });
 
@@ -20,6 +21,9 @@ class ThrowInputPanel extends StatefulWidget {
 
   /// Throws to mark on the board, e.g. the current visit
   final List<DartThrow> shownThrows;
+
+  /// Fields to mark on the board, e.g. the fields an uncertain dart may be in
+  final List<Score> highlights;
   final BoardGeometry geometry;
 
   @override
@@ -60,6 +64,7 @@ class _ThrowInputPanelState extends State<ThrowInputPanel> {
                     key: const ValueKey('dartboard'),
                     geometry: widget.geometry,
                     throws: widget.shownThrows,
+                    highlights: widget.highlights,
                     image: EngineScope.of(context).boardImage,
                     onTap: (point) => widget.onThrow(DartThrow(point, ThrowInput.board, geometry: widget.geometry)),
                   ),

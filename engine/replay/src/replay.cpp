@@ -135,10 +135,13 @@ std::string throwLine (const session::RecordedSession& session, const ReplayConf
                        const std::vector<std::vector<std::uint32_t>>& baseline_frames, const std::vector<std::vector<std::uint32_t>>& after_frames)
 {
     std::ostringstream line;
-    const bool accepted = dart.board_mm.has_value();
+    const bool located = dart.board_mm.has_value();
+    // A located dart spread over more than one field keeps its point as an uncertain throw (#126), as live.
+    const bool accepted = located && !fusion::uncertainField(dart.board_mm->x, dart.board_mm->y, dart.covariance_mm2, scoring::BoardGeometry{},
+                                                             config.detection.confidence);
     line << "{\"throw_id\": " << jsonString(event.throw_id) << ", \"accepted\": " << (accepted ? "true" : "false")
-         << ", \"board_point\": " << (accepted ? boardPoint(*dart.board_mm, dart.covariance_mm2) : "null")
-         << ", \"score\": " << (accepted ? scoreJson(*dart.board_mm) : "null") << ", \"confidence\": "
+         << ", \"board_point\": " << (located ? boardPoint(*dart.board_mm, dart.covariance_mm2) : "null")
+         << ", \"score\": " << (located ? scoreJson(*dart.board_mm) : "null") << ", \"confidence\": "
          << number(!accepted                    ? config.detection.confidence.abstained
                    : dart.cameras_agreeing >= 3 ? config.detection.confidence.three_cameras
                                                 : config.detection.confidence.two_cameras,

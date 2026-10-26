@@ -288,6 +288,13 @@ void LiveDetection::publish (const fusion::TrackerUpdate& update, const event_de
         const auto& c = dart.location->covariance_mm2;
         thrown.board_point = api::BoardPoint{p.x, p.y, std::array<double, 3>{c(0, 0), c(0, 1), c(1, 1)}};
         thrown.confidence = dart.location->views.size() >= 3 ? confidence.three_cameras : confidence.two_cameras;
+        // Its point is kept, so the throw message offers the fields it may be in.
+        if(fusion::uncertainField(p.x, p.y, c, server_.hello().board_geometry, confidence))
+        {
+            thrown.accepted = false;
+            thrown.confidence = confidence.abstained;
+            thrown.reason = "near_wire";
+        }
     }
     else
     {

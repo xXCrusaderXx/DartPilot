@@ -82,4 +82,5 @@ Regenerate the table with `dartpilot detection-params`; `DetectionParams.Documen
 | `confidence_two_cameras` | fusion | 0.8 | 0–1 |  | Confidence of a dart located by two cameras. |
 | `confidence_three_cameras` | fusion | 0.95 | 0–1 |  | Confidence of a dart located by three or more cameras. |
 | `confidence_abstained` | fusion | 0.3 | 0–1 |  | Confidence sent with an abstention. |
+| `uncertain_field_probability` | fusion | 0 | 0–1 |  | A located dart whose most likely field has less probability than this, from its covariance, is sent as uncertain with the fields it may be in, for the player to pick. 0 sends every located dart as accepted. |
 <!-- detection-params:end -->

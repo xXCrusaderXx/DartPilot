@@ -521,7 +521,7 @@ nlohmann::json Server::handle (const std::string& connection, const Request& req
                     return resultMessage(request.request_id, false, *error, "No throw " + correction.throw_id);
                 }
                 broadcast(throwCorrectedMessage(correction.throw_id, "corrected", correction.board_point, hello_.board_geometry, client));
-                logged(correctionRecord(correction.throw_id, "corrected", correction.board_point, client, "", 0));
+                logged(correctionRecord(correction.throw_id, "corrected", correction.board_point, client, "", 0, correction.candidate));
                 return resultMessage(request.request_id, true);
             },
             [&] (const RejectThrow& rejection)

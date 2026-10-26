@@ -1210,5 +1210,7 @@
     }
   },
   "modePrecision": "Precision training",
-  "modePrecisionDescription": "Grouping, doubles and checkouts, measured in millimetres"
+  "modePrecisionDescription": "Grouping, doubles and checkouts, measured in millimetres",
+  "or": "or",
+  "pickCandidate": "Tap the right field, or tap the board where the dart is."
 }

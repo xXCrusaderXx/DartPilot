@@ -121,7 +121,8 @@ nlohmann::json toJson (const scoring::BoardGeometry& geometry, const std::string
 nlohmann::json toJson (const BoardStateInfo& board);
 nlohmann::json helloMessage (const Hello& hello);
 nlohmann::json boardStateMessage (const BoardStateInfo& board);
-// The score is derived from the board point with the geometry, as the engine's scorer does it.
+// The score is derived from the board point with the geometry, as the engine's scorer does it, and so are the candidate
+// fields of an uncertain dart with a covariance (#126).
 nlohmann::json throwMessage (const Throw& dart, const scoring::BoardGeometry& geometry);
 // action: corrected, rejected or added
 nlohmann::json throwCorrectedMessage (const std::string& throw_id, const std::string& action, const std::optional<BoardPoint>& point,
@@ -130,7 +131,8 @@ nlohmann::json throwCorrectedMessage (const std::string& throw_id, const std::st
 // and a client's correction of it (action corrected, rejected or added) as a line of its own
 nlohmann::json throwRecord (const Throw& dart, const scoring::BoardGeometry& geometry);
 nlohmann::json correctionRecord (const std::string& throw_id, const std::string& action, const std::optional<BoardPoint>& point,
-                                 const std::string& client, const std::string& reason, std::int64_t event_ns);
+                                 const std::string& client, const std::string& reason, std::int64_t event_ns,
+                                 std::optional<int> candidate = std::nullopt);
 nlohmann::json takeoutMessage (std::int64_t event_ns, int darts_removed, std::optional<double> detection_latency_ms = std::nullopt);
 nlohmann::json cameraStatusMessage (const CameraStatus& status);
 nlohmann::json engineStatusMessage (const std::string& detection, const std::string& message);
@@ -161,6 +163,8 @@ struct CorrectThrow
 {
     std::string throw_id;
     BoardPoint board_point;
+    // The index of the throw's candidate field the player picked (#126), a labelled example
+    std::optional<int> candidate;
 };
 struct RejectThrow
 {

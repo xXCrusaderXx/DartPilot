@@ -7,6 +7,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include "dartpilot/scoring/field_candidates.hpp"
 #include "dartpilot/scoring/score.hpp"
 
 namespace
@@ -206,4 +207,45 @@ TEST(Score, SharedCasesWithThePythonScorer)
         EXPECT_EQ(dartpilot::scoring::label(s), c["label"].get<std::string>()) << c.dump();
         EXPECT_EQ(s.points, c["points"].get<int>()) << c.dump();
     }
+}
+
+TEST(FieldCandidates, ADartOnTheWireIsSplitBetweenBothFields)
+{
+    // On the radial wire between T20 and T1 at r = 103 mm, 9 degrees right of the top
+    const double r_mm = 103.0, phi = radians(90.0 - 9.0);
+    const auto fields = dartpilot::scoring::fieldCandidates(r_mm * std::cos(phi) - 0.2, r_mm * std::sin(phi), {1.0, 0.0, 1.0});
+    ASSERT_EQ(fields.size(), 2u);
+    EXPECT_EQ(dartpilot::scoring::label(fields[0].score), "T20");
+    EXPECT_EQ(dartpilot::scoring::label(fields[1].score), "T1");
+    EXPECT_GT(fields[0].probability, fields[1].probability);
+    EXPECT_NEAR(fields[0].probability + fields[1].probability, 1.0, 0.05);
+    // The most likely field keeps the point itself; the other one's point lies in it, close to the wire.
+    EXPECT_DOUBLE_EQ(fields[0].x_mm, r_mm * std::cos(phi) - 0.2);
+    EXPECT_EQ(dartpilot::scoring::label(score(fields[1].x_mm, fields[1].y_mm)), "T1");
+    EXPECT_LT(std::hypot(fields[1].x_mm - fields[0].x_mm, fields[1].y_mm - fields[0].y_mm), 1.0);
+}
+
+TEST(FieldCandidates, ASureDartHasOneFieldAndALooseOneAtMostThree)
+{
+    const auto sure = dartpilot::scoring::fieldCandidates(0.0, 103.0, {0.2, 0.0, 0.2});
+    ASSERT_EQ(sure.size(), 1u);
+    EXPECT_EQ(dartpilot::scoring::label(sure[0].score), "T20");
+    EXPECT_GT(sure[0].probability, 0.99);
+
+    // 15 mm sigma on the middle of T20 reaches the singles, the triple and both neighbours: the three likeliest are kept.
+    const auto loose = dartpilot::scoring::fieldCandidates(0.0, 103.0, {225.0, 0.0, 225.0});
+    EXPECT_EQ(loose.size(), 3u);
+    for(std::size_t i = 1; i < loose.size(); ++i)
+    {
+        EXPECT_GE(loose[i - 1].probability, loose[i].probability);
+        EXPECT_GE(loose[i].probability, 0.05);
+    }
+    EXPECT_EQ(dartpilot::scoring::label(loose[0].score), "S20");
+}
+
+TEST(FieldCandidates, NothingForACovarianceThatIsNotPositiveDefinite)
+{
+    EXPECT_TRUE(dartpilot::scoring::fieldCandidates(0.0, 103.0, {0.0, 0.0, 1.0}).empty());
+    EXPECT_TRUE(dartpilot::scoring::fieldCandidates(0.0, 103.0, {1.0, 1.0, 1.0}).empty());
+    EXPECT_TRUE(dartpilot::scoring::fieldCandidates(0.0, 103.0, {std::nan(""), 0.0, 1.0}).empty());
 }
