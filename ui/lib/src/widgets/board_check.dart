@@ -64,10 +64,12 @@ class BoardOccupiedDialog extends StatefulWidget {
 
 class _BoardOccupiedDialogState extends State<BoardOccupiedDialog> {
   EngineConnection? _engine;
+  ModalRoute<Object?>? _route;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _route = ModalRoute.of(context);
     final engine = EngineScope.of(context);
     if (!identical(engine, _engine)) {
       _engine?.removeListener(_onChange);
@@ -85,7 +87,10 @@ class _BoardOccupiedDialogState extends State<BoardOccupiedDialog> {
     final engine = _engine!;
     if (!engine.isConnected || !(engine.boardState?.occupied ?? false)) {
       _engine?.removeListener(_onChange);
-      Navigator.of(context).pop(true);
+      // A question asked from this dialog, such as storing the empty board, has no answer any more.
+      final navigator = Navigator.of(context);
+      navigator.popUntil((route) => route == _route);
+      navigator.pop(true);
     }
   }
 
@@ -108,7 +113,8 @@ class _BoardOccupiedDialogState extends State<BoardOccupiedDialog> {
               for (final camera in cameras) ...[
                 const SizedBox(height: 12),
                 Text(
-                  camera.reason.isEmpty
+                  // The engine's reason is an English sentence; in other languages the marked image says where.
+                  camera.reason.isEmpty || !l10n.localeName.startsWith('en')
                       ? cameraLabel(context, camera.camera)
                       : '${cameraLabel(context, camera.camera)}: ${camera.reason}',
                 ),

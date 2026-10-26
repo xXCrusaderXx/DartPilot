@@ -74,7 +74,12 @@ class _ReferenceRunScreenState extends State<ReferenceRunScreen> {
                 ),
               if (run == null) Text(l10n.referenceIntro),
               if (run != null) ...[
-                if (run.step == 'done' || !run.running) _Verdict(run: run) else _TargetCard(run: run),
+                if (run.step == 'done')
+                  _Verdict(run: run)
+                else if (!run.running)
+                  _Stopped(run: run)
+                else
+                  _TargetCard(run: run),
                 const SizedBox(height: 16),
                 _MarkedBoard(run: run),
                 if (run.results.isNotEmpty) ...[
@@ -122,9 +127,13 @@ class _TargetCard extends StatelessWidget {
     final (icon, text) = switch (run.step) {
       'empty_board' => (Icons.crop_free, l10n.stepEmptyBoard),
       'remove_dart' => (Icons.back_hand, l10n.stepRemoveDart),
-      _ when target == null => (Icons.help_outline, ''),
+      _ when target == null => (Icons.hourglass_empty, l10n.referenceWaiting),
       _ when target.hintCode == 'bull_centre' => (Icons.ads_click, l10n.referenceBullCentre),
-      _ => (Icons.ads_click, l10n.referenceCorner(target.field, target.wires.first, target.wires.last)),
+      _ when target.wires.length == 2 => (
+        Icons.ads_click,
+        l10n.referenceCorner(target.field, target.wires.first, target.wires.last),
+      ),
+      _ => (Icons.ads_click, target.field),
     };
     return Card(
       child: Padding(
@@ -353,6 +362,24 @@ class _ResultTile extends StatelessWidget {
                 _ => result.reason ?? '',
               }
             : l10n.referenceCamerasUsed(result.camerasUsed),
+      ),
+    );
+  }
+}
+
+/// A run the player stopped before the last dart: too few darts for a verdict
+class _Stopped extends StatelessWidget {
+  const _Stopped({required this.run});
+
+  final ReferenceRun run;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      key: const ValueKey('reference-stopped'),
+      child: ListTile(
+        leading: const Icon(Icons.stop_circle_outlined, size: 36),
+        title: Text(AppLocalizations.of(context).referenceStopped(run.results.length)),
       ),
     );
   }

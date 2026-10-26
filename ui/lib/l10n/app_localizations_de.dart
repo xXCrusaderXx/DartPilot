@@ -227,6 +227,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get discard => 'Verwerfen';
 
   @override
+  String get discardCameraOrderTitle => 'Geänderte Reihenfolge und Namen verwerfen?';
+
+  @override
   String get tapToCorrect => 'Tippe auf die Stelle, an der der Dart steckt';
 
   @override
@@ -275,6 +278,14 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get cameraLost => 'Verloren';
+
+  @override
+  String get cameraUnknown => 'Unbekannt';
+
+  @override
+  String cameraNoFrameFor(int seconds) {
+    return 'Kein Bild seit $seconds s';
+  }
 
   @override
   String get noCameras => 'Die Engine hat keine Kameras';
@@ -457,6 +468,11 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String diagnosisFailed(String code) {
     return 'Die Diagnose konnte nicht starten ($code).';
+  }
+
+  @override
+  String diagnosisStopFailed(String code) {
+    return 'Die Diagnose konnte nicht gestoppt werden ($code).';
   }
 
   @override
@@ -1253,6 +1269,15 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get referenceIntro =>
       'Du steckst einen Dart nach dem anderen von Hand an eine bekannte Stelle: in die Mitte des Bulls, dann in Ecken, wo ein Radialdraht auf einen Ringdraht trifft. Die Engine ortet jeden Dart, und der Abstand zur Stelle ist der Fehler des ganzen Systems, von der Kalibrierung bis zur Spitze. Zehn Darts dauern etwa fünf Minuten; die Scheibe muss kalibriert sein.';
+
+  @override
+  String get referenceWaiting => 'Warte auf die nächste Position…';
+
+  @override
+  String referenceStopped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Darts', one: '1 Dart');
+    return 'Nach $_temp0 abgebrochen. Starte neu für ein Urteil.';
+  }
 
   @override
   String get referenceNotCalibrated => 'Kalibriere zuerst die Kameras (Einstellungen → Kalibrierung).';
