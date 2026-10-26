@@ -67,6 +67,13 @@ QtObject {
         return Qt.rgba(tone.r, tone.g, tone.b, alpha);
     }
 
+    // Set at start by --reduced-motion or DARTPILOT_REDUCED_MOTION: moving things jump to their end, pauses stay
+    property bool reducedMotion: false
+
+    function motion(duration_ms) {
+        return reducedMotion ? 0 : duration_ms;
+    }
+
     // good, fair or poor as a status colour; anything else, such as no result yet, is muted
     function qualityTone(quality) {
         return quality === "good" ? good : quality === "fair" ? warning : quality === "poor" ? bad : textMuted;

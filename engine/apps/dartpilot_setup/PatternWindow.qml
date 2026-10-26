@@ -42,7 +42,7 @@ Window {
             NumberAnimation {
                 from: 1
                 to: 0
-                duration: 400
+                duration: Tokens.motion(400)
                 easing.type: Easing.InQuad
             }
         }

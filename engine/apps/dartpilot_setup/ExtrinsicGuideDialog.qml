@@ -32,7 +32,7 @@ GuideDialogBase {
             property: "detection"
             from: 0
             to: 1
-            duration: 1800
+            duration: Tokens.motion(1800)
             easing.type: Easing.InOutQuad
         }
         PauseAnimation {
@@ -45,21 +45,21 @@ GuideDialogBase {
             target: cursor
             property: "opacity"
             to: 1
-            duration: 200
+            duration: Tokens.motion(200)
         }
         ParallelAnimation {
             NumberAnimation {
                 target: cursor
                 property: "x"
                 to: stage.width / 2 - 4
-                duration: 1000
+                duration: Tokens.motion(1000)
                 easing.type: Easing.InOutCubic
             }
             NumberAnimation {
                 target: cursor
                 property: "y"
                 to: stage.height / 2 - board.boardRadius * 0.62
-                duration: 1000
+                duration: Tokens.motion(1000)
                 easing.type: Easing.InOutCubic
             }
         }
@@ -129,14 +129,14 @@ GuideDialogBase {
                             property: "opacity"
                             from: 1
                             to: 0
-                            duration: 500
+                            duration: Tokens.motion(500)
                         }
                         NumberAnimation {
                             target: rippleCircle
                             property: "scale"
                             from: 0.3
                             to: 1.4
-                            duration: 500
+                            duration: Tokens.motion(500)
                         }
                     }
                 }
