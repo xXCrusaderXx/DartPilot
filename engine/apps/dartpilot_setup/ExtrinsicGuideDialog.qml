@@ -207,11 +207,8 @@ GuideDialogBase {
 
                 delegate: ChecklistItem {}
             }
-            Label {
-                text: "THEN, ONCE FOR ALL CAMERAS"
-                font.pixelSize: Tokens.captionSize
-                font.weight: Font.DemiBold
-                color: Tokens.textMuted
+            SectionLabel {
+                text: "Then, once for all cameras"
                 Layout.topMargin: Tokens.spaceSm
             }
             Repeater {
