@@ -136,6 +136,22 @@ class AppLocalizationsDe extends AppLocalizations {
   String get legs => 'Legs';
 
   @override
+  String x01LegOf(int number, int total) {
+    return 'Leg $number · $total zum Sieg';
+  }
+
+  @override
+  String x01PlayerFigures(String average) {
+    return 'Ø $average';
+  }
+
+  @override
+  String x01PlayerFiguresLegs(int legs, String average) {
+    String _temp0 = intl.Intl.pluralLogic(legs, locale: localeName, other: '$legs Legs', one: '1 Leg');
+    return '$_temp0 · Ø $average';
+  }
+
+  @override
   String get checkout => 'Checkout';
 
   @override
@@ -1672,6 +1688,38 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get scoreCaller => 'Score-Ansage';
+
+  @override
+  String get settingsDisplay => 'Anzeige';
+
+  @override
+  String get displayStyle => 'Spielanzeige';
+
+  @override
+  String get displayStyleHint =>
+      'Klar zeigt den Rest groß in den Farben der App; das Scoreboard zeigt mehr auf wenig Platz. Automatisch: Scoreboard auf dem Handy, sonst klar.';
+
+  @override
+  String get displayAuto => 'Automatisch';
+
+  @override
+  String get displayStyleClear => 'Klar';
+
+  @override
+  String get displayStyleScoreboard => 'Scoreboard';
+
+  @override
+  String get viewingDistance => 'Leseabstand';
+
+  @override
+  String get viewingDistanceHint =>
+      'Fern zeigt nur das Wichtigste, sehr groß, für einen Bildschirm am Board oder einen Fernseher. Automatisch: fern auf großen Bildschirmen.';
+
+  @override
+  String get viewingNear => 'Nah';
+
+  @override
+  String get viewingFar => 'Fern';
 
   @override
   String get scoreCallerHint => 'Sagt die Punkte jeder Aufnahme an, wie ein Caller';

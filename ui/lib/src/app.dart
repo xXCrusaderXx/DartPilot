@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import '../l10n/app_localizations.dart';
+import 'display.dart';
 import 'engine/camera_order.dart';
 import 'engine/engine_choice.dart';
 import 'engine/engine_connection.dart';
@@ -28,6 +29,7 @@ class DartPilotApp extends StatefulWidget {
     this.cameraOrder,
     this.dartLinks,
     this.caller,
+    this.display,
   });
 
   /// Fixed locale for tests; the system language otherwise
@@ -53,6 +55,9 @@ class DartPilotApp extends StatefulWidget {
   /// The score caller; a silent one when none is given (tests)
   final Caller? caller;
 
+  /// Display style and viewing distance; kept in memory only when none is given (tests)
+  final DisplaySettings? display;
+
   @override
   State<DartPilotApp> createState() => _DartPilotAppState();
 }
@@ -67,6 +72,7 @@ class _DartPilotAppState extends State<DartPilotApp> {
   late final CameraOrder _cameraOrder = (widget.cameraOrder ?? CameraOrder())..attach(_engine);
   late final DartLinks _dartLinks = widget.dartLinks ?? DartLinks();
   late final Caller _caller = widget.caller ?? Caller(RecordingVoice(), store: false);
+  late final DisplaySettings _display = widget.display ?? DisplaySettings(store: false);
   final GlobalKey<ScaffoldMessengerState> _messenger = GlobalKey();
   StreamSubscription<EngineEvent>? _events;
   final Set<String> _movedCameras = {};
@@ -170,7 +176,10 @@ class _DartPilotAppState extends State<DartPilotApp> {
             links: _dartLinks,
             child: CallerScope(
               caller: _caller,
-              child: manager == null ? app : LocalEngineScope(manager: manager, settings: _settings, child: app),
+              child: DisplayScope(
+                settings: _display,
+                child: manager == null ? app : LocalEngineScope(manager: manager, settings: _settings, child: app),
+              ),
             ),
           ),
         ),

@@ -8,6 +8,7 @@ import '../sound/x01_calls.dart';
 import '../widgets/board_check.dart';
 import '../widgets/engine_card.dart';
 import '../widgets/paired_devices.dart';
+import '../display.dart';
 import 'calibration_check_screen.dart';
 import 'calibration_screen.dart';
 import 'cameras_screen.dart';
@@ -119,6 +120,8 @@ class SettingsScreen extends StatelessWidget {
                 subtitle: Text(l10n.settingsEmptyBoardHint),
                 onTap: () => storeEmptyBoard(context),
               ),
+              section(l10n.settingsDisplay),
+              const DisplaySettingsTiles(),
               section(l10n.scoreCaller),
               const CallerSettings(),
               section(l10n.settingsCalibration),
@@ -215,6 +218,49 @@ class _CallerSettingsState extends State<CallerSettings> {
               child: Text(l10n.callerTest),
             ),
           ),
+      ],
+    );
+  }
+}
+
+/// The display style of games and the viewing distance, for this device
+class DisplaySettingsTiles extends StatelessWidget {
+  const DisplaySettingsTiles({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final display = DisplayScope.of(context);
+    return Column(
+      children: [
+        ListTile(title: Text(l10n.displayStyle), subtitle: Text(l10n.displayStyleHint)),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: SegmentedButton<DisplayStyle>(
+            key: const ValueKey('display-style'),
+            segments: [
+              ButtonSegment(value: DisplayStyle.auto, label: Text(l10n.displayAuto)),
+              ButtonSegment(value: DisplayStyle.clear, label: Text(l10n.displayStyleClear)),
+              ButtonSegment(value: DisplayStyle.scoreboard, label: Text(l10n.displayStyleScoreboard)),
+            ],
+            selected: {display.style},
+            onSelectionChanged: (s) => display.set(style: s.first),
+          ),
+        ),
+        ListTile(title: Text(l10n.viewingDistance), subtitle: Text(l10n.viewingDistanceHint)),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: SegmentedButton<ViewingDistance>(
+            key: const ValueKey('viewing-distance'),
+            segments: [
+              ButtonSegment(value: ViewingDistance.auto, label: Text(l10n.displayAuto)),
+              ButtonSegment(value: ViewingDistance.near, label: Text(l10n.viewingNear)),
+              ButtonSegment(value: ViewingDistance.far, label: Text(l10n.viewingFar)),
+            ],
+            selected: {display.distance},
+            onSelectionChanged: (s) => display.set(distance: s.first),
+          ),
+        ),
       ],
     );
   }
