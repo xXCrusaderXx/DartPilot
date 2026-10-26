@@ -50,7 +50,7 @@ class DoublesScreen extends StatefulWidget {
 String rankingLine(AppLocalizations l10n, TargetPrecision p) {
   final spread = p.spread;
   return [
-    '${p.target.label}  ${(100 * p.hitRate).round()} %',
+    '${p.target.label}  ${percentText(l10n, p.hitRate)}',
     if (spread != null) mmText(l10n, spread.spreadMm),
   ].join('  ·  ');
 }
@@ -105,7 +105,7 @@ class _DoublesScreenState extends State<DoublesScreen> with RecordsGame {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('${l10n.hitRate}: ${(100 * _game.hitRate).round()} %', key: const ValueKey('doubles-result-rate')),
+              Text('${l10n.hitRate}: ${percentText(l10n, _game.hitRate)}', key: const ValueKey('doubles-result-rate')),
               const SizedBox(height: 8),
               for (final p in ranking) Text(rankingLine(l10n, p)),
             ],
@@ -178,7 +178,7 @@ class _DoublesScreenState extends State<DoublesScreen> with RecordsGame {
         ),
         Text(
           '${l10n.groupingProgress((throws.length + 1).clamp(1, _game.dartCount), _game.dartCount)}  ·  '
-          '${l10n.hitRate} ${(100 * _game.hitRate).round()} %',
+          '${l10n.hitRate} ${percentText(l10n, _game.hitRate)}',
           key: const ValueKey('doubles-progress'),
         ),
         if (next != null)

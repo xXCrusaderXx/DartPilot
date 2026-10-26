@@ -17,6 +17,7 @@ import 'my_darts_screen.dart';
 import 'watched_board.dart';
 import 'game_layout.dart';
 import 'players_setup_screen.dart';
+import '../widgets/precision_text.dart';
 
 class AroundTheClockScreen extends StatefulWidget {
   const AroundTheClockScreen({
@@ -125,7 +126,7 @@ class _AroundTheClockScreenState extends State<AroundTheClockScreen> with Record
               title: Text(_game.players[i].name),
               subtitle: Text(
                 '${_game.players[i].dartsThrown} ${l10n.darts} · '
-                '${l10n.hitRate} ${(100 * _game.players[i].hitRate).toStringAsFixed(0)} %',
+                '${l10n.hitRate} ${percentText(l10n, _game.players[i].hitRate)}',
               ),
               trailing: Text(
                 _game.targetLabel(_game.players[i].position.clamp(0, _game.targetCount - 1)),

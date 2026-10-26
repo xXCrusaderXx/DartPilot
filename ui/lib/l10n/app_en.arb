@@ -93,14 +93,14 @@
   "engineErrorDisconnected": "The connection to the engine was lost.",
   "engineErrorTimeout": "The engine did not answer.",
   "engineSimulated": "simulated",
-  "uncertainDart": "Uncertain: {label} ({percent} %)",
+  "uncertainDart": "Uncertain: {label} ({percent})",
   "@uncertainDart": {
     "placeholders": {
       "label": {
         "type": "String"
       },
       "percent": {
-        "type": "int"
+        "type": "String"
       }
     }
   },
@@ -248,7 +248,7 @@
   "diagnosisMeasuring": "Measuring…",
   "diagnosisMeasured": "Measured",
   "diagnosisStopped": "Stopped",
-  "diagnosisSummary": "{time} · {empty} empty boards · {darts} darts",
+  "diagnosisSummary": "{time} · {empty, plural, =1{1 empty board} other{{empty} empty boards}} · {darts, plural, =1{1 dart} other{{darts} darts}}",
   "@diagnosisSummary": {
     "placeholders": {
       "time": {
@@ -388,7 +388,7 @@
   },
   "hintExposureSettling": "After the cameras start, their automatic exposure needs a moment: begin about 30 s after starting them, and keep the ring light on.",
   "hintLightChanged": "Use the ring light and keep daylight and room light constant during the test.",
-  "findingBoardChanged": "The empty board changed {count} times between darts.",
+  "findingBoardChanged": "The empty board changed {count, plural, =1{once} other{{count} times}} between darts.",
   "@findingBoardChanged": {
     "placeholders": {
       "count": {
@@ -888,7 +888,7 @@
       }
     }
   },
-  "referenceCamerasUsed": "{count} cameras",
+  "referenceCamerasUsed": "{count, plural, =1{1 camera} other{{count} cameras}}",
   "@referenceCamerasUsed": {
     "placeholders": {
       "count": {

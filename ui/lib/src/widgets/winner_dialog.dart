@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../stats/game_record.dart';
 import '../stats/player_stats.dart';
+import 'precision_text.dart';
 
 /// End of a match: the winner, the figures of this game per player, and undo, new game or back to the menu.
 Future<void> showWinnerDialog(
@@ -57,7 +58,7 @@ class GameSummary extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     String n(double? v, [int decimals = 1]) => v == null ? '–' : v.toStringAsFixed(decimals);
-    String percent(double? v) => v == null ? '–' : '${(100 * v).round()} %';
+    String percent(double? v) => v == null ? '–' : percentText(l10n, v);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,

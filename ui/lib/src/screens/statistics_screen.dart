@@ -189,7 +189,7 @@ class _PlayerStatsScreenState extends State<PlayerStatsScreen> {
     final stats = computePlayerStats(games, widget.player, since: since);
     final precision = computePlayerPrecision(games, widget.player, since: since);
     String n(double? v, [int decimals = 1]) => v == null ? '–' : _number(l10n, v, decimals);
-    String percent(double? v) => v == null ? '–' : '${_number(l10n, 100 * v, 0)} %';
+    String percent(double? v) => v == null ? '–' : percentText(l10n, v);
     // X01 games, oldest first, the last 30
     final averages = [for (final g in stats.history.reversed) ?g.average];
     if (averages.length > 30) averages.removeRange(0, averages.length - 30);
@@ -339,7 +339,7 @@ class _TargetPrecisionCard extends StatelessWidget {
         Text(label, style: theme.textTheme.headlineSmall),
         Text(
           '${l10n.statsDartsCount(precision.points.length)}  ·  '
-          '${l10n.hitRate} ${_number(l10n, 100 * precision.hitRate, 0)} %',
+          '${l10n.hitRate} ${percentText(l10n, precision.hitRate)}',
         ),
         const SizedBox(height: 8),
         Text(
@@ -425,11 +425,11 @@ class _HistoryTile extends StatelessWidget {
         ? '${l10n.statsMarksPerRound} ${_number(l10n, game.marksPerRound!, 2)}'
         : game.hitRate != null
         ? '${record.mode == GameMode.doubles ? l10n.hitRate : l10n.statsClockHitRate} '
-              '${_number(l10n, 100 * game.hitRate!, 0)} %'
+              '${percentText(l10n, game.hitRate!)}'
         : game.spreadMm != null
         ? '${l10n.precisionSpread} ${_number(l10n, game.spreadMm!)} mm'
         : game.checkoutRate != null
-        ? '${l10n.statsCheckoutRate} ${_number(l10n, 100 * game.checkoutRate!, 0)} %'
+        ? '${l10n.statsCheckoutRate} ${percentText(l10n, game.checkoutRate!)}'
         : game.points != null
         ? '${l10n.points} ${game.points}'
         : '';

@@ -128,7 +128,7 @@ void main() {
     engine.receiveForTest(jsonEncode(diagnosisJson()));
     await tester.pump();
     expect(find.text('Steck einen Dart in die Scheibe und nimm die Hand weg.'), findsOneWidget);
-    expect(find.text('1:14 · 1 leere Scheiben · 1 Darts'), findsOneWidget);
+    expect(find.text('1:14 · 1 leere Scheibe · 1 Dart'), findsOneWidget);
     expect(find.text('Kamera 2: Die Scheibe liegt 1,23 mm neben der Kalibrierung dieser Kamera.'), findsOneWidget);
     expect(find.text('Kamera 1: Das Bild hat sich um 0,62 px in 1,6 min bewegt.'), findsOneWidget);
     expect(find.text('Wo drei Kameras einen Dart sahen, stimmten sie auf 0,40 mm überein (Median).'), findsOneWidget);

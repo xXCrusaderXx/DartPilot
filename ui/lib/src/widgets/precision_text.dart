@@ -21,6 +21,10 @@ String offsetText(AppLocalizations l10n, double dxMm, double dyMm) {
 String mmNumber(AppLocalizations l10n, double valueMm) =>
     NumberFormat.decimalPatternDigits(locale: l10n.localeName, decimalDigits: 1).format(valueMm);
 
+/// A share as the locale writes it: "45%" in English, "45 %" in German
+String percentText(AppLocalizations l10n, double fraction) =>
+    NumberFormat.percentPattern(l10n.localeName).format(fraction);
+
 /// A length with one decimal and its unit: "12,5 mm"
 String mmText(AppLocalizations l10n, double valueMm) => '${mmNumber(l10n, valueMm)} mm';
 

@@ -86,7 +86,7 @@ void main() {
     // All: 161 points in 7 darts.
     expect(figure('3-Dart-Schnitt'), '69,0');
     expect(figure('Bestes Leg'), '4 Darts');
-    expect(figure('Checkout-Quote'), '100 %');
+    expect(figure('Checkout-Quote'), '100\u00a0%');
     expect(figure('Höchstes Finish'), '20');
     expect(find.text('D10 × 1'), findsOneWidget);
 
