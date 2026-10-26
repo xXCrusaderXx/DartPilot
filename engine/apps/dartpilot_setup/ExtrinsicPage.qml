@@ -63,7 +63,7 @@ ColumnLayout {
         ComboBox {
             id: cameraBox
 
-            Layout.preferredWidth: 420
+            Layout.preferredWidth: Tokens.sidePanelWidth
             model: page.cameras.map((c, i) => "Camera " + (i + 1) + "  ·  USB " + c.usbPort + (c.hasBoardPlane ? "  ·  board " + c.boardRmsMm.toFixed(2) + " mm" : "  ·  not yet"))
             currentIndex: page.selected
             // A new model resets the index and choosing an entry breaks the binding, so the selection is set again.
@@ -82,10 +82,10 @@ ColumnLayout {
         ColumnLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            spacing: 12
+            spacing: Tokens.spaceMd
 
             RowLayout {
-                spacing: 8
+                spacing: Tokens.spaceSm
 
                 Chip {
                     text: !page.camera ? "" : page.camera.hasIntrinsics && page.camera.intrinsicsWarning === "" ? "Lens calibrated" : "Lens not calibrated"
@@ -122,7 +122,7 @@ ColumnLayout {
             Card {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                padding: 8
+                padding: Tokens.spaceSm
 
                 ExtrinsicView {
                     id: view
@@ -134,41 +134,23 @@ ColumnLayout {
                 }
             }
 
-            Rectangle {
+            HintBanner {
                 // A failure reads as one, not as the next instruction
-                readonly property color tone: view.state === "failed" ? Tokens.bad : view.saveFailed ? Tokens.warning : Tokens.accent
-
-                Layout.fillWidth: true
-                implicitHeight: hintLabel.implicitHeight + 24
-                radius: Tokens.radius
-                color: Qt.rgba(tone.r, tone.g, tone.b, 0.10)
-                border.color: Qt.rgba(tone.r, tone.g, tone.b, 0.35)
-
-                Label {
-                    id: hintLabel
-
-                    anchors.fill: parent
-                    anchors.margins: 12
-                    anchors.leftMargin: 16
-                    text: "→  " + (view.state === "idle" ? (view.hasPlane ? "This camera is calibrated. Detect again after moving the camera or the board." : "Empty the board, then press \"Detect board\".") : view.message)
-                    font.pixelSize: Tokens.headingSize
-                    color: Tokens.text
-                    wrapMode: Text.WordWrap
-                    verticalAlignment: Text.AlignVCenter
-                }
+                tone: view.state === "failed" ? Tokens.bad : view.saveFailed ? Tokens.warning : Tokens.accent
+                text: view.state === "idle" ? (view.hasPlane ? "This camera is calibrated. Detect again after moving the camera or the board." : "Empty the board, then press \"Detect board\".") : view.message
             }
         }
 
         ScrollView {
             id: side
 
-            Layout.preferredWidth: 420
+            Layout.preferredWidth: Tokens.sidePanelWidth
             Layout.fillHeight: true
             contentWidth: availableWidth
 
             ColumnLayout {
                 width: side.availableWidth
-                spacing: 12
+                spacing: Tokens.spaceMd
 
                 StepCard {
                     Layout.fillWidth: true
@@ -243,8 +225,8 @@ ColumnLayout {
                     GridLayout {
                         visible: view.hasPlane
                         columns: 2
-                        columnSpacing: 12
-                        rowSpacing: 4
+                        columnSpacing: Tokens.spaceMd
+                        rowSpacing: Tokens.spaceXs
 
                         Label {
                             text: "Board fit"
@@ -323,11 +305,11 @@ ColumnLayout {
                             readonly property int number: page.cameras.findIndex(c => c.usbPort === modelData.usbPort) + 1
 
                             Layout.fillWidth: true
-                            spacing: 2
+                            spacing: Tokens.spaceXxs
 
                             Chip {
                                 text: (result.number > 0 ? "Camera " + result.number : "USB " + result.modelData.usbPort) + "  ·  " + result.modelData.heldOutMm.toFixed(2) + " mm"
-                                tone: result.modelData.quality === "good" ? Tokens.good : result.modelData.quality === "fair" ? Tokens.warning : Tokens.bad
+                                tone: Tokens.qualityTone(result.modelData.quality)
                                 dot: true
 
                                 HoverHandler {

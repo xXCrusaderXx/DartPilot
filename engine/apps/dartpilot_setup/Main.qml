@@ -32,7 +32,7 @@ ApplicationWindow {
         spacing: 0
 
         Rectangle {
-            Layout.preferredWidth: 260
+            Layout.preferredWidth: Tokens.sidebarWidth
             Layout.fillHeight: true
             color: Tokens.sidebar
 
@@ -45,13 +45,13 @@ ApplicationWindow {
 
             ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: 16
-                spacing: 6
+                anchors.margins: Tokens.spaceLg
+                spacing: Tokens.spaceSm
 
                 RowLayout {
-                    Layout.bottomMargin: 24
-                    Layout.topMargin: 8
-                    spacing: 12
+                    Layout.bottomMargin: Tokens.spaceXl
+                    Layout.topMargin: Tokens.spaceSm
+                    spacing: Tokens.spaceMd
 
                     Image {
                         source: "icons/dartpilot.svg"
@@ -63,7 +63,7 @@ ApplicationWindow {
 
                         Label {
                             text: "DartPilot"
-                            font.pixelSize: 18
+                            font.pixelSize: Tokens.brandSize
                             font.weight: Font.Bold
                             color: Tokens.text
                         }
@@ -131,11 +131,11 @@ ApplicationWindow {
 
                 Card {
                     Layout.fillWidth: true
-                    padding: 12
+                    padding: Tokens.spaceMd
 
                     ColumnLayout {
                         anchors.fill: parent
-                        spacing: 8
+                        spacing: Tokens.spaceSm
 
                         Chip {
                             text: finder.cameras.length === 1 ? "1 camera connected" : finder.cameras.length + " cameras connected"
@@ -157,7 +157,7 @@ ApplicationWindow {
         StackLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Layout.margins: 24
+            Layout.margins: Tokens.spaceXl
             currentIndex: window.page
 
             CamerasPage {

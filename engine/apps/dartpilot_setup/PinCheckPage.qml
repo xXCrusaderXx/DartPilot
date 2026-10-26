@@ -72,22 +72,12 @@ ColumnLayout {
 
                         ColumnLayout {
                             anchors.fill: parent
-                            spacing: 10
+                            spacing: Tokens.spaceMd
 
-                            RowLayout {
-                                spacing: 10
+                            CameraCardHeader {
+                                number: pane.index + 1
+                                usbPort: pane.modelData.usbPort
 
-                                Label {
-                                    text: "Camera " + (pane.index + 1)
-                                    font.pixelSize: Tokens.headingSize
-                                    font.weight: Font.Bold
-                                }
-                                Chip {
-                                    text: "USB " + pane.modelData.usbPort
-                                }
-                                Item {
-                                    Layout.fillWidth: true
-                                }
                                 Chip {
                                     text: view.picked ? "Clicked" : "Click the pin"
                                     tone: view.picked ? Tokens.good : Tokens.textMuted
@@ -125,7 +115,7 @@ ColumnLayout {
 
             ColumnLayout {
                 anchors.fill: parent
-                spacing: 12
+                spacing: Tokens.spaceMd
 
                 Label {
                     text: "Result"
@@ -135,7 +125,7 @@ ColumnLayout {
                 Chip {
                     visible: check.count >= 2
                     text: "Spread " + check.spreadMm.toFixed(2) + " mm"
-                    tone: check.quality === "good" ? Tokens.good : check.quality === "fair" ? Tokens.warning : Tokens.bad
+                    tone: Tokens.qualityTone(check.quality)
                     dot: true
 
                     HoverHandler {
@@ -158,11 +148,11 @@ ColumnLayout {
                 Label {
                     Layout.fillWidth: true
                     wrapMode: Text.WordWrap
-                    color: check.quality === "" ? Tokens.textMuted : check.quality === "good" ? Tokens.good : check.quality === "fair" ? Tokens.warning : Tokens.bad
+                    color: Tokens.qualityTone(check.quality)
                     text: check.summary
                 }
                 RowLayout {
-                    spacing: 8
+                    spacing: Tokens.spaceSm
 
                     Button {
                         text: "Save"

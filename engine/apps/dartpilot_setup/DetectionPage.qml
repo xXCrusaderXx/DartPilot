@@ -103,19 +103,11 @@ ColumnLayout {
 
                         ColumnLayout {
                             anchors.fill: parent
-                            spacing: 8
+                            spacing: Tokens.spaceSm
 
-                            RowLayout {
-                                spacing: 10
-
-                                Label {
-                                    text: "Camera " + (pane.index + 1)
-                                    font.pixelSize: Tokens.headingSize
-                                    font.weight: Font.Bold
-                                }
-                                Chip {
-                                    text: "USB " + pane.modelData.usbPort
-                                }
+                            CameraCardHeader {
+                                number: pane.index + 1
+                                usbPort: pane.modelData.usbPort
                             }
                             MarkerView {
                                 Layout.fillWidth: true
@@ -133,7 +125,7 @@ ColumnLayout {
 
                     ColumnLayout {
                         anchors.fill: parent
-                        spacing: 8
+                        spacing: Tokens.spaceSm
 
                         Label {
                             text: "Detection values"
@@ -141,7 +133,7 @@ ColumnLayout {
                             font.weight: Font.Bold
                         }
                         RowLayout {
-                            spacing: 8
+                            spacing: Tokens.spaceSm
 
                             ComboBox {
                                 id: profileBox
@@ -195,10 +187,10 @@ ColumnLayout {
                                 required property string modelData
 
                                 Layout.fillWidth: true
-                                spacing: 4
+                                spacing: Tokens.spaceXs
 
                                 Label {
-                                    Layout.topMargin: 8
+                                    Layout.topMargin: Tokens.spaceSm
                                     text: group.modelData
                                     font.weight: Font.Bold
                                     color: Tokens.accent
@@ -213,7 +205,7 @@ ColumnLayout {
                                         readonly property bool changed: Math.abs(modelData.value - modelData.defaultValue) > 1e-9
 
                                         Layout.fillWidth: true
-                                        spacing: 8
+                                        spacing: Tokens.spaceSm
 
                                         Label {
                                             Layout.preferredWidth: 210
@@ -275,14 +267,14 @@ ColumnLayout {
 
             ColumnLayout {
                 width: side.availableWidth
-                spacing: 12
+                spacing: Tokens.spaceMd
 
                 Card {
                     Layout.fillWidth: true
 
                     ColumnLayout {
                         anchors.fill: parent
-                        spacing: 6
+                        spacing: Tokens.spaceSm
 
                         readonly property var counts: test.stats.counts || {}
 
@@ -293,7 +285,7 @@ ColumnLayout {
                         }
                         Flow {
                             Layout.fillWidth: true
-                            spacing: 6
+                            spacing: Tokens.spaceSm
 
                             Repeater {
                                 model: ["right", "wrong", "abstained", "missed", "falseAlarm"]
@@ -321,7 +313,7 @@ ColumnLayout {
                         Label {
                             text: "By dart of the round"
                             font.weight: Font.Bold
-                            Layout.topMargin: 4
+                            Layout.topMargin: Tokens.spaceXs
                         }
                         Repeater {
                             model: test.stats.byPosition || []
@@ -341,7 +333,7 @@ ColumnLayout {
 
                     ColumnLayout {
                         anchors.fill: parent
-                        spacing: 6
+                        spacing: Tokens.spaceSm
 
                         Label {
                             Layout.fillWidth: true
@@ -378,7 +370,7 @@ ColumnLayout {
                         required property int index
 
                         Layout.fillWidth: true
-                        padding: 10
+                        padding: Tokens.spaceMd
                         // Several children: a Pane then takes its content size from none of them.
                         contentHeight: dartColumn.implicitHeight
 
@@ -399,10 +391,10 @@ ColumnLayout {
                             id: dartColumn
 
                             width: parent.width
-                            spacing: 4
+                            spacing: Tokens.spaceXs
 
                             RowLayout {
-                                spacing: 8
+                                spacing: Tokens.spaceSm
 
                                 Label {
                                     text: (test.darts.length - dartCard.index) + ".  " + (dartCard.modelData.label || (dartCard.modelData.detected ? "?" : "—"))
@@ -439,7 +431,7 @@ ColumnLayout {
                             }
                             Flow {
                                 Layout.fillWidth: true
-                                spacing: 6
+                                spacing: Tokens.spaceSm
 
                                 Repeater {
                                     model: dartCard.modelData.cameras

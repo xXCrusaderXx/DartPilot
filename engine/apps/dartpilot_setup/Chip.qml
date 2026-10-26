@@ -11,22 +11,22 @@ Rectangle {
     property bool dot: false
 
     implicitWidth: row.implicitWidth + 20
-    implicitHeight: 26
+    implicitHeight: Tokens.chipHeight
     radius: height / 2
-    color: Qt.rgba(tone.r, tone.g, tone.b, 0.14)
-    border.color: Qt.rgba(tone.r, tone.g, tone.b, 0.35)
+    color: Tokens.tint(tone, Tokens.tintFill)
+    border.color: Tokens.tint(tone, Tokens.tintBorder)
 
     RowLayout {
         id: row
 
         anchors.centerIn: parent
-        spacing: 6
+        spacing: Tokens.spaceSm
 
         Rectangle {
             visible: chip.dot
             implicitWidth: 8
             implicitHeight: 8
-            radius: 4
+            radius: width / 2
             color: chip.tone
         }
         Label {

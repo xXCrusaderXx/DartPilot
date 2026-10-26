@@ -117,7 +117,7 @@ ColumnLayout {
     property var covered: [false, false, false, false, false, false, false, false, false]
     readonly property var pose: poses[step]
 
-    spacing: 10
+    spacing: Tokens.spaceMd
 
     Timer {
         // Move for 700 ms, hold still, capture at 1500 ms, next pose at 2200 ms
@@ -149,8 +149,8 @@ ColumnLayout {
 
         Layout.fillWidth: true
         Layout.preferredHeight: width * 9 / 16
-        radius: 10
-        color: "#0b0e12"
+        radius: Tokens.radiusSmall
+        color: Tokens.stage
         border.color: Tokens.border
         clip: true
 
@@ -166,8 +166,8 @@ ColumnLayout {
 
                     width: stage.width / 3
                     height: stage.height / 3
-                    color: guide.covered[index] ? Qt.rgba(Tokens.good.r, Tokens.good.g, Tokens.good.b, 0.22) : "transparent"
-                    border.color: Qt.rgba(1, 1, 1, 0.06)
+                    color: guide.covered[index] ? Tokens.tint(Tokens.good, 0.22) : "transparent"
+                    border.color: Tokens.gridLine
 
                     Behavior on color {
                         ColorAnimation {
@@ -188,8 +188,8 @@ ColumnLayout {
             x: stage.width * guide.pose.x - width / 2
             y: stage.height * guide.pose.y - height / 2
             radius: width * 0.05
-            color: "#2b2f36"
-            border.color: "#454b55"
+            color: Tokens.deviceFrame
+            border.color: Tokens.deviceBorder
 
             transform: [
                 Rotation {
@@ -260,7 +260,7 @@ ColumnLayout {
             id: flashRect
 
             anchors.fill: parent
-            color: "white"
+            color: Tokens.paper
             opacity: 0
 
             NumberAnimation on opacity {
@@ -276,7 +276,7 @@ ColumnLayout {
         Chip {
             anchors.right: parent.right
             anchors.top: parent.top
-            anchors.margins: 8
+            anchors.margins: Tokens.spaceSm
             text: "Camera image"
             tone: Tokens.textMuted
         }
@@ -292,7 +292,7 @@ ColumnLayout {
     }
 
     Row {
-        spacing: 6
+        spacing: Tokens.spaceSm
 
         Repeater {
             model: guide.poses.length

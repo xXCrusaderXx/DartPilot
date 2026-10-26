@@ -12,11 +12,11 @@ ItemDelegate {
 
     Layout.fillWidth: true
     implicitHeight: 60
-    leftPadding: 16
+    leftPadding: Tokens.spaceLg
 
     background: Rectangle {
-        radius: 10
-        color: nav.selected ? Qt.rgba(Tokens.accent.r, Tokens.accent.g, Tokens.accent.b, 0.14) : nav.hovered ? Tokens.surface : "transparent"
+        radius: Tokens.radiusSmall
+        color: nav.selected ? Tokens.tint(Tokens.accent, Tokens.tintFill) : nav.hovered ? Tokens.surface : "transparent"
 
         Rectangle {
             visible: nav.selected
@@ -30,17 +30,17 @@ ItemDelegate {
     }
 
     contentItem: RowLayout {
-        spacing: 12
+        spacing: Tokens.spaceMd
 
         Label {
             text: nav.glyph
-            font.pixelSize: 20
+            font.pixelSize: Tokens.iconSize
             color: nav.selected ? Tokens.accent : Tokens.textMuted
             Layout.preferredWidth: 24
             horizontalAlignment: Text.AlignHCenter
         }
         ColumnLayout {
-            spacing: 2
+            spacing: Tokens.spaceXxs
 
             Label {
                 text: nav.text

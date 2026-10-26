@@ -42,29 +42,19 @@ ColumnLayout {
 
                     required property var modelData
                     required property int index
-                    readonly property color tone: view.quality === "good" ? Tokens.good : view.quality === "fair" ? Tokens.warning : view.quality === "poor" ? Tokens.bad : Tokens.textMuted
+                    readonly property color tone: Tokens.qualityTone(view.quality)
 
                     Layout.fillWidth: true
                     Layout.alignment: Qt.AlignTop
 
                     ColumnLayout {
                         anchors.fill: parent
-                        spacing: 12
+                        spacing: Tokens.spaceMd
 
-                        RowLayout {
-                            spacing: 10
+                        CameraCardHeader {
+                            number: pane.index + 1
+                            usbPort: pane.modelData.usbPort
 
-                            Label {
-                                text: "Camera " + (pane.index + 1)
-                                font.pixelSize: Tokens.headingSize
-                                font.weight: Font.Bold
-                            }
-                            Chip {
-                                text: "USB " + pane.modelData.usbPort
-                            }
-                            Item {
-                                Layout.fillWidth: true
-                            }
                             Chip {
                                 text: view.state === "checked" ? (view.swappedWith !== "" ? "Wrong port?" : view.rmsMm.toFixed(2) + " mm") : view.state === "noboard" ? "No board" : view.state === "nocalibration" ? "Not calibrated" : "Checking"
                                 tone: pane.tone

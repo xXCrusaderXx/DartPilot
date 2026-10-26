@@ -5,37 +5,13 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 // How the board calibration works: an animation of detect, click the sector 20 and check, and a checklist.
-Dialog {
+GuideDialogBase {
     id: dialog
 
     // 0 detect, 1 click, 2 check
     property int phase: 0
 
-    parent: Overlay.overlay
-    anchors.centerIn: parent
-    width: Math.min(parent.width - 80, 1100)
-    modal: true
     title: "How to calibrate the board"
-    padding: 24
-
-    background: Rectangle {
-        radius: Tokens.radius
-        color: Tokens.surface
-        border.color: Tokens.border
-    }
-
-    header: Label {
-        text: dialog.title
-        padding: 24
-        bottomPadding: 8
-        font.pixelSize: Tokens.titleSize
-        font.weight: Font.Bold
-        color: Tokens.text
-    }
-
-    Overlay.modal: Rectangle {
-        color: Qt.rgba(0, 0, 0, 0.6)
-    }
 
     SequentialAnimation {
         running: dialog.visible
@@ -106,19 +82,19 @@ Dialog {
 
     RowLayout {
         anchors.fill: parent
-        spacing: 24
+        spacing: Tokens.spaceXl
 
         ColumnLayout {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignTop
-            spacing: 10
+            spacing: Tokens.spaceMd
 
             Rectangle {
                 id: stage
 
                 Layout.fillWidth: true
                 Layout.preferredHeight: width * 0.62
-                radius: 10
+                radius: Tokens.radiusSmall
                 color: Tokens.background
                 border.color: Tokens.border
                 clip: true
@@ -136,7 +112,7 @@ Dialog {
 
                     width: 44
                     height: 44
-                    radius: 22
+                    radius: width / 2
                     x: cursor.x - 22 + 4
                     y: cursor.y - 22 + 4
                     color: "transparent"
@@ -195,7 +171,7 @@ Dialog {
                 Chip {
                     anchors.left: parent.left
                     anchors.top: parent.top
-                    anchors.margins: 8
+                    anchors.margins: Tokens.spaceSm
                     text: ["1  Detect board", "2  Click the sector 20", "3  Check the numbers"][dialog.phase]
                     tone: Tokens.accent
                     dot: true
@@ -212,25 +188,19 @@ Dialog {
         ColumnLayout {
             Layout.preferredWidth: 380
             Layout.alignment: Qt.AlignTop
-            spacing: 10
+            spacing: Tokens.spaceMd
 
-            Label {
-                text: "BEFORE YOU START"
-                font.pixelSize: Tokens.captionSize
-                font.weight: Font.DemiBold
-                color: Tokens.textMuted
+            SectionLabel {
+                text: "Before you start"
             }
             Repeater {
                 model: ["Remove all darts; nothing may cover the board, also not a hand.", "Light the board evenly; strong glare on the rings can hide them.", "The cameras stay in their mounts. After moving a camera or the board, calibrate it again."]
 
                 delegate: ChecklistItem {}
             }
-            Label {
-                text: "FOR EVERY CAMERA"
-                font.pixelSize: Tokens.captionSize
-                font.weight: Font.DemiBold
-                color: Tokens.textMuted
-                Layout.topMargin: 8
+            SectionLabel {
+                text: "For every camera"
+                Layout.topMargin: Tokens.spaceSm
             }
             Repeater {
                 model: ["Choose the camera at the top and press \"Detect board\".", "Click anywhere into the sector 20, between the bull and the double ring.", "Check that the numbers match the board. If not, click the sector 20 again.", "The board fit in millimetres says how well the board was found: green up to 0.5 mm."]
@@ -242,54 +212,13 @@ Dialog {
                 font.pixelSize: Tokens.captionSize
                 font.weight: Font.DemiBold
                 color: Tokens.textMuted
-                Layout.topMargin: 8
+                Layout.topMargin: Tokens.spaceSm
             }
             Repeater {
                 model: ["Press \"Refine all cameras\": poses, lenses and the actual board size are fitted to the points of all cameras together.", "Each camera gets its error on wires the fit did not see: green up to 0.5 mm. Refine again after detecting any board again."]
 
                 delegate: ChecklistItem {}
             }
-        }
-    }
-
-    footer: DialogButtonBox {
-        background: null
-
-        Button {
-            text: "Got it"
-            highlighted: true
-            DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
-        }
-    }
-
-    component ChecklistItem: RowLayout {
-        id: item
-
-        required property string modelData
-
-        Layout.fillWidth: true
-        spacing: 10
-
-        Rectangle {
-            Layout.alignment: Qt.AlignTop
-            Layout.topMargin: 2
-            implicitWidth: 18
-            implicitHeight: 18
-            radius: 9
-            color: Qt.rgba(Tokens.good.r, Tokens.good.g, Tokens.good.b, 0.18)
-
-            Label {
-                anchors.centerIn: parent
-                text: "✓"
-                font.pixelSize: 11
-                color: Tokens.good
-            }
-        }
-        Label {
-            Layout.fillWidth: true
-            text: item.modelData
-            wrapMode: Text.WordWrap
-            color: Tokens.text
         }
     }
 }
