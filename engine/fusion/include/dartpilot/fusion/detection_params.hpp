@@ -6,6 +6,7 @@
 
 #include "dartpilot/event_detection/event_detection.hpp"
 #include "dartpilot/fusion/dart_tracker.hpp"
+#include "dartpilot/scoring/score.hpp"
 
 // Every value of the live detection path in one place (#195): when the board counts as still, how a dart is found per
 // camera, when cameras agree on its point, when the board counts as occupied or empty, and the confidences sent with a
@@ -19,7 +20,14 @@ struct ConfidenceSettings
     double two_cameras = 0.8;
     double three_cameras = 0.95;
     double abstained = 0.3;
+    // A located dart whose most likely field has less probability than this is sent as uncertain (#126); 0 never
+    double uncertain_field_probability = 0.0;
 };
+
+// Whether a located dart counts as uncertain because its uncertainty spreads over more than one field: its most likely
+// field is less likely than settings.uncertain_field_probability (#126)
+bool uncertainField (double x_mm, double y_mm, const cv::Matx22d& covariance_mm2, const scoring::BoardGeometry& geometry,
+                     const ConfidenceSettings& settings);
 
 struct DetectionSettings
 {

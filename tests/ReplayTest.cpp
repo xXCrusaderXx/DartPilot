@@ -544,6 +544,20 @@ TEST(StillDetector, ADartLandingIsMotionButImageNoiseIsNot)
     EXPECT_TRUE(event_detection::moved(before, before + 10.0f));
 }
 
+TEST(DetectionParams, AnUncertainFieldOnlyWhenSwitchedOn)
+{
+    fusion::ConfidenceSettings settings;
+    const cv::Matx22d covariance(1.0, 0.0, 0.0, 1.0);
+    // On the wire between T20 and T1, and in the middle of T20
+    EXPECT_FALSE(fusion::uncertainField(16.1, 102.9, covariance, {}, settings));
+    settings.uncertain_field_probability = 0.9;
+    EXPECT_TRUE(fusion::uncertainField(16.1, 102.9, covariance, {}, settings));
+    EXPECT_FALSE(fusion::uncertainField(0.0, 103.0, cv::Matx22d(0.2, 0.0, 0.0, 0.2), {}, settings));
+    fusion::DetectionSettings detection;
+    EXPECT_FALSE(fusion::setDetectionParam(detection, "uncertain_field_probability", 0.8));
+    EXPECT_EQ(detection.confidence.uncertain_field_probability, 0.8);
+}
+
 TEST(DetectionParams, DocumentedAsInTheRegistry)
 {
     const std::string doc = readFile(std::filesystem::path(DARTPILOT_SOURCE_DIR) / "docs/detection-params.md");

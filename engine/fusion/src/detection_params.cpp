@@ -3,6 +3,8 @@
 #include <cmath>
 #include <cstdio>
 
+#include "dartpilot/scoring/field_candidates.hpp"
+
 namespace dartpilot::fusion
 {
 namespace
@@ -157,6 +159,9 @@ std::vector<DetectionParam> makeParams ()
         DETECTION_PARAM("confidence_three_cameras", "fusion", "", 0, 1, 0.05, confidence.three_cameras,
                         "Confidence of a dart located by three or more cameras."),
         DETECTION_PARAM("confidence_abstained", "fusion", "", 0, 1, 0.05, confidence.abstained, "Confidence sent with an abstention."),
+        DETECTION_PARAM("uncertain_field_probability", "fusion", "", 0, 1, 0.05, confidence.uncertain_field_probability,
+                        "A located dart whose most likely field has less probability than this, from its covariance, is sent as uncertain "
+                        "with the fields it may be in, for the player to pick. 0 sends every located dart as accepted."),
     };
 }
 #undef DETECTION_PARAM
@@ -213,5 +218,15 @@ std::string detectionParamsMarkdown ()
                number(param.max) + " | " + param.unit + " | " + param.description + " |\n";
     }
     return out;
+}
+bool uncertainField (double x_mm, double y_mm, const cv::Matx22d& covariance_mm2, const scoring::BoardGeometry& geometry,
+                     const ConfidenceSettings& settings)
+{
+    if(!(settings.uncertain_field_probability > 0.0))
+    {
+        return false;
+    }
+    const auto fields = scoring::fieldCandidates(x_mm, y_mm, {covariance_mm2(0, 0), covariance_mm2(0, 1), covariance_mm2(1, 1)}, geometry, 0.0, 1);
+    return !fields.empty() && fields.front().probability < settings.uncertain_field_probability;
 }
 }  // namespace dartpilot::fusion

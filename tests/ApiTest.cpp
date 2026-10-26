@@ -63,6 +63,31 @@ TEST(Protocol, AbstentionWithoutPointAndInfiniteDistancesAsNull)
     EXPECT_EQ(bull["ring"], "inner_bull");
 }
 
+TEST(Protocol, AnUncertainDartOnAWireOffersItsFields)
+{
+    api::Throw dart;
+    dart.accepted = false;
+    dart.reason = "near_wire";
+    dart.board_point = api::BoardPoint{16.1, 102.9, std::array<double, 3>{1.0, 0.0, 1.0}};
+    const json message = api::throwMessage(dart, {});
+    ASSERT_EQ(message["candidates"].size(), 2u);
+    EXPECT_EQ(message["candidates"][0]["score"]["label"], "T20");
+    EXPECT_EQ(message["candidates"][1]["score"]["label"], "T1");
+    EXPECT_EQ(message["candidates"][0]["board_point"]["x_mm"], 16.1);
+    EXPECT_GT(message["candidates"][0]["probability"].get<double>(), message["candidates"][1]["probability"].get<double>());
+    EXPECT_EQ(api::throwRecord(dart, {})["candidates"], message["candidates"]);
+
+    // Accepted darts, darts well inside one field, and darts without a covariance offer none.
+    dart.accepted = true;
+    EXPECT_FALSE(api::throwMessage(dart, {}).contains("candidates"));
+    dart.accepted = false;
+    dart.board_point = api::BoardPoint{0.0, 103.0, std::array<double, 3>{0.2, 0.0, 0.2}};
+    EXPECT_FALSE(api::throwMessage(dart, {}).contains("candidates"));
+    dart.accepted = false;
+    dart.board_point->covariance_mm2.reset();
+    EXPECT_FALSE(api::throwMessage(dart, {}).contains("candidates"));
+}
+
 TEST(Protocol, HelloNamesProtocolAndGeometry)
 {
     api::Hello hello;
@@ -83,6 +108,10 @@ TEST(Protocol, ParsesRequestsAndReportsErrors)
     const auto& request = std::get<api::Request>(correct);
     EXPECT_EQ(request.request_id, "7");
     EXPECT_EQ(std::get<api::CorrectThrow>(request.body).board_point.y_mm, 2.0);
+    EXPECT_FALSE(std::get<api::CorrectThrow>(request.body).candidate);
+    const auto picked =
+        api::parseRequest(R"({"type":"correct_throw","request_id":"7","throw_id":"s/3","board_point":{"x_mm":1,"y_mm":2},"candidate":1})");
+    EXPECT_EQ(std::get<api::CorrectThrow>(std::get<api::Request>(picked).body).candidate, 1);
 
     const auto unknown = api::parseRequest(R"({"type":"launch","request_id":"8"})");
     EXPECT_EQ(std::get<api::ParseError>(unknown).code, "unknown_type");
@@ -117,12 +146,18 @@ TEST(Simulator, TargetsHitTheirFieldsAndDartsAreReproducible)
     EXPECT_EQ(a.board_point->x_mm, b.board_point->x_mm);
     EXPECT_EQ(a.accepted, b.accepted);
     int abstained = 0;
+    int with_candidates = 0;
     for(int i = 0; i < 1000; ++i)
     {
-        abstained += api::Simulator::makeDart(1, i, settings).accepted ? 0 : 1;
+        const auto dart = api::Simulator::makeDart(1, i, settings);
+        abstained += dart.accepted ? 0 : 1;
+        with_candidates += api::throwMessage(dart, {}).contains("candidates") ? 1 : 0;
     }
     EXPECT_GT(abstained, 50);
     EXPECT_LT(abstained, 150);
+    // Uncertain simulated darts near a wire offer their fields, so a client can try the choice without cameras (#126).
+    EXPECT_GT(with_candidates, 10);
+    EXPECT_LE(with_candidates, abstained);
 }
 
 namespace
@@ -573,7 +608,11 @@ TEST(Server, ThrowsAndCorrectionsAreLoggedAsSessionRecords)
     client.next("hello");
     client.send({{"type", "hello"}, {"request_id", "0"}, {"client", "app"}});
     client.next("result");
-    client.send({{"type", "correct_throw"}, {"request_id", "1"}, {"throw_id", recorded.throw_id}, {"board_point", {{"x_mm", 1.0}, {"y_mm", 60.0}}}});
+    client.send({{"type", "correct_throw"},
+                 {"request_id", "1"},
+                 {"throw_id", recorded.throw_id},
+                 {"board_point", {{"x_mm", 1.0}, {"y_mm", 60.0}}},
+                 {"candidate", 1}});
     client.next("result");
     client.send({{"type", "add_throw"}, {"request_id", "2"}, {"board_point", {{"x_mm", -30.0}, {"y_mm", 0.0}}}});
     client.next("result");
@@ -590,6 +629,7 @@ TEST(Server, ThrowsAndCorrectionsAreLoggedAsSessionRecords)
     EXPECT_EQ(records[1]["correction"]["action"], "corrected");
     EXPECT_EQ(records[1]["correction"]["client"], "app");
     EXPECT_EQ(records[1]["correction"]["board_point"]["y_mm"], 60.0);
+    EXPECT_EQ(records[1]["correction"]["candidate"], 1);
     EXPECT_EQ(records[2]["correction"]["action"], "added");
     EXPECT_TRUE(records[2]["correction"].contains("event_ns"));
 }

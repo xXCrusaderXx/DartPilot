@@ -2,6 +2,7 @@
 
 #include <cmath>
 
+#include "dartpilot/scoring/field_candidates.hpp"
 #include "dartpilot/version.hpp"
 
 namespace dartpilot::api
@@ -45,6 +46,28 @@ BoardPoint parseBoardPoint (const json& value)
         point.covariance_mm2 = std::array<double, 3>{it->at("xx").get<double>(), it->at("xy").get<double>(), it->at("yy").get<double>()};
     }
     return point;
+}
+
+// An uncertain dart with a covariance that spreads over more than one field: those fields (#126), derived like its score
+json candidatesJson (const Throw& dart, const scoring::BoardGeometry& geometry)
+{
+    json out = json::array();
+    if(dart.accepted || !dart.board_point || !dart.board_point->covariance_mm2)
+    {
+        return out;
+    }
+    const auto fields = scoring::fieldCandidates(dart.board_point->x_mm, dart.board_point->y_mm, *dart.board_point->covariance_mm2, geometry);
+    // One field leaves nothing to choose; the dart is offered for confirmation as it is.
+    if(fields.size() < 2)
+    {
+        return out;
+    }
+    for(const auto& c : fields)
+    {
+        out.push_back(
+            {{"board_point", toJson(BoardPoint{c.x_mm, c.y_mm, std::nullopt})}, {"score", toJson(c.score)}, {"probability", c.probability}});
+    }
+    return out;
 }
 }  // namespace
 
@@ -190,6 +213,10 @@ json throwMessage (const Throw& dart, const scoring::BoardGeometry& geometry)
     {
         out["board_point"] = toJson(*dart.board_point);
         out["score"] = toJson(scoring::score(dart.board_point->x_mm, dart.board_point->y_mm, geometry));
+        if(auto candidates = candidatesJson(dart, geometry); !candidates.empty())
+        {
+            out["candidates"] = std::move(candidates);
+        }
     }
     if(!dart.reason.empty())
     {
@@ -230,6 +257,10 @@ json throwRecord (const Throw& dart, const scoring::BoardGeometry& geometry)
     {
         out["board_point"] = toJson(*dart.board_point);
         out["score"] = toJson(scoring::score(dart.board_point->x_mm, dart.board_point->y_mm, geometry));
+        if(auto candidates = candidatesJson(dart, geometry); !candidates.empty())
+        {
+            out["candidates"] = std::move(candidates);
+        }
     }
     if(!dart.reason.empty())
     {
@@ -239,9 +270,13 @@ json throwRecord (const Throw& dart, const scoring::BoardGeometry& geometry)
 }
 
 json correctionRecord (const std::string& throw_id, const std::string& action, const std::optional<BoardPoint>& point, const std::string& client,
-                       const std::string& reason, std::int64_t event_ns)
+                       const std::string& reason, std::int64_t event_ns, std::optional<int> candidate)
 {
     json correction = {{"action", action}, {"board_point", point ? toJson(*point) : json(nullptr)}, {"client", client}};
+    if(candidate)
+    {
+        correction["candidate"] = *candidate;
+    }
     if(!reason.empty())
     {
         correction["reason"] = reason;
@@ -361,7 +396,12 @@ std::variant<Request, ParseError> parseRequest (const std::string& text)
         }
         else if(type == "correct_throw")
         {
-            request.body = CorrectThrow{message.at("throw_id").get<std::string>(), parseBoardPoint(message.at("board_point"))};
+            CorrectThrow correction{message.at("throw_id").get<std::string>(), parseBoardPoint(message.at("board_point"))};
+            if(const auto it = message.find("candidate"); it != message.end() && it->is_number_integer())
+            {
+                correction.candidate = it->get<int>();
+            }
+            request.body = correction;
         }
         else if(type == "reject_throw")
         {

@@ -1,1 +1,1 @@
-dartpilot_add_module(fusion DEPS geometry event_detection opencv_imgproc)
+dartpilot_add_module(fusion DEPS geometry event_detection scoring opencv_imgproc)
