@@ -1913,10 +1913,30 @@ class AppLocalizationsEn extends AppLocalizations {
       'Keypad darts and corrected darts have no measured point and do not count for the group.';
 
   @override
-  String get groupingDone => 'Round done';
+  String get roundDone => 'Round done';
 
   @override
-  String get groupingAgain => 'Another round';
+  String get roundAgain => 'Another round';
+
+  @override
+  String resultSpread(String value) {
+    return 'Spread: $value';
+  }
+
+  @override
+  String resultOffset(String value) {
+    return 'Offset: $value';
+  }
+
+  @override
+  String resultHitRate(String value) {
+    return 'Hit rate: $value';
+  }
+
+  @override
+  String resultCheckouts(int done, int total) {
+    return 'Checkout rate: $done of $total';
+  }
 
   @override
   String get statsPrecision => 'Precision';

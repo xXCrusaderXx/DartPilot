@@ -51,6 +51,51 @@ Future<void> showWinnerDialog(
   );
 }
 
+/// End of a training round: what it gave, and undo the last dart, another round or back to the menu
+Future<void> showRoundResult(
+  BuildContext context, {
+  required Widget content,
+  required VoidCallback onUndo,
+  required WidgetBuilder again,
+}) {
+  final l10n = AppLocalizations.of(context);
+  return showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (dialogContext) => EndOfGameBack(
+      gameContext: context,
+      child: AlertDialog(
+        title: Text(l10n.roundDone),
+        content: SingleChildScrollView(child: content),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              onUndo();
+            },
+            child: Text(l10n.undo),
+          ),
+          TextButton(
+            key: const ValueKey('round-again'),
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              Navigator.of(context).pushReplacement(MaterialPageRoute<void>(builder: again));
+            },
+            child: Text(l10n.roundAgain),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              Navigator.of(context).pop();
+            },
+            child: Text(l10n.backToMenu),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 /// The figures of one game per player (#117), from the same statistics as the statistics page
 class GameSummary extends StatelessWidget {
   const GameSummary({super.key, required this.record});

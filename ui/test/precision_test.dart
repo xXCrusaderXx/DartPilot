@@ -341,7 +341,7 @@ void main() {
       final label = tester.widget<Text>(find.byKey(const ValueKey('checkout-aim'))).data!.split(' ').last;
       await tapBoard(tester, PrecisionTarget.parse(label)!.centre());
     }
-    expect(find.text('Checkout-Quote: 5 / 5'), findsOneWidget);
+    expect(find.text('Checkout-Quote: 5 von 5'), findsOneWidget);
     await tester.tap(find.text('Menü'));
     await tester.pumpAndSettle();
     final record = statistics.games.single;

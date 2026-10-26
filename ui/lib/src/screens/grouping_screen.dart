@@ -14,7 +14,7 @@ import '../widgets/precision_plot.dart';
 import '../widgets/precision_text.dart';
 import 'game_scaffold.dart';
 import 'my_darts_screen.dart';
-import '../widgets/leave_game_guard.dart';
+import '../widgets/winner_dialog.dart';
 
 /// Grouping training (#125): darts at one target, with the miss of every dart and the group's spread in mm.
 class GroupingScreen extends StatefulWidget {
@@ -69,56 +69,21 @@ class _GroupingScreenState extends State<GroupingScreen> with RecordsGame {
   Future<void> _showResult() {
     final l10n = AppLocalizations.of(context);
     final spread = _game.spread;
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => EndOfGameBack(
-        gameContext: context,
-        child: AlertDialog(
-          title: Text(l10n.groupingDone),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${l10n.precisionSpread}: ${spread == null ? '–' : mmText(l10n, spread.spreadMm)}',
-                key: const ValueKey('grouping-result-spread'),
-              ),
-              if (spread != null)
-                Text('${l10n.precisionOffset}: ${offsetText(l10n, spread.offsetXMm, spread.offsetYMm)}'),
-            ],
+    return showRoundResult(
+      context,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.resultSpread(spread == null ? '–' : mmText(l10n, spread.spreadMm)),
+            key: const ValueKey('grouping-result-spread'),
           ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                setState(_game.undo);
-              },
-              child: Text(l10n.undo),
-            ),
-            TextButton(
-              key: const ValueKey('grouping-again'),
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute<void>(
-                    builder: (_) =>
-                        GroupingScreen(player: widget.player, target: widget.target, dartCount: widget.dartCount),
-                  ),
-                );
-              },
-              child: Text(l10n.groupingAgain),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                Navigator.of(context).pop();
-              },
-              child: Text(l10n.backToMenu),
-            ),
-          ],
-        ),
+          if (spread != null) Text(l10n.resultOffset(offsetText(l10n, spread.offsetXMm, spread.offsetYMm))),
+        ],
       ),
+      onUndo: () => setState(_game.undo),
+      again: (_) => GroupingScreen(player: widget.player, target: widget.target, dartCount: widget.dartCount),
     );
   }
 
