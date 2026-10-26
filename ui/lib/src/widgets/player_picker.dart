@@ -218,3 +218,49 @@ class PlayerPicker extends StatelessWidget {
     );
   }
 }
+
+/// One profile for a solo training: tap one, or create a new one here.
+class ProfileChoice extends StatelessWidget {
+  const ProfileChoice({super.key, required this.selected, required this.onSelected});
+
+  final String? selected;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final profiles = StatisticsScope.maybeOf(context)?.players ?? const <String>[];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(l10n.players, style: theme.textTheme.titleMedium),
+        const SizedBox(height: 4),
+        Text(l10n.groupingPickPlayer, style: theme.textTheme.bodySmall),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final name in profiles)
+              ChoiceChip(
+                key: ValueKey('pick-$name'),
+                label: Text(name),
+                selected: name == selected,
+                onSelected: (_) => onSelected(name),
+              ),
+            ActionChip(
+              key: const ValueKey('pick-new-profile'),
+              avatar: const Icon(Icons.person_add),
+              label: Text(l10n.newProfile),
+              onPressed: () async {
+                final name = await createProfile(context);
+                if (name != null) onSelected(name);
+              },
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}

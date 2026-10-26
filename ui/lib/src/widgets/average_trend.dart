@@ -2,7 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-/// The 3-dart average of each game, oldest left, as a line with a dot per game (#117)
+/// The 3-dart average of each game, oldest left, as a line with a dot per game (#117); also the weekly spread in mm
+/// (#125)
 class AverageTrend extends StatelessWidget {
   const AverageTrend({super.key, required this.averages});
 

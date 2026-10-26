@@ -70,23 +70,11 @@ BoardPoint aimAt(String label) {
   };
 }
 
-/// What is left after a setup dart, best first: doubles a player likes to finish on
-const List<int> _leaves = [32, 40, 16, 8, 24, 20, 36, 12, 4, 2];
-
 BoardPoint aimX01(X01Game game) {
   final player = game.players[game.current];
   final dartsLeft = game.currentVisit.isComplete ? 3 : 3 - game.currentVisit.darts.length;
   if (game.settings.doubleIn && !player.isIn) return aimAt('D20');
-  final remaining = player.remaining;
-  final route = suggestCheckout(remaining, dartsLeft, doubleOut: game.settings.doubleOut);
-  if (route != null) return aimAt(route.first);
-  if (remaining > 60) return aimAt('T20');
-  // No finish this visit: a single that leaves a good double
-  for (final leave in _leaves) {
-    final single = remaining - leave;
-    if (single >= 1 && single <= 20) return aimAt('S$single');
-  }
-  return aimAt('S1');
+  return aimAt(aimField(player.remaining, dartsLeft, doubleOut: game.settings.doubleOut));
 }
 
 /// The highest number the bot has not closed, on the triple; the bull last

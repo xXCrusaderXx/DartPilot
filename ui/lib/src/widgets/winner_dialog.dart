@@ -81,6 +81,9 @@ class GameSummary extends StatelessWidget {
                   ],
                   GameMode.cricket => [(l10n.statsMarksPerRound, n(s.marksPerRound, 2))],
                   GameMode.aroundTheClock => [(l10n.statsClockHitRate, percent(s.clockHitRate))],
+                  GameMode.grouping => [(l10n.precisionSpread, '${n(s.history.firstOrNull?.spreadMm)} mm')],
+                  GameMode.doubles => [(l10n.hitRate, percent(s.history.firstOrNull?.hitRate))],
+                  GameMode.checkout => [(l10n.statsCheckoutRate, percent(s.history.firstOrNull?.checkoutRate))],
                 },
               ];
               return Padding(

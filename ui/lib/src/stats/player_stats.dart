@@ -1,9 +1,13 @@
 // The figures of one player over a set of games (#117), computed by replaying the games.
 import '../board/scoring.dart';
 import '../games/around_the_clock.dart';
+import '../games/checkout_trainer.dart';
 import '../games/cricket.dart';
+import '../games/doubles.dart';
+import '../games/grouping.dart';
 import '../games/x01.dart';
 import 'game_record.dart';
+import 'precision.dart';
 
 /// One game of the player, for the history
 class PlayedGame {
@@ -14,16 +18,25 @@ class PlayedGame {
     this.average,
     this.marksPerRound,
     this.hitRate,
+    this.spreadMm,
+    this.checkoutRate,
   });
 
   final GameRecord record;
   final bool won;
   final int darts;
 
-  /// X01 three-dart average, Cricket marks per round, Around the Clock share of darts on the target
+  /// X01 three-dart average, Cricket marks per round, Around the Clock and doubles practice share of darts on the
+  /// target
   final double? average;
   final double? marksPerRound;
   final double? hitRate;
+
+  /// Grouping training: the size of the group in mm
+  final double? spreadMm;
+
+  /// Checkout trainer: share of the checkouts finished
+  final double? checkoutRate;
 }
 
 class PlayerStats {
@@ -119,6 +132,12 @@ PlayerStats computePlayerStats(List<GameRecord> games, String player, {DateTime?
         stats.clockDarts += state.dartsThrown;
         stats.clockHits += state.hits;
         played = PlayedGame(record, won: game.winner == index, darts: mine.length, hitRate: state.hitRate);
+      case GroupingGame():
+        played = PlayedGame(record, won: false, darts: mine.length, spreadMm: game.spread?.spreadMm);
+      case DoublesGame():
+        played = PlayedGame(record, won: false, darts: mine.length, hitRate: game.hitRate);
+      case CheckoutTrainer():
+        played = PlayedGame(record, won: false, darts: mine.length, checkoutRate: game.checkoutRate);
       default:
         continue;
     }
@@ -187,3 +206,23 @@ PlayedGame _addX01(PlayerStats stats, GameRecord record, X01Game game, int index
 }
 
 bool _hasSector(Ring ring) => ring != Ring.innerBull && ring != Ring.outerBull && ring != Ring.miss;
+
+/// The precision per target of [player] from the games that know what each dart was aimed at; games before [since]
+/// are left out.
+List<TargetPrecision> computePlayerPrecision(List<GameRecord> games, String player, {DateTime? since}) {
+  final darts = <AimedDart>[];
+  for (final record in games) {
+    if (since != null && record.ended.isBefore(since)) continue;
+    final index = record.players.indexOf(player);
+    if (index < 0) continue;
+    final (:game, :playerOf) = record.replay();
+    if (game is! AimedGame) continue;
+    for (var i = 0; i < record.throws.length; ++i) {
+      final target = game.targetOf(i);
+      if (playerOf[i] == index && target != null) {
+        darts.add((target: target, dart: record.throws[i], thrown: record.ended));
+      }
+    }
+  }
+  return computePrecision(darts);
+}

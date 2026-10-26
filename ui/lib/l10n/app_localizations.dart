@@ -3043,6 +3043,258 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No dart was found on the sheet. Put it in the middle, without shadow.'**
   String get dartPhotoNoDart;
+
+  /// No description provided for @modeGrouping.
+  ///
+  /// In en, this message translates to:
+  /// **'Grouping'**
+  String get modeGrouping;
+
+  /// No description provided for @modeGroupingDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Darts at one target, scored by how tightly they group'**
+  String get modeGroupingDescription;
+
+  /// No description provided for @groupingTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Target'**
+  String get groupingTarget;
+
+  /// No description provided for @groupingDartCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Darts per round'**
+  String get groupingDartCount;
+
+  /// No description provided for @groupingPickPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Who throws? Only profiles keep their precision.'**
+  String get groupingPickPlayer;
+
+  /// No description provided for @groupingProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Dart {thrown} of {total}'**
+  String groupingProgress(int thrown, int total);
+
+  /// No description provided for @precisionSpread.
+  ///
+  /// In en, this message translates to:
+  /// **'Spread'**
+  String get precisionSpread;
+
+  /// No description provided for @precisionOffset.
+  ///
+  /// In en, this message translates to:
+  /// **'Offset'**
+  String get precisionOffset;
+
+  /// No description provided for @precisionOnTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'on target'**
+  String get precisionOnTarget;
+
+  /// No description provided for @offsetRight.
+  ///
+  /// In en, this message translates to:
+  /// **'{mm} mm right'**
+  String offsetRight(String mm);
+
+  /// No description provided for @offsetLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{mm} mm left'**
+  String offsetLeft(String mm);
+
+  /// No description provided for @offsetHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'{mm} mm high'**
+  String offsetHigh(String mm);
+
+  /// No description provided for @offsetLow.
+  ///
+  /// In en, this message translates to:
+  /// **'{mm} mm low'**
+  String offsetLow(String mm);
+
+  /// No description provided for @missFromTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'{mm} mm off: {direction}'**
+  String missFromTarget(String mm, String direction);
+
+  /// No description provided for @groupingNotMeasured.
+  ///
+  /// In en, this message translates to:
+  /// **'Keypad darts and corrected darts have no measured point and do not count for the group.'**
+  String get groupingNotMeasured;
+
+  /// No description provided for @groupingDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Round done'**
+  String get groupingDone;
+
+  /// No description provided for @groupingAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Another round'**
+  String get groupingAgain;
+
+  /// No description provided for @statsPrecision.
+  ///
+  /// In en, this message translates to:
+  /// **'Precision'**
+  String get statsPrecision;
+
+  /// No description provided for @statsPrecisionEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Play the grouping training to see your spread and offset per target.'**
+  String get statsPrecisionEmpty;
+
+  /// No description provided for @statsPrecisionTrend.
+  ///
+  /// In en, this message translates to:
+  /// **'Spread per week'**
+  String get statsPrecisionTrend;
+
+  /// No description provided for @statsPrecisionHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Spread: how far the darts lie from their own middle (root mean square). Offset: how far that middle lies from the target. The ellipse holds about two in five darts.'**
+  String get statsPrecisionHelp;
+
+  /// No description provided for @modeDoubles.
+  ///
+  /// In en, this message translates to:
+  /// **'Doubles practice'**
+  String get modeDoubles;
+
+  /// No description provided for @modeDoublesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'One visit at each double; your doubles ranked by hit rate and spread'**
+  String get modeDoublesDescription;
+
+  /// No description provided for @doublesSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Doubles'**
+  String get doublesSet;
+
+  /// No description provided for @doublesTop10.
+  ///
+  /// In en, this message translates to:
+  /// **'The 10 most played'**
+  String get doublesTop10;
+
+  /// No description provided for @doublesAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All 20 and the bull'**
+  String get doublesAll;
+
+  /// No description provided for @doublesWeakest.
+  ///
+  /// In en, this message translates to:
+  /// **'Your 5 weakest'**
+  String get doublesWeakest;
+
+  /// No description provided for @doublesRanking.
+  ///
+  /// In en, this message translates to:
+  /// **'Your doubles, best first'**
+  String get doublesRanking;
+
+  /// No description provided for @doublesRound.
+  ///
+  /// In en, this message translates to:
+  /// **'This round'**
+  String get doublesRound;
+
+  /// No description provided for @modeCheckout.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkout trainer'**
+  String get modeCheckout;
+
+  /// No description provided for @modeCheckoutDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Random finishes; every miss measured against the field to aim at'**
+  String get modeCheckoutDescription;
+
+  /// No description provided for @checkoutRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Finishes'**
+  String get checkoutRange;
+
+  /// No description provided for @checkoutCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkouts per round'**
+  String get checkoutCount;
+
+  /// No description provided for @checkoutDarts.
+  ///
+  /// In en, this message translates to:
+  /// **'Darts per checkout'**
+  String get checkoutDarts;
+
+  /// No description provided for @checkoutAim.
+  ///
+  /// In en, this message translates to:
+  /// **'Aim: {field}'**
+  String checkoutAim(String field);
+
+  /// No description provided for @checkoutProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkout {number} of {total}'**
+  String checkoutProgress(int number, int total);
+
+  /// No description provided for @checkoutLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{points} left'**
+  String checkoutLeft(int points);
+
+  /// No description provided for @checkoutHit.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked out'**
+  String get checkoutHit;
+
+  /// No description provided for @checkoutMissed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not checked out'**
+  String get checkoutMissed;
+
+  /// No description provided for @aimedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'at {field}'**
+  String aimedAt(String field);
+
+  /// No description provided for @modePrecision.
+  ///
+  /// In en, this message translates to:
+  /// **'Precision training'**
+  String get modePrecision;
+
+  /// No description provided for @modePrecisionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Grouping, doubles and checkouts, measured in millimetres'**
+  String get modePrecisionDescription;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

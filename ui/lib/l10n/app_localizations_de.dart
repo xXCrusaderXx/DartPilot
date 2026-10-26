@@ -1687,4 +1687,154 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get dartPhotoNoDart => 'Auf dem Blatt wurde kein Dart gefunden. Leg ihn mitten aufs Blatt, ohne Schatten.';
+
+  @override
+  String get modeGrouping => 'Gruppieren';
+
+  @override
+  String get modeGroupingDescription => 'Darts auf ein Ziel, bewertet danach, wie eng sie liegen';
+
+  @override
+  String get groupingTarget => 'Ziel';
+
+  @override
+  String get groupingDartCount => 'Darts pro Runde';
+
+  @override
+  String get groupingPickPlayer => 'Wer wirft? Nur Profile behalten ihre Präzision.';
+
+  @override
+  String groupingProgress(int thrown, int total) {
+    return 'Dart $thrown von $total';
+  }
+
+  @override
+  String get precisionSpread => 'Streuung';
+
+  @override
+  String get precisionOffset => 'Versatz';
+
+  @override
+  String get precisionOnTarget => 'im Ziel';
+
+  @override
+  String offsetRight(String mm) {
+    return '$mm mm rechts';
+  }
+
+  @override
+  String offsetLeft(String mm) {
+    return '$mm mm links';
+  }
+
+  @override
+  String offsetHigh(String mm) {
+    return '$mm mm hoch';
+  }
+
+  @override
+  String offsetLow(String mm) {
+    return '$mm mm tief';
+  }
+
+  @override
+  String missFromTarget(String mm, String direction) {
+    return '$mm mm daneben: $direction';
+  }
+
+  @override
+  String get groupingNotMeasured =>
+      'Darts über die Zifferntasten und korrigierte Darts haben keinen gemessenen Punkt und zählen nicht für die Gruppe.';
+
+  @override
+  String get groupingDone => 'Runde fertig';
+
+  @override
+  String get groupingAgain => 'Noch eine Runde';
+
+  @override
+  String get statsPrecision => 'Präzision';
+
+  @override
+  String get statsPrecisionEmpty =>
+      'Spiel das Gruppieren-Training, um deine Streuung und deinen Versatz pro Ziel zu sehen.';
+
+  @override
+  String get statsPrecisionTrend => 'Streuung pro Woche';
+
+  @override
+  String get statsPrecisionHelp =>
+      'Streuung: wie weit die Darts im Mittel von ihrer eigenen Mitte liegen (quadratisches Mittel). Versatz: wie weit diese Mitte vom Ziel liegt. In der Ellipse liegen etwa zwei von fünf Darts.';
+
+  @override
+  String get modeDoubles => 'Doppel-Training';
+
+  @override
+  String get modeDoublesDescription => 'Eine Aufnahme pro Doppel; deine Doppel sortiert nach Trefferquote und Streuung';
+
+  @override
+  String get doublesSet => 'Doppel';
+
+  @override
+  String get doublesTop10 => 'Die 10 meistgespielten';
+
+  @override
+  String get doublesAll => 'Alle 20 und Bull';
+
+  @override
+  String get doublesWeakest => 'Deine 5 schwächsten';
+
+  @override
+  String get doublesRanking => 'Deine Doppel, die besten zuerst';
+
+  @override
+  String get doublesRound => 'Diese Runde';
+
+  @override
+  String get modeCheckout => 'Checkout-Trainer';
+
+  @override
+  String get modeCheckoutDescription =>
+      'Zufällige Finishes; jeder Fehlwurf gemessen am Feld, auf das du zielen solltest';
+
+  @override
+  String get checkoutRange => 'Finishes';
+
+  @override
+  String get checkoutCount => 'Checkouts pro Runde';
+
+  @override
+  String get checkoutDarts => 'Darts pro Checkout';
+
+  @override
+  String checkoutAim(String field) {
+    return 'Ziel: $field';
+  }
+
+  @override
+  String checkoutProgress(int number, int total) {
+    return 'Checkout $number von $total';
+  }
+
+  @override
+  String checkoutLeft(int points) {
+    return 'Rest $points';
+  }
+
+  @override
+  String get checkoutHit => 'Gecheckt';
+
+  @override
+  String get checkoutMissed => 'Nicht gecheckt';
+
+  @override
+  String aimedAt(String field) {
+    return 'auf $field';
+  }
+
+  @override
+  String get modePrecision => 'Präzisionstraining';
+
+  @override
+  String get modePrecisionDescription => 'Gruppieren, Doppel und Checkouts, gemessen in Millimetern';
 }
