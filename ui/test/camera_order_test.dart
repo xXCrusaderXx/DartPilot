@@ -7,6 +7,7 @@ import 'package:dartpilot/src/engine/engine_connection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'navigation.dart';
 import 'preview_test.dart' show hello;
 
 void main() {
@@ -43,10 +44,14 @@ void main() {
     engine.receiveForTest(jsonEncode(hello));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const ValueKey('assign-cameras-prompt')), findsOneWidget);
-    await tester.tap(
-      find.descendant(of: find.byKey(const ValueKey('assign-cameras-prompt')), matching: find.byType(FilledButton)),
+    // New cameras are a setup step: the settings show it, home does not.
+    expect(find.byKey(const ValueKey('assign-cameras-prompt')), findsNothing);
+    await openSettings(tester);
+    expect(
+      find.descendant(of: find.byKey(const ValueKey('settings-assign-cameras')), matching: find.text('Fehlt')),
+      findsOneWidget,
     );
+    await tester.tap(find.byKey(const ValueKey('settings-assign-cameras')));
     await tester.pumpAndSettle();
     // Every camera shows its live image.
     expect(sent.where((r) => r['type'] == 'subscribe_preview').map((r) => r['camera']).toSet(), {'usb-1', 'usb-2'});
@@ -61,7 +66,10 @@ void main() {
 
     expect(store.order, ['usb-2', 'usb-1']);
     expect(store.names, {'usb-1': 'Links'});
-    expect(find.byKey(const ValueKey('assign-cameras-prompt')), findsNothing);
+    expect(
+      find.descendant(of: find.byKey(const ValueKey('settings-assign-cameras')), matching: find.text('Erledigt')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('the assignment page follows cameras that come and asks before dropping changes', (tester) async {
@@ -73,10 +81,8 @@ void main() {
     final order = CameraOrder(MemoryCameraOrderStore());
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine, cameraOrder: order));
     engine.receiveForTest(jsonEncode(hello));
-    await tester.pumpAndSettle();
-    await tester.tap(
-      find.descendant(of: find.byKey(const ValueKey('assign-cameras-prompt')), matching: find.byType(FilledButton)),
-    );
+    await openSettings(tester);
+    await tester.tap(find.byKey(const ValueKey('settings-assign-cameras')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('assign-down-usb-1')));
     await tester.pumpAndSettle();

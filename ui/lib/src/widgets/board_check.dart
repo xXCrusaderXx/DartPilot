@@ -164,7 +164,7 @@ class MarkedPreview extends StatelessWidget {
   }
 }
 
-/// In the engine card: a warning while the board is occupied, and the action to store the empty board.
+/// On home: a warning while darts are in the board.
 class BoardStateRow extends StatelessWidget {
   const BoardStateRow({super.key});
 
@@ -192,15 +192,7 @@ class BoardStateRow extends StatelessWidget {
         ],
       );
     }
-    if (board.referenceStored) return const SizedBox.shrink();
-    return Row(
-      key: const ValueKey('board-reference-missing'),
-      children: [
-        Icon(Icons.info_outline, color: theme.colorScheme.secondary),
-        const SizedBox(width: 8),
-        Expanded(child: Text(l10n.emptyReferenceMissing)),
-        TextButton(onPressed: () => storeEmptyBoard(context), child: Text(l10n.storeEmptyReference)),
-      ],
-    );
+    // A missing empty board is a setup step and shows in the settings.
+    return const SizedBox.shrink();
   }
 }

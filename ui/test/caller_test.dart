@@ -66,6 +66,8 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('caller-enabled')));
     await tester.pumpAndSettle();
     expect(caller.enabled, isTrue);
+    await tester.ensureVisible(find.byKey(const ValueKey('caller-test')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('caller-test')));
     expect(voice.spoken.last, 'One hundred and eighty!');
 

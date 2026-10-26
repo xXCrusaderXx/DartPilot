@@ -32,20 +32,21 @@ void main() {
     await tester.scrollUntilVisible(find.text('Lokal oder solo spielen'), 200);
     await tester.scrollUntilVisible(find.text('Zusammen spielen'), 200);
 
-    // A live engine that is not calibrated says so on home.
+    // A missing calibration is a setup step: it shows in the settings, not on home.
     engine.receiveForTest(
       jsonEncode({'type': 'engine_status', 'detection': 'unavailable', 'message': 'not_calibrated'}),
     );
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.byKey(const ValueKey('detection-state')), -200);
-    expect(find.textContaining('Noch nicht kalibriert'), findsOneWidget);
+    expect(find.byKey(const ValueKey('detection-state'), skipOffstage: false), findsNothing);
     engine.receiveForTest(jsonEncode({'type': 'engine_status', 'detection': 'running', 'message': ''}));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('detection-state')), findsNothing);
 
     await openSettings(tester);
     expect(find.text('Verbunden mit einer Engine im Netzwerk'), findsOneWidget);
+    await showSettingsEntry(tester, 'settings-cameras');
     expect(tester.widget<ListTile>(find.byKey(const ValueKey('settings-cameras'))).enabled, isTrue);
+    await tester.scrollUntilVisible(find.byKey(const ValueKey('settings-disconnect')), -200);
     await tester.tap(find.byKey(const ValueKey('settings-disconnect')));
     await tester.pumpAndSettle();
     expect(find.text('Engine verbinden'), findsOneWidget);
@@ -63,8 +64,10 @@ void main() {
     expect(tester.widget<ListTile>(find.byKey(const ValueKey('lobby'))).enabled, isFalse);
 
     await openSettings(tester);
-    expect(tester.widget<ListTile>(find.byKey(const ValueKey('settings-cameras'))).enabled, isFalse);
     expect(tester.widget<ListTile>(find.byKey(const ValueKey('open-diagnosis'))).enabled, isFalse);
+    await showSettingsEntry(tester, 'settings-cameras');
+    expect(tester.widget<ListTile>(find.byKey(const ValueKey('settings-cameras'))).enabled, isFalse);
+    await tester.scrollUntilVisible(find.widgetWithText(FilledButton, 'Connect'), -200);
 
     // Connect leads back to the connection page.
     await tester.tap(find.widgetWithText(FilledButton, 'Connect'));

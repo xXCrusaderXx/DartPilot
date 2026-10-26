@@ -7,6 +7,9 @@ import 'home_screen.dart';
 import 'pairing_screen.dart';
 import 'settings_screen.dart';
 import 'statistics_screen.dart';
+import '../engine/camera_order.dart';
+import '../engine/setup_status.dart';
+import '../theme.dart';
 
 /// The app's root: the connection page until an engine is connected (or the player chose to play without one), then
 /// the main view. A lost connection leads back to the connection page; games opened on top of it stay open.
@@ -110,8 +113,8 @@ class _MainShellState extends State<MainShell> {
                         label: Text(l10n.navStatistics),
                       ),
                       NavigationRailDestination(
-                        icon: const Icon(Icons.settings_outlined),
-                        selectedIcon: const Icon(Icons.settings),
+                        icon: const _SettingsIcon(Icons.settings_outlined),
+                        selectedIcon: const _SettingsIcon(Icons.settings),
                         label: Text(l10n.navSettings),
                       ),
                     ],
@@ -139,14 +142,35 @@ class _MainShellState extends State<MainShell> {
                   label: l10n.navStatistics,
                 ),
                 NavigationDestination(
-                  icon: const Icon(Icons.settings_outlined),
-                  selectedIcon: const Icon(Icons.settings),
+                  icon: const _SettingsIcon(Icons.settings_outlined),
+                  selectedIcon: const _SettingsIcon(Icons.settings),
                   label: l10n.navSettings,
                 ),
               ],
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// The settings tab's icon, with a mark while a setup step needs the player; home stays free of setup
+class _SettingsIcon extends StatelessWidget {
+  const _SettingsIcon(this.icon);
+
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final order = CameraOrderScope.of(context);
+    return EngineSelect(
+      select: (engine) => SetupStatus.of(engine, order).needsAttention,
+      builder: (context, attention) => Badge(
+        key: const ValueKey('settings-attention'),
+        isLabelVisible: attention,
+        backgroundColor: StatusColors.of(context).warning,
+        child: Icon(icon),
       ),
     );
   }

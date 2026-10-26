@@ -375,9 +375,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get show => 'Anzeigen';
 
   @override
-  String get emptyReferenceMissing => 'Kein Bild der leeren Scheibe gespeichert';
-
-  @override
   String get storeEmptyReference => 'Leere Scheibe speichern';
 
   @override
@@ -766,7 +763,25 @@ class AppLocalizationsDe extends AppLocalizations {
   String get playingWithoutEngineHint => 'Verbinde eine Engine, um Darts zu erkennen und die Kameras zu nutzen.';
 
   @override
-  String get settingsCamerasBoard => 'Kameras und Scheibe';
+  String get settingsCamerasBoard => 'Kameras und Darts';
+
+  @override
+  String get settingsSetup => 'Einrichtung';
+
+  @override
+  String get setupAssignHint => 'Welche Kamera Kamera 1, 2 und 3 ist';
+
+  @override
+  String get setupDone => 'Erledigt';
+
+  @override
+  String get setupMissing => 'Fehlt';
+
+  @override
+  String get setupStale => 'Veraltet';
+
+  @override
+  String get setupProblem => 'Prüfen';
 
   @override
   String get settingsCamerasHint => 'Livebilder und der Zustand jeder Kamera';
@@ -1294,16 +1309,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get checkChecking => 'Prüfe …';
 
   @override
-  String homeCameraMoved(String camera) {
-    return '$camera hat sich bewegt – miss sie neu ein.';
-  }
-
-  @override
-  String homeCameraWrongPort(String camera) {
-    return '$camera steckt an einem anderen USB-Port als beim Kalibrieren.';
-  }
-
-  @override
   String get referenceRun => 'Referenzmessung';
 
   @override
@@ -1407,13 +1412,6 @@ class AppLocalizationsDe extends AppLocalizations {
       'Diese Engine kann noch keine Darts erkennen. Schalte „Darts simulieren“ ein oder aktualisiere die Engine.';
 
   @override
-  String get detectionNotCalibrated =>
-      'Noch nicht kalibriert – Darts werden nicht erkannt. Kalibriere die Kameras unter Einstellungen.';
-
-  @override
-  String get detectionWaitingForEmptyBoard => 'Warte auf eine leere, ruhige Scheibe, bevor Darts erkannt werden.';
-
-  @override
   String get detectionPaused => 'Erkennung pausiert';
 
   @override
@@ -1472,12 +1470,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get saveCameraOrder => 'Übernehmen';
-
-  @override
-  String get newCamerasTitle => 'Neue Kameras gefunden';
-
-  @override
-  String get newCamerasText => 'Ordne sie einmal zu, damit Kamera 1, 2 und 3 immer dieselben sind.';
 
   @override
   String get statsAverageTrend => 'Average-Verlauf (X01)';

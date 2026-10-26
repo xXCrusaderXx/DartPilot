@@ -379,9 +379,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get show => 'Show';
 
   @override
-  String get emptyReferenceMissing => 'No image of the empty board stored';
-
-  @override
   String get storeEmptyReference => 'Store empty board';
 
   @override
@@ -767,7 +764,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playingWithoutEngineHint => 'Connect an engine to detect darts and use the cameras.';
 
   @override
-  String get settingsCamerasBoard => 'Cameras and board';
+  String get settingsCamerasBoard => 'Cameras and darts';
+
+  @override
+  String get settingsSetup => 'Setup';
+
+  @override
+  String get setupAssignHint => 'Which camera is camera 1, 2 and 3';
+
+  @override
+  String get setupDone => 'Done';
+
+  @override
+  String get setupMissing => 'To do';
+
+  @override
+  String get setupStale => 'Out of date';
+
+  @override
+  String get setupProblem => 'Check';
 
   @override
   String get settingsCamerasHint => 'Live images and the state of each camera';
@@ -1295,16 +1310,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get checkChecking => 'Checking …';
 
   @override
-  String homeCameraMoved(String camera) {
-    return '$camera has moved – measure it again.';
-  }
-
-  @override
-  String homeCameraWrongPort(String camera) {
-    return '$camera is on another USB port than when it was calibrated.';
-  }
-
-  @override
   String get referenceRun => 'Reference measurement';
 
   @override
@@ -1407,13 +1412,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'This engine cannot detect darts yet. Switch on \"Simulate darts\", or update the engine.';
 
   @override
-  String get detectionNotCalibrated =>
-      'Not calibrated yet – darts are not detected. Calibrate the cameras under Settings.';
-
-  @override
-  String get detectionWaitingForEmptyBoard => 'Waiting for an empty, still board before detecting darts.';
-
-  @override
   String get detectionPaused => 'Detection paused';
 
   @override
@@ -1472,12 +1470,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get saveCameraOrder => 'Apply';
-
-  @override
-  String get newCamerasTitle => 'New cameras found';
-
-  @override
-  String get newCamerasText => 'Assign them once, so that camera 1, 2 and 3 are always the same.';
 
   @override
   String get statsAverageTrend => 'Average over games (X01)';

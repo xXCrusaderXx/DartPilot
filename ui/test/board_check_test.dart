@@ -7,6 +7,7 @@ import 'package:dartpilot/src/screens/training_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'navigation.dart';
 import 'preview_test.dart' show hello, previewMessage, tinyJpeg;
 
 Map<String, dynamic> boardState(String state, {String reference = 'stored'}) => {
@@ -153,15 +154,20 @@ void main() {
     expect(sent.where((r) => r['type'] == 'store_empty_reference'), isEmpty);
   });
 
-  testWidgets('offers to store the empty board when the engine has none', (tester) async {
+  testWidgets('a missing empty board is a step in the settings, which stores it', (tester) async {
     final engine = EngineConnection.forTest((_) {});
     addTearDown(engine.dispose);
     engine.receiveForTest(jsonEncode({...hello, 'board_state': boardState('unknown', reference: 'missing')}));
 
     await tester.pumpWidget(DartPilotApp(locale: const Locale('en'), engine: engine));
     await tester.pumpAndSettle();
-    expect(find.text('No image of the empty board stored'), findsOneWidget);
-    await tester.tap(find.text('Store empty board'));
+    expect(find.text('No image of the empty board stored'), findsNothing);
+    await openSettings(tester);
+    expect(
+      find.descendant(of: find.byKey(const ValueKey('settings-empty-board')), matching: find.text('To do')),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const ValueKey('settings-empty-board')));
     engine.receiveForTest(jsonEncode({'type': 'result', 'request_id': '1', 'ok': true}));
     await tester.pumpAndSettle();
     expect(find.text('Empty board stored'), findsOneWidget);
