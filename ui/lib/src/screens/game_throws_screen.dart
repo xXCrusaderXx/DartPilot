@@ -4,6 +4,7 @@ import '../../l10n/app_localizations.dart';
 import '../board/dart_throw.dart';
 import '../stats/game_record.dart';
 import 'throw_views_screen.dart';
+import '../board/score_text.dart';
 
 /// Every dart of a played game, visit by visit (#129); a detected dart opens its camera views.
 class GameThrowsScreen extends StatelessWidget {
@@ -61,15 +62,16 @@ class _DartChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final id = dart.engineThrowId;
+    final label = dart.score.text(AppLocalizations.of(context));
     return ActionChip(
       key: ValueKey('game-dart-$index'),
       avatar: Icon(id != null ? Icons.videocam : Icons.touch_app, size: 16),
-      label: Text(dart.score.label),
+      label: Text(label),
       onPressed: id == null
           ? null
           : () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => ThrowViewsScreen(throwId: id, label: dart.score.label),
+                builder: (_) => ThrowViewsScreen(throwId: id, label: label),
               ),
             ),
     );

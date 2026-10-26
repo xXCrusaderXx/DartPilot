@@ -10,6 +10,7 @@ import '../engine/engine_events.dart';
 import '../stats/dart_links.dart';
 import '../stats/statistics.dart';
 import '../widgets/board_check.dart';
+import '../widgets/precision_text.dart';
 
 /// The player's darts (#120): measured sets with their dimensions and reference images, each linked to the players
 /// who throw it. Optional: without a set the engine detects any dart.
@@ -115,33 +116,74 @@ class MyDartsScreen extends StatelessWidget {
   }
 }
 
-Future<String?> _askName(BuildContext context, {required String title, String initial = ''}) {
-  final l10n = AppLocalizations.of(context);
-  final controller = TextEditingController(text: initial);
-  return showDialog<String>(
-    context: context,
-    builder: (dialogContext) {
-      void done() {
-        final name = controller.text.trim();
-        if (name.isNotEmpty) Navigator.of(dialogContext).pop(name);
-      }
+Future<String?> _askName(BuildContext context, {required String title, String initial = ''}) => showDialog<String>(
+  context: context,
+  builder: (_) => _NameDialog(title: title, initial: initial),
+);
 
-      return AlertDialog(
-        title: Text(title),
-        content: TextField(
-          key: const ValueKey('dart-set-name'),
-          controller: controller,
-          autofocus: true,
-          decoration: InputDecoration(labelText: l10n.dartSetName, hintText: l10n.dartSetNameHint),
-          onSubmitted: (_) => done(),
+class _NameDialog extends StatefulWidget {
+  const _NameDialog({required this.title, required this.initial});
+
+  final String title;
+  final String initial;
+
+  @override
+  State<_NameDialog> createState() => _NameDialogState();
+}
+
+class _NameDialogState extends State<_NameDialog> {
+  late final TextEditingController _controller = TextEditingController(text: widget.initial);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _done() {
+    final name = _controller.text.trim();
+    if (name.isNotEmpty) Navigator.of(context).pop(name);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return AlertDialog(
+      title: Text(widget.title),
+      content: TextField(
+        key: const ValueKey('dart-set-name'),
+        controller: _controller,
+        autofocus: true,
+        decoration: InputDecoration(labelText: l10n.dartSetName, hintText: l10n.dartSetNameHint),
+        onSubmitted: (_) => _done(),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(l10n.cancel)),
+        FilledButton(key: const ValueKey('dart-set-name-ok'), onPressed: _done, child: Text(l10n.dartSetStart)),
+      ],
+    );
+  }
+}
+
+/// Asks before a set and its reference images are deleted
+Future<bool> _confirmDelete(BuildContext context, DartSet set) async {
+  final l10n = AppLocalizations.of(context);
+  final delete = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(l10n.deleteDartSetTitle(set.name)),
+      content: Text(l10n.deleteDartSetText),
+      actions: [
+        TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(l10n.cancel)),
+        FilledButton(
+          key: const ValueKey('delete-dart-set-confirm'),
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          child: Text(l10n.delete),
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(l10n.cancel)),
-          FilledButton(key: const ValueKey('dart-set-name-ok'), onPressed: done, child: Text(l10n.dartSetStart)),
-        ],
-      );
-    },
+      ],
+    ),
   );
+  return delete == true;
 }
 
 /// One set: name, dimensions, reference images per camera, and the players who throw it
@@ -184,10 +226,17 @@ class _DartSetCard extends StatelessWidget {
                       if (error != null && context.mounted) _showDimsError(context, error);
                     } else if (action == 'rename') {
                       final name = await _askName(context, title: l10n.renameDartSet, initial: set.name);
-                      if (name != null) await engine.renameDartSet(set.id, name);
+                      if (name == null) return;
+                      final error = await engine.renameDartSet(set.id, name);
+                      if (error != null && context.mounted) _showDimsError(context, error);
                     } else if (action == 'delete') {
+                      if (!await _confirmDelete(context, set)) return;
                       final error = await engine.deleteDartSet(set.id);
-                      if (error == null) await links.forgetSet(set.id);
+                      if (error == null) {
+                        await links.forgetSet(set.id);
+                      } else if (context.mounted) {
+                        _showDimsError(context, error);
+                      }
                     }
                   },
                   itemBuilder: (_) => [
@@ -207,7 +256,7 @@ class _DartSetCard extends StatelessWidget {
               [
                 for (final dim in dartDims)
                   if (set.dims[dim.key] != null)
-                    '${dim.label(l10n)} ${dim.format(set.dims[dim.key]!)}${_source(l10n, set, dim.key)}',
+                    '${dim.label(l10n)} ${dim.format(l10n, set.dims[dim.key]!)}${_source(l10n, set, dim.key)}',
               ].join('  ·  '),
               key: ValueKey('dart-set-dims-${set.id}'),
               style: theme.textTheme.bodySmall,
@@ -470,7 +519,7 @@ class DartDim {
   final String Function(AppLocalizations) label;
   final String unit;
 
-  String format(double value) => '${value.toStringAsFixed(1)} $unit';
+  String format(AppLocalizations l10n, double value) => '${decimal(l10n, value)} $unit';
 }
 
 final List<DartDim> dartDims = [
@@ -567,7 +616,7 @@ class _DartDimsDialogState extends State<DartDimsDialog> {
                     suffixText: dim.unit,
                     helperText: set?.measured[dim.key] == null
                         ? null
-                        : l10n.dimMeasuredValue(dim.format(set!.measured[dim.key]!)),
+                        : l10n.dimMeasuredValue(dim.format(l10n, set!.measured[dim.key]!)),
                   ),
                 ),
             ],

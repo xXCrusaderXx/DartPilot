@@ -61,6 +61,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get undo => 'Rückgängig';
 
   @override
+  String get leaveGameTitle => 'Spiel verlassen?';
+
+  @override
+  String get leaveGameText => 'Es bleibt als nicht beendet in der Statistik.';
+
+  @override
+  String get leaveGame => 'Verlassen';
+
+  @override
   String get visit => 'Aufnahme';
 
   @override
@@ -1497,6 +1506,15 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get renameDartSet => 'Umbenennen';
+
+  @override
+  String deleteDartSetTitle(String name) {
+    return '$name löschen?';
+  }
+
+  @override
+  String get deleteDartSetText =>
+      'Maße und Referenzbilder werden in der Engine gelöscht; die Spiele der Spieler, die ihn werfen, bleiben.';
 
   @override
   String get dartSetName => 'Name des Sets';

@@ -50,7 +50,7 @@ void main() {
     expect(chip('Darts 6'), findsOneWidget);
     // Average and first-9 average are the same over six darts.
     expect(
-      find.descendant(of: find.byKey(const ValueKey('summary-Anna')), matching: find.textContaining('150.5')),
+      find.descendant(of: find.byKey(const ValueKey('summary-Anna')), matching: find.textContaining('150,5')),
       findsNWidgets(2),
     );
     expect(chip('180 1'), findsOneWidget);
@@ -60,5 +60,38 @@ void main() {
     await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text('Rückgängig')));
     await tester.pumpAndSettle();
     expect(tester.widget<Text>(find.byKey(const ValueKey('remaining-Anna'))).data, '16');
+  });
+
+  testWidgets('leaving a game with darts asks first, and a miss reads in German', (tester) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(const DartPilotApp(locale: Locale('de')));
+    await playOffline(tester);
+    await tester.tap(find.text('X01'));
+    await tester.pumpAndSettle();
+    await pickPlayers(tester, ['Anna']);
+    await tester.tap(find.text('Spiel starten'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tastenfeld'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('keypad-miss')));
+    await tester.pumpAndSettle();
+    expect(find.text('miss'), findsNothing);
+    expect(tester.widget<Text>(find.byKey(const ValueKey('visit-dart-0'))).data, 'Daneben');
+
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(find.text('Spiel verlassen?'), findsOneWidget);
+    await tester.tap(find.text('Abbrechen'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('visit-dart-0')), findsOneWidget);
+
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('leave-game')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('visit-dart-0')), findsNothing);
   });
 }

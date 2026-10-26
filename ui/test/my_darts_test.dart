@@ -79,9 +79,9 @@ void main() {
     await start(tester, sets: dartSets());
     await openMyDarts(tester);
     expect(find.text('Annas Darts'), findsOneWidget);
-    expect(find.textContaining('Gesamtlänge 151.0 mm'), findsOneWidget);
+    expect(find.textContaining('Gesamtlänge 151,0 mm'), findsOneWidget);
     // The point length is not measured yet and not shown.
-    expect(tester.widget<Text>(find.textContaining('Gesamtlänge 151.0 mm')).data, isNot(contains('Spitze')));
+    expect(tester.widget<Text>(find.textContaining('Gesamtlänge 151,0 mm')).data, isNot(contains('Spitze')));
     expect(sent.where((r) => r['type'] == 'get_dart_set_image').map((r) => r['camera']).toSet(), {'usb-1', 'usb-2'});
 
     await tester.tap(find.byKey(const ValueKey('link-set-1-Anna')));
@@ -91,6 +91,11 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('dart-set-menu-set-1')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('delete-dart-set-set-1')));
+    await tester.pumpAndSettle();
+    // Nothing is deleted before the player confirms.
+    expect(sent.where((r) => r['type'] == 'delete_dart_set'), isEmpty);
+    expect(find.textContaining('löschen?'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('delete-dart-set-confirm')));
     await tester.pumpAndSettle();
     expect(sent.last, {'type': 'delete_dart_set', 'id': 'set-1'});
   });
@@ -225,13 +230,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       tester.widget<Text>(find.byKey(const ValueKey('dart-set-dims-set-1'))).data,
-      'Gesamtlänge 141.0 mm  ·  Barrel 45.0 mm (eingegeben)',
+      'Gesamtlänge 141,0 mm  ·  Barrel 45,0 mm (eingegeben)',
     );
     await tester.tap(find.byKey(const ValueKey('dart-set-menu-set-1')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('edit-dims-set-1')));
     await tester.pumpAndSettle();
-    expect(find.text('gemessen: 11.0 mm'), findsOneWidget);
+    expect(find.text('gemessen: 11,0 mm'), findsOneWidget);
     await tester.enterText(find.byKey(const ValueKey('dim-barrel_mm')), '');
     await tester.enterText(find.byKey(const ValueKey('dim-weight_g')), '22');
     await tester.tap(find.byKey(const ValueKey('dims-save')));

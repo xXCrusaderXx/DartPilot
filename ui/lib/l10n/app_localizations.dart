@@ -194,6 +194,24 @@ abstract class AppLocalizations {
   /// **'Undo'**
   String get undo;
 
+  /// No description provided for @leaveGameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave the game?'**
+  String get leaveGameTitle;
+
+  /// No description provided for @leaveGameText.
+  ///
+  /// In en, this message translates to:
+  /// **'It is kept in the statistics as unfinished.'**
+  String get leaveGameText;
+
+  /// No description provided for @leaveGame.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave'**
+  String get leaveGame;
+
   /// No description provided for @visit.
   ///
   /// In en, this message translates to:
@@ -2677,6 +2695,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Rename'**
   String get renameDartSet;
+
+  /// No description provided for @deleteDartSetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}?'**
+  String deleteDartSetTitle(String name);
+
+  /// No description provided for @deleteDartSetText.
+  ///
+  /// In en, this message translates to:
+  /// **'Its dimensions and reference images are deleted on the engine; players who throw it keep their games.'**
+  String get deleteDartSetText;
 
   /// No description provided for @dartSetName.
   ///

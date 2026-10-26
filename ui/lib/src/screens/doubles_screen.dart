@@ -17,6 +17,7 @@ import '../widgets/precision_text.dart';
 import 'game_layout.dart';
 import 'my_darts_screen.dart';
 import 'watched_board.dart';
+import '../widgets/leave_game_guard.dart';
 
 /// Doubles practice (#125): one visit at each double, with the miss of every dart, and the doubles ranked by the
 /// player's own hit rate and spread.
@@ -205,19 +206,22 @@ class _DoublesScreenState extends State<DoublesScreen> with RecordsGame {
         ),
       ],
     );
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.modeDoubles)),
-      body: GameLayout(
-        input: widget.watching
-            ? WatchedBoard(throws: _game.dartsAt(shown))
-            : GameInput(
-                game: _game,
-                takeout: _takeout,
-                shownThrows: _game.dartsAt(shown),
-                onDart: _add,
-                onChanged: () => setState(() {}),
-              ),
-        panel: panel,
+    return LeaveGameGuard(
+      canLeave: widget.watching || _game.isFinished || currentRecord.throws.isEmpty,
+      child: Scaffold(
+        appBar: AppBar(title: Text(l10n.modeDoubles)),
+        body: GameLayout(
+          input: widget.watching
+              ? WatchedBoard(throws: _game.dartsAt(shown))
+              : GameInput(
+                  game: _game,
+                  takeout: _takeout,
+                  shownThrows: _game.dartsAt(shown),
+                  onDart: _add,
+                  onChanged: () => setState(() {}),
+                ),
+          panel: panel,
+        ),
       ),
     );
   }

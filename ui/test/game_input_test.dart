@@ -67,6 +67,34 @@ void main() {
     expect(tester.widget<Text>(find.byKey(const ValueKey('visit-dart-0'))).data, '–');
   });
 
+  testWidgets('a takeout while a dart is uncertain asks about the missing darts once the dart is settled', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final engine = EngineConnection();
+    addTearDown(engine.dispose);
+    await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
+    await playOffline(tester);
+    await tester.tap(find.text('X01'));
+    await tester.pumpAndSettle();
+    await pickPlayers(tester, ['Anna']);
+    await tester.tap(find.text('301'));
+    await tester.tap(find.text('Spiel starten'));
+    await tester.pumpAndSettle();
+
+    engine.receiveForTest(throwJson('s/1', 0, 103, accepted: false, confidence: 0.4));
+    await tester.pumpAndSettle();
+    engine.receiveForTest(jsonEncode({'type': 'takeout', 'event_ns': 1, 'darts_removed': 1}));
+    await tester.pumpAndSettle();
+    expect(find.text('2 Darts fehlen'), findsNothing);
+
+    await tester.tap(find.text('Bestätigen'));
+    await tester.pumpAndSettle();
+    expect(find.text('2 Darts fehlen'), findsOneWidget);
+  });
+
   testWidgets('an uncertain dart on a wire offers both fields, marks them, and sends the one picked', (tester) async {
     tester.view.physicalSize = const Size(1400, 1000);
     tester.view.devicePixelRatio = 1.0;

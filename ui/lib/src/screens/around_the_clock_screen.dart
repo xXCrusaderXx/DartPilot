@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../board/score_text.dart';
 import '../board/dart_throw.dart';
 import '../games/around_the_clock.dart';
 import '../bots/bot_turns.dart';
@@ -17,6 +18,7 @@ import 'my_darts_screen.dart';
 import 'watched_board.dart';
 import 'game_layout.dart';
 import 'players_setup_screen.dart';
+import '../widgets/leave_game_guard.dart';
 import '../widgets/precision_text.dart';
 
 class AroundTheClockScreen extends StatefulWidget {
@@ -115,9 +117,8 @@ class _AroundTheClockScreenState extends State<AroundTheClockScreen> with Record
     final atOche = _takeout.isClosed(_game)
         ? (_game.current + _game.players.length - 1) % _game.players.length
         : _game.current;
-    final panel = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
+    final panel = ScrollingPanel(
+      top: [
         for (var i = 0; i < _game.players.length; ++i)
           Card(
             color: i == atOche ? theme.colorScheme.secondaryContainer : null,
@@ -136,8 +137,9 @@ class _AroundTheClockScreenState extends State<AroundTheClockScreen> with Record
             ),
           ),
         const SizedBox(height: 12),
-        VisitDarts([for (final (dart, hit) in _game.currentVisit) '${dart.score.label} ${hit ? '✓' : '✗'}']),
-        const Spacer(),
+        VisitDarts([for (final (dart, hit) in _game.currentVisit) '${dart.score.text(l10n)} ${hit ? '✓' : '✗'}']),
+      ],
+      bottom: [
         OutlinedButton.icon(
           onPressed: _game.canUndo && !widget.watching ? () => setState(_game.undo) : null,
           icon: const Icon(Icons.undo),
@@ -145,22 +147,25 @@ class _AroundTheClockScreenState extends State<AroundTheClockScreen> with Record
         ),
       ],
     );
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.modeAroundTheClock)),
-      body: GameLayout(
-        input: widget.watching
-            ? WatchedBoard(throws: [for (final (dart, _) in _game.currentVisit) dart])
-            : GameInput(
-                game: _game,
-                takeout: _takeout,
-                shownThrows: [for (final (dart, _) in _game.currentVisit) dart],
-                onDart: (dart) {
-                  // While a bot is at the oche, its darts are its own.
-                  if (!isBotTurn) _add(dart);
-                },
-                onChanged: () => setState(() {}),
-              ),
-        panel: panel,
+    return LeaveGameGuard(
+      canLeave: widget.watching || _game.isFinished || currentRecord.throws.isEmpty,
+      child: Scaffold(
+        appBar: AppBar(title: Text(l10n.modeAroundTheClock)),
+        body: GameLayout(
+          input: widget.watching
+              ? WatchedBoard(throws: [for (final (dart, _) in _game.currentVisit) dart])
+              : GameInput(
+                  game: _game,
+                  takeout: _takeout,
+                  shownThrows: [for (final (dart, _) in _game.currentVisit) dart],
+                  onDart: (dart) {
+                    // While a bot is at the oche, its darts are its own.
+                    if (!isBotTurn) _add(dart);
+                  },
+                  onChanged: () => setState(() {}),
+                ),
+          panel: panel,
+        ),
       ),
     );
   }
