@@ -7,6 +7,9 @@ import '../games/dart_game.dart';
 import '../games/round_games.dart';
 import '../input/game_input.dart';
 import '../input/takeout_gate.dart';
+import '../sound/caller.dart';
+import '../sound/game_calls.dart';
+import '../sound/x01_calls.dart';
 import '../stats/game_record.dart';
 import '../stats/statistics.dart';
 import '../widgets/winner_dialog.dart';
@@ -110,7 +113,12 @@ class _RoundGameScreenState extends State<RoundGameScreen> with RecordsGame, Bot
   void addBotDart(DartThrow dart) => _add(dart);
 
   void _add(DartThrow dart) {
+    final player = _game.current;
+    final scoreBefore = _game.players[player].score;
     setState(() => _game.add(dart));
+    if (!widget.watching) {
+      CallerScope.read(context).call(roundCalls(_game, player: player, scoreBefore: scoreBefore), callLanguage);
+    }
     if (!_game.isFinished) return;
     showWinnerDialog(
       context,
