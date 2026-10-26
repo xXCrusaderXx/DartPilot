@@ -16,6 +16,7 @@ Card {
         spacing: Tokens.spaceMd
 
         RowLayout {
+            Layout.fillWidth: true
             spacing: Tokens.spaceMd
 
             Rectangle {
@@ -33,6 +34,8 @@ Card {
                 }
             }
             Label {
+                Layout.fillWidth: true
+                elide: Text.ElideRight
                 text: card.title
                 font.pixelSize: Tokens.headingSize
                 font.weight: Font.DemiBold

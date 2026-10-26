@@ -12,6 +12,7 @@ ColumnLayout {
 
     required property bool active
     required property var cameras
+    required property BoardRefiner refiner
     // Kept here, so refreshing the camera list after a save does not jump back to the first camera
     property int selected: 0
     readonly property var camera: selected >= 0 && selected < cameras.length ? cameras[selected] : null
@@ -32,11 +33,6 @@ ColumnLayout {
     }
     Component.onCompleted: activeChanged()
 
-    BoardRefiner {
-        id: refiner
-
-        cameras: page.cameras
-    }
 
     ExtrinsicGuideDialog {
         id: guideDialog
@@ -179,13 +175,23 @@ ColumnLayout {
                         color: Tokens.textMuted
                         text: "Averages ten frames and finds the rings and the 20 radial wires: 60 calibration points."
                     }
-                    Button {
-                        text: view.phase === "detecting" ? "Detecting …" : view.hasPlane ? "Detect again" : "Detect board"
-                        highlighted: !view.hasPlane
-                        enabled: view.phase !== "detecting" && page.active
-                        onClicked: view.detect()
-                        ToolTip.visible: hovered
-                        ToolTip.text: "Takes about a second; the board must be empty"
+                    RowLayout {
+                        spacing: Tokens.spaceSm
+
+                        Button {
+                            text: view.phase === "detecting" ? "Detecting …" : view.hasPlane ? "Detect again" : "Detect board"
+                            highlighted: !view.hasPlane
+                            enabled: view.phase !== "detecting" && page.active
+                            onClicked: view.detect()
+                            ToolTip.visible: hovered
+                            ToolTip.text: "Takes about a second; the board must be empty"
+                        }
+                        BusyIndicator {
+                            running: view.phase === "detecting"
+                            visible: running
+                            implicitWidth: Tokens.chipHeight + Tokens.spaceSm
+                            implicitHeight: implicitWidth
+                        }
                     }
                 }
 
@@ -265,7 +271,7 @@ ColumnLayout {
                     step: 5
                     title: "Refine all cameras"
                     // Done once refined and saved for the current board planes; the quality shows per camera
-                    done: refiner.hasResult && !refiner.stale
+                    done: page.refiner.hasResult && !page.refiner.stale
 
                     Label {
                         Layout.fillWidth: true
@@ -273,30 +279,40 @@ ColumnLayout {
                         color: Tokens.textMuted
                         text: "Pose, focal length and lens distortion of every camera and the actual size of the board, from the points of all cameras together. Run it once the board of every camera is saved."
                     }
-                    Button {
-                        text: refiner.running ? "Refining …" : refiner.hasResult ? "Refine again" : "Refine all cameras"
-                        highlighted: !refiner.hasResult || refiner.stale
-                        enabled: !refiner.running && refiner.refinableCount > 0
-                        onClicked: refiner.refine()
-                        ToolTip.visible: hovered
-                        ToolTip.text: refiner.refinableCount + " of " + page.cameras.length + " cameras have a board plane; takes a second"
+                    RowLayout {
+                        spacing: Tokens.spaceSm
+
+                        Button {
+                            text: page.refiner.running ? "Refining …" : page.refiner.hasResult ? "Refine again" : "Refine all cameras"
+                            highlighted: !page.refiner.hasResult || page.refiner.stale
+                            enabled: !page.refiner.running && page.refiner.refinableCount > 0
+                            onClicked: page.refiner.refine()
+                            ToolTip.visible: hovered
+                            ToolTip.text: page.refiner.refinableCount + " of " + page.cameras.length + " cameras have a board plane; takes a second"
+                        }
+                        BusyIndicator {
+                            running: page.refiner.running
+                            visible: running
+                            implicitWidth: Tokens.chipHeight + Tokens.spaceSm
+                            implicitHeight: implicitWidth
+                        }
                     }
                     Label {
-                        visible: refiner.stale
+                        visible: page.refiner.stale
                         Layout.fillWidth: true
                         wrapMode: Text.WordWrap
                         color: Tokens.warning
                         text: "A board plane or lens calibration changed since the last refinement, or a camera was added. Refine again."
                     }
                     Label {
-                        visible: refiner.message !== "" && !refiner.hasResult
+                        visible: page.refiner.message !== "" && !page.refiner.hasResult
                         Layout.fillWidth: true
                         wrapMode: Text.WordWrap
                         color: Tokens.textMuted
-                        text: refiner.message
+                        text: page.refiner.message
                     }
                     Repeater {
-                        model: refiner.results
+                        model: page.refiner.results
 
                         delegate: ColumnLayout {
                             id: result
@@ -328,12 +344,12 @@ ColumnLayout {
                         }
                     }
                     Label {
-                        visible: refiner.hasResult
+                        visible: page.refiner.hasResult
                         Layout.fillWidth: true
                         wrapMode: Text.WordWrap
                         font.pixelSize: Tokens.captionSize
                         color: Tokens.textMuted
-                        text: "Measured board: outer bull " + refiner.outerBullMm.toFixed(1) + " mm, treble centre " + refiner.trebleMm.toFixed(1) + " mm (nominal 15.9 and 103.0, the double ring is the scale)."
+                        text: "Measured board: outer bull " + page.refiner.outerBullMm.toFixed(1) + " mm, treble centre " + page.refiner.trebleMm.toFixed(1) + " mm (nominal 15.9 and 103.0, the double ring is the scale)."
                     }
                 }
             }

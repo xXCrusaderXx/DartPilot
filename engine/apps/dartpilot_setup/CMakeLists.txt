@@ -15,7 +15,7 @@ qt_add_qml_module(dartpilot_setup
   VERSION 1.0
   QML_FILES
     Main.qml Tokens.qml
-    Card.qml CameraCardHeader.qml Chip.qml HintBanner.qml SectionLabel.qml NavButton.qml PageHeader.qml StepCard.qml
+    Card.qml CameraCardHeader.qml Chip.qml EmptyState.qml HintBanner.qml SectionLabel.qml NavButton.qml PageHeader.qml StepCard.qml
     CamerasPage.qml CameraPane.qml IntrinsicPage.qml ExtrinsicPage.qml
     CaptureGuide.qml ChecklistItem.qml GuideDialog.qml GuideDialogBase.qml PatternWindow.qml
     BoardIllustration.qml ExtrinsicGuideDialog.qml
@@ -35,6 +35,7 @@ qt_add_qml_module(dartpilot_setup
     pattern_image_provider.hpp pattern_image_provider.cpp
     pin_check.hpp pin_check.cpp
     pin_view.hpp pin_view.cpp
+    setup_progress.hpp setup_progress.cpp
     stream_view.hpp stream_view.cpp
     validation_run.hpp validation_run.cpp
     detection_test.hpp detection_test.cpp

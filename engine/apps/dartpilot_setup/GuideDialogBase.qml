@@ -8,6 +8,9 @@ Dialog {
     parent: Overlay.overlay
     anchors.centerIn: parent
     width: Math.min(parent.width - 80, 1100)
+    // On a short window the content gives way, not the "Got it" button
+    height: Math.min(implicitHeight, parent.height - 2 * Tokens.spaceXl)
+    clip: true
     modal: true
     // Esc closes a popup only while it has the focus; the guide opens by itself on a page's first visit.
     focus: true
