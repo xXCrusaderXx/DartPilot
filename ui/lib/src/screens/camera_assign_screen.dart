@@ -8,6 +8,7 @@ import '../engine/camera_order.dart';
 import '../engine/engine_connection.dart';
 import '../engine/engine_events.dart';
 import '../engine/engine_errors.dart';
+import '../widgets/live_jpeg.dart';
 
 /// All cameras of the engine with a live image, to put them in the player's order and name them: once when new
 /// cameras appear, and whenever two should swap places.
@@ -240,12 +241,7 @@ class _CameraThumbnailState extends State<CameraThumbnail> {
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
           child: frame == null
               ? Center(child: Text(AppLocalizations.of(context).waitingForImage))
-              : Image.memory(
-                  frame.jpeg,
-                  key: ValueKey('thumbnail-${widget.camera}'),
-                  fit: BoxFit.contain,
-                  gaplessPlayback: true,
-                ),
+              : LiveJpeg(frame.jpeg, key: ValueKey('thumbnail-${widget.camera}')),
         ),
       ),
     );

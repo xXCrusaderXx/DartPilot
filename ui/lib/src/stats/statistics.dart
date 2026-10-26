@@ -9,6 +9,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../engine/engine_connection.dart';
 import 'game_record.dart';
+import 'player_stats.dart';
+import 'precision.dart';
 
 /// Where played games are kept
 abstract interface class GameStore {
@@ -102,6 +104,24 @@ class Statistics extends ChangeNotifier {
 
   final GameStore store;
   final ProfileStore profileStore;
+
+  /// Figures per player and period, computed once until the games change
+  final Map<(String, DateTime?), PlayerStats> _stats = {};
+  final Map<(String, DateTime?), List<TargetPrecision>> _precision = {};
+
+  PlayerStats statsOf(String player, {DateTime? since}) =>
+      _stats.putIfAbsent((player, since), () => computePlayerStats(games, player, since: since));
+
+  List<TargetPrecision> precisionOf(String player, {DateTime? since}) =>
+      _precision.putIfAbsent((player, since), () => computePlayerPrecision(games, player, since: since));
+
+  @override
+  void notifyListeners() {
+    _stats.clear();
+    _precision.clear();
+    super.notifyListeners();
+  }
+
   List<GameRecord> games = [];
   List<String> profiles = [];
   bool loaded = false;

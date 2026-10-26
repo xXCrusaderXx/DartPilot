@@ -8,6 +8,7 @@ import '../engine/camera_order.dart';
 import '../engine/engine_connection.dart';
 import '../engine/engine_events.dart';
 import 'camera_assign_screen.dart';
+import '../widgets/live_jpeg.dart';
 
 /// Live images of the engine's cameras with their status. Each camera is a panel that can be collapsed, which also
 /// stops its preview; tapping an image opens it full screen.
@@ -283,11 +284,9 @@ class _CameraPanelState extends State<CameraPanel> with _PreviewWatcher<CameraPa
                           // Decoded at the size it is shown, not at the size it was sent
                           builder: (context, constraints) => _StaleFrame(
                             seconds: secondsWithoutFrame,
-                            child: Image.memory(
+                            child: LiveJpeg(
                               current.jpeg,
                               key: ValueKey('preview-${widget.camera}'),
-                              fit: BoxFit.contain,
-                              gaplessPlayback: true,
                               cacheWidth: _decodeWidth(
                                 constraints.maxWidth * MediaQuery.devicePixelRatioOf(context),
                                 current.width,
@@ -363,12 +362,7 @@ class _CameraFullscreenState extends State<CameraFullscreen> with _PreviewWatche
               child: Center(
                 child: _StaleFrame(
                   seconds: secondsWithoutFrame,
-                  child: Image.memory(
-                    current.jpeg,
-                    key: ValueKey('fullscreen-${widget.camera}'),
-                    fit: BoxFit.contain,
-                    gaplessPlayback: true,
-                  ),
+                  child: LiveJpeg(current.jpeg, key: ValueKey('fullscreen-${widget.camera}')),
                 ),
               ),
             ),
