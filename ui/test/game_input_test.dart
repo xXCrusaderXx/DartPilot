@@ -129,6 +129,30 @@ void main() {
     expect(find.text('T1 (35\u00a0%)'), findsOneWidget);
   });
 
+  testWidgets('a notice shows in the score panel and the board keeps its size', (tester) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final engine = EngineConnection.forTest((_) {});
+    addTearDown(engine.dispose);
+    await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
+    await playOffline(tester);
+    await tester.tap(find.text('X01'));
+    await tester.pumpAndSettle();
+    await pickPlayers(tester, ['Anna']);
+    await tester.tap(find.text('Spiel starten'));
+    await tester.pumpAndSettle();
+    final before = tester.getRect(find.byKey(const ValueKey('dartboard')));
+
+    engine.receiveForTest(throwJson('s/1', 0, 103, accepted: false, confidence: 0.4));
+    await tester.pumpAndSettle();
+    final notice = find.text('Unsicher: T20 (40\u00a0%)');
+    expect(notice, findsOneWidget);
+    expect(tester.getRect(find.byKey(const ValueKey('dartboard'))), before);
+    // Beside the board, in the score panel
+    expect(tester.getRect(notice).left, greaterThan(before.right));
+  });
+
   testWidgets('an uncertain dart on a wire offers both fields, marks them, and sends the one picked', (tester) async {
     tester.view.physicalSize = const Size(1400, 1000);
     tester.view.devicePixelRatio = 1.0;
