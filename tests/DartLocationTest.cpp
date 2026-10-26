@@ -9,6 +9,7 @@
 #include "dartpilot/fusion/dart_tracker.hpp"
 #include "dartpilot/fusion/reference_targets.hpp"
 #include "dartpilot/geometry/dart_location.hpp"
+#include "dartpilot/tip_candidates/tip_candidates.hpp"
 
 namespace
 {
@@ -131,6 +132,53 @@ TEST(ObserveDart, FindsTheAxisAndTheVisibleEndOfThePoint)
     }
     // The point is drawn 2 px thick with a round cap, which reaches about a pixel beyond its end and fades there.
     EXPECT_LT(nearest, 2.5);
+}
+
+TEST(TipCandidates, EveryGeneratorOffersACandidateAtTheTip)
+{
+    const cv::Point2f tip_mm(40.0f, 70.0f);
+    const auto observation = dartpilot::tip_candidates::observeDart(withDart(kCameras[0], tip_mm, 15.0, 30.0, 1), scene(2));
+    ASSERT_TRUE(observation);
+    const cv::Point2f truth = project(kCameras[0], {cv::Point3f(tip_mm.x, tip_mm.y, 0.0f)}).front();
+    const auto candidates = dartpilot::tip_candidates::tipCandidates(*observation);
+    using dartpilot::tip_candidates::CandidateSource;
+    for(const auto source : {CandidateSource::AxisEnd, CandidateSource::ContourEnd, CandidateSource::SkeletonEnd})
+    {
+        double nearest = 1e9;
+        int count = 0;
+        for(const auto& c : candidates)
+        {
+            if(c.source == source)
+            {
+                nearest = std::min(nearest, static_cast<double>(cv::norm(c.pixel_px - truth)));
+                ++count;
+            }
+        }
+        // One at each end; the skeleton stops short of the faded end of the point by about its half width.
+        EXPECT_EQ(count, 2) << dartpilot::tip_candidates::sourceName(source);
+        EXPECT_LT(nearest, 4.0) << dartpilot::tip_candidates::sourceName(source);
+    }
+    EXPECT_EQ(candidates, dartpilot::tip_candidates::tipCandidates(*observation));
+}
+
+TEST(TipCandidates, NoneAtTheImageBorderAndNoneWithoutAnAxis)
+{
+    dartpilot::tip_candidates::DartObservation observation;
+    EXPECT_TRUE(dartpilot::tip_candidates::tipCandidates(observation).empty());
+    // A bar from the left image border to x = 60: only its inner end is a candidate.
+    observation.mask = cv::Mat::zeros(100, 200, CV_8U);
+    cv::rectangle(observation.mask, cv::Point(0, 48), cv::Point(60, 52), cv::Scalar(255), cv::FILLED);
+    for(int x = 0; x <= 60; x += 2)
+    {
+        observation.axis_px.emplace_back(static_cast<float>(x), 50.0f);
+    }
+    observation.ends_px = {cv::Point2f(60.0f, 50.0f)};
+    const auto candidates = dartpilot::tip_candidates::tipCandidates(observation);
+    ASSERT_FALSE(candidates.empty());
+    for(const auto& c : candidates)
+    {
+        EXPECT_GT(c.pixel_px.x, 50.0f) << dartpilot::tip_candidates::sourceName(c.source);
+    }
 }
 
 TEST(ObserveDart, NothingOnAnEmptyBoard) { EXPECT_FALSE(dartpilot::tip_candidates::observeDart(scene(1), scene(2))); }
