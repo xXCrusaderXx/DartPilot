@@ -5,7 +5,6 @@ import '../board/dart_throw.dart';
 import '../games/cricket.dart';
 import '../bots/bot_turns.dart';
 import '../games/dart_game.dart';
-import '../input/game_input.dart';
 import '../input/takeout_gate.dart';
 import '../sound/caller.dart';
 import '../sound/game_calls.dart';
@@ -14,11 +13,10 @@ import '../stats/game_record.dart';
 import '../stats/statistics.dart';
 import '../widgets/winner_dialog.dart';
 import 'my_darts_screen.dart';
-import 'watched_board.dart';
 import 'game_layout.dart';
+import 'game_scaffold.dart';
 import 'players_setup_screen.dart';
 import '../board/score_text.dart';
-import '../widgets/leave_game_guard.dart';
 
 class CricketScreen extends StatefulWidget {
   const CricketScreen({
@@ -161,27 +159,19 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
         ),
       ],
     );
-    return LeaveGameGuard(
-      canLeave: widget.watching || _game.isFinished || currentRecord.throws.isEmpty,
-      child: Scaffold(
-        appBar: AppBar(title: Text(l10n.modeCricket)),
-        body: GameLayout(
-          input: widget.watching
-              ? WatchedBoard(throws: [for (final d in _game.currentVisit) d.dart])
-              : GameInput(
-                  game: _game,
-                  takeout: _takeout,
-                  shownThrows: [for (final d in _game.currentVisit) d.dart],
-                  onDart: (dart) {
-                    // While a bot is at the oche, its darts are its own.
-                    if (!isBotTurn) _add(dart);
-                  },
-                  onChanged: () => setState(() {}),
-                ),
-          panel: panel,
-          panelWidth: 120.0 + 90.0 * players.length.clamp(2, 4),
-        ),
-      ),
+    return GameScaffold(
+      title: l10n.modeCricket,
+      game: _game,
+      takeout: _takeout,
+      shownThrows: [for (final d in _game.currentVisit) d.dart],
+      watching: widget.watching,
+      onDart: (dart) {
+        // While a bot is at the oche, its darts are its own.
+        if (!isBotTurn) _add(dart);
+      },
+      onChanged: () => setState(() {}),
+      panel: panel,
+      panelWidth: 120.0 + 90.0 * players.length.clamp(2, 4),
     );
   }
 }

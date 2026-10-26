@@ -4,6 +4,7 @@ import '../../l10n/app_localizations.dart';
 import '../stats/game_record.dart';
 import '../stats/player_stats.dart';
 import 'precision_text.dart';
+import 'leave_game_guard.dart';
 
 /// End of a match: the winner, the figures of this game per player, and undo, new game or back to the menu.
 Future<void> showWinnerDialog(
@@ -17,32 +18,35 @@ Future<void> showWinnerDialog(
   return showDialog<void>(
     context: context,
     barrierDismissible: false,
-    builder: (dialogContext) => AlertDialog(
-      title: Text(l10n.matchWonBy(winner)),
-      content: SingleChildScrollView(child: GameSummary(record: record)),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.of(dialogContext).pop();
-            onUndo();
-          },
-          child: Text(l10n.undo),
-        ),
-        TextButton(
-          onPressed: () {
-            Navigator.of(dialogContext).pop();
-            Navigator.of(context).pushReplacement(MaterialPageRoute<void>(builder: newGame));
-          },
-          child: Text(l10n.newGame),
-        ),
-        FilledButton(
-          onPressed: () {
-            Navigator.of(dialogContext).pop();
-            Navigator.of(context).pop();
-          },
-          child: Text(l10n.backToMenu),
-        ),
-      ],
+    builder: (dialogContext) => EndOfGameBack(
+      gameContext: context,
+      child: AlertDialog(
+        title: Text(l10n.matchWonBy(winner)),
+        content: SingleChildScrollView(child: GameSummary(record: record)),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              onUndo();
+            },
+            child: Text(l10n.undo),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              Navigator.of(context).pushReplacement(MaterialPageRoute<void>(builder: newGame));
+            },
+            child: Text(l10n.newGame),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              Navigator.of(context).pop();
+            },
+            child: Text(l10n.backToMenu),
+          ),
+        ],
+      ),
     ),
   );
 }

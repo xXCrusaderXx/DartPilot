@@ -39,3 +39,26 @@ class LeaveGameGuard extends StatelessWidget {
     );
   }
 }
+
+/// Around the dialog at the end of a game: back leaves the game for the menu, as the dialog's own button does, rather
+/// than closing the dialog onto a finished game with nothing left to do.
+class EndOfGameBack extends StatelessWidget {
+  const EndOfGameBack({super.key, required this.gameContext, required this.child});
+
+  /// The game screen's context, to leave it
+  final BuildContext gameContext;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        Navigator.of(context).pop();
+        Navigator.of(gameContext).pop();
+      },
+      child: child,
+    );
+  }
+}

@@ -430,7 +430,8 @@ class _Notice extends StatelessWidget {
                 Icon(icon),
                 const SizedBox(width: 16),
                 Expanded(child: texts),
-                if (!narrow) buttons,
+                // Two or three candidates are wider than the space beside the text; they wrap instead.
+                if (!narrow) Flexible(child: buttons),
               ],
             );
             return narrow

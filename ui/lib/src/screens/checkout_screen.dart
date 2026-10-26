@@ -7,7 +7,6 @@ import '../board/dart_throw.dart';
 import '../games/checkout_trainer.dart';
 import '../games/dart_game.dart';
 import '../games/x01.dart';
-import '../input/game_input.dart';
 import '../input/takeout_gate.dart';
 import '../stats/game_record.dart';
 import '../stats/precision.dart';
@@ -16,9 +15,8 @@ import '../widgets/board_check.dart';
 import '../widgets/player_picker.dart';
 import '../widgets/precision_plot.dart';
 import '../widgets/precision_text.dart';
-import 'game_layout.dart';
+import 'game_scaffold.dart';
 import 'my_darts_screen.dart';
-import 'watched_board.dart';
 import '../widgets/leave_game_guard.dart';
 
 /// Checkout trainer (#125): random finishes, the field to aim at before every dart, and how far each dart missed it.
@@ -85,51 +83,54 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.groupingDone),
-        content: Text(
-          [
-            '${l10n.statsCheckoutRate}: ${_game.checkouts} / ${_game.attemptsDone}',
-            if (widget.ladder) l10n.ladderBest(_game.bestCheckout?.toString() ?? '–'),
-          ].join('\n'),
-          key: const ValueKey('checkout-result'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              setState(_game.undo);
-            },
-            child: Text(l10n.undo),
+      builder: (dialogContext) => EndOfGameBack(
+        gameContext: context,
+        child: AlertDialog(
+          title: Text(l10n.groupingDone),
+          content: Text(
+            [
+              '${l10n.statsCheckoutRate}: ${_game.checkouts} / ${_game.attemptsDone}',
+              if (widget.ladder) l10n.ladderBest(_game.bestCheckout?.toString() ?? '–'),
+            ].join('\n'),
+            key: const ValueKey('checkout-result'),
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute<void>(
-                  builder: (_) => CheckoutScreen(
-                    player: widget.player,
-                    starts: checkoutStarts(
-                      math.Random().nextInt(1 << 31),
-                      widget.starts.length,
-                      widget.ladder ? CheckoutRange.ladder : _rangeOf(widget.starts),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                setState(_game.undo);
+              },
+              child: Text(l10n.undo),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute<void>(
+                    builder: (_) => CheckoutScreen(
+                      player: widget.player,
+                      starts: checkoutStarts(
+                        math.Random().nextInt(1 << 31),
+                        widget.starts.length,
+                        widget.ladder ? CheckoutRange.ladder : _rangeOf(widget.starts),
+                      ),
+                      dartsPerAttempt: widget.dartsPerAttempt,
+                      ladder: widget.ladder,
                     ),
-                    dartsPerAttempt: widget.dartsPerAttempt,
-                    ladder: widget.ladder,
                   ),
-                ),
-              );
-            },
-            child: Text(l10n.groupingAgain),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              Navigator.of(context).pop();
-            },
-            child: Text(l10n.backToMenu),
-          ),
-        ],
+                );
+              },
+              child: Text(l10n.groupingAgain),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                Navigator.of(context).pop();
+              },
+              child: Text(l10n.backToMenu),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -209,23 +210,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
         ),
       ],
     );
-    return LeaveGameGuard(
-      canLeave: widget.watching || _game.isFinished || currentRecord.throws.isEmpty,
-      child: Scaffold(
-        appBar: AppBar(title: Text(l10n.modeCheckout)),
-        body: GameLayout(
-          input: widget.watching
-              ? WatchedBoard(throws: shown.darts)
-              : GameInput(
-                  game: _game,
-                  takeout: _takeout,
-                  shownThrows: shown.darts,
-                  onDart: _add,
-                  onChanged: () => setState(() {}),
-                ),
-          panel: panel,
-        ),
-      ),
+    return GameScaffold(
+      title: l10n.modeCheckout,
+      game: _game,
+      takeout: _takeout,
+      shownThrows: shown.darts,
+      watching: widget.watching,
+      onDart: _add,
+      onChanged: () => setState(() {}),
+      panel: panel,
     );
   }
 }
