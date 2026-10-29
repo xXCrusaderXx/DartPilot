@@ -5,6 +5,7 @@ import '../engine/engine_choice.dart';
 import '../engine/engine_connection.dart';
 import '../sound/caller.dart';
 import '../sound/x01_calls.dart';
+import '../widgets/appearance_tiles.dart';
 import '../widgets/board_check.dart';
 import '../widgets/engine_card.dart';
 import '../widgets/paired_devices.dart';
@@ -293,7 +294,7 @@ class _SetupTile extends StatelessWidget {
   }
 }
 
-/// Brightness, the display style of games and the viewing distance, for this device
+/// How the app looks on this device: preset, brightness, colours, text size, game display and viewing distance
 class DisplaySettingsTiles extends StatelessWidget {
   const DisplaySettingsTiles({super.key});
 
@@ -303,6 +304,7 @@ class DisplaySettingsTiles extends StatelessWidget {
     final display = DisplayScope.of(context);
     return Column(
       children: [
+        const AppearancePresetTiles(),
         ListTile(title: Text(l10n.brightness), subtitle: Text(l10n.brightnessHint)),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -317,6 +319,7 @@ class DisplaySettingsTiles extends StatelessWidget {
             onSelectionChanged: (s) => display.set(brightness: s.first),
           ),
         ),
+        const AppearanceColourTiles(),
         ListTile(title: Text(l10n.displayStyle), subtitle: Text(l10n.displayStyleHint)),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),

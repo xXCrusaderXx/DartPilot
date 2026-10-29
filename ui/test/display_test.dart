@@ -77,7 +77,10 @@ void main() {
     await playOffline(tester);
     await openSettings(tester);
     await tester.ensureVisible(find.byKey(const ValueKey('display-style')));
-    await tester.tap(find.text('Scoreboard'));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(of: find.byKey(const ValueKey('display-style')), matching: find.text('Scoreboard')),
+    );
     await tester.pumpAndSettle();
     expect(display.style, DisplayStyle.scoreboard);
     await tester.tap(find.text('Fern'));

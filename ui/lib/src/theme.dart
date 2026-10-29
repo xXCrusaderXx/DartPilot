@@ -139,7 +139,129 @@ class AppPalette extends ThemeExtension<AppPalette> {
     onHighlight: Color(0xFF111827),
   );
 
+  /// Pure black and white surfaces, stronger borders and muted text closer to the text
+  static final highContrastDark = dark
+      .copyWith(
+        background: const Color(0xFF000000),
+        sidebar: const Color(0xFF050505),
+        surface: const Color(0xFF0D0D0D),
+        surfaceRaised: const Color(0xFF1A1A1A),
+        border: const Color(0xFF8C8C8C),
+        text: const Color(0xFFFFFFFF),
+        textMuted: const Color(0xFFD4D4D4),
+        onAccent: const Color(0xFF000000),
+        onStatus: const Color(0xFF000000),
+        onHighlight: const Color(0xFF000000),
+        notice: const Color(0xFF2E2508),
+      )
+      .withAccent(AppColors.accent);
+
+  static final highContrastLight = light
+      .copyWith(
+        background: const Color(0xFFFFFFFF),
+        sidebar: const Color(0xFFF2F2F2),
+        surface: const Color(0xFFFFFFFF),
+        surfaceRaised: const Color(0xFFF0F0F0),
+        border: const Color(0xFF4D4D4D),
+        text: const Color(0xFF000000),
+        textMuted: const Color(0xFF262626),
+        onHighlight: const Color(0xFF000000),
+        good: const Color(0xFF035E44),
+        warning: const Color(0xFF8A3F06),
+        bad: const Color(0xFF991515),
+      )
+      .withAccent(AppColors.accent);
+
+  /// The surfaces text and accents are drawn on
+  List<Color> get grounds => [background, sidebar, surface, surfaceRaised];
+
+  /// This palette with its accent from [seed]: the seed's hue and saturation, each shade made just dark or light
+  /// enough to keep WCAG AA on this palette's surfaces, so any colour the player picks stays readable.
+  AppPalette withAccent(Color seed) {
+    final hsl = HSLColor.fromColor(seed);
+    final dark = brightness == Brightness.dark;
+    final onAccent = dark ? background : const Color(0xFFFFFFFF);
+    bool readsOnGrounds(Color c) => [...grounds, notice].every((g) => contrastRatio(c, g) >= 4.5);
+    final accent = _fitLightness(hsl, towardLight: dark, (c) => readsOnGrounds(c) && contrastRatio(onAccent, c) >= 4.5);
+    final accentHsl = HSLColor.fromColor(accent);
+    final accentLight = _fitLightness(
+      accentHsl.withLightness((accentHsl.lightness + (dark ? 0.12 : 0.06)).clamp(0.0, 1.0)),
+      towardLight: dark,
+      (c) => contrastRatio(onAccent, c) >= 4.5 && grounds.every((g) => contrastRatio(c, g) >= 3),
+    );
+    final accentDeep = accentHsl.withLightness((accentHsl.lightness - 0.15).clamp(0.0, 1.0)).toColor();
+    final container = _fitLightness(
+      accentHsl.withSaturation(accentHsl.saturation * 0.8).withLightness(dark ? 0.2 : 0.92),
+      towardLight: !dark,
+      (c) => contrastRatio(text, c) >= 4.5 && contrastRatio(accent, c) >= 4.5,
+    );
+    final soft = _fitLightness(
+      accentHsl.withSaturation(accentHsl.saturation * 0.45).withLightness(dark ? 0.21 : 0.9),
+      towardLight: !dark,
+      (c) => contrastRatio(dark ? accentLight : accent, c) >= 4.5,
+    );
+    return copyWith(
+      accent: accent,
+      accentLight: accentLight,
+      accentDeep: accentDeep,
+      onAccent: onAccent,
+      accentContainer: container,
+      accentSoft: soft,
+      onAccentSoft: dark ? accentLight : accent,
+    );
+  }
+
+  /// The colour of [start]'s hue and saturation nearest to its lightness that passes [ok], searching toward light or
+  /// dark; the far end if none does.
+  static Color _fitLightness(HSLColor start, bool Function(Color) ok, {required bool towardLight}) {
+    for (var step = 0; step <= 100; ++step) {
+      final l = start.lightness + (towardLight ? step : -step) / 100;
+      if (l < 0 || l > 1) break;
+      final c = start.withLightness(l).toColor();
+      if (ok(c)) return c;
+    }
+    return towardLight ? const Color(0xFFFFFFFF) : const Color(0xFF000000);
+  }
+
   static AppPalette of(BuildContext context) => Theme.of(context).extension<AppPalette>() ?? dark;
+
+  List<Object> get _values => [
+    brightness,
+    background,
+    sidebar,
+    surface,
+    surfaceRaised,
+    border,
+    text,
+    textMuted,
+    accentLight,
+    accent,
+    accentDeep,
+    onAccent,
+    accentContainer,
+    accentSoft,
+    onAccentSoft,
+    notice,
+    good,
+    warning,
+    bad,
+    onStatus,
+    highlight,
+    onHighlight,
+  ];
+
+  @override
+  bool operator ==(Object other) {
+    if (other is! AppPalette) return false;
+    final a = _values, b = other._values;
+    for (var i = 0; i < a.length; ++i) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  @override
+  int get hashCode => Object.hashAll(_values);
 
   @override
   AppPalette copyWith({

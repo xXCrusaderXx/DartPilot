@@ -1759,6 +1759,91 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsDisplay => 'Anzeige';
 
   @override
+  String get appearancePreset => 'Vorlage';
+
+  @override
+  String get appearancePresetHint =>
+      'Eine wählen und darunter einzelne Werte ändern. Zurücksetzen kehrt zu ihr zurück.';
+
+  @override
+  String get presetStandard => 'Standard';
+
+  @override
+  String get presetLight => 'Hell';
+
+  @override
+  String get presetHighContrast => 'Hoher Kontrast';
+
+  @override
+  String get presetScoreboard => 'Scoreboard';
+
+  @override
+  String get appearanceReset => 'Zurücksetzen';
+
+  @override
+  String get highContrast => 'Hoher Kontrast';
+
+  @override
+  String get highContrastHint => 'Reines Schwarz und Weiß mit kräftigeren Rändern';
+
+  @override
+  String get accentColour => 'Akzentfarbe';
+
+  @override
+  String get accentCustom => 'Eigene Farbe';
+
+  @override
+  String get accentHue => 'Farbton';
+
+  @override
+  String get accentApply => 'Übernehmen';
+
+  @override
+  String get accentAdjusted => 'Heller oder dunkler gemacht, damit Text lesbar bleibt.';
+
+  @override
+  String get accentSky => 'Himmelblau';
+
+  @override
+  String get accentGreen => 'Grün';
+
+  @override
+  String get accentTeal => 'Türkis';
+
+  @override
+  String get accentViolet => 'Violett';
+
+  @override
+  String get accentPink => 'Pink';
+
+  @override
+  String get accentOrange => 'Orange';
+
+  @override
+  String get accentRed => 'Rot';
+
+  @override
+  String get accentGold => 'Gold';
+
+  @override
+  String get textSize => 'Textgröße';
+
+  @override
+  String get textSizeHint => 'Zusätzlich zur Textgröße des Systems';
+
+  @override
+  String get textSmall => 'Klein';
+
+  @override
+  String get textNormal => 'Normal';
+
+  @override
+  String get textLarge => 'Groß';
+
+  @override
+  String get textLarger => 'Sehr groß';
+
+  @override
   String get brightnessHint => 'Dunkel, hell oder wie im System eingestellt. Jeder Text bleibt in beiden gut lesbar.';
 
   @override
