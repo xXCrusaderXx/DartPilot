@@ -1759,6 +1759,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsDisplay => 'Display';
 
   @override
+  String get brightnessHint => 'Dark, light, or as the system is set. Every text keeps enough contrast in both.';
+
+  @override
+  String get brightnessSystem => 'System';
+
+  @override
+  String get brightnessDark => 'Dark';
+
+  @override
+  String get brightnessLight => 'Light';
+
+  @override
   String get displayStyle => 'Game display';
 
   @override

@@ -362,7 +362,7 @@ class _ResultTile extends StatelessWidget {
       leading: CircleAvatar(
         radius: 14,
         backgroundColor: _errorColor(context, error),
-        child: Text('${result.index + 1}', style: const TextStyle(color: AppColors.background, fontSize: 12)),
+        child: Text('${result.index + 1}', style: TextStyle(color: AppPalette.of(context).onStatus, fontSize: 12)),
       ),
       title: Text(error == null ? l10n.referenceAbstained : l10n.referenceError(_mm(l10n, error))),
       subtitle: Text(

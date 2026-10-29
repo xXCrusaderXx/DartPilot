@@ -47,7 +47,8 @@ class PlayerRow extends StatelessWidget {
     final window = WindowClass.of(context);
     final scoreboard = display.styleFor(window) == DisplayStyle.scoreboard;
     final far = display.farFor(window);
-    final onBlock = active && scoreboard ? AppColors.background : null;
+    final palette = AppPalette.of(context);
+    final onBlock = active && scoreboard ? palette.onHighlight : null;
     final valueStyle =
         (active
                 ? (far ? theme.textTheme.displayLarge : theme.textTheme.displayMedium)
@@ -109,7 +110,7 @@ class PlayerRow extends StatelessWidget {
     final Widget content = LayoutBuilder(builder: (context, constraints) => row(constraints.maxWidth));
     final Widget body;
     if (active && scoreboard) {
-      body = Container(color: AppColors.warning, child: content);
+      body = Container(color: palette.highlight, child: content);
     } else if (active) {
       body = Container(
         decoration: BoxDecoration(

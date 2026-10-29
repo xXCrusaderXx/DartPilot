@@ -1759,6 +1759,18 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsDisplay => 'Anzeige';
 
   @override
+  String get brightnessHint => 'Dunkel, hell oder wie im System eingestellt. Jeder Text bleibt in beiden gut lesbar.';
+
+  @override
+  String get brightnessSystem => 'System';
+
+  @override
+  String get brightnessDark => 'Dunkel';
+
+  @override
+  String get brightnessLight => 'Hell';
+
+  @override
   String get displayStyle => 'Spielanzeige';
 
   @override

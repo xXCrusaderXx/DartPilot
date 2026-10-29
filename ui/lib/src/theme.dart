@@ -1,7 +1,11 @@
 // The app's colours, from the DartPilot icon (engine/apps/dartpilot_setup/icons/dartpilot.svg) and the same tokens
 // as the setup tool (engine/apps/dartpilot_setup/Tokens.qml): night blue surfaces and the sky blue of the flight.
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
+/// The dark palette as constants, for what is drawn over camera images and the board, which look the same in every
+/// theme. Screens take their colours from the theme ([AppPalette.of]).
 abstract final class AppColors {
   static const background = Color(0xFF0F1216);
   static const sidebar = Color(0xFF13171D);
@@ -19,6 +23,209 @@ abstract final class AppColors {
   static const good = Color(0xFF34D399);
   static const warning = Color(0xFFFBBF24);
   static const bad = Color(0xFFF87171);
+}
+
+/// The design tokens of one brightness. Every colour a screen uses comes from here, so a change applies everywhere.
+@immutable
+class AppPalette extends ThemeExtension<AppPalette> {
+  const AppPalette({
+    required this.brightness,
+    required this.background,
+    required this.sidebar,
+    required this.surface,
+    required this.surfaceRaised,
+    required this.border,
+    required this.text,
+    required this.textMuted,
+    required this.accentLight,
+    required this.accent,
+    required this.accentDeep,
+    required this.onAccent,
+    required this.accentContainer,
+    required this.accentSoft,
+    required this.onAccentSoft,
+    required this.notice,
+    required this.good,
+    required this.warning,
+    required this.bad,
+    required this.onStatus,
+    required this.highlight,
+    required this.onHighlight,
+  });
+
+  final Brightness brightness;
+  final Color background;
+  final Color sidebar;
+  final Color surface;
+  final Color surfaceRaised;
+  final Color border;
+  final Color text;
+  final Color textMuted;
+
+  /// The flight's blues, light to deep, as they read on this palette's surfaces
+  final Color accentLight;
+  final Color accent;
+  final Color accentDeep;
+  final Color onAccent;
+
+  /// Notices about the board (pull the darts), with text and an accent button on them
+  final Color accentContainer;
+
+  /// Quiet accent areas (selected chips, tonal buttons) and their text
+  final Color accentSoft;
+  final Color onAccentSoft;
+
+  /// Notices that need the player (an uncertain dart, a correction): amber-tinted, so text stays readable
+  final Color notice;
+
+  final Color good;
+  final Color warning;
+  final Color bad;
+
+  /// Text on a filled good, warning or bad mark
+  final Color onStatus;
+
+  /// The active player's block in the scoreboard style, the same yellow in every palette
+  final Color highlight;
+  final Color onHighlight;
+
+  static const dark = AppPalette(
+    brightness: Brightness.dark,
+    background: AppColors.background,
+    sidebar: AppColors.sidebar,
+    surface: AppColors.surface,
+    surfaceRaised: AppColors.surfaceRaised,
+    border: AppColors.border,
+    text: AppColors.text,
+    textMuted: AppColors.textMuted,
+    accentLight: AppColors.accentLight,
+    accent: AppColors.accent,
+    accentDeep: AppColors.accentDeep,
+    onAccent: AppColors.background,
+    accentContainer: Color(0xFF0B3B57),
+    accentSoft: Color(0xFF1E3A4C),
+    onAccentSoft: AppColors.accentLight,
+    notice: Color(0xFF3B3117),
+    good: AppColors.good,
+    warning: AppColors.warning,
+    bad: AppColors.bad,
+    onStatus: AppColors.background,
+    highlight: AppColors.warning,
+    onHighlight: AppColors.background,
+  );
+
+  static const light = AppPalette(
+    brightness: Brightness.light,
+    background: Color(0xFFF4F6F9),
+    sidebar: Color(0xFFE9EDF2),
+    surface: Color(0xFFFFFFFF),
+    surfaceRaised: Color(0xFFEEF1F5),
+    border: Color(0xFFCBD3DD),
+    text: Color(0xFF111827),
+    textMuted: Color(0xFF4B5563),
+    accentLight: Color(0xFF0369A1),
+    accent: Color(0xFF075985),
+    accentDeep: Color(0xFF0C4A6E),
+    onAccent: Color(0xFFFFFFFF),
+    accentContainer: Color(0xFFDCEFFB),
+    accentSoft: Color(0xFFD6EEFB),
+    onAccentSoft: Color(0xFF075985),
+    notice: Color(0xFFFDF1D8),
+    good: Color(0xFF047857),
+    warning: Color(0xFFB45309),
+    bad: Color(0xFFB91C1C),
+    onStatus: Color(0xFFFFFFFF),
+    highlight: AppColors.warning,
+    onHighlight: Color(0xFF111827),
+  );
+
+  static AppPalette of(BuildContext context) => Theme.of(context).extension<AppPalette>() ?? dark;
+
+  @override
+  AppPalette copyWith({
+    Brightness? brightness,
+    Color? background,
+    Color? sidebar,
+    Color? surface,
+    Color? surfaceRaised,
+    Color? border,
+    Color? text,
+    Color? textMuted,
+    Color? accentLight,
+    Color? accent,
+    Color? accentDeep,
+    Color? onAccent,
+    Color? accentContainer,
+    Color? accentSoft,
+    Color? onAccentSoft,
+    Color? notice,
+    Color? good,
+    Color? warning,
+    Color? bad,
+    Color? onStatus,
+    Color? highlight,
+    Color? onHighlight,
+  }) => AppPalette(
+    brightness: brightness ?? this.brightness,
+    background: background ?? this.background,
+    sidebar: sidebar ?? this.sidebar,
+    surface: surface ?? this.surface,
+    surfaceRaised: surfaceRaised ?? this.surfaceRaised,
+    border: border ?? this.border,
+    text: text ?? this.text,
+    textMuted: textMuted ?? this.textMuted,
+    accentLight: accentLight ?? this.accentLight,
+    accent: accent ?? this.accent,
+    accentDeep: accentDeep ?? this.accentDeep,
+    onAccent: onAccent ?? this.onAccent,
+    accentContainer: accentContainer ?? this.accentContainer,
+    accentSoft: accentSoft ?? this.accentSoft,
+    onAccentSoft: onAccentSoft ?? this.onAccentSoft,
+    notice: notice ?? this.notice,
+    good: good ?? this.good,
+    warning: warning ?? this.warning,
+    bad: bad ?? this.bad,
+    onStatus: onStatus ?? this.onStatus,
+    highlight: highlight ?? this.highlight,
+    onHighlight: onHighlight ?? this.onHighlight,
+  );
+
+  @override
+  AppPalette lerp(AppPalette? other, double t) {
+    if (other == null) return this;
+    Color mix(Color a, Color b) => Color.lerp(a, b, t)!;
+    return AppPalette(
+      brightness: t < 0.5 ? brightness : other.brightness,
+      background: mix(background, other.background),
+      sidebar: mix(sidebar, other.sidebar),
+      surface: mix(surface, other.surface),
+      surfaceRaised: mix(surfaceRaised, other.surfaceRaised),
+      border: mix(border, other.border),
+      text: mix(text, other.text),
+      textMuted: mix(textMuted, other.textMuted),
+      accentLight: mix(accentLight, other.accentLight),
+      accent: mix(accent, other.accent),
+      accentDeep: mix(accentDeep, other.accentDeep),
+      onAccent: mix(onAccent, other.onAccent),
+      accentContainer: mix(accentContainer, other.accentContainer),
+      accentSoft: mix(accentSoft, other.accentSoft),
+      onAccentSoft: mix(onAccentSoft, other.onAccentSoft),
+      notice: mix(notice, other.notice),
+      good: mix(good, other.good),
+      warning: mix(warning, other.warning),
+      bad: mix(bad, other.bad),
+      onStatus: mix(onStatus, other.onStatus),
+      highlight: mix(highlight, other.highlight),
+      onHighlight: mix(onHighlight, other.onHighlight),
+    );
+  }
+}
+
+/// WCAG 2.x contrast ratio of two opaque colours, from 1 (same) to 21 (black on white)
+double contrastRatio(Color a, Color b) {
+  final la = a.computeLuminance();
+  final lb = b.computeLuminance();
+  return (math.max(la, lb) + 0.05) / (math.min(la, lb) + 0.05);
 }
 
 /// Colours for states (camera ok, measured, warning, problem), so screens do not pick their own greens and ambers
@@ -46,33 +253,34 @@ class StatusColors extends ThemeExtension<StatusColors> {
         );
 }
 
-ThemeData dartPilotTheme() {
-  const scheme = ColorScheme.dark(
-    primary: AppColors.accent,
-    onPrimary: AppColors.background,
-    primaryContainer: AppColors.accentDeep,
-    onPrimaryContainer: AppColors.text,
-    secondary: AppColors.accentLight,
-    onSecondary: AppColors.background,
-    secondaryContainer: Color(0xFF1E3A4C),
-    onSecondaryContainer: AppColors.accentLight,
-    tertiary: AppColors.warning,
-    onTertiary: AppColors.background,
-    // Notices that need the player (an uncertain dart, a correction): dark and amber-tinted, so text stays readable
-    tertiaryContainer: Color(0xFF3B3117),
-    onTertiaryContainer: AppColors.text,
-    error: AppColors.bad,
-    onError: AppColors.background,
-    surface: AppColors.surface,
-    onSurface: AppColors.text,
-    onSurfaceVariant: AppColors.textMuted,
-    surfaceContainerLowest: AppColors.background,
-    surfaceContainerLow: AppColors.sidebar,
-    surfaceContainer: AppColors.surface,
-    surfaceContainerHigh: AppColors.surfaceRaised,
-    surfaceContainerHighest: AppColors.surfaceRaised,
-    outline: AppColors.border,
-    outlineVariant: AppColors.border,
+/// The app's theme for one palette, dark by default
+ThemeData dartPilotTheme([AppPalette p = AppPalette.dark]) {
+  final scheme = ColorScheme(
+    brightness: p.brightness,
+    primary: p.accent,
+    onPrimary: p.onAccent,
+    primaryContainer: p.accentContainer,
+    onPrimaryContainer: p.text,
+    secondary: p.accentLight,
+    onSecondary: p.onAccent,
+    secondaryContainer: p.accentSoft,
+    onSecondaryContainer: p.onAccentSoft,
+    tertiary: p.warning,
+    onTertiary: p.onStatus,
+    tertiaryContainer: p.notice,
+    onTertiaryContainer: p.text,
+    error: p.bad,
+    onError: p.onStatus,
+    surface: p.surface,
+    onSurface: p.text,
+    onSurfaceVariant: p.textMuted,
+    surfaceContainerLowest: p.background,
+    surfaceContainerLow: p.sidebar,
+    surfaceContainer: p.surface,
+    surfaceContainerHigh: p.surfaceRaised,
+    surfaceContainerHighest: p.surfaceRaised,
+    outline: p.border,
+    outlineVariant: p.border,
   );
   final base = ThemeData(colorScheme: scheme, useMaterial3: true);
   // Scores and figures keep their width while they change, so 141 → 111 does not jitter.
@@ -90,35 +298,39 @@ ThemeData dartPilotTheme() {
       titleLarge: figures(text.titleLarge),
       titleMedium: figures(text.titleMedium),
     ),
-    scaffoldBackgroundColor: AppColors.background,
-    appBarTheme: const AppBarTheme(backgroundColor: AppColors.background, surfaceTintColor: Colors.transparent),
+    scaffoldBackgroundColor: p.background,
+    appBarTheme: AppBarTheme(backgroundColor: p.background, surfaceTintColor: Colors.transparent),
     cardTheme: CardThemeData(
-      color: AppColors.surface,
+      color: p.surface,
       surfaceTintColor: Colors.transparent,
+      // Flat with a border: a shadow would show only on light surfaces
+      elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: p.border),
       ),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: AppColors.sidebar,
-      indicatorColor: AppColors.accent.withValues(alpha: 0.2),
+      backgroundColor: p.sidebar,
+      indicatorColor: p.accent.withValues(alpha: 0.2),
       iconTheme: WidgetStateProperty.resolveWith(
-        (states) =>
-            IconThemeData(color: states.contains(WidgetState.selected) ? AppColors.accent : AppColors.textMuted),
+        (states) => IconThemeData(color: states.contains(WidgetState.selected) ? p.accent : p.textMuted),
       ),
     ),
     navigationRailTheme: NavigationRailThemeData(
-      backgroundColor: AppColors.sidebar,
-      indicatorColor: AppColors.accent.withValues(alpha: 0.2),
-      selectedIconTheme: const IconThemeData(color: AppColors.accent),
-      unselectedIconTheme: const IconThemeData(color: AppColors.textMuted),
+      backgroundColor: p.sidebar,
+      indicatorColor: p.accent.withValues(alpha: 0.2),
+      selectedIconTheme: IconThemeData(color: p.accent),
+      unselectedIconTheme: IconThemeData(color: p.textMuted),
     ),
-    dividerTheme: const DividerThemeData(color: AppColors.border),
-    snackBarTheme: const SnackBarThemeData(
-      backgroundColor: AppColors.surfaceRaised,
-      contentTextStyle: TextStyle(color: AppColors.text),
+    dividerTheme: DividerThemeData(color: p.border),
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: p.surfaceRaised,
+      contentTextStyle: TextStyle(color: p.text),
     ),
-    extensions: const [StatusColors(good: AppColors.good, warning: AppColors.warning, bad: AppColors.bad)],
+    extensions: [
+      p,
+      StatusColors(good: p.good, warning: p.warning, bad: p.bad),
+    ],
   );
 }

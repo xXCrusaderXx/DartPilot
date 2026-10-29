@@ -106,8 +106,9 @@ class X01Panel extends StatelessWidget {
   Widget _scoreboard(BuildContext context, double width) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    const block = AppColors.warning;
-    final onBlock = AppColors.background;
+    final palette = AppPalette.of(context);
+    final block = palette.highlight;
+    final onBlock = palette.onHighlight;
     final active = game.players[visit.player];
     final others = [
       for (var i = 0; i < game.players.length; ++i)
@@ -118,8 +119,8 @@ class X01Panel extends StatelessWidget {
       children: [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: AppColors.bad, width: 3)),
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: palette.bad, width: 3)),
           ),
           child: Text(
             _meta(l10n).toUpperCase(),

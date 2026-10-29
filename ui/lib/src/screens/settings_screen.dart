@@ -293,7 +293,7 @@ class _SetupTile extends StatelessWidget {
   }
 }
 
-/// The display style of games and the viewing distance, for this device
+/// Brightness, the display style of games and the viewing distance, for this device
 class DisplaySettingsTiles extends StatelessWidget {
   const DisplaySettingsTiles({super.key});
 
@@ -303,6 +303,20 @@ class DisplaySettingsTiles extends StatelessWidget {
     final display = DisplayScope.of(context);
     return Column(
       children: [
+        ListTile(title: Text(l10n.brightness), subtitle: Text(l10n.brightnessHint)),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: SegmentedButton<AppBrightness>(
+            key: const ValueKey('brightness'),
+            segments: [
+              ButtonSegment(value: AppBrightness.system, label: Text(l10n.brightnessSystem)),
+              ButtonSegment(value: AppBrightness.dark, label: Text(l10n.brightnessDark)),
+              ButtonSegment(value: AppBrightness.light, label: Text(l10n.brightnessLight)),
+            ],
+            selected: {display.brightness},
+            onSelectionChanged: (s) => display.set(brightness: s.first),
+          ),
+        ),
         ListTile(title: Text(l10n.displayStyle), subtitle: Text(l10n.displayStyleHint)),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
