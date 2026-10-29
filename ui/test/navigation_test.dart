@@ -68,6 +68,8 @@ void main() {
     await showSettingsEntry(tester, 'settings-cameras');
     expect(tester.widget<ListTile>(find.byKey(const ValueKey('settings-cameras'))).enabled, isFalse);
     await tester.scrollUntilVisible(find.widgetWithText(FilledButton, 'Connect'), -200);
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Connect'));
+    await tester.pumpAndSettle();
 
     // Connect leads back to the connection page.
     await tester.tap(find.widgetWithText(FilledButton, 'Connect'));

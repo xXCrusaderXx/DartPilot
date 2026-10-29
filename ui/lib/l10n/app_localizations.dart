@@ -3104,6 +3104,174 @@ abstract class AppLocalizations {
   /// **'Display'**
   String get settingsDisplay;
 
+  /// No description provided for @appearancePreset.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting point'**
+  String get appearancePreset;
+
+  /// No description provided for @appearancePresetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick one and change single values below. Reset returns to it.'**
+  String get appearancePresetHint;
+
+  /// No description provided for @presetStandard.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard'**
+  String get presetStandard;
+
+  /// No description provided for @presetLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get presetLight;
+
+  /// No description provided for @presetHighContrast.
+  ///
+  /// In en, this message translates to:
+  /// **'High contrast'**
+  String get presetHighContrast;
+
+  /// No description provided for @presetScoreboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Scoreboard'**
+  String get presetScoreboard;
+
+  /// No description provided for @appearanceReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get appearanceReset;
+
+  /// No description provided for @highContrast.
+  ///
+  /// In en, this message translates to:
+  /// **'High contrast'**
+  String get highContrast;
+
+  /// No description provided for @highContrastHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pure black and white with stronger borders'**
+  String get highContrastHint;
+
+  /// No description provided for @accentColour.
+  ///
+  /// In en, this message translates to:
+  /// **'Accent colour'**
+  String get accentColour;
+
+  /// No description provided for @accentCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Own colour'**
+  String get accentCustom;
+
+  /// No description provided for @accentHue.
+  ///
+  /// In en, this message translates to:
+  /// **'Hue'**
+  String get accentHue;
+
+  /// No description provided for @accentApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get accentApply;
+
+  /// No description provided for @accentAdjusted.
+  ///
+  /// In en, this message translates to:
+  /// **'Made lighter or darker so that text stays readable.'**
+  String get accentAdjusted;
+
+  /// No description provided for @accentSky.
+  ///
+  /// In en, this message translates to:
+  /// **'Sky blue'**
+  String get accentSky;
+
+  /// No description provided for @accentGreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Green'**
+  String get accentGreen;
+
+  /// No description provided for @accentTeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Teal'**
+  String get accentTeal;
+
+  /// No description provided for @accentViolet.
+  ///
+  /// In en, this message translates to:
+  /// **'Violet'**
+  String get accentViolet;
+
+  /// No description provided for @accentPink.
+  ///
+  /// In en, this message translates to:
+  /// **'Pink'**
+  String get accentPink;
+
+  /// No description provided for @accentOrange.
+  ///
+  /// In en, this message translates to:
+  /// **'Orange'**
+  String get accentOrange;
+
+  /// No description provided for @accentRed.
+  ///
+  /// In en, this message translates to:
+  /// **'Red'**
+  String get accentRed;
+
+  /// No description provided for @accentGold.
+  ///
+  /// In en, this message translates to:
+  /// **'Gold'**
+  String get accentGold;
+
+  /// No description provided for @textSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Text size'**
+  String get textSize;
+
+  /// No description provided for @textSizeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'On top of the system\'s text size'**
+  String get textSizeHint;
+
+  /// No description provided for @textSmall.
+  ///
+  /// In en, this message translates to:
+  /// **'Small'**
+  String get textSmall;
+
+  /// No description provided for @textNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get textNormal;
+
+  /// No description provided for @textLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Large'**
+  String get textLarge;
+
+  /// No description provided for @textLarger.
+  ///
+  /// In en, this message translates to:
+  /// **'Larger'**
+  String get textLarger;
+
   /// No description provided for @brightnessHint.
   ///
   /// In en, this message translates to:

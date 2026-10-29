@@ -1759,6 +1759,90 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsDisplay => 'Display';
 
   @override
+  String get appearancePreset => 'Starting point';
+
+  @override
+  String get appearancePresetHint => 'Pick one and change single values below. Reset returns to it.';
+
+  @override
+  String get presetStandard => 'Standard';
+
+  @override
+  String get presetLight => 'Light';
+
+  @override
+  String get presetHighContrast => 'High contrast';
+
+  @override
+  String get presetScoreboard => 'Scoreboard';
+
+  @override
+  String get appearanceReset => 'Reset';
+
+  @override
+  String get highContrast => 'High contrast';
+
+  @override
+  String get highContrastHint => 'Pure black and white with stronger borders';
+
+  @override
+  String get accentColour => 'Accent colour';
+
+  @override
+  String get accentCustom => 'Own colour';
+
+  @override
+  String get accentHue => 'Hue';
+
+  @override
+  String get accentApply => 'Apply';
+
+  @override
+  String get accentAdjusted => 'Made lighter or darker so that text stays readable.';
+
+  @override
+  String get accentSky => 'Sky blue';
+
+  @override
+  String get accentGreen => 'Green';
+
+  @override
+  String get accentTeal => 'Teal';
+
+  @override
+  String get accentViolet => 'Violet';
+
+  @override
+  String get accentPink => 'Pink';
+
+  @override
+  String get accentOrange => 'Orange';
+
+  @override
+  String get accentRed => 'Red';
+
+  @override
+  String get accentGold => 'Gold';
+
+  @override
+  String get textSize => 'Text size';
+
+  @override
+  String get textSizeHint => 'On top of the system\'s text size';
+
+  @override
+  String get textSmall => 'Small';
+
+  @override
+  String get textNormal => 'Normal';
+
+  @override
+  String get textLarge => 'Large';
+
+  @override
+  String get textLarger => 'Larger';
+
+  @override
   String get brightnessHint => 'Dark, light, or as the system is set. Every text keeps enough contrast in both.';
 
   @override

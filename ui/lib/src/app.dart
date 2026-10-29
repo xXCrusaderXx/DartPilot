@@ -149,8 +149,13 @@ class _DartPilotAppState extends State<DartPilotApp> {
     super.dispose();
   }
 
-  static final _darkTheme = dartPilotTheme();
-  static final _lightTheme = dartPilotTheme(AppPalette.light);
+  // Built again only when the palette changes, so other display settings do not animate the theme
+  final _themes = <AppPalette, ThemeData>{};
+  ThemeData _theme(Brightness brightness) {
+    final palette = _display.paletteFor(brightness);
+    if (_themes.length > 8) _themes.clear();
+    return _themes.putIfAbsent(palette, () => dartPilotTheme(palette));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -168,10 +173,13 @@ class _DartPilotAppState extends State<DartPilotApp> {
           GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: AppLocalizations.supportedLocales,
-        theme: _lightTheme,
-        darkTheme: _darkTheme,
+        theme: _theme(Brightness.light),
+        darkTheme: _theme(Brightness.dark),
         themeMode: _display.themeMode,
-        builder: (context, child) => _ReconnectBanner(child: child!),
+        builder: (context, child) => _TextSizeScope(
+          factor: _display.textSize.factor,
+          child: _ReconnectBanner(child: child!),
+        ),
         home: const RootScreen(),
       ),
     );
@@ -193,6 +201,24 @@ class _DartPilotAppState extends State<DartPilotApp> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The player's text size on top of the system's
+class _TextSizeScope extends StatelessWidget {
+  const _TextSizeScope({required this.factor, required this.child});
+
+  final double factor;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (factor == 1.0) return child;
+    final media = MediaQuery.of(context);
+    return MediaQuery(
+      data: media.copyWith(textScaler: TextScaler.linear(media.textScaler.scale(1.0) * factor)),
+      child: child,
     );
   }
 }
