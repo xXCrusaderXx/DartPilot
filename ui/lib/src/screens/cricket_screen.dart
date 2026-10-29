@@ -123,7 +123,8 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
     final window = WindowClass.of(context);
     final scoreboard = display.styleFor(window) == DisplayStyle.scoreboard;
     final far = display.farFor(window);
-    final activeFill = scoreboard ? AppColors.warning : theme.colorScheme.primary.withValues(alpha: 0.18);
+    final palette = AppPalette.of(context);
+    final activeFill = scoreboard ? palette.highlight : theme.colorScheme.primary.withValues(alpha: 0.18);
     final markStyle = far ? theme.textTheme.displaySmall : theme.textTheme.titleLarge;
     TableRow row(String label, List<String> cells, {TextStyle? style, List<int>? marks}) => TableRow(
       children: [
@@ -145,7 +146,7 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
                       marks[i],
                       key: ValueKey('marks-${players[i].name}-$label'),
                       size: (markStyle?.fontSize ?? 22) * 1.1,
-                      color: i == atOche && scoreboard ? AppColors.background : null,
+                      color: i == atOche && scoreboard ? palette.onHighlight : null,
                     ),
                   )
                 : Text(
@@ -153,7 +154,7 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
                     textAlign: TextAlign.center,
                     style: (style ?? markStyle)?.copyWith(
                       fontWeight: i == atOche ? FontWeight.w800 : null,
-                      color: i == atOche && scoreboard ? AppColors.background : null,
+                      color: i == atOche && scoreboard ? palette.onHighlight : null,
                     ),
                   ),
           ),

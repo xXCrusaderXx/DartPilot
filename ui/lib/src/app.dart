@@ -149,23 +149,31 @@ class _DartPilotAppState extends State<DartPilotApp> {
     super.dispose();
   }
 
+  static final _darkTheme = dartPilotTheme();
+  static final _lightTheme = dartPilotTheme(AppPalette.light);
+
   @override
   Widget build(BuildContext context) {
     final manager = _manager;
-    final app = MaterialApp(
-      scaffoldMessengerKey: _messenger,
-      onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
-      locale: widget.locale,
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: AppLocalizations.supportedLocales,
-      theme: dartPilotTheme(),
-      builder: (context, child) => _ReconnectBanner(child: child!),
-      home: const RootScreen(),
+    final app = ListenableBuilder(
+      listenable: _display,
+      builder: (context, _) => MaterialApp(
+        scaffoldMessengerKey: _messenger,
+        onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
+        locale: widget.locale,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: _lightTheme,
+        darkTheme: _darkTheme,
+        themeMode: _display.themeMode,
+        builder: (context, child) => _ReconnectBanner(child: child!),
+        home: const RootScreen(),
+      ),
     );
     return EngineScope(
       connection: _engine,

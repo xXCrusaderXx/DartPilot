@@ -3104,6 +3104,30 @@ abstract class AppLocalizations {
   /// **'Display'**
   String get settingsDisplay;
 
+  /// No description provided for @brightnessHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark, light, or as the system is set. Every text keeps enough contrast in both.'**
+  String get brightnessHint;
+
+  /// No description provided for @brightnessSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get brightnessSystem;
+
+  /// No description provided for @brightnessDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get brightnessDark;
+
+  /// No description provided for @brightnessLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get brightnessLight;
+
   /// No description provided for @displayStyle.
   ///
   /// In en, this message translates to:

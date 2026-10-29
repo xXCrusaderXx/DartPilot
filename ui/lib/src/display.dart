@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -26,7 +27,10 @@ enum DisplayStyle { auto, clear, scoreboard }
 /// Whether the screen is read from close by (in the hand, on the desk) or from the oche (at the board, a TV)
 enum ViewingDistance { auto, near, far }
 
-/// The player's choice of display style and viewing distance for this device; auto picks by the window.
+/// Light or dark colours, or whichever the system uses
+enum AppBrightness { system, dark, light }
+
+/// The player's choice of display style, viewing distance and brightness for this device; auto picks by the window.
 class DisplaySettings extends ChangeNotifier {
   DisplaySettings({this.store = true});
 
@@ -36,26 +40,39 @@ class DisplaySettings extends ChangeNotifier {
   DisplayStyle style = DisplayStyle.auto;
   ViewingDistance distance = ViewingDistance.auto;
 
+  /// Dark by default, as the app always was
+  AppBrightness brightness = AppBrightness.dark;
+
   static const _styleKey = 'display.style';
   static const _distanceKey = 'display.distance';
+  static const _brightnessKey = 'display.brightness';
 
   Future<void> load() async {
     if (!store) return;
     final prefs = await SharedPreferences.getInstance();
     style = DisplayStyle.values.asNameMap()[prefs.getString(_styleKey)] ?? DisplayStyle.auto;
     distance = ViewingDistance.values.asNameMap()[prefs.getString(_distanceKey)] ?? ViewingDistance.auto;
+    brightness = AppBrightness.values.asNameMap()[prefs.getString(_brightnessKey)] ?? AppBrightness.dark;
     notifyListeners();
   }
 
-  Future<void> set({DisplayStyle? style, ViewingDistance? distance}) async {
+  Future<void> set({DisplayStyle? style, ViewingDistance? distance, AppBrightness? brightness}) async {
     this.style = style ?? this.style;
     this.distance = distance ?? this.distance;
+    this.brightness = brightness ?? this.brightness;
     notifyListeners();
     if (!store) return;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_styleKey, this.style.name);
     await prefs.setString(_distanceKey, this.distance.name);
+    await prefs.setString(_brightnessKey, this.brightness.name);
   }
+
+  ThemeMode get themeMode => switch (brightness) {
+    AppBrightness.system => ThemeMode.system,
+    AppBrightness.dark => ThemeMode.dark,
+    AppBrightness.light => ThemeMode.light,
+  };
 
   /// The style a game uses in this window: on a phone the scoreboard fits more, elsewhere the clear style
   DisplayStyle styleFor(WindowClass window) => style != DisplayStyle.auto
