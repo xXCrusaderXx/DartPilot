@@ -93,9 +93,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get average => '3-dart average';
 
   @override
-  String get newVisit => 'Next visit';
-
-  @override
   String get noThrowsYet => 'Tap the board or use the keypad';
 
   @override
@@ -103,14 +100,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get players => 'Players';
-
-  @override
-  String get addPlayer => 'Add player';
-
-  @override
-  String playerName(int number) {
-    return 'Player $number';
-  }
 
   @override
   String get startScore => 'Start score';
@@ -233,9 +222,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String quickStartX01(int score, String players) {
     return 'Again: $score · $players';
   }
-
-  @override
-  String get removePlayer => 'Remove player';
 
   @override
   String get cricketSetup => 'New Cricket game';
@@ -846,9 +832,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playingWithoutEngine => 'Darts by hand – no cameras connected';
 
   @override
-  String get settingsCamerasBoard => 'Cameras and darts';
-
-  @override
   String get settingsSetup => 'Setup';
 
   @override
@@ -876,13 +859,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsEmptyBoardHint => 'Store the cameras\' images of the empty board for the board check';
 
   @override
-  String get settingsCalibration => 'Calibration';
-
-  @override
   String get calibration => 'Calibrate the cameras';
-
-  @override
-  String get calibrationInSetupTool => 'For now in the setup program dartpilot_setup on Linux';
 
   @override
   String diagnosisProgress(int done, int target) {
@@ -965,9 +942,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statsLegs => 'Legs';
 
   @override
-  String get statsBestLeg => 'Best leg';
-
-  @override
   String statsDartsCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count darts', one: '1 dart');
     return '$_temp0';
@@ -1029,17 +1003,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get statsHistory => 'Games';
-
-  @override
-  String statsOpponents(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'against $count players',
-      one: 'against 1 player',
-    );
-    return '$_temp0';
-  }
 
   @override
   String get statsSolo => 'solo';
@@ -1300,7 +1263,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String botAverage(int average) {
-    return 'Average about $average';
+    return '3-dart average about $average';
   }
 
   @override
@@ -1560,9 +1523,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get statsExport => 'Export';
-
-  @override
   String get exportDartsCsv => 'All darts as CSV';
 
   @override
@@ -1589,10 +1549,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get myDartsIntro =>
-      'Optional: the engine measures a dart set (point, barrel, length, appearance). It then finds the point more precisely and tells new darts from those in the board. Without a set it detects any dart as before.';
+      'Optional: the camera detection measures a dart set (point, barrel, length, appearance). It then finds the point more precisely and tells new darts from those in the board. Without a set it detects any dart as before.';
 
   @override
-  String get dartSetsUnavailable => 'This engine cannot measure darts yet.';
+  String get dartSetsUnavailable => 'This version of the camera detection cannot measure darts yet.';
 
   @override
   String get noDartSets => 'No dart set measured yet.';
@@ -1610,7 +1570,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteDartSetText =>
-      'Its dimensions and reference images are deleted on the engine; players who throw it keep their games.';
+      'Its dimensions and reference images are deleted from the camera detection; players who throw it keep their games.';
 
   @override
   String get dartSetName => 'Name of the set';
@@ -1626,15 +1586,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dartSetThrownBy => 'Thrown by:';
-
-  @override
-  String get dartPoint => 'Point';
-
-  @override
-  String get dartBarrel => 'Barrel';
-
-  @override
-  String get dartTotal => 'Total';
 
   @override
   String get dartSetPutIn => 'Put one dart of the set into the board and take your hand away.';
@@ -1663,15 +1614,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dartSetBoardNotEmpty => 'Please pull all darts out of the board first.';
 
   @override
-  String get dartSetBusy => 'The engine is busy. Try again in a moment.';
+  String get dartSetBusy => 'The camera detection is busy. Try again in a moment.';
 
   @override
   String dartSetFailed(String reason) {
     return 'Measuring failed: $reason';
   }
-
-  @override
-  String get dartFlight => 'Flight';
 
   @override
   String dartSetPlacementFailed(String reason) {
@@ -1695,7 +1643,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dartSetBoardStillOccupied =>
-      'The engine still sees something in the board. If it is empty, store the empty board again – otherwise the measurement cannot go on.';
+      'The cameras still see something in the board. If it is empty, store the empty board again.';
 
   @override
   String get dartMeasureUncertain => 'uncertain';
@@ -1890,7 +1838,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get viewingDistanceHint =>
-      'Far shows only what matters, very large, for a screen at the board or a TV. Automatic: far on large screens.';
+      'Far shows only what matters, very large, for a screen beside the board or a TV. Automatic: far on large screens.';
 
   @override
   String get viewingNear => 'Near';
@@ -2231,9 +2179,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statsMatchLegs => 'Match legs';
 
   @override
-  String get statsTrainings => 'Training rounds';
-
-  @override
   String get statsHighestVisit => 'Highest visit';
 
   @override
@@ -2340,11 +2285,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Line: the dart\'s axis as the camera saw it. Ring: the tip it found. Cross: the located point.';
 
   @override
-  String get throwViewNoEngine => 'Camera views come from the engine. Connect to the engine that detected this dart.';
+  String get throwViewNoEngine =>
+      'Camera views come from the camera detection. Connect to the one that detected this dart.';
 
   @override
   String get throwViewNotAvailable =>
-      'The engine has no camera images of this dart, e.g. because it was entered by hand or simulated.';
+      'The camera detection has no images of this dart, e.g. because it was entered by hand or simulated.';
 
   @override
   String throwViewFailed(String code) {
@@ -2435,7 +2381,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get detailCheckout => 'Checkout route';
 
   @override
-  String get detailAverage => 'Average';
+  String get detailAverage => '3-dart average';
 
   @override
   String get detailDartsThrown => 'Darts thrown';
@@ -2552,7 +2498,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutDescription =>
-      'Scores steel darts with cameras on the board, or by hand without any. Free and open source, made for playing at home.';
+      'Scores steel darts with cameras at the board, or by hand without any. Free and open source, made for playing at home.';
 
   @override
   String get aboutLicence => 'Licence';
@@ -2898,11 +2844,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String statsTrainingRounds(int count) {
     String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count rounds', one: '1 round');
     return '$_temp0';
-  }
-
-  @override
-  String statsTrainingLast(String value) {
-    return 'Last $value';
   }
 
   @override

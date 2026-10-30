@@ -93,9 +93,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get average => '3-Dart-Schnitt';
 
   @override
-  String get newVisit => 'Nächste Aufnahme';
-
-  @override
   String get noThrowsYet => 'Tippe auf die Scheibe oder nutze das Tastenfeld';
 
   @override
@@ -103,14 +100,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get players => 'Spieler';
-
-  @override
-  String get addPlayer => 'Spieler hinzufügen';
-
-  @override
-  String playerName(int number) {
-    return 'Spieler $number';
-  }
 
   @override
   String get startScore => 'Startpunktzahl';
@@ -233,9 +222,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String quickStartX01(int score, String players) {
     return 'Nochmal: $score · $players';
   }
-
-  @override
-  String get removePlayer => 'Spieler entfernen';
 
   @override
   String get cricketSetup => 'Neues Cricket-Spiel';
@@ -381,7 +367,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get removeDarts => 'Darts entfernen';
 
   @override
-  String get removeDartsHint => 'Die nächste Aufnahme beginnt, sobald die Darts aus dem Board sind.';
+  String get removeDartsHint => 'Die nächste Aufnahme beginnt, sobald die Darts aus der Scheibe sind.';
 
   @override
   String get dartsRemoved => 'Darts sind raus';
@@ -827,7 +813,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get connectIntro => 'Du kannst das jederzeit in den Einstellungen ändern.';
 
   @override
-  String get navHome => 'Home';
+  String get navHome => 'Start';
 
   @override
   String get navSettings => 'Einstellungen';
@@ -843,9 +829,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get playingWithoutEngine => 'Darts von Hand – keine Kameras verbunden';
-
-  @override
-  String get settingsCamerasBoard => 'Kameras und Darts';
 
   @override
   String get settingsSetup => 'Einrichtung';
@@ -875,13 +858,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsEmptyBoardHint => 'Die Bilder der leeren Scheibe für die Scheibenprüfung speichern';
 
   @override
-  String get settingsCalibration => 'Kalibrierung';
-
-  @override
   String get calibration => 'Kameras kalibrieren';
-
-  @override
-  String get calibrationInSetupTool => 'Vorerst im Einrichtungsprogramm dartpilot_setup unter Linux';
 
   @override
   String diagnosisProgress(int done, int target) {
@@ -964,9 +941,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get statsLegs => 'Legs';
 
   @override
-  String get statsBestLeg => 'Bestes Leg';
-
-  @override
   String statsDartsCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Darts', one: '1 Dart');
     return '$_temp0';
@@ -1028,17 +1002,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get statsHistory => 'Spiele';
-
-  @override
-  String statsOpponents(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'gegen $count Spieler',
-      one: 'gegen 1 Spieler',
-    );
-    return '$_temp0';
-  }
 
   @override
   String get statsSolo => 'solo';
@@ -1299,7 +1262,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String botAverage(int average) {
-    return 'Average etwa $average';
+    return 'Schnitt etwa $average';
   }
 
   @override
@@ -1560,9 +1523,6 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get statsExport => 'Exportieren';
-
-  @override
   String get exportDartsCsv => 'Alle Darts als CSV';
 
   @override
@@ -1589,10 +1549,10 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get myDartsIntro =>
-      'Optional: Die Engine vermisst ein Dart-Set (Spitze, Barrel, Länge, Aussehen). Damit findet sie die Spitze genauer und hält neue Darts von steckenden auseinander. Ohne Set erkennt sie jeden Dart wie bisher.';
+      'Optional: Die Kamera-Erkennung vermisst ein Dart-Set (Spitze, Barrel, Länge, Aussehen). Damit findet sie die Spitze genauer und hält neue Darts von steckenden auseinander. Ohne Set erkennt sie jeden Dart wie bisher.';
 
   @override
-  String get dartSetsUnavailable => 'Diese Engine kann noch keine Darts vermessen.';
+  String get dartSetsUnavailable => 'Diese Version der Kamera-Erkennung kann noch keine Darts vermessen.';
 
   @override
   String get noDartSets => 'Noch kein Dart-Set vermessen.';
@@ -1610,7 +1570,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get deleteDartSetText =>
-      'Maße und Referenzbilder werden in der Engine gelöscht; die Spiele der Spieler, die ihn werfen, bleiben.';
+      'Maße und Referenzbilder werden in der Kamera-Erkennung gelöscht; die Spiele der Spieler, die ihn werfen, bleiben.';
 
   @override
   String get dartSetName => 'Name des Sets';
@@ -1628,16 +1588,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get dartSetThrownBy => 'Geworfen von:';
 
   @override
-  String get dartPoint => 'Spitze';
-
-  @override
-  String get dartBarrel => 'Barrel';
-
-  @override
-  String get dartTotal => 'Gesamt';
-
-  @override
-  String get dartSetPutIn => 'Steck einen Dart des Sets ins Board und nimm die Hand weg.';
+  String get dartSetPutIn => 'Steck einen Dart des Sets in die Scheibe und nimm die Hand weg.';
 
   @override
   String get dartSetMeasuring => 'Wird vermessen …';
@@ -1660,18 +1611,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get dartSetNotCalibrated => 'Die Kameras sind noch nicht kalibriert.';
 
   @override
-  String get dartSetBoardNotEmpty => 'Bitte erst alle Darts aus dem Board ziehen.';
+  String get dartSetBoardNotEmpty => 'Bitte erst alle Darts aus der Scheibe ziehen.';
 
   @override
-  String get dartSetBusy => 'Die Engine ist gerade beschäftigt. Versuch es gleich noch einmal.';
+  String get dartSetBusy => 'Die Kamera-Erkennung ist gerade beschäftigt. Versuch es gleich noch einmal.';
 
   @override
   String dartSetFailed(String reason) {
     return 'Vermessen fehlgeschlagen: $reason';
   }
-
-  @override
-  String get dartFlight => 'Flight';
 
   @override
   String dartSetPlacementFailed(String reason) {
@@ -1695,7 +1643,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get dartSetBoardStillOccupied =>
-      'Die Engine sieht noch etwas im Board. Ist es leer, speichere das leere Board neu – sonst geht es nicht weiter.';
+      'Die Kameras sehen noch etwas in der Scheibe. Ist sie leer, speichere sie neu.';
 
   @override
   String get dartMeasureUncertain => 'unsicher';
@@ -1891,7 +1839,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get viewingDistanceHint =>
-      'Fern zeigt nur das Wichtigste, sehr groß, für einen Bildschirm am Board oder einen Fernseher. Automatisch: fern auf großen Bildschirmen.';
+      'Fern zeigt nur das Wichtigste, sehr groß, für einen Bildschirm neben der Scheibe oder einen Fernseher. Automatisch: fern auf großen Bildschirmen.';
 
   @override
   String get viewingNear => 'Nah';
@@ -1915,7 +1863,7 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get addSetMeasure => 'Im Board vermessen';
+  String get addSetMeasure => 'In der Scheibe vermessen';
 
   @override
   String get addSetMeasureHint => 'Einen Dart an vier Stellen stecken – die Kameras messen ihn';
@@ -2170,7 +2118,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get or => 'oder';
 
   @override
-  String get pickCandidate => 'Tipp auf das richtige Feld oder auf die Stelle im Board, wo der Dart steckt.';
+  String get pickCandidate => 'Tipp auf das richtige Feld oder auf die Stelle der Scheibe, wo der Dart steckt.';
 
   @override
   String get callCheckout => 'Checkout ansagen';
@@ -2231,9 +2179,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get statsMatchLegs => 'Match-Legs';
-
-  @override
-  String get statsTrainings => 'Trainings';
 
   @override
   String get statsHighestVisit => 'Höchste Aufnahme';
@@ -2344,11 +2289,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get throwViewNoEngine =>
-      'Kamerabilder kommen von der Engine. Verbinde dich mit der Engine, die diesen Dart erkannt hat.';
+      'Kamerabilder kommen von der Kamera-Erkennung. Verbinde dich mit der, die diesen Dart erkannt hat.';
 
   @override
   String get throwViewNotAvailable =>
-      'Die Engine hat keine Kamerabilder dieses Darts, z. B. weil er von Hand eingegeben oder simuliert wurde.';
+      'Die Kamera-Erkennung hat keine Bilder dieses Darts, z. B. weil er von Hand eingegeben oder simuliert wurde.';
 
   @override
   String throwViewFailed(String code) {
@@ -2403,10 +2348,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get gameScreenLayoutHint => 'Gilt für dieses Gerät, unabhängig von der Vorlage';
 
   @override
-  String get boardSide => 'Board-Seite';
+  String get boardSide => 'Seite der Scheibe';
 
   @override
-  String get boardSideHint => 'Wo das Board steht, wenn es neben die Punkte passt';
+  String get boardSideHint => 'Wo die Scheibe steht, wenn sie neben die Punkte passt';
 
   @override
   String get boardLeft => 'Links';
@@ -2415,10 +2360,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get boardRight => 'Rechts';
 
   @override
-  String get boardSize => 'Board-Größe';
+  String get boardSize => 'Größe der Scheibe';
 
   @override
-  String get boardSizeHint => 'Wie viel vom Spielbildschirm das Board einnimmt; die Punkte bleiben immer lesbar';
+  String get boardSizeHint => 'Wie viel vom Spielbildschirm die Scheibe einnimmt; die Punkte bleiben immer lesbar';
 
   @override
   String get boardSmall => 'Klein';
@@ -2439,7 +2384,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get detailCheckout => 'Checkout-Weg';
 
   @override
-  String get detailAverage => 'Average';
+  String get detailAverage => 'Schnitt';
 
   @override
   String get detailDartsThrown => 'Geworfene Darts';
@@ -2466,10 +2411,10 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get boardColours => 'Board-Farben';
+  String get boardColours => 'Farben der Scheibe';
 
   @override
-  String get boardColoursHint => 'Für das gezeichnete Board; ein fotografiertes Board behält seine eigenen';
+  String get boardColoursHint => 'Für die gezeichnete Scheibe; eine fotografierte behält ihre eigenen';
 
   @override
   String get boardClassic => 'Klassisch';
@@ -2481,7 +2426,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get boardContrast => 'Kontrast';
 
   @override
-  String get dartColour => 'Darts auf dem Board';
+  String get dartColour => 'Darts auf der Scheibe';
 
   @override
   String get dartAccent => 'Akzent';
@@ -2557,7 +2502,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get aboutDescription =>
-      'Zählt Steeldarts mit Kameras am Board, oder von Hand ganz ohne. Freie, quelloffene Software für das Spiel zu Hause.';
+      'Zählt Steeldarts mit Kameras an der Scheibe, oder von Hand ganz ohne. Freie, quelloffene Software für das Spiel zu Hause.';
 
   @override
   String get aboutLicence => 'Lizenz';
@@ -2904,11 +2849,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String statsTrainingRounds(int count) {
     String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Runden', one: '1 Runde');
     return '$_temp0';
-  }
-
-  @override
-  String statsTrainingLast(String value) {
-    return 'Zuletzt $value';
   }
 
   @override

@@ -254,12 +254,6 @@ abstract class AppLocalizations {
   /// **'3-dart average'**
   String get average;
 
-  /// No description provided for @newVisit.
-  ///
-  /// In en, this message translates to:
-  /// **'Next visit'**
-  String get newVisit;
-
   /// No description provided for @noThrowsYet.
   ///
   /// In en, this message translates to:
@@ -277,18 +271,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Players'**
   String get players;
-
-  /// No description provided for @addPlayer.
-  ///
-  /// In en, this message translates to:
-  /// **'Add player'**
-  String get addPlayer;
-
-  /// No description provided for @playerName.
-  ///
-  /// In en, this message translates to:
-  /// **'Player {number}'**
-  String playerName(int number);
 
   /// No description provided for @startScore.
   ///
@@ -481,12 +463,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Again: {score} · {players}'**
   String quickStartX01(int score, String players);
-
-  /// No description provided for @removePlayer.
-  ///
-  /// In en, this message translates to:
-  /// **'Remove player'**
-  String get removePlayer;
 
   /// No description provided for @cricketSetup.
   ///
@@ -1520,12 +1496,6 @@ abstract class AppLocalizations {
   /// **'Darts by hand – no cameras connected'**
   String get playingWithoutEngine;
 
-  /// No description provided for @settingsCamerasBoard.
-  ///
-  /// In en, this message translates to:
-  /// **'Cameras and darts'**
-  String get settingsCamerasBoard;
-
   /// No description provided for @settingsSetup.
   ///
   /// In en, this message translates to:
@@ -1580,23 +1550,11 @@ abstract class AppLocalizations {
   /// **'Store the cameras\' images of the empty board for the board check'**
   String get settingsEmptyBoardHint;
 
-  /// No description provided for @settingsCalibration.
-  ///
-  /// In en, this message translates to:
-  /// **'Calibration'**
-  String get settingsCalibration;
-
   /// No description provided for @calibration.
   ///
   /// In en, this message translates to:
   /// **'Calibrate the cameras'**
   String get calibration;
-
-  /// No description provided for @calibrationInSetupTool.
-  ///
-  /// In en, this message translates to:
-  /// **'For now in the setup program dartpilot_setup on Linux'**
-  String get calibrationInSetupTool;
 
   /// No description provided for @diagnosisProgress.
   ///
@@ -1718,12 +1676,6 @@ abstract class AppLocalizations {
   /// **'Legs'**
   String get statsLegs;
 
-  /// No description provided for @statsBestLeg.
-  ///
-  /// In en, this message translates to:
-  /// **'Best leg'**
-  String get statsBestLeg;
-
   /// No description provided for @statsDartsCount.
   ///
   /// In en, this message translates to:
@@ -1843,12 +1795,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Games'**
   String get statsHistory;
-
-  /// No description provided for @statsOpponents.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{against 1 player} other{against {count} players}}'**
-  String statsOpponents(int count);
 
   /// No description provided for @statsSolo.
   ///
@@ -2315,7 +2261,7 @@ abstract class AppLocalizations {
   /// No description provided for @botAverage.
   ///
   /// In en, this message translates to:
-  /// **'Average about {average}'**
+  /// **'3-dart average about {average}'**
   String botAverage(int average);
 
   /// No description provided for @botName.
@@ -2756,12 +2702,6 @@ abstract class AppLocalizations {
   /// **'Misses: {count}'**
   String statsMisses(int count);
 
-  /// No description provided for @statsExport.
-  ///
-  /// In en, this message translates to:
-  /// **'Export'**
-  String get statsExport;
-
   /// No description provided for @exportDartsCsv.
   ///
   /// In en, this message translates to:
@@ -2807,13 +2747,13 @@ abstract class AppLocalizations {
   /// No description provided for @myDartsIntro.
   ///
   /// In en, this message translates to:
-  /// **'Optional: the engine measures a dart set (point, barrel, length, appearance). It then finds the point more precisely and tells new darts from those in the board. Without a set it detects any dart as before.'**
+  /// **'Optional: the camera detection measures a dart set (point, barrel, length, appearance). It then finds the point more precisely and tells new darts from those in the board. Without a set it detects any dart as before.'**
   String get myDartsIntro;
 
   /// No description provided for @dartSetsUnavailable.
   ///
   /// In en, this message translates to:
-  /// **'This engine cannot measure darts yet.'**
+  /// **'This version of the camera detection cannot measure darts yet.'**
   String get dartSetsUnavailable;
 
   /// No description provided for @noDartSets.
@@ -2843,7 +2783,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteDartSetText.
   ///
   /// In en, this message translates to:
-  /// **'Its dimensions and reference images are deleted on the engine; players who throw it keep their games.'**
+  /// **'Its dimensions and reference images are deleted from the camera detection; players who throw it keep their games.'**
   String get deleteDartSetText;
 
   /// No description provided for @dartSetName.
@@ -2875,24 +2815,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Thrown by:'**
   String get dartSetThrownBy;
-
-  /// No description provided for @dartPoint.
-  ///
-  /// In en, this message translates to:
-  /// **'Point'**
-  String get dartPoint;
-
-  /// No description provided for @dartBarrel.
-  ///
-  /// In en, this message translates to:
-  /// **'Barrel'**
-  String get dartBarrel;
-
-  /// No description provided for @dartTotal.
-  ///
-  /// In en, this message translates to:
-  /// **'Total'**
-  String get dartTotal;
 
   /// No description provided for @dartSetPutIn.
   ///
@@ -2945,7 +2867,7 @@ abstract class AppLocalizations {
   /// No description provided for @dartSetBusy.
   ///
   /// In en, this message translates to:
-  /// **'The engine is busy. Try again in a moment.'**
+  /// **'The camera detection is busy. Try again in a moment.'**
   String get dartSetBusy;
 
   /// No description provided for @dartSetFailed.
@@ -2953,12 +2875,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Measuring failed: {reason}'**
   String dartSetFailed(String reason);
-
-  /// No description provided for @dartFlight.
-  ///
-  /// In en, this message translates to:
-  /// **'Flight'**
-  String get dartFlight;
 
   /// No description provided for @dartSetPlacementFailed.
   ///
@@ -2999,7 +2915,7 @@ abstract class AppLocalizations {
   /// No description provided for @dartSetBoardStillOccupied.
   ///
   /// In en, this message translates to:
-  /// **'The engine still sees something in the board. If it is empty, store the empty board again – otherwise the measurement cannot go on.'**
+  /// **'The cameras still see something in the board. If it is empty, store the empty board again.'**
   String get dartSetBoardStillOccupied;
 
   /// No description provided for @dartMeasureUncertain.
@@ -3365,7 +3281,7 @@ abstract class AppLocalizations {
   /// No description provided for @viewingDistanceHint.
   ///
   /// In en, this message translates to:
-  /// **'Far shows only what matters, very large, for a screen at the board or a TV. Automatic: far on large screens.'**
+  /// **'Far shows only what matters, very large, for a screen beside the board or a TV. Automatic: far on large screens.'**
   String get viewingDistanceHint;
 
   /// No description provided for @viewingNear.
@@ -3956,12 +3872,6 @@ abstract class AppLocalizations {
   /// **'Match legs'**
   String get statsMatchLegs;
 
-  /// No description provided for @statsTrainings.
-  ///
-  /// In en, this message translates to:
-  /// **'Training rounds'**
-  String get statsTrainings;
-
   /// No description provided for @statsHighestVisit.
   ///
   /// In en, this message translates to:
@@ -4115,13 +4025,13 @@ abstract class AppLocalizations {
   /// No description provided for @throwViewNoEngine.
   ///
   /// In en, this message translates to:
-  /// **'Camera views come from the engine. Connect to the engine that detected this dart.'**
+  /// **'Camera views come from the camera detection. Connect to the one that detected this dart.'**
   String get throwViewNoEngine;
 
   /// No description provided for @throwViewNotAvailable.
   ///
   /// In en, this message translates to:
-  /// **'The engine has no camera images of this dart, e.g. because it was entered by hand or simulated.'**
+  /// **'The camera detection has no images of this dart, e.g. because it was entered by hand or simulated.'**
   String get throwViewNotAvailable;
 
   /// No description provided for @throwViewFailed.
@@ -4283,7 +4193,7 @@ abstract class AppLocalizations {
   /// No description provided for @detailAverage.
   ///
   /// In en, this message translates to:
-  /// **'Average'**
+  /// **'3-dart average'**
   String get detailAverage;
 
   /// No description provided for @detailDartsThrown.
@@ -4499,7 +4409,7 @@ abstract class AppLocalizations {
   /// No description provided for @aboutDescription.
   ///
   /// In en, this message translates to:
-  /// **'Scores steel darts with cameras on the board, or by hand without any. Free and open source, made for playing at home.'**
+  /// **'Scores steel darts with cameras at the board, or by hand without any. Free and open source, made for playing at home.'**
   String get aboutDescription;
 
   /// No description provided for @aboutLicence.
@@ -5077,12 +4987,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 round} other{{count} rounds}}'**
   String statsTrainingRounds(int count);
-
-  /// No description provided for @statsTrainingLast.
-  ///
-  /// In en, this message translates to:
-  /// **'Last {value}'**
-  String statsTrainingLast(String value);
 
   /// No description provided for @statsTrainingBest.
   ///

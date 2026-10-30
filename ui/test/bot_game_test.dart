@@ -20,7 +20,7 @@ void main() {
     await pickPlayers(tester, ['Anna']);
     await tester.tap(find.byKey(const ValueKey('pick-bot')));
     await tester.pumpAndSettle();
-    expect(find.text('Average etwa 65'), findsOneWidget);
+    expect(find.text('Schnitt etwa 65'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('bot-level-10')));
     await tester.pumpAndSettle();
     expect(find.text('Reihenfolge: Anna → Bot · Profi'), findsOneWidget);
