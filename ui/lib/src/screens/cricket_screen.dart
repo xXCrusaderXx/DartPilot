@@ -182,7 +182,8 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
     );
     Color? onCell(int i) => i == atOche && scoreboard ? palette.onHighlight : null;
 
-    Widget header(bool short, double width) => IntrinsicHeight(
+    // In a tight panel, such as a phone on its side, the points sit beside the name, so the numbers keep their rows.
+    Widget header(bool short, bool tight, double width) => IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -192,47 +193,54 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
               i,
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-                child: Column(
+                child: Flex(
+                  direction: tight ? Axis.horizontal : Axis.vertical,
                   mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // One line, cut short rather than broken inside a word; in a narrow column the player's colour
                     // is a bar under the name, so the dot leaves the name its room.
-                    Builder(
-                      builder: (context) {
-                        final colour = statistics?.colourOf(players[i].name);
-                        final narrow = (width - labelWidth) / players.length < 88;
-                        final name = Text(
-                          players[i].name,
-                          maxLines: 1,
-                          softWrap: false,
-                          overflow: TextOverflow.ellipsis,
-                          style: (far ? theme.textTheme.headlineSmall : theme.textTheme.titleMedium)?.copyWith(
-                            fontWeight: i == atOche ? FontWeight.w800 : FontWeight.w600,
-                            color: onCell(i),
-                          ),
-                        );
-                        if (narrow) {
-                          return Column(
+                    Flexible(
+                      fit: FlexFit.loose,
+                      flex: tight ? 1 : 0,
+                      child: Builder(
+                        builder: (context) {
+                          final colour = statistics?.colourOf(players[i].name);
+                          final narrow = (width - labelWidth) / players.length < 88;
+                          final name = Text(
+                            players[i].name,
+                            maxLines: 1,
+                            softWrap: false,
+                            overflow: TextOverflow.ellipsis,
+                            style: (far ? theme.textTheme.headlineSmall : theme.textTheme.titleMedium)?.copyWith(
+                              fontWeight: i == atOche ? FontWeight.w800 : FontWeight.w600,
+                              color: onCell(i),
+                            ),
+                          );
+                          if (narrow) {
+                            return Column(
+                              children: [
+                                name,
+                                if (colour != null)
+                                  Container(
+                                    height: 4,
+                                    margin: const EdgeInsets.only(top: 2),
+                                    decoration: BoxDecoration(color: colour, borderRadius: BorderRadius.circular(2)),
+                                  ),
+                              ],
+                            );
+                          }
+                          return Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              name,
-                              if (colour != null)
-                                Container(
-                                  height: 4,
-                                  margin: const EdgeInsets.only(top: 2),
-                                  decoration: BoxDecoration(color: colour, borderRadius: BorderRadius.circular(2)),
-                                ),
+                              if (colour != null) ...[PlayerDot(colour, ring: onCell(i)), const SizedBox(width: 6)],
+                              Flexible(child: name),
                             ],
                           );
-                        }
-                        return Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            if (colour != null) ...[PlayerDot(colour, ring: onCell(i)), const SizedBox(width: 6)],
-                            Flexible(child: name),
-                          ],
-                        );
-                      },
+                        },
+                      ),
                     ),
+                    if (tight) const SizedBox(width: 8),
                     FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text(
@@ -247,7 +255,7 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
                                 ?.copyWith(fontWeight: FontWeight.w800, color: onCell(i), height: 1.1),
                       ),
                     ),
-                    if (!short)
+                    if (!short && !tight)
                       Text(
                         '${l10n.marksPerRoundShort} ${decimal(l10n, players[i].marksPerRound, digits: 2)}',
                         key: ValueKey('mpr-${players[i].name}'),
@@ -270,7 +278,7 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
     Widget targetRow(int target, double height) {
       final label = target == 25 ? l10n.bull : '$target';
       final dead = players.every((p) => p.isClosed(target));
-      final markSize = (height * 0.62).clamp(18.0, far ? 84.0 : 44.0);
+      final markSize = (height * 0.62).clamp(14.0, far ? 84.0 : 44.0);
       return Container(
         key: ValueKey('cricket-row-$target'),
         height: height,
@@ -281,12 +289,15 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
             SizedBox(
               width: labelWidth,
               child: Center(
-                child: Text(
-                  label,
-                  style: (far ? theme.textTheme.headlineMedium : theme.textTheme.titleLarge)?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    decoration: dead ? TextDecoration.lineThrough : null,
-                    color: dead ? theme.colorScheme.onSurface.withValues(alpha: 0.4) : null,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    style: (far ? theme.textTheme.headlineMedium : theme.textTheme.titleLarge)?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      decoration: dead ? TextDecoration.lineThrough : null,
+                      color: dead ? theme.colorScheme.onSurface.withValues(alpha: 0.4) : null,
+                    ),
                   ),
                 ),
               ),
@@ -318,18 +329,20 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
         label: Text(l10n.undo),
       ),
     ];
-    // The marks grow into the room the panel has; where it has too little, they scroll between names and Undo.
+    // The marks grow into the room the panel has and shrink to fit a phone, upright or on its side, down to the bull;
+    // only where even that is too little do they scroll between names and Undo.
     final panel = LayoutBuilder(
       builder: (context, constraints) {
         final short = constraints.maxHeight < 420;
+        final tight = constraints.maxHeight < 360;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            header(short, constraints.maxWidth),
+            header(short, tight, constraints.maxWidth),
             Expanded(
               child: LayoutBuilder(
                 builder: (context, rows) {
-                  final height = (rows.maxHeight / cricketTargets.length).clamp(far ? 56.0 : 36.0, far ? 140.0 : 72.0);
+                  final height = (rows.maxHeight / cricketTargets.length).clamp(far ? 56.0 : 22.0, far ? 140.0 : 72.0);
                   final table = Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [for (final target in cricketTargets) targetRow(target, height)],
