@@ -25,6 +25,7 @@ import '../widgets/precision_plot.dart';
 import '../widgets/precision_text.dart';
 import 'game_throws_screen.dart';
 import 'round_game_screen.dart';
+import 'x01_setup_screen.dart';
 
 /// The player profiles of this device with their statistics; profiles are created and deleted here.
 class StatisticsScreen extends StatelessWidget {
@@ -343,6 +344,7 @@ class _RenameDialogState extends State<_RenameDialog> {
 
   Future<void> _save() async {
     final error = await StatisticsScope.read(context)!.renameProfile(widget.player, _name.text);
+    if (error == null) await LastX01.renamePlayer(widget.player, _name.text.trim());
     if (!mounted) return;
     if (error != null) {
       setState(() => _error = error);

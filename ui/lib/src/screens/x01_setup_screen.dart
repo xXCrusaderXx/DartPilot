@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -56,6 +57,27 @@ class LastX01 {
       // Nothing kept, or kept by a version that wrote it differently: the setup starts empty.
       return null;
     }
+  }
+
+  /// Gives the remembered line-up a renamed profile's new name, so the next game is kept under it. Bots keep theirs.
+  static Future<void> renamePlayer(String from, String to) async {
+    final last = await load();
+    if (last == null) return;
+    final s = last.settings;
+    final players = [
+      for (var i = 0; i < s.players.length; ++i) s.players[i] == from && !last.bots.containsKey(i) ? to : s.players[i],
+    ];
+    if (listEquals(players, s.players)) return;
+    await LastX01(
+      X01Settings(
+        players: players,
+        startScore: s.startScore,
+        doubleIn: s.doubleIn,
+        doubleOut: s.doubleOut,
+        legsToWin: s.legsToWin,
+      ),
+      last.bots,
+    ).save();
   }
 
   Future<void> save() async {

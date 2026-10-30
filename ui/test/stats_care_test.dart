@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:dartpilot/src/app.dart';
 import 'package:dartpilot/src/board/dart_throw.dart';
 import 'package:dartpilot/src/board/scoring.dart';
+import 'package:dartpilot/src/games/x01.dart';
+import 'package:dartpilot/src/screens/x01_setup_screen.dart';
 import 'package:dartpilot/src/stats/backup.dart';
 import 'package:dartpilot/src/stats/export.dart';
 import 'package:dartpilot/src/stats/game_record.dart';
@@ -13,6 +15,7 @@ import 'package:dartpilot/src/stats/statistics.dart';
 import 'package:dartpilot/src/stats/training_best.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'navigation.dart';
 
@@ -280,6 +283,9 @@ void main() {
   });
 
   testWidgets('a profile is renamed from its menu', (tester) async {
+    // The remembered X01 line-up follows the rename; a bot that happens to share the name keeps it.
+    SharedPreferences.setMockInitialValues({});
+    await const LastX01(X01Settings(players: ['Ana', 'Ana']), {1: 3}).save();
     final statistics = Statistics(MemoryGameStore(), MemoryProfileStore(['Ana']));
     await statistics.load();
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), statistics: statistics));
@@ -295,5 +301,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(statistics.profiles, ['Anna']);
     expect(find.byKey(const ValueKey('stats-player-Anna')), findsOneWidget);
+    final last = (await LastX01.load())!;
+    expect(last.settings.players, ['Anna', 'Ana']);
+    expect(last.bots, {1: 3});
   });
 }
