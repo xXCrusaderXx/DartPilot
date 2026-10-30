@@ -16,7 +16,7 @@ class PrefsGameStore implements GameStore {
     final records = <GameRecord>[];
     for (final entry in (await SharedPreferences.getInstance()).getStringList(_gamesKey) ?? const <String>[]) {
       try {
-        final record = GameRecord.fromJson(jsonDecode(entry) as Map<String, dynamic>);
+        final record = GameRecord.tryParse(jsonDecode(entry));
         if (record != null) records.add(record);
       } on FormatException {
         continue;
@@ -36,7 +36,7 @@ class PrefsGameStore implements GameStore {
     final text = (await SharedPreferences.getInstance()).getString(_runningKey);
     if (text == null) return null;
     try {
-      return GameRecord.fromJson(jsonDecode(text) as Map<String, dynamic>);
+      return GameRecord.tryParse(jsonDecode(text));
     } on FormatException {
       return null;
     }

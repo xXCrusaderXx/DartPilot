@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../board/dart_throw.dart';
+import '../bots/bot_turns.dart';
 import '../board/scoring.dart';
 import '../engine/engine_connection.dart';
 import '../engine/engine_events.dart';
@@ -57,6 +58,48 @@ class _GameInputState extends State<GameInput> {
   bool _takenOut = false;
 
   bool get _waiting => widget.takeout?.isClosed(widget.game) ?? false;
+
+  /// The engine throw ids among the game's darts when the input last looked; one missing later was undone in the app.
+  Set<String> _engineIds = {};
+
+  Set<String> get _gameEngineIds => {for (final t in widget.game.throws) ?t.engineThrowId};
+
+  @override
+  void initState() {
+    super.initState();
+    _engineIds = _gameEngineIds;
+  }
+
+  @override
+  void didUpdateWidget(GameInput old) {
+    super.didUpdateWidget(old);
+    _followUndo();
+  }
+
+  /// After the screen took darts back: the engine hears which of its darts no longer count, so its throw log stays the
+  /// game's. When the undo reopened a visit that waited for its takeout, the darts held for the next visit are not
+  /// that visit's: they are rejected rather than counted later, out of order.
+  void _followUndo() {
+    final ids = _gameEngineIds;
+    final engine = _engine;
+    for (final id in _engineIds.difference(ids)) {
+      engine?.rejectThrow(id, 'undone in the app');
+    }
+    _engineIds = ids;
+    if (_held.isNotEmpty && !_waiting) {
+      for (final event in _held) {
+        if (event is EngineThrow) engine?.rejectThrow(event.throwId, 'undone in the app');
+      }
+      _held.clear();
+    }
+  }
+
+  /// Whether the engine's throw `id` is counted already, waits for the takeout, or waits as an uncertain dart: the
+  /// same dart sent again must not count twice.
+  bool _known(String id) =>
+      _pending?.throwId == id ||
+      widget.game.throws.any((t) => t.engineThrowId == id) ||
+      _held.any((e) => e is EngineThrow && e.throwId == id || e is EngineThrowCorrected && e.throwId == id);
 
   @override
   void didChangeDependencies() {
@@ -115,6 +158,8 @@ class _GameInputState extends State<GameInput> {
       if (event is EngineTakeout) {
         _dartsRemoved();
       } else if (event is EngineThrow) {
+        if (!_known(event.throwId)) _held.add(event);
+      } else if (event is EngineThrowCorrected && _holds(event)) {
         _held.add(event);
       } else {
         _onVisitEvent(event);
@@ -124,9 +169,36 @@ class _GameInputState extends State<GameInput> {
     _onVisitEvent(event);
   }
 
+  /// A correction waits with the darts of the next visit when it adds a dart, which belongs to that visit, or changes
+  /// a dart that waits already.
+  bool _holds(EngineThrowCorrected event) =>
+      event.action == 'added' || _held.any((e) => e is EngineThrow && e.throwId == event.throwId);
+
+  /// Takes the dart at `index` out of the game, wherever in the game it is: the darts after it are thrown again in the
+  /// same order. They keep their place, not their player, so in a bot game a bot's dart can move into the visit before.
+  /// The last dart that counts goes through the screen, so a leg or match it now wins is announced as when thrown.
+  void _remove(int index) {
+    final game = widget.game;
+    final after = game.throws.sublist(index + 1);
+    for (var i = game.throws.length; i > index; --i) {
+      game.undo();
+    }
+    after.forEach(game.add);
+    // A dart fewer here is no undo: the bots must not take back further darts for it.
+    context.findAncestorStateOfType<BotTurns>()?.dartsReplaced();
+    if (game.throws.length > index) {
+      final last = game.throws.last;
+      game.undo();
+      widget.onDart(last);
+    }
+    _engineIds = _gameEngineIds;
+    widget.onChanged();
+  }
+
   void _onVisitEvent(EngineEvent event) {
     switch (event) {
       case EngineThrow(:final accepted, :final point, :final throwId, :final confidence):
+        if (_known(throwId)) return;
         if (accepted) {
           // An accepted dart without a point bounced out or landed off the board.
           _add(_engineDart(point ?? fieldCentre(Ring.miss, geometry: _geometry), throwId, confidence));
@@ -139,11 +211,13 @@ class _GameInputState extends State<GameInput> {
         if (action == 'corrected' && index >= 0 && point != null) {
           widget.game.replace(index, _engineDart(point, throwId, null));
           widget.onChanged();
-        } else if (action == 'added' && point != null) {
+        } else if (action == 'added' && point != null && !_known(throwId)) {
           _add(_engineDart(point, throwId, null));
-        } else if (action == 'rejected' && index == widget.game.throws.length - 1) {
-          widget.game.undo();
-          widget.onChanged();
+        } else if (action == 'rejected' && index >= 0) {
+          _remove(index);
+        } else if (action == 'rejected' && _pending?.throwId == throwId) {
+          setState(() => _pending = null);
+          _pendingSettled();
         }
       case EngineTakeout():
         _onTakeout();

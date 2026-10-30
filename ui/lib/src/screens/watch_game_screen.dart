@@ -27,7 +27,7 @@ class WatchGameScreen extends StatelessWidget {
 
   Widget _build(BuildContext context, SharedGame? shared) {
     final l10n = AppLocalizations.of(context);
-    final record = shared?.game == null ? null : GameRecord.fromJson(shared!.game!);
+    final record = GameRecord.tryParse(shared?.game);
     if (record == null) {
       return Scaffold(
         appBar: AppBar(title: Text(l10n.watchGame)),
@@ -145,7 +145,7 @@ class SharedGameCard extends StatelessWidget {
     if (shared == null || shared.client == EngineScope.read(context).clientName || shared.game == null) {
       return const SizedBox.shrink();
     }
-    final record = GameRecord.fromJson(shared.game!);
+    final record = GameRecord.tryParse(shared.game);
     if (record == null) return const SizedBox.shrink();
     final mode = gameTitle(l10n, record);
     return Card(

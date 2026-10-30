@@ -80,7 +80,8 @@ List<String> killerCalls(KillerGame game, {required List<int> livesBefore, requi
   return calls;
 }
 
-/// A checkout route as a caller reads it: "Treble 20, treble 19, double 12"
+/// A checkout route as a caller reads it: "Treble 20, treble 19, double 12"; takes the fields as [suggestCheckout]
+/// or [routeText] names them
 String callRoute(List<String> route) {
   final words = [
     for (final field in route)
@@ -88,7 +89,7 @@ String callRoute(List<String> route) {
         'T' => 'treble ${field.substring(1)}',
         'D' => 'double ${field.substring(1)}',
         'S' => field.substring(1),
-        _ => field == '50' ? 'bull' : field,
+        _ => field == '50' || field == 'Bull' ? 'bull' : field,
       },
   ];
   final text = words.join(', ');

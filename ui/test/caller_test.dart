@@ -124,6 +124,7 @@ void main() {
     expect(callRoute(['T20', 'T19', 'D12']), 'Treble 20, treble 19, double 12');
     expect(callRoute(['S10', '50']), '10, bull');
     expect(callRoute(['25', 'D20']), '25, double 20');
+    expect(callRoute(['T20', '20', 'Bull']), 'Treble 20, 20, bull');
   });
 
   testWidgets('the checkout route is said on request, also with the caller off', (tester) async {
