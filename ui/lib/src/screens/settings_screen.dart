@@ -11,6 +11,7 @@ import '../widgets/appearance_tiles.dart';
 import '../widgets/board_check.dart';
 import '../widgets/engine_card.dart';
 import '../widgets/paired_devices.dart';
+import 'about_screen.dart';
 import 'calibration_check_screen.dart';
 import 'calibration_screen.dart';
 import 'cameras_screen.dart';
@@ -61,6 +62,14 @@ class SettingsScreen extends StatelessWidget {
                 onTap: () => open(const SoundSettingsScreen()),
               ),
               _CamerasEntry(onOpen: () => open(CameraSettingsScreen(onConnect: onConnect))),
+              ListTile(
+                key: const ValueKey('settings-page-about'),
+                leading: const Icon(Icons.info_outline),
+                title: Text(l10n.aboutTitle),
+                subtitle: Text(l10n.aboutHint),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => open(const AboutScreen()),
+              ),
             ],
           ),
         ),

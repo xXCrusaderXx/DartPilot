@@ -1,9 +1,12 @@
 import 'package:dartpilot/l10n/app_localizations.dart';
+import 'package:dartpilot/src/app.dart';
 import 'package:dartpilot/src/app_info.dart';
 import 'package:dartpilot/src/screens/about_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'navigation.dart';
 
 Widget _app(Widget child, {Locale locale = const Locale('en')}) => MaterialApp(
   locale: locale,
@@ -64,5 +67,14 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('about-third-party')));
     await tester.pumpAndSettle();
     expect(find.byType(LicensePage), findsOneWidget);
+  });
+
+  testWidgets('the settings lead to the About page', (tester) async {
+    await tester.pumpWidget(const DartPilotApp(locale: Locale('en')));
+    await playOffline(tester);
+    await openSettings(tester);
+    await tester.tap(find.byKey(const ValueKey('settings-page-about')));
+    await tester.pumpAndSettle();
+    expect(find.byType(AboutScreen), findsOneWidget);
   });
 }
