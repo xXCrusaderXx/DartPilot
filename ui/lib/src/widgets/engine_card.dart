@@ -423,9 +423,9 @@ class LocalEnginePanel extends StatelessWidget {
                 key: const ValueKey('engine-choose-program'),
                 onPressed: () => showDialog<void>(
                   context: context,
-                  builder: (_) => _EngineLogDialog(local: local),
+                  builder: (_) => _EngineLogDialog(local: local, withLog: false),
                 ),
-                icon: const Icon(Icons.folder_open_outlined),
+                icon: const Icon(Icons.edit_outlined),
                 label: Text(l10n.engineChooseProgram),
               ),
             TextButton.icon(
@@ -460,11 +460,12 @@ class LocalEnginePanel extends StatelessWidget {
   }
 }
 
-/// The local engine's output, and the program it runs
+/// The local engine's output, and the program it runs; [withLog] false asks only for the program, and starts it
 class _EngineLogDialog extends StatefulWidget {
-  const _EngineLogDialog({required this.local});
+  const _EngineLogDialog({required this.local, this.withLog = true});
 
   final LocalEngineScope local;
+  final bool withLog;
 
   @override
   State<_EngineLogDialog> createState() => _EngineLogDialogState();
@@ -485,46 +486,66 @@ class _EngineLogDialogState extends State<_EngineLogDialog> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final manager = LocalEngineScope.maybeOf(context)?.notifier ?? widget.local.notifier!;
+    final withLog = widget.withLog;
     return AlertDialog(
-      title: Text(l10n.engineLog),
+      key: ValueKey(withLog ? 'engine-log-dialog' : 'engine-program-dialog'),
+      title: Text(withLog ? l10n.engineLog : l10n.engineProgram),
       content: SizedBox(
-        width: 720,
+        width: withLog ? 720 : 560,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             TextField(
+              key: const ValueKey('engine-program-field'),
               controller: _program,
+              autofocus: !withLog,
               decoration: InputDecoration(labelText: l10n.engineProgram, helperText: l10n.engineProgramHint),
-              onSubmitted: _saveProgram,
+              onSubmitted: withLog ? _saveProgram : (_) => _start(context),
             ),
-            const SizedBox(height: 12),
-            Flexible(
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                color: Colors.black,
-                child: SingleChildScrollView(
-                  reverse: true,
-                  child: SelectableText(
-                    manager.log.isEmpty ? l10n.engineLogEmpty : manager.log.join('\n'),
-                    style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+            if (withLog) ...[
+              const SizedBox(height: 12),
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  color: Colors.black,
+                  child: SingleChildScrollView(
+                    reverse: true,
+                    child: SelectableText(
+                      manager.log.isEmpty ? l10n.engineLogEmpty : manager.log.join('\n'),
+                      style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
       ),
       actions: [
         TextButton(
           onPressed: () {
-            _saveProgram(_program.text);
+            if (withLog) _saveProgram(_program.text);
             Navigator.of(context).pop();
           },
-          child: Text(l10n.close),
+          child: Text(withLog ? l10n.close : l10n.cancel),
         ),
+        if (!withLog)
+          FilledButton(
+            key: const ValueKey('engine-program-start'),
+            onPressed: () => _start(context),
+            child: Text(l10n.startEngine),
+          ),
       ],
     );
+  }
+
+  /// Keeps the program and starts it right away, so the player sees whether it was the right one
+  void _start(BuildContext context) {
+    _saveProgram(_program.text);
+    final local = widget.local;
+    unawaited(startLocalEngine(local.notifier!, EngineScope.of(context), local.settings));
+    Navigator.of(context).pop();
   }
 
   void _saveProgram(String value) {

@@ -44,6 +44,10 @@ class EngineSettings extends ChangeNotifier {
   /// Path of the engine program when the player chose one; found automatically otherwise
   String? executable;
 
+  /// The player stopped reaching the chosen engine for this run of the app and enters darts by hand meanwhile; the
+  /// choice itself stays, so the next start reaches the engine again. Not stored.
+  bool pausedForNow = false;
+
   static const _mode = 'engine.mode';
   static const _url = 'engine.url';
   static const _simulate = 'engine.simulate';
@@ -76,8 +80,22 @@ class EngineSettings extends ChangeNotifier {
   void choose({required bool byHand}) {
     chosen = true;
     this.byHand = byHand;
+    pausedForNow = false;
     notifyListeners();
     save();
+  }
+
+  /// Darts by hand until the player tries the chosen engine again or the app starts anew
+  void pauseForNow() {
+    pausedForNow = true;
+    notifyListeners();
+  }
+
+  /// Trying the chosen engine again ends a pause
+  void resume() {
+    if (!pausedForNow) return;
+    pausedForNow = false;
+    notifyListeners();
   }
 
   Future<void> save() async {
@@ -105,12 +123,21 @@ Future<void> startLocalEngine(EngineManager manager, EngineConnection connection
 
 /// Connects to the engine the player chose: starts the one on this device, or reaches the one in the network.
 Future<void> connectChosenEngine(EngineSettings settings, EngineConnection connection, EngineManager? manager) async {
+  settings.resume();
   if (settings.mode == EngineMode.thisDevice && manager != null) {
     await startLocalEngine(manager, connection, settings);
   } else {
     await connection.connect(settings.url);
   }
 }
+
+/// The engine on this device is on its way up as the chosen way of counting: not reachable yet, but not out of reach
+bool chosenLocalEngineStarting(EngineSettings? settings, EngineManager? manager) =>
+    settings != null &&
+    settings.chosen &&
+    !settings.byHand &&
+    settings.mode == EngineMode.thisDevice &&
+    manager?.state == LocalEngineState.starting;
 
 /// How the darts are counted, on every platform; the app follows a change of the choice
 class EngineSettingsScope extends InheritedNotifier<EngineSettings> {

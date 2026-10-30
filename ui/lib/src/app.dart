@@ -270,7 +270,11 @@ class _ReconnectBanner extends StatelessWidget {
                   const SizedBox(width: 8),
                   TextButton(
                     key: const ValueKey('reconnect-stop'),
-                    onPressed: engine.disconnect,
+                    // Only for now: the chosen engine stays chosen, and home offers to try it again.
+                    onPressed: () {
+                      EngineSettingsScope.maybeOf(context)?.pauseForNow();
+                      engine.disconnect();
+                    },
                     child: Text(l10n.reconnectStop),
                   ),
                 ],

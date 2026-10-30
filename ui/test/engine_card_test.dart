@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dartpilot/src/app.dart';
+import 'package:dartpilot/src/engine/engine_choice.dart';
 import 'package:dartpilot/src/engine/engine_connection.dart';
 import 'package:dartpilot/src/engine/engine_discovery.dart';
 import 'package:flutter/material.dart';
@@ -49,7 +50,9 @@ void main() {
     expect(find.byKey(const ValueKey('engine-reconnecting')), findsOneWidget);
   });
 
-  testWidgets('a drop keeps home open, and an engine that stays away can be left for darts by hand', (tester) async {
+  testWidgets('a drop keeps home open, and an engine that stays away can be left for darts by hand for now', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(412, 915);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -63,7 +66,8 @@ void main() {
       discovery: EngineDiscovery(const []),
     );
     addTearDown(engine.dispose);
-    await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
+    final settings = EngineSettings(store: false);
+    await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine, settings: settings));
     unawaited(engine.connect('ws://192.168.1.20:8484/'));
     await tester.pump();
     incoming.add(jsonEncode(hello));
@@ -77,7 +81,8 @@ void main() {
     expect(engine.reconnecting, isTrue);
     expect(find.text('Verbindung zur Kamera-Erkennung verloren – verbinde neu…'), findsWidgets);
 
-    // After a few tries the banner says to go on by hand, and stopping leaves home with a way to try again.
+    // After a few tries the banner says to go on by hand. That is for now: home says calmly that darts go in by
+    // hand, offers another try, and the engine stays the choice for the next start.
     for (final delay in [...EngineConnection.reconnectDelays, EngineConnection.reconnectDelays.last]) {
       await tester.pump(delay);
     }
@@ -88,8 +93,18 @@ void main() {
     expect(engine.reconnecting, isFalse);
     expect(find.byKey(const ValueKey('engine-reconnecting')), findsNothing);
     expect(find.byType(NavigationBar), findsOneWidget);
-    expect(find.text('Kamera-Erkennung nicht erreichbar – trag die Darts von Hand ein'), findsOneWidget);
+    expect(find.text('Kamera-Erkennung nicht erreichbar – trag die Darts von Hand ein'), findsNothing);
+    expect(find.text('Darts von Hand – keine Kameras verbunden'), findsOneWidget);
     expect(find.byKey(const ValueKey('home-retry')), findsOneWidget);
+    expect(settings.chosen, isTrue);
+    expect(settings.byHand, isFalse);
+    expect(settings.pausedForNow, isTrue);
+
+    // Trying again ends the pause; out of reach, home warns again.
+    await tester.tap(find.byKey(const ValueKey('home-retry')));
+    await tester.pumpAndSettle();
+    expect(settings.pausedForNow, isFalse);
+    expect(find.text('Kamera-Erkennung nicht erreichbar – trag die Darts von Hand ein'), findsOneWidget);
   });
 }
 

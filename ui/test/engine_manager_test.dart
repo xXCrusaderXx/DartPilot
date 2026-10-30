@@ -243,6 +243,93 @@ void main() {
     expect((await SharedPreferences.getInstance()).getString('engine.mode'), 'network');
   });
 
+  testWidgets('while the engine on this device starts, home waits for it, and warns only once it failed', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(412, 915);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final process = FakeProcess();
+    var starts = 0;
+    final manager = EngineManager(
+      start: (_, args) async {
+        starts++;
+        return process;
+      },
+      findEngine: () => program,
+      freePort: () async => 8500,
+      readyTimeout: const Duration(seconds: 20),
+    );
+    final engine = EngineConnection(
+      connector: (_) => throw const SocketException('no engine in tests'),
+      discovery: EngineDiscovery(const []),
+    );
+    addTearDown(engine.dispose);
+    addTearDown(manager.dispose);
+    final settings = EngineSettings(mode: EngineMode.thisDevice, chosen: true, store: false);
+    await tester.pumpWidget(
+      DartPilotApp(locale: const Locale('de'), engine: engine, manager: manager, settings: settings),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 5));
+    expect(manager.state, LocalEngineState.starting);
+    expect(engine.state, isNot(EngineConnectionState.connecting));
+    expect(find.text('Verbinde mit der Kamera-Erkennung…'), findsOneWidget);
+    expect(find.byKey(const ValueKey('home-retry')), findsNothing);
+    expect(find.byKey(const ValueKey('home-change')), findsNothing);
+
+    // The engine does not answer: now home says so and offers another try.
+    await tester.pump(const Duration(seconds: 16));
+    await tester.pump();
+    expect(manager.state, LocalEngineState.failed);
+    expect(find.text('Kamera-Erkennung nicht erreichbar – trag die Darts von Hand ein'), findsOneWidget);
+    expect(find.byKey(const ValueKey('home-retry')), findsOneWidget);
+    expect(starts, 1);
+  });
+
+  testWidgets('an engine program that is not found can be set in a dialog of its own, which starts it', (tester) async {
+    tester.view.physicalSize = const Size(1000, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    SharedPreferences.setMockInitialValues({});
+    final started = <String>[];
+    final manager = EngineManager(
+      start: (executable, args) async {
+        started.add(executable);
+        return FakeProcess();
+      },
+      findEngine: () => null,
+      freePort: () async => 8500,
+    );
+    final engine = EngineConnection(
+      connector: (_) => throw const SocketException('no engine in tests'),
+      discovery: EngineDiscovery(const []),
+    );
+    addTearDown(engine.dispose);
+    addTearDown(manager.dispose);
+    final settings = EngineSettings(mode: EngineMode.thisDevice, store: false);
+    await tester.pumpWidget(
+      DartPilotApp(locale: const Locale('de'), engine: engine, manager: manager, settings: settings),
+    );
+    await tester.tap(find.byKey(const ValueKey('local-engine-start')));
+    await tester.pumpAndSettle();
+    expect(manager.error, LocalEngineError.notFound);
+
+    await tester.tap(find.byKey(const ValueKey('engine-choose-program')));
+    await tester.pumpAndSettle();
+    // Only the program, not the log
+    expect(find.byKey(const ValueKey('engine-program-dialog')), findsOneWidget);
+    expect(find.byKey(const ValueKey('engine-log-dialog')), findsNothing);
+    await tester.enterText(find.byKey(const ValueKey('engine-program-field')), program);
+    await tester.tap(find.byKey(const ValueKey('engine-program-start')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('engine-program-dialog')), findsNothing);
+    expect(settings.executable, program);
+    expect(started, [program]);
+    expect(manager.state, LocalEngineState.starting);
+    await manager.stop();
+  });
+
   test('the choice survives a restart', () async {
     SharedPreferences.setMockInitialValues({});
     await (EngineSettings(

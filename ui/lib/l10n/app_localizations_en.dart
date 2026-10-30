@@ -2459,7 +2459,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reconnectStop => 'Continue by hand';
 
   @override
-  String get engineChooseProgram => 'Choose program…';
+  String get engineChooseProgram => 'Set engine program';
 
   @override
   String get setupHintTitle => 'The cameras are not fully set up yet';

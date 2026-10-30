@@ -84,11 +84,12 @@ class _CamerasEntry extends StatelessWidget {
       builder: (context, state) {
         final (connected, connection, reconnecting, status) = state;
         final settings = EngineSettingsScope.maybeOf(context);
+        final starting = chosenLocalEngineStarting(settings, LocalEngineScope.maybeOf(context)?.notifier);
         final summary = connected
             ? (status.needsAttention ? l10n.settingsSetupIncomplete : l10n.engineConnected)
-            : reconnecting || connection == EngineConnectionState.connecting
+            : reconnecting || connection == EngineConnectionState.connecting || starting
             ? l10n.engineConnecting
-            : settings == null || settings.byHand || !settings.chosen
+            : settings == null || settings.byHand || !settings.chosen || settings.pausedForNow
             ? l10n.settingsCamerasByHand
             : l10n.homeUnreachable;
         return ListTile(

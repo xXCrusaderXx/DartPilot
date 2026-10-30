@@ -4379,7 +4379,7 @@ abstract class AppLocalizations {
   /// No description provided for @engineChooseProgram.
   ///
   /// In en, this message translates to:
-  /// **'Choose program…'**
+  /// **'Set engine program'**
   String get engineChooseProgram;
 
   /// No description provided for @setupHintTitle.

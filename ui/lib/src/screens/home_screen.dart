@@ -216,8 +216,19 @@ class _StatusCard extends StatelessWidget {
     final settings = EngineSettingsScope.maybeOf(context);
     final connected = engine.isConnected;
     final byHand = settings == null || settings.byHand || !settings.chosen;
-    final trying = engine.reconnecting || engine.state == EngineConnectionState.connecting;
-    // Connected, by hand, on the way to the engine, or the engine chosen but out of reach
+    final manager = LocalEngineScope.maybeOf(context)?.notifier;
+    // The engine on this device takes a while to start, and the connection waits for it meanwhile.
+    final trying =
+        engine.reconnecting ||
+        engine.state == EngineConnectionState.connecting ||
+        chosenLocalEngineStarting(settings, manager);
+    Widget retry() => TextButton(
+      key: const ValueKey('home-retry'),
+      onPressed: () => connectChosenEngine(settings!, engine, manager),
+      child: Text(l10n.engineRetry),
+    );
+    final change = TextButton(key: const ValueKey('home-change'), onPressed: onConnect, child: Text(l10n.homeChange));
+    // Connected, by hand, on the way to the engine, by hand for now, or the engine chosen but out of reach
     final (Widget icon, String text, List<Widget> actions) = connected
         ? (
             Icon(Icons.link, color: colours.good),
@@ -246,19 +257,15 @@ class _StatusCard extends StatelessWidget {
               ),
             ],
           )
-        : (
-            Icon(Icons.link_off, color: colours.warning),
-            l10n.homeUnreachable,
-            [
-              TextButton(key: const ValueKey('home-change'), onPressed: onConnect, child: Text(l10n.homeChange)),
-              TextButton(
-                key: const ValueKey('home-retry'),
-                onPressed: () => connectChosenEngine(settings, engine, LocalEngineScope.maybeOf(context)?.notifier),
-                child: Text(l10n.engineRetry),
-              ),
-            ],
-          );
-    final inline = actions.length == 1 && WindowClass.of(context) != WindowClass.compact;
+        // The player stopped trying: no warning, that was a choice.
+        : settings.pausedForNow
+        ? (
+            Icon(Icons.touch_app_outlined, color: theme.colorScheme.onSurfaceVariant),
+            l10n.playingWithoutEngine,
+            [change, retry()],
+          )
+        : (Icon(Icons.link_off, color: colours.warning), l10n.homeUnreachable, [change, retry()]);
+    final inline = WindowClass.of(context) != WindowClass.compact;
     // A flat line, not a card: cards are for what can be played
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -277,7 +284,7 @@ class _StatusCard extends StatelessWidget {
                 if (inline) ...actions,
               ],
             ),
-            // On a phone, or with two of them, the ways on go below the line, where there is room for them
+            // On a phone the ways on go below the line, where there is room for them
             if (!inline && actions.isNotEmpty) Wrap(alignment: WrapAlignment.end, children: actions),
             // A missing setup step has a line of its own below; this one says only what holds the darts back now.
             if (connected &&

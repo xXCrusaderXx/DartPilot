@@ -731,7 +731,7 @@
   "homeChange": "Ändern",
   "engineReconnectingLong": "Kamera-Erkennung nicht erreichbar – trag die Darts von Hand ein, bis sie wieder da ist.",
   "reconnectStop": "Von Hand weiter",
-  "engineChooseProgram": "Programm wählen…",
+  "engineChooseProgram": "Engine-Programm angeben",
   "setupHintTitle": "Die Kameras sind noch nicht fertig eingerichtet",
   "setupHintNext": "Nächster Schritt: {step}",
   "setupHintHide": "Ausblenden",

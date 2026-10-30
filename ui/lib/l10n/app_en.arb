@@ -1631,7 +1631,7 @@
   "homeChange": "Change",
   "engineReconnectingLong": "Camera detection not reachable – enter the darts by hand until it is back.",
   "reconnectStop": "Continue by hand",
-  "engineChooseProgram": "Choose program…",
+  "engineChooseProgram": "Set engine program",
   "setupHintTitle": "The cameras are not fully set up yet",
   "setupHintNext": "Next step: {step}",
   "@setupHintNext": {
