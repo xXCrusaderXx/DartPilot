@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import '../display.dart';
 import '../theme.dart';
 import '../../l10n/app_localizations.dart';
+import '../engine/camera_order.dart';
+import '../engine/engine_choice.dart';
 import '../engine/engine_connection.dart';
+import '../engine/setup_status.dart';
 import '../stats/statistics.dart';
 import '../widgets/board_check.dart';
 import '../widgets/player_picker.dart';
@@ -11,15 +14,16 @@ import 'around_the_clock_screen.dart';
 import 'cricket_screen.dart';
 import 'more_games_screen.dart';
 import 'precision_training_screen.dart';
+import 'settings_screen.dart';
 import 'training_screen.dart';
 import 'watch_game_screen.dart';
 import 'x01_setup_screen.dart';
 
-/// The hub once the app is set up: the engine's state, the games to play locally or solo, and playing together.
+/// The hub once the app is set up: how darts are counted right now, and the games.
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key, required this.onConnect});
 
-  /// Opens the connection page, when playing without an engine
+  /// Opens the choice of how darts are counted
   final VoidCallback onConnect;
 
   @override
@@ -28,7 +32,7 @@ class HomeScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final modes = [
       (
-        Icons.flag,
+        Icons.scoreboard_outlined,
         l10n.modeX01,
         l10n.modeX01Description,
         () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const X01SetupScreen())),
@@ -77,6 +81,7 @@ class HomeScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             children: [
               _StatusCard(onConnect: onConnect),
+              const _SetupHint(),
               const SharedGameCard(),
               const _InterruptedGameCard(),
               if (StatisticsScope.maybeOf(context)?.profiles.isEmpty ?? false) ...[
@@ -87,7 +92,17 @@ class HomeScreen extends StatelessWidget {
                     leading: const Icon(Icons.person_add, size: 32),
                     title: Text(l10n.firstProfileTitle),
                     subtitle: Text(l10n.firstProfileText),
-                    trailing: FilledButton(onPressed: () => createProfile(context), child: Text(l10n.newProfile)),
+                    trailing: FilledButton(
+                      onPressed: () async {
+                        final messenger = ScaffoldMessenger.of(context);
+                        final name = await createProfile(context);
+                        if (name == null) return;
+                        messenger.showSnackBar(
+                          SnackBar(key: const ValueKey('profile-created'), content: Text(l10n.profileCreated(name))),
+                        );
+                      },
+                      child: Text(l10n.newProfile),
+                    ),
                   ),
                 ),
               ],
@@ -99,7 +114,7 @@ class HomeScreen extends StatelessWidget {
                   Card(
                     child: ListTile(
                       key: ValueKey('mode-$title'),
-                      leading: Icon(icon, size: 32),
+                      leading: Icon(icon, size: 32, color: theme.colorScheme.primary),
                       title: Text(title),
                       subtitle: Text(description),
                       trailing: const Icon(Icons.chevron_right),
@@ -108,18 +123,6 @@ class HomeScreen extends StatelessWidget {
                   )
               else
                 _ModeGrid(columns: window == WindowClass.large ? 3 : 2, modes: modes),
-              const SizedBox(height: 24),
-              Text(l10n.playTogether, style: theme.textTheme.titleLarge),
-              const SizedBox(height: 12),
-              Card(
-                child: ListTile(
-                  key: const ValueKey('lobby'),
-                  enabled: false,
-                  leading: const Icon(Icons.groups, size: 32),
-                  title: Text(l10n.lobby),
-                  subtitle: Text(l10n.lobbyComingSoon),
-                ),
-              ),
             ],
           ),
         ),
@@ -185,7 +188,7 @@ class _ModeGrid extends StatelessWidget {
   }
 }
 
-/// One line about the engine, and the board warning while darts are in it
+/// One line on how darts are counted right now, and the board warning while darts are in it
 class _StatusCard extends StatelessWidget {
   const _StatusCard({required this.onConnect});
 
@@ -194,8 +197,14 @@ class _StatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return EngineSelect(
-      select: (engine) =>
-          (engine.isConnected, engine.hello, engine.detection, engine.detectionReason, engine.calibration),
+      select: (engine) => (
+        engine.state,
+        engine.reconnecting,
+        engine.hello,
+        engine.detection,
+        engine.detectionReason,
+        engine.calibration,
+      ),
       builder: (context, _) => _card(context, EngineScope.read(context)),
     );
   }
@@ -203,7 +212,60 @@ class _StatusCard extends StatelessWidget {
   Widget _card(BuildContext context, EngineConnection engine) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    final colours = StatusColors.of(context);
+    final settings = EngineSettingsScope.maybeOf(context);
     final connected = engine.isConnected;
+    final byHand = settings == null || settings.byHand || !settings.chosen;
+    final manager = LocalEngineScope.maybeOf(context)?.notifier;
+    // The engine on this device takes a while to start, and the connection waits for it meanwhile.
+    final trying =
+        engine.reconnecting ||
+        engine.state == EngineConnectionState.connecting ||
+        chosenLocalEngineStarting(settings, manager);
+    Widget retry() => TextButton(
+      key: const ValueKey('home-retry'),
+      onPressed: () => connectChosenEngine(settings!, engine, manager),
+      child: Text(l10n.engineRetry),
+    );
+    final change = TextButton(key: const ValueKey('home-change'), onPressed: onConnect, child: Text(l10n.homeChange));
+    // Connected, by hand, on the way to the engine, by hand for now, or the engine chosen but out of reach
+    final (Widget icon, String text, List<Widget> actions) = connected
+        ? (
+            Icon(Icons.link, color: colours.good),
+            engine.hello?.mode == 'simulate' ? l10n.homeConnectedSimulated : l10n.homeConnected,
+            const <Widget>[],
+          )
+        : trying
+        ? (
+            const SizedBox.square(
+              dimension: 24,
+              child: Padding(padding: EdgeInsets.all(3), child: CircularProgressIndicator(strokeWidth: 2)),
+            ),
+            // The banner above says that the connection is lost; this line says what to do meanwhile.
+            engine.reconnecting ? l10n.homeReconnecting : l10n.homeConnecting,
+            const <Widget>[],
+          )
+        : byHand
+        ? (
+            Icon(Icons.touch_app_outlined, color: theme.colorScheme.onSurfaceVariant),
+            l10n.playingWithoutEngine,
+            [
+              TextButton(
+                key: const ValueKey('home-connect'),
+                onPressed: onConnect,
+                child: Text(l10n.homeConnectCameras),
+              ),
+            ],
+          )
+        // The player stopped trying: no warning, that was a choice.
+        : settings.pausedForNow
+        ? (
+            Icon(Icons.touch_app_outlined, color: theme.colorScheme.onSurfaceVariant),
+            l10n.playingWithoutEngine,
+            [change, retry()],
+          )
+        : (Icon(Icons.link_off, color: colours.warning), l10n.homeUnreachable, [change, retry()]);
+    final inline = WindowClass.of(context) != WindowClass.compact;
     // A flat line, not a card: cards are for what can be played
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -216,25 +278,15 @@ class _StatusCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(
-                  connected ? Icons.link : Icons.keyboard,
-                  color: connected ? StatusColors.of(context).good : theme.disabledColor,
-                ),
+                icon,
                 const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    connected
-                        ? engine.hello?.mode == 'simulate'
-                              ? l10n.engineConnectedSimulated
-                              : l10n.engineConnected
-                        : l10n.playingWithoutEngine,
-                    key: const ValueKey('engine-state'),
-                  ),
-                ),
-                if (!connected) TextButton(onPressed: onConnect, child: Text(l10n.connect)),
+                Expanded(child: Text(text, key: const ValueKey('engine-state'))),
+                if (inline) ...actions,
               ],
             ),
-            // A setup step that is missing shows on the settings tab, not here; home keeps what matters while playing.
+            // On a phone the ways on go below the line, where there is room for them
+            if (!inline && actions.isNotEmpty) Wrap(alignment: WrapAlignment.end, children: actions),
+            // A missing setup step has a line of its own below; this one says only what holds the darts back now.
             if (connected &&
                 engine.detection != 'running' &&
                 engine.detectionReason != 'not_calibrated' &&
@@ -246,7 +298,7 @@ class _StatusCard extends StatelessWidget {
                   children: [
                     Icon(
                       engine.detection == 'paused' ? Icons.pause_circle_outline : Icons.visibility_off_outlined,
-                      color: StatusColors.of(context).warning,
+                      color: colours.warning,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -259,6 +311,56 @@ class _StatusCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// While cameras are connected but their setup is not finished: one line that opens the first open step, until the
+/// player hides it for this session
+class _SetupHint extends StatefulWidget {
+  const _SetupHint();
+
+  @override
+  State<_SetupHint> createState() => _SetupHintState();
+}
+
+class _SetupHintState extends State<_SetupHint> {
+  bool _hidden = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (_hidden) return const SizedBox.shrink();
+    final order = CameraOrderScope.of(context);
+    return EngineSelect(
+      select: (engine) => (engine.hello?.cameras.isNotEmpty ?? false) ? SetupStatus.of(engine, order).firstOpen : null,
+      builder: (context, step) {
+        if (step == null) return const SizedBox.shrink();
+        final l10n = AppLocalizations.of(context);
+        final name = switch (step) {
+          SetupStep.assignment => l10n.assignCameras,
+          SetupStep.calibration => l10n.calibration,
+          SetupStep.check => l10n.calibrationCheck,
+          SetupStep.emptyBoard => l10n.storeEmptyReference,
+        };
+        return Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Card(
+            key: const ValueKey('setup-hint'),
+            child: ListTile(
+              leading: Icon(Icons.build_circle_outlined, color: StatusColors.of(context).warning),
+              title: Text(l10n.setupHintTitle),
+              subtitle: Text(l10n.setupHintNext(name)),
+              onTap: () => openSetupStep(context, step),
+              trailing: IconButton(
+                key: const ValueKey('setup-hint-hide'),
+                tooltip: l10n.setupHintHide,
+                icon: const Icon(Icons.close),
+                onPressed: () => setState(() => _hidden = true),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

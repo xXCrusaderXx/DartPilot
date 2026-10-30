@@ -47,7 +47,7 @@ void main() {
     final display = DisplaySettings(store: false);
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), display: display));
     await playOffline(tester);
-    await openSettings(tester);
+    await openSettingsPage(tester, 'display');
 
     await showSettingsEntry(tester, 'board-colours');
     await tester.ensureVisible(find.byKey(const ValueKey('board-colours')));

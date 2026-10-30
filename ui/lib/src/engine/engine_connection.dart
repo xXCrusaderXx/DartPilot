@@ -81,6 +81,9 @@ class EngineConnection extends ChangeNotifier {
   Timer? _reconnectTimer;
   int _reconnectAttempts = 0;
 
+  /// Tries since the engine went away
+  int get reconnectAttempts => _reconnectAttempts;
+
   String url = defaultUrl;
   EngineConnectionState state = EngineConnectionState.disconnected;
   EngineHello? hello;

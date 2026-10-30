@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../engine/engine_choice.dart';
 import '../engine/engine_connection.dart';
 import 'connect_screen.dart';
 import 'home_screen.dart';
@@ -11,8 +12,8 @@ import '../engine/camera_order.dart';
 import '../engine/setup_status.dart';
 import '../theme.dart';
 
-/// The app's root: the connection page until an engine is connected (or the player chose to play without one), then
-/// the main view. A lost connection leads back to the connection page; games opened on top of it stay open.
+/// The app's root: on the first start the choice of how darts are counted, then the main view. The main view stays
+/// while a connection drops or the engine cannot be reached; home says so. Games opened on top of it stay open.
 class RootScreen extends StatefulWidget {
   const RootScreen({super.key});
 
@@ -21,24 +22,34 @@ class RootScreen extends StatefulWidget {
 }
 
 class _RootScreenState extends State<RootScreen> {
-  bool _offline = false;
+  /// The player asked to change how darts are counted
+  bool _choosing = false;
 
   /// The main view's tab, kept here so that it survives a lost and regained connection
   int _tab = 0;
 
   @override
   Widget build(BuildContext context) {
+    final settings = EngineSettingsScope.of(context);
     return EngineSelect(
       select: (engine) => (engine.isConnected, engine.pairingRequired),
       builder: (context, state) {
         final (connected, pairingRequired) = state;
-        if (!connected && !_offline) return ConnectScreen(onPlayOffline: () => setState(() => _offline = true));
         if (connected && pairingRequired) return const PairingScreen();
+        if (connected) _choosing = false;
+        if (!connected && (_choosing || !settings.chosen)) {
+          return ConnectScreen(
+            onPlayByHand: () {
+              settings.choose(byHand: true);
+              setState(() => _choosing = false);
+            },
+            onCancel: settings.chosen ? () => setState(() => _choosing = false) : null,
+          );
+        }
         return MainShell(
-          connected: connected,
           index: _tab,
           onIndexChanged: (i) => setState(() => _tab = i),
-          onConnect: () => setState(() => _offline = false),
+          onConnect: () => setState(() => _choosing = true),
         );
       },
     );
@@ -47,19 +58,12 @@ class _RootScreenState extends State<RootScreen> {
 
 /// Home, statistics and settings, with a navigation bar at the bottom on phones and a rail at the side on wide screens.
 class MainShell extends StatefulWidget {
-  const MainShell({
-    super.key,
-    required this.connected,
-    required this.index,
-    required this.onIndexChanged,
-    required this.onConnect,
-  });
+  const MainShell({super.key, required this.index, required this.onIndexChanged, required this.onConnect});
 
-  final bool connected;
   final int index;
   final ValueChanged<int> onIndexChanged;
 
-  /// Back to the connection page, when playing without an engine
+  /// Opens the choice of how darts are counted
   final VoidCallback onConnect;
 
   @override
@@ -78,18 +82,11 @@ class _MainShellState extends State<MainShell> {
       SettingsScreen(onConnect: widget.onConnect),
     ];
     final body = IndexedStack(index: _index, children: pages);
-    final connected = widget.connected;
-    // Back always leads home; from home it leads to the connection page only while no engine is connected, and
-    // never out of the app.
+    // Back always leads home, and never out of the app.
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
-        if (didPop) return;
-        if (_index != 0) {
-          widget.onIndexChanged(0);
-        } else if (!connected) {
-          widget.onConnect();
-        }
+        if (!didPop && _index != 0) widget.onIndexChanged(0);
       },
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -108,8 +105,8 @@ class _MainShellState extends State<MainShell> {
                         label: Text(l10n.navHome),
                       ),
                       NavigationRailDestination(
-                        icon: const Icon(Icons.insights_outlined),
-                        selectedIcon: const Icon(Icons.insights),
+                        icon: const Icon(Icons.bar_chart_outlined),
+                        selectedIcon: const Icon(Icons.bar_chart),
                         label: Text(l10n.navStatistics),
                       ),
                       NavigationRailDestination(
@@ -137,8 +134,8 @@ class _MainShellState extends State<MainShell> {
                   label: l10n.navHome,
                 ),
                 NavigationDestination(
-                  icon: const Icon(Icons.insights_outlined),
-                  selectedIcon: const Icon(Icons.insights),
+                  icon: const Icon(Icons.bar_chart_outlined),
+                  selectedIcon: const Icon(Icons.bar_chart),
                   label: l10n.navStatistics,
                 ),
                 NavigationDestination(
@@ -155,7 +152,7 @@ class _MainShellState extends State<MainShell> {
   }
 }
 
-/// The settings tab's icon, with a mark while a setup step needs the player; home stays free of setup
+/// The settings tab's icon, with a mark while a setup step needs the player
 class _SettingsIcon extends StatelessWidget {
   const _SettingsIcon(this.icon);
 

@@ -35,7 +35,7 @@ void main() {
     addTearDown(engine.dispose);
     engine.receiveForTest(jsonEncode(hello));
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
-    await openSettings(tester);
+    await openSettingsPage(tester, 'cameras');
     await tester.tap(find.byKey(const ValueKey('open-reference-run')));
     await tester.pumpAndSettle();
     expect(find.textContaining('Zehn Darts dauern etwa fünf Minuten'), findsOneWidget);
@@ -71,7 +71,7 @@ void main() {
     final corner = Map<String, dynamic>.of(fixtures['remove'] as Map<String, dynamic>)..['step'] = 'insert_dart';
     engine.receiveForTest(jsonEncode(corner));
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
-    await openSettings(tester);
+    await openSettingsPage(tester, 'cameras');
     await tester.tap(find.byKey(const ValueKey('open-reference-run')));
     await tester.pumpAndSettle();
     expect(
@@ -96,7 +96,7 @@ void main() {
     };
     engine.receiveForTest(jsonEncode(odd));
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
-    await openSettings(tester);
+    await openSettingsPage(tester, 'cameras');
     await tester.tap(find.byKey(const ValueKey('open-reference-run')));
     await tester.pumpAndSettle();
     expect(find.text('D20'), findsWidgets);
@@ -116,7 +116,7 @@ void main() {
     engine.receiveForTest(jsonEncode(hello));
     engine.receiveForTest(jsonEncode(fixtures['first']));
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
-    await openSettings(tester);
+    await openSettingsPage(tester, 'cameras');
     await showSettingsEntry(tester, 'open-reference-run');
     await tester.tap(find.byKey(const ValueKey('open-reference-run')));
     await tester.pumpAndSettle();

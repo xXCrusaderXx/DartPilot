@@ -62,7 +62,7 @@ void main() {
   );
 
   Future<void> openMyDarts(WidgetTester tester) async {
-    await openSettings(tester);
+    await openSettingsPage(tester, 'cameras');
     await tester.scrollUntilVisible(find.byKey(const ValueKey('open-my-darts')), 200);
     await tester.tap(find.byKey(const ValueKey('open-my-darts')));
     await tester.pumpAndSettle();

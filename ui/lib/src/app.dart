@@ -66,7 +66,7 @@ class _DartPilotAppState extends State<DartPilotApp> {
   late final EngineConnection _engine = widget.engine ?? EngineConnection(tokens: PrefsPairingTokens());
   late final EngineManager? _manager =
       widget.manager ?? (widget.engine == null && EngineManager.supported ? EngineManager() : null);
-  late EngineSettings _settings = widget.settings ?? EngineSettings();
+  late final EngineSettings _settings = widget.settings ?? EngineSettings(store: false);
   late final AppLifecycleListener _lifecycle;
   late final Statistics _statistics = widget.statistics ?? Statistics(MemoryGameStore());
   late final CameraOrder _cameraOrder = (widget.cameraOrder ?? CameraOrder())..attach(_engine);
@@ -123,28 +123,32 @@ class _DartPilotAppState extends State<DartPilotApp> {
         return AppExitResponse.exit;
       },
     );
-    if (widget.settings == null && widget.engine == null) _restoreChoice();
+    _engine.addListener(_rememberConnected);
+    _rememberConnected();
+    // A test's own engine stays alone unless the test gives a choice to restore as well.
+    if (widget.engine == null || widget.settings != null) _restoreChoice();
   }
 
-  Future<void> _restoreChoice() async {
-    final settings = await EngineSettings.load();
-    if (!mounted) return;
-    setState(() => _settings = settings);
-    final manager = _manager;
-    if (settings.mode == EngineMode.thisDevice && manager != null) {
-      await startLocalEngine(manager, _engine, settings);
-    } else {
-      _engine.url = settings.url;
-    }
+  /// An engine that answered is how darts are counted from now on, also after the next start.
+  void _rememberConnected() {
+    if (_engine.isConnected && (!_settings.chosen || _settings.byHand)) _settings.choose(byHand: false);
+  }
+
+  /// The engine chosen before is reached again in the background; home shows how far that got.
+  void _restoreChoice() {
+    _engine.url = _settings.url;
+    if (_settings.chosen && !_settings.byHand) unawaited(connectChosenEngine(_settings, _engine, _manager));
   }
 
   @override
   void dispose() {
     _lifecycle.dispose();
+    _engine.removeListener(_rememberConnected);
     _events?.cancel();
     _movedTimer?.cancel();
     _movedQuiet?.cancel();
     if (widget.manager == null) _manager?.dispose();
+    if (widget.settings == null) _settings.dispose();
     if (widget.engine == null) _engine.dispose();
     super.dispose();
   }
@@ -195,7 +199,10 @@ class _DartPilotAppState extends State<DartPilotApp> {
               caller: _caller,
               child: DisplayScope(
                 settings: _display,
-                child: manager == null ? app : LocalEngineScope(manager: manager, settings: _settings, child: app),
+                child: EngineSettingsScope(
+                  settings: _settings,
+                  child: manager == null ? app : LocalEngineScope(manager: manager, settings: _settings, child: app),
+                ),
               ),
             ),
           ),
@@ -224,17 +231,23 @@ class _TextSizeScope extends StatelessWidget {
 }
 
 /// Above every page while the app tries to reach a lost engine again, so a game or setup page left open says why
-/// nothing arrives.
+/// nothing arrives. After a few tries it says that darts go in by hand meanwhile, and the player can stop trying.
 class _ReconnectBanner extends StatelessWidget {
   const _ReconnectBanner({required this.child});
 
   final Widget child;
 
+  /// Tries after which the engine counts as gone for a while rather than a short drop
+  static const int longAfter = 3;
+
   @override
   Widget build(BuildContext context) {
-    if (!EngineScope.of(context).reconnecting) return child;
+    final engine = EngineScope.of(context);
+    if (!engine.reconnecting) return child;
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final colors = StatusColors.of(context);
+    final long = engine.reconnectAttempts > longAfter;
     return Column(
       children: [
         Material(
@@ -242,17 +255,27 @@ class _ReconnectBanner extends StatelessWidget {
           child: SafeArea(
             bottom: false,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.fromLTRB(16, 4, 8, 4),
               child: Row(
                 children: [
                   const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2)),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      AppLocalizations.of(context).engineReconnecting,
+                      long ? l10n.engineReconnectingLong : l10n.engineReconnecting,
                       key: const ValueKey('engine-reconnecting'),
                       style: theme.textTheme.bodyMedium,
                     ),
+                  ),
+                  const SizedBox(width: 8),
+                  TextButton(
+                    key: const ValueKey('reconnect-stop'),
+                    // Only for now: the chosen engine stays chosen, and home offers to try it again.
+                    onPressed: () {
+                      EngineSettingsScope.maybeOf(context)?.pauseForNow();
+                      engine.disconnect();
+                    },
+                    child: Text(l10n.reconnectStop),
                   ),
                 ],
               ),

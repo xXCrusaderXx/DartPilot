@@ -46,7 +46,7 @@ void main() {
 
     // New cameras are a setup step: the settings show it, home does not.
     expect(find.byKey(const ValueKey('assign-cameras-prompt')), findsNothing);
-    await openSettings(tester);
+    await openSettingsPage(tester, 'cameras');
     expect(
       find.descendant(of: find.byKey(const ValueKey('settings-assign-cameras')), matching: find.text('Fehlt')),
       findsOneWidget,
@@ -81,7 +81,7 @@ void main() {
     final order = CameraOrder(MemoryCameraOrderStore());
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine, cameraOrder: order));
     engine.receiveForTest(jsonEncode(hello));
-    await openSettings(tester);
+    await openSettingsPage(tester, 'cameras');
     await tester.tap(find.byKey(const ValueKey('settings-assign-cameras')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('assign-down-usb-1')));

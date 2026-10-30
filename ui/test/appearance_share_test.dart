@@ -73,7 +73,7 @@ void main() {
     final display = DisplaySettings(store: false);
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), display: display));
     await playOffline(tester);
-    await openSettings(tester);
+    await openSettingsPage(tester, 'display');
 
     await display.set(boardColours: BoardColours.colourSafe);
     await showSettingsEntry(tester, 'appearance-share');
@@ -108,10 +108,7 @@ void main() {
       final display = DisplaySettings(store: false);
       await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), display: display));
       await playOffline(tester);
-      await openSettings(tester);
-      await showSettingsEntry(tester, 'appearance-preview-open');
-      await tester.tap(find.byKey(const ValueKey('appearance-preview-open')));
-      await tester.pumpAndSettle();
+      await openSettingsPage(tester, 'display');
       expect(tester.takeException(), isNull);
 
       final preview = find.byKey(const ValueKey('appearance-preview'));

@@ -289,7 +289,7 @@ void main() {
 
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.insights_outlined));
+    await tester.tap(find.byIcon(Icons.bar_chart_outlined));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('stats-player-Anna')));
     await tester.pumpAndSettle();

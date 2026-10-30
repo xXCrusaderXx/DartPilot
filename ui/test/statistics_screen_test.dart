@@ -40,7 +40,7 @@ void main() {
     expect(game.x01Settings.startScore, 301);
     expect(game.throws.single.score.label, 'T20');
 
-    await tester.tap(find.byIcon(Icons.insights_outlined));
+    await tester.tap(find.byIcon(Icons.bar_chart_outlined));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('stats-player-Anna')), findsOneWidget);
     expect(find.byKey(const ValueKey('stats-player-Ben')), findsOneWidget);
@@ -76,7 +76,7 @@ void main() {
     await statistics.load();
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), statistics: statistics));
     await playOffline(tester);
-    await tester.tap(find.byIcon(Icons.insights_outlined));
+    await tester.tap(find.byIcon(Icons.bar_chart_outlined));
     await tester.pumpAndSettle();
     expect(find.text('2 Spiele  ·  3-Dart-Schnitt: 69,0'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('stats-player-Anna')));

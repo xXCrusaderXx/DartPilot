@@ -152,7 +152,7 @@ void main() {
     final display = DisplaySettings(store: false);
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), display: display));
     await playOffline(tester);
-    await openSettings(tester);
+    await openSettingsPage(tester, 'display');
     Color background() => Theme.of(tester.element(find.byKey(const ValueKey('brightness')))).scaffoldBackgroundColor;
     expect(background(), AppPalette.dark.background);
 
@@ -175,7 +175,7 @@ void main() {
     final display = DisplaySettings(store: false);
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), display: display));
     await playOffline(tester);
-    await openSettings(tester);
+    await openSettingsPage(tester, 'display');
     AppPalette palette() => AppPalette.of(tester.element(find.byKey(const ValueKey('brightness'))));
     double scale() => MediaQuery.textScalerOf(tester.element(find.byKey(const ValueKey('brightness')))).scale(1);
 

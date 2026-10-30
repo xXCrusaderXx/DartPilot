@@ -141,6 +141,7 @@ class AppearanceColourTiles extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
           child: SegmentedButton<TextSize>(
             key: const ValueKey('text-size'),
+            showSelectedIcon: false,
             segments: [
               ButtonSegment(value: TextSize.small, label: Text(l10n.textSmall)),
               ButtonSegment(value: TextSize.normal, label: Text(l10n.textNormal)),
@@ -257,6 +258,7 @@ class GameScreenTiles extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       child: SegmentedButton<T>(
         key: ValueKey(key),
+        showSelectedIcon: false,
         segments: [for (final (value, label) in values) ButtonSegment(value: value, label: Text(label))],
         selected: {selected},
         onSelectionChanged: (s) => onChanged(s.first),
@@ -355,6 +357,7 @@ class BoardColourTiles extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
           child: SegmentedButton<BoardColours>(
             key: const ValueKey('board-colours'),
+            showSelectedIcon: false,
             segments: [
               ButtonSegment(value: BoardColours.classic, label: Text(l10n.boardClassic)),
               ButtonSegment(value: BoardColours.colourSafe, label: Text(l10n.boardColourSafe)),

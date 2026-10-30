@@ -12,7 +12,7 @@ void main() {
 
     await tester.pumpWidget(const DartPilotApp(locale: Locale('de')));
     await playOffline(tester);
-    expect(find.text('Lokal oder solo spielen'), findsOneWidget);
+    expect(find.text('Spielen'), findsOneWidget);
     await tester.tap(find.text('Freies Werfen'));
     await tester.pumpAndSettle();
 
@@ -40,9 +40,9 @@ void main() {
 
   testWidgets('English follows the locale', (tester) async {
     await tester.pumpWidget(const DartPilotApp(locale: Locale('en')));
-    expect(find.text('Connect an engine'), findsOneWidget);
+    expect(find.text('How are the darts counted?'), findsOneWidget);
     await playOffline(tester);
-    expect(find.text('Play locally or solo'), findsOneWidget);
+    expect(find.text('Play'), findsOneWidget);
     expect(find.text('Free throwing'), findsOneWidget);
   });
 }

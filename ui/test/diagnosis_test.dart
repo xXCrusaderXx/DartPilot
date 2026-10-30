@@ -109,7 +109,8 @@ void main() {
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
     await tester.pumpAndSettle();
 
-    await openSettings(tester);
+    await openSettingsPage(tester, 'cameras');
+    await showSettingsEntry(tester, 'open-diagnosis');
     await tester.tap(find.byKey(const ValueKey('open-diagnosis')));
     await tester.pumpAndSettle();
     expect(find.textContaining('Die Diagnose beobachtet die Kameras'), findsOneWidget);
@@ -157,7 +158,8 @@ void main() {
     addTearDown(engine.dispose);
     engine.receiveForTest(jsonEncode(hello));
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
-    await openSettings(tester);
+    await openSettingsPage(tester, 'cameras');
+    await showSettingsEntry(tester, 'open-diagnosis');
     await tester.tap(find.byKey(const ValueKey('open-diagnosis')));
     await tester.pumpAndSettle();
 
@@ -208,7 +210,8 @@ void main() {
     engine.receiveForTest(jsonEncode(hello));
     await tester.pumpWidget(DartPilotApp(locale: const Locale('en'), engine: engine));
     await tester.pumpAndSettle();
-    await openSettings(tester);
+    await openSettingsPage(tester, 'cameras');
+    await showSettingsEntry(tester, 'open-diagnosis');
     await tester.tap(find.byKey(const ValueKey('open-diagnosis')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('diagnosis-start')));

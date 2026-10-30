@@ -101,7 +101,7 @@ abstract class AppLocalizations {
   /// No description provided for @chooseGame.
   ///
   /// In en, this message translates to:
-  /// **'Play locally or solo'**
+  /// **'Play'**
   String get chooseGame;
 
   /// No description provided for @modeX01.
@@ -113,7 +113,7 @@ abstract class AppLocalizations {
   /// No description provided for @modeX01Description.
   ///
   /// In en, this message translates to:
-  /// **'501 or 301, double out'**
+  /// **'301 · 501 · 701, double in/out'**
   String get modeX01Description;
 
   /// No description provided for @modeCricket.
@@ -581,7 +581,7 @@ abstract class AppLocalizations {
   /// No description provided for @engineReconnecting.
   ///
   /// In en, this message translates to:
-  /// **'Connection to the engine lost – connecting again…'**
+  /// **'Connection to the camera detection lost – connecting again…'**
   String get engineReconnecting;
 
   /// No description provided for @engineSimulated.
@@ -965,7 +965,7 @@ abstract class AppLocalizations {
   /// No description provided for @localEngineNotFound.
   ///
   /// In en, this message translates to:
-  /// **'The engine program was not found. Enter its path under Log.'**
+  /// **'The engine program was not found.'**
   String get localEngineNotFound;
 
   /// No description provided for @localEngineNoCameras.
@@ -1433,20 +1433,14 @@ abstract class AppLocalizations {
   /// No description provided for @connectTitle.
   ///
   /// In en, this message translates to:
-  /// **'Connect an engine'**
+  /// **'How are the darts counted?'**
   String get connectTitle;
 
   /// No description provided for @connectIntro.
   ///
   /// In en, this message translates to:
-  /// **'The engine runs the cameras and detects the darts. It runs on this device or on another one in your network.'**
+  /// **'You can change this any time in the settings.'**
   String get connectIntro;
-
-  /// No description provided for @playWithoutEngine.
-  ///
-  /// In en, this message translates to:
-  /// **'Play without an engine (enter darts by hand)'**
-  String get playWithoutEngine;
 
   /// No description provided for @navHome.
   ///
@@ -1481,14 +1475,8 @@ abstract class AppLocalizations {
   /// No description provided for @playingWithoutEngine.
   ///
   /// In en, this message translates to:
-  /// **'Without an engine – darts are entered by hand'**
+  /// **'Darts by hand – no cameras connected'**
   String get playingWithoutEngine;
-
-  /// No description provided for @playingWithoutEngineHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Connect an engine to detect darts and use the cameras.'**
-  String get playingWithoutEngineHint;
 
   /// No description provided for @settingsCamerasBoard.
   ///
@@ -1505,7 +1493,7 @@ abstract class AppLocalizations {
   /// No description provided for @setupAssignHint.
   ///
   /// In en, this message translates to:
-  /// **'Which camera is camera 1, 2 and 3'**
+  /// **'Which camera is no. 1, 2 and 3'**
   String get setupAssignHint;
 
   /// No description provided for @setupDone.
@@ -1567,24 +1555,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'For now in the setup program dartpilot_setup on Linux'**
   String get calibrationInSetupTool;
-
-  /// No description provided for @playTogether.
-  ///
-  /// In en, this message translates to:
-  /// **'Play together'**
-  String get playTogether;
-
-  /// No description provided for @lobby.
-  ///
-  /// In en, this message translates to:
-  /// **'Lobby'**
-  String get lobby;
-
-  /// No description provided for @lobbyComingSoon.
-  ///
-  /// In en, this message translates to:
-  /// **'Play with friends on other devices – coming with #124'**
-  String get lobbyComingSoon;
 
   /// No description provided for @diagnosisProgress.
   ///
@@ -1661,7 +1631,7 @@ abstract class AppLocalizations {
   /// No description provided for @navStatistics.
   ///
   /// In en, this message translates to:
-  /// **'Players'**
+  /// **'Statistics'**
   String get navStatistics;
 
   /// No description provided for @statisticsEmpty.
@@ -3305,7 +3275,7 @@ abstract class AppLocalizations {
   /// No description provided for @displayAuto.
   ///
   /// In en, this message translates to:
-  /// **'Automatic'**
+  /// **'Auto'**
   String get displayAuto;
 
   /// No description provided for @displayStyleClear.
@@ -4442,18 +4412,6 @@ abstract class AppLocalizations {
   /// **'The camera cannot be used to scan. Allow the camera for DartPilot, or paste the code shown under the QR code.'**
   String get appearanceScanUnavailable;
 
-  /// No description provided for @appearancePreview.
-  ///
-  /// In en, this message translates to:
-  /// **'Adjust with preview'**
-  String get appearancePreview;
-
-  /// No description provided for @appearancePreviewHint.
-  ///
-  /// In en, this message translates to:
-  /// **'A game screen shows every change at once'**
-  String get appearancePreviewHint;
-
   /// No description provided for @aboutTitle.
   ///
   /// In en, this message translates to:
@@ -4555,6 +4513,180 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Downloaded: {name}'**
   String exportDownloaded(String name);
+
+  /// No description provided for @countByHandTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'By hand'**
+  String get countByHandTitle;
+
+  /// No description provided for @countByHandText.
+  ///
+  /// In en, this message translates to:
+  /// **'Play right away: tap the hits on the board or the keypad.'**
+  String get countByHandText;
+
+  /// No description provided for @countThisDeviceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'With cameras on this computer'**
+  String get countThisDeviceTitle;
+
+  /// No description provided for @countThisDeviceText.
+  ///
+  /// In en, this message translates to:
+  /// **'The cameras are connected to this computer, and it detects the darts.'**
+  String get countThisDeviceText;
+
+  /// No description provided for @countNetworkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'With cameras via the network'**
+  String get countNetworkTitle;
+
+  /// No description provided for @countNetworkText.
+  ///
+  /// In en, this message translates to:
+  /// **'Another computer with the cameras detects the darts; this device shows the game. Scan its QR code or look for it in the network.'**
+  String get countNetworkText;
+
+  /// No description provided for @homeConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera detection connected'**
+  String get homeConnected;
+
+  /// No description provided for @homeConnectedSimulated.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera detection connected (simulated darts)'**
+  String get homeConnectedSimulated;
+
+  /// No description provided for @homeConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting to the camera detection…'**
+  String get homeConnecting;
+
+  /// No description provided for @homeUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera detection not reachable – enter the darts by hand'**
+  String get homeUnreachable;
+
+  /// No description provided for @homeConnectCameras.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect cameras'**
+  String get homeConnectCameras;
+
+  /// No description provided for @homeChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get homeChange;
+
+  /// No description provided for @engineReconnectingLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera detection not reachable – enter the darts by hand until it is back.'**
+  String get engineReconnectingLong;
+
+  /// No description provided for @reconnectStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue by hand'**
+  String get reconnectStop;
+
+  /// No description provided for @engineChooseProgram.
+  ///
+  /// In en, this message translates to:
+  /// **'Set engine program'**
+  String get engineChooseProgram;
+
+  /// No description provided for @setupHintTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The cameras are not fully set up yet'**
+  String get setupHintTitle;
+
+  /// No description provided for @setupHintNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next step: {step}'**
+  String setupHintNext(String step);
+
+  /// No description provided for @setupHintHide.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get setupHintHide;
+
+  /// No description provided for @profileCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is ready – choose a game'**
+  String profileCreated(String name);
+
+  /// No description provided for @settingsDisplayHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Colours, text size and the game screen'**
+  String get settingsDisplayHint;
+
+  /// No description provided for @settingsSound.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound & caller'**
+  String get settingsSound;
+
+  /// No description provided for @settingsCallerOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Score caller on'**
+  String get settingsCallerOn;
+
+  /// No description provided for @settingsCallerOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Score caller off'**
+  String get settingsCallerOff;
+
+  /// No description provided for @settingsCamerasPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Cameras & detection'**
+  String get settingsCamerasPage;
+
+  /// No description provided for @settingsCamerasByHand.
+  ///
+  /// In en, this message translates to:
+  /// **'Darts by hand – cameras are optional'**
+  String get settingsCamerasByHand;
+
+  /// No description provided for @settingsSetupIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup not finished'**
+  String get settingsSetupIncomplete;
+
+  /// No description provided for @settingsAdvanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced'**
+  String get settingsAdvanced;
+
+  /// No description provided for @settingsCamerasOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Cameras are optional. With them, DartPilot detects the darts by itself; their setup appears here once they are connected.'**
+  String get settingsCamerasOptional;
+
+  /// No description provided for @homeReconnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Until the connection is back, enter the darts by hand'**
+  String get homeReconnecting;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
