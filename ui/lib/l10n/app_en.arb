@@ -1751,5 +1751,104 @@
   "settingsSetupIncomplete": "Setup not finished",
   "settingsAdvanced": "Advanced",
   "settingsCamerasOptional": "Cameras are optional. With them, DartPilot detects the darts by itself; their setup appears here once they are connected.",
-  "homeReconnecting": "Until the connection is back, enter the darts by hand"
+  "homeReconnecting": "Until the connection is back, enter the darts by hand",
+  "gameDraw": "Draw",
+  "drawBetween": "{names}: {points} points each",
+  "@drawBetween": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      },
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "gameOver": "Game over",
+  "resultPoints": "{points} points",
+  "@resultPoints": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "resultBelowZero": "Below zero at {target}",
+  "@resultBelowZero": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "resultAllClosed": "All closed in {darts} darts",
+  "@resultAllClosed": {
+    "placeholders": {
+      "darts": {
+        "type": "int"
+      }
+    }
+  },
+  "resultRoundTheClock": "Round the clock in {darts} darts",
+  "@resultRoundTheClock": {
+    "placeholders": {
+      "darts": {
+        "type": "int"
+      }
+    }
+  },
+  "personalBest": "Your best so far: {value}",
+  "@personalBest": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "newPersonalBest": "New personal best",
+  "roundTarget": "Target",
+  "gameRules": "Rules",
+  "cricketRules": "Close 15 to 20 and the bull with three marks each: a single counts one, a double two, a triple three. Hits on a number you closed and your opponents have not score its points. Whoever closes everything and leads on points wins.",
+  "aroundTheClockRules": "Hit 1 to 20 in order, any ring counts; then the bull if it is on. The first to get round wins.",
+  "shanghaiRules": "Round 1 is played at the 1, round 2 at the 2, and so on. Every hit scores its points; single, double and triple of the number in one visit win at once.",
+  "bobs27Rules": "You start with 27 and play D1 to D20, then the bull. Each hit adds the double's value, a visit without a hit takes it away once. Below zero you are out.",
+  "halveItRules": "You start with 40. Targets: 15, 16, any double, 17, 18, any triple, 19, 20, bull. Hits on the target score their points; a visit without a hit halves your score.",
+  "killerRules": "Everyone gets a number. Hit your own double three times to become a killer; then each hit on another player's double takes a life. Hitting your own double as a killer costs you one. The last player with lives wins.",
+  "killerFiveLives": "5 lives instead of 3",
+  "killerLives": "{count, plural, =1{1 life} other{{count} lives}}",
+  "@killerLives": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "statsLivesLeft": "Lives left",
+  "celebrateMarks": "{marks} marks",
+  "@celebrateMarks": {
+    "placeholders": {
+      "marks": {
+        "type": "int"
+      }
+    }
+  },
+  "celebrateShanghai": "Shanghai!",
+  "celebrateThreeHits": "Three of three",
+  "celebrateKiller": "{name} is a killer",
+  "@celebrateKiller": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "celebrateOut": "{name} is out",
+  "@celebrateOut": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "marksPerRoundShort": "MPR"
 }

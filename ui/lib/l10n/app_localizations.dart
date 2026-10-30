@@ -4687,6 +4687,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Until the connection is back, enter the darts by hand'**
   String get homeReconnecting;
+
+  /// No description provided for @gameDraw.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw'**
+  String get gameDraw;
+
+  /// No description provided for @drawBetween.
+  ///
+  /// In en, this message translates to:
+  /// **'{names}: {points} points each'**
+  String drawBetween(String names, int points);
+
+  /// No description provided for @gameOver.
+  ///
+  /// In en, this message translates to:
+  /// **'Game over'**
+  String get gameOver;
+
+  /// No description provided for @resultPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'{points} points'**
+  String resultPoints(int points);
+
+  /// No description provided for @resultBelowZero.
+  ///
+  /// In en, this message translates to:
+  /// **'Below zero at {target}'**
+  String resultBelowZero(String target);
+
+  /// No description provided for @resultAllClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'All closed in {darts} darts'**
+  String resultAllClosed(int darts);
+
+  /// No description provided for @resultRoundTheClock.
+  ///
+  /// In en, this message translates to:
+  /// **'Round the clock in {darts} darts'**
+  String resultRoundTheClock(int darts);
+
+  /// No description provided for @personalBest.
+  ///
+  /// In en, this message translates to:
+  /// **'Your best so far: {value}'**
+  String personalBest(String value);
+
+  /// No description provided for @newPersonalBest.
+  ///
+  /// In en, this message translates to:
+  /// **'New personal best'**
+  String get newPersonalBest;
+
+  /// No description provided for @roundTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Target'**
+  String get roundTarget;
+
+  /// No description provided for @gameRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Rules'**
+  String get gameRules;
+
+  /// No description provided for @cricketRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Close 15 to 20 and the bull with three marks each: a single counts one, a double two, a triple three. Hits on a number you closed and your opponents have not score its points. Whoever closes everything and leads on points wins.'**
+  String get cricketRules;
+
+  /// No description provided for @aroundTheClockRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Hit 1 to 20 in order, any ring counts; then the bull if it is on. The first to get round wins.'**
+  String get aroundTheClockRules;
+
+  /// No description provided for @shanghaiRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Round 1 is played at the 1, round 2 at the 2, and so on. Every hit scores its points; single, double and triple of the number in one visit win at once.'**
+  String get shanghaiRules;
+
+  /// No description provided for @bobs27Rules.
+  ///
+  /// In en, this message translates to:
+  /// **'You start with 27 and play D1 to D20, then the bull. Each hit adds the double\'s value, a visit without a hit takes it away once. Below zero you are out.'**
+  String get bobs27Rules;
+
+  /// No description provided for @halveItRules.
+  ///
+  /// In en, this message translates to:
+  /// **'You start with 40. Targets: 15, 16, any double, 17, 18, any triple, 19, 20, bull. Hits on the target score their points; a visit without a hit halves your score.'**
+  String get halveItRules;
+
+  /// No description provided for @killerRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone gets a number. Hit your own double three times to become a killer; then each hit on another player\'s double takes a life. Hitting your own double as a killer costs you one. The last player with lives wins.'**
+  String get killerRules;
+
+  /// No description provided for @killerFiveLives.
+  ///
+  /// In en, this message translates to:
+  /// **'5 lives instead of 3'**
+  String get killerFiveLives;
+
+  /// No description provided for @killerLives.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 life} other{{count} lives}}'**
+  String killerLives(int count);
+
+  /// No description provided for @statsLivesLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Lives left'**
+  String get statsLivesLeft;
+
+  /// No description provided for @celebrateMarks.
+  ///
+  /// In en, this message translates to:
+  /// **'{marks} marks'**
+  String celebrateMarks(int marks);
+
+  /// No description provided for @celebrateShanghai.
+  ///
+  /// In en, this message translates to:
+  /// **'Shanghai!'**
+  String get celebrateShanghai;
+
+  /// No description provided for @celebrateThreeHits.
+  ///
+  /// In en, this message translates to:
+  /// **'Three of three'**
+  String get celebrateThreeHits;
+
+  /// No description provided for @celebrateKiller.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is a killer'**
+  String celebrateKiller(String name);
+
+  /// No description provided for @celebrateOut.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is out'**
+  String celebrateOut(String name);
+
+  /// No description provided for @marksPerRoundShort.
+  ///
+  /// In en, this message translates to:
+  /// **'MPR'**
+  String get marksPerRoundShort;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

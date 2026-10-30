@@ -115,11 +115,17 @@ class VisitDarts extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      i < labels.length ? labels[i] : '–',
-                      key: ValueKey('visit-dart-$i'),
-                      textAlign: TextAlign.center,
-                      style: style,
+                    // A narrow card shrinks a long label such as D-Bull rather than cutting it.
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          i < labels.length ? labels[i] : '–',
+                          key: ValueKey('visit-dart-$i'),
+                          textAlign: TextAlign.center,
+                          style: style,
+                        ),
+                      ),
                     ),
                     if (hits != null && i < hits.length) ...[
                       const SizedBox(width: 6),

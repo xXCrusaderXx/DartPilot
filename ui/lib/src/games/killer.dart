@@ -45,6 +45,9 @@ class KillerGame implements DartGame {
   late int current;
   late List<DartThrow> currentVisit;
 
+  /// The player of [currentVisit], which stays with them after it ends until the next dart
+  late int visitPlayer;
+
   /// Set when the player at the oche went out during the visit: the visit ends at once.
   late bool _visitOver;
   int? winner;
@@ -83,6 +86,7 @@ class KillerGame implements DartGame {
     players = [for (var i = 0; i < names.length; ++i) KillerPlayerState(names[i], numbers[i], lives)];
     current = 0;
     currentVisit = [];
+    visitPlayer = 0;
     _visitOver = false;
     winner = null;
     for (final dart in _throws) {
@@ -95,6 +99,7 @@ class KillerGame implements DartGame {
       currentVisit = [];
       _visitOver = false;
     }
+    if (currentVisit.isEmpty) visitPlayer = current;
     final player = players[current];
     player.dartsThrown++;
     currentVisit.add(dart);

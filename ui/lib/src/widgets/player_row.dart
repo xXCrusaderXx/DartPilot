@@ -19,6 +19,7 @@ class PlayerRow extends StatelessWidget {
     this.enabled = true,
     this.valueColour,
     this.detailsFromAfar = false,
+    this.valueIcons,
   });
 
   final String name;
@@ -38,6 +39,9 @@ class PlayerRow extends StatelessWidget {
   /// The details are part of the game, not figures to look up later: shown from afar too
   final bool detailsFromAfar;
 
+  /// Draws the value as icons, as Killer's lives, sized like the value's text; [value] is then what screen readers say
+  final Widget? valueIcons;
+
   /// The active player's value from afar: like the X01 score, by the panel's width within bounds
   static double _farSize(double width) => (width * 0.18).clamp(57, 140).toDouble();
 
@@ -56,6 +60,20 @@ class PlayerRow extends StatelessWidget {
                 ? (far ? theme.textTheme.displayLarge : theme.textTheme.displayMedium)
                 : (far ? theme.textTheme.displaySmall : theme.textTheme.headlineMedium))
             ?.copyWith(fontWeight: FontWeight.w700, color: valueColour ?? onBlock);
+    Widget valueText(TextStyle? style) {
+      final icons = valueIcons;
+      if (icons == null) return Text(value, key: valueKey, style: style);
+      return Semantics(
+        label: value,
+        child: ExcludeSemantics(
+          child: IconTheme.merge(
+            data: IconThemeData(size: (style?.fontSize ?? 28) * 0.8, color: style?.color),
+            child: KeyedSubtree(key: valueKey, child: icons),
+          ),
+        ),
+      );
+    }
+
     Widget row(double width) => Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
@@ -98,12 +116,13 @@ class PlayerRow extends StatelessWidget {
               constraints: BoxConstraints(maxWidth: width * 0.6),
               child: FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text(
-                  value,
-                  key: valueKey,
-                  style: valueStyle?.copyWith(fontSize: _farSize(width), height: 1.0),
-                ),
+                child: valueText(valueStyle?.copyWith(fontSize: _farSize(width), height: 1.0)),
               ),
+            )
+          else if (valueIcons != null)
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: width * 0.5),
+              child: FittedBox(fit: BoxFit.scaleDown, child: valueText(valueStyle)),
             )
           else
             Text(value, key: valueKey, style: valueStyle),

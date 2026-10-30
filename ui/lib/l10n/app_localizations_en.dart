@@ -2651,4 +2651,109 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeReconnecting => 'Until the connection is back, enter the darts by hand';
+
+  @override
+  String get gameDraw => 'Draw';
+
+  @override
+  String drawBetween(String names, int points) {
+    return '$names: $points points each';
+  }
+
+  @override
+  String get gameOver => 'Game over';
+
+  @override
+  String resultPoints(int points) {
+    return '$points points';
+  }
+
+  @override
+  String resultBelowZero(String target) {
+    return 'Below zero at $target';
+  }
+
+  @override
+  String resultAllClosed(int darts) {
+    return 'All closed in $darts darts';
+  }
+
+  @override
+  String resultRoundTheClock(int darts) {
+    return 'Round the clock in $darts darts';
+  }
+
+  @override
+  String personalBest(String value) {
+    return 'Your best so far: $value';
+  }
+
+  @override
+  String get newPersonalBest => 'New personal best';
+
+  @override
+  String get roundTarget => 'Target';
+
+  @override
+  String get gameRules => 'Rules';
+
+  @override
+  String get cricketRules =>
+      'Close 15 to 20 and the bull with three marks each: a single counts one, a double two, a triple three. Hits on a number you closed and your opponents have not score its points. Whoever closes everything and leads on points wins.';
+
+  @override
+  String get aroundTheClockRules =>
+      'Hit 1 to 20 in order, any ring counts; then the bull if it is on. The first to get round wins.';
+
+  @override
+  String get shanghaiRules =>
+      'Round 1 is played at the 1, round 2 at the 2, and so on. Every hit scores its points; single, double and triple of the number in one visit win at once.';
+
+  @override
+  String get bobs27Rules =>
+      'You start with 27 and play D1 to D20, then the bull. Each hit adds the double\'s value, a visit without a hit takes it away once. Below zero you are out.';
+
+  @override
+  String get halveItRules =>
+      'You start with 40. Targets: 15, 16, any double, 17, 18, any triple, 19, 20, bull. Hits on the target score their points; a visit without a hit halves your score.';
+
+  @override
+  String get killerRules =>
+      'Everyone gets a number. Hit your own double three times to become a killer; then each hit on another player\'s double takes a life. Hitting your own double as a killer costs you one. The last player with lives wins.';
+
+  @override
+  String get killerFiveLives => '5 lives instead of 3';
+
+  @override
+  String killerLives(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count lives', one: '1 life');
+    return '$_temp0';
+  }
+
+  @override
+  String get statsLivesLeft => 'Lives left';
+
+  @override
+  String celebrateMarks(int marks) {
+    return '$marks marks';
+  }
+
+  @override
+  String get celebrateShanghai => 'Shanghai!';
+
+  @override
+  String get celebrateThreeHits => 'Three of three';
+
+  @override
+  String celebrateKiller(String name) {
+    return '$name is a killer';
+  }
+
+  @override
+  String celebrateOut(String name) {
+    return '$name is out';
+  }
+
+  @override
+  String get marksPerRoundShort => 'MPR';
 }

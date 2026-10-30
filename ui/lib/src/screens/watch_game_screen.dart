@@ -102,6 +102,7 @@ Widget gameScreenFor(GameRecord record, {Key? key, required bool watching}) {
       key: key,
       names: record.players,
       numbers: record.killerGame.numbers,
+      lives: record.killerGame.lives,
       bots: record.bots,
       replay: record.throws,
       watching: watching,
