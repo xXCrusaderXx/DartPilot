@@ -191,4 +191,17 @@ void main() {
     expect(g.legNumber, 2);
     expect(g.currentVisit.leg, 2);
   });
+
+  test('the last visit names its player and what it came to, a bust as a bust', () {
+    final g = game(start: 101);
+    expect(g.lastVisit, isNull);
+    play(g, ['T20', 'S1']);
+    expect(g.lastVisit, isNull);
+    play(g, ['S20']);
+    expect(g.lastVisit, isA<Object>());
+    expect((g.lastVisit!.player, g.lastVisit!.darts, g.lastVisit!.points, g.lastVisit!.bust), ('P1', 3, 81, false));
+    // P2 busts with the second dart: a visit of two darts
+    play(g, ['T20', 'T20']);
+    expect((g.lastVisit!.player, g.lastVisit!.darts, g.lastVisit!.points, g.lastVisit!.bust), ('P2', 2, 0, true));
+  });
 }

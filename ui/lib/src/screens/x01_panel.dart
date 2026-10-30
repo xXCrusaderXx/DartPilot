@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
@@ -9,7 +11,8 @@ import '../widgets/precision_text.dart';
 
 /// The X01 score panel in the player's display style: clear (the remaining score large in the app's colours) or a
 /// scoreboard (the player at the oche as a bright block, darts and checkout in a strip). From afar it shows only what
-/// is read from the oche.
+/// is read from the oche; where the window is short, as a phone on its side, it packs tighter so the other players
+/// stay in view.
 class X01Panel extends StatelessWidget {
   const X01Panel({
     super.key,
@@ -22,6 +25,7 @@ class X01Panel extends StatelessWidget {
     required this.far,
     this.details = DisplaySettings.defaultPanelDetails,
     this.legWon,
+    this.height,
   });
 
   final X01Game game;
@@ -40,25 +44,70 @@ class X01Panel extends StatelessWidget {
   /// Who won the leg just ended, shown until the next leg's first dart
   final String? legWon;
 
+  /// The height the panel has, when known: the score then shrinks so the other players and Undo stay in view
+  final double? height;
+
   /// The remaining score on show: none left after a visit that won the leg, even when the next leg has begun
   int get _shownRemaining => visit.isCheckout ? 0 : game.players[visit.player].remaining;
 
   /// The big score rolls only within one player's leg; a new player or leg shows at once.
   Key get _rollKey => ValueKey('roll-${visit.player}-${visit.leg}');
 
+  /// Window height, and panel height, below which the panel packs tighter
+  static const double shortBelow = 500;
+  static const double shortPanelBelow = 360;
+
   @override
   Widget build(BuildContext context) {
+    final height = MediaQuery.sizeOf(context).height;
+    final short = height < shortBelow || (this.height ?? double.infinity) < shortPanelBelow;
     return LayoutBuilder(
       builder: (context, constraints) => style == DisplayStyle.scoreboard
-          ? _scoreboard(context, constraints.maxWidth)
-          : _clear(context, constraints.maxWidth),
+          ? _scoreboard(context, constraints.maxWidth, height, short: short)
+          : _clear(context, constraints.maxWidth, height, short: short),
     );
   }
 
-  /// The active player's remaining score fills the panel's width, within bounds for near and far
-  double _bigSize(double width) => (width * 0.34).clamp(56, far ? 220 : 120).toDouble();
+  /// The active player's remaining score fills the panel's width, within bounds for near and far; from afar on a tall
+  /// screen such as a TV it also grows with the height, and in a short window it leaves room for the others.
+  double _bigSize(double width, double height, {required bool short, bool scoreboard = false}) {
+    if (short) return (width * 0.24).clamp(48, 80).toDouble();
+    final double size =
+        (width * 0.34).clamp(56.0, far ? math.max(220.0, height * 0.26) : 120.0) * (scoreboard ? 1.15 : 1);
+    final panel = this.height;
+    return far || panel == null ? size : math.max(56.0, math.min(size, panel * 0.28));
+  }
 
-  Widget _clear(BuildContext context, double width) {
+  /// The leg line on top: from afar large and with the game; in a short window only in a match over several legs,
+  /// since a single leg is always leg 1
+  Widget? _metaLine(AppLocalizations l10n, ThemeData theme, {required bool short, required bool scoreboard}) {
+    if (short && game.settings.legsToWin == 1) return null;
+    final text = far ? '${game.settings.startScore} · ${_meta(l10n)}' : _meta(l10n);
+    if (scoreboard) {
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: short ? 4 : 8),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: (theme.extension<AppPalette>() ?? AppPalette.dark).bad, width: 3)),
+        ),
+        child: Text(
+          text.toUpperCase(),
+          style: scoreStyle(far ? theme.textTheme.headlineSmall : theme.textTheme.titleMedium)
+              ?.copyWith(fontWeight: FontWeight.w700, letterSpacing: 1),
+        ),
+      );
+    }
+    return Padding(
+      padding: EdgeInsets.only(bottom: short ? 4 : 8),
+      child: Text(
+        text,
+        style: (far ? theme.textTheme.headlineSmall : theme.textTheme.titleMedium)?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+
+  Widget _clear(BuildContext context, double width, double height, {required bool short}) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final active = game.players[visit.player];
@@ -69,8 +118,7 @@ class X01Panel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(_meta(l10n), style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-        const SizedBox(height: 8),
+        ?_metaLine(l10n, theme, short: short, scoreboard: false),
         if (legWon != null)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
@@ -78,7 +126,7 @@ class X01Panel extends StatelessWidget {
           ),
         Container(
           key: const ValueKey('active-player'),
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          padding: short ? const EdgeInsets.fromLTRB(12, 6, 12, 8) : const EdgeInsets.fromLTRB(16, 12, 16, 12),
           decoration: BoxDecoration(
             color: theme.colorScheme.primary.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(16),
@@ -97,7 +145,7 @@ class X01Panel extends StatelessWidget {
                   Expanded(
                     child: Text(
                       active.name,
-                      style: (far ? theme.textTheme.headlineSmall : theme.textTheme.titleLarge)?.copyWith(
+                      style: (far ? theme.textTheme.headlineMedium : theme.textTheme.titleLarge)?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
                       overflow: TextOverflow.ellipsis,
@@ -107,29 +155,34 @@ class X01Panel extends StatelessWidget {
                   if (_legs(active) case final legs?) ...[const SizedBox(width: 12), legs],
                 ],
               ),
-              _Remaining(key: _rollKey, name: active.name, remaining: _shownRemaining, size: _bigSize(width)),
+              _Remaining(
+                key: _rollKey,
+                name: active.name,
+                remaining: _shownRemaining,
+                size: _bigSize(width, height, short: short),
+              ),
               if (details.contains(PanelDetail.visitDarts))
-                _VisitRow(texts: dartTexts, total: visit.points, bust: visit.isBust, big: far)
+                _VisitRow(texts: dartTexts, total: visit.points, bust: visit.isBust, big: far, short: short)
               else if (visit.isBust)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(l10n.bust, style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.error)),
                 ),
               if (checkout != null && details.contains(PanelDetail.checkout))
-                _CheckoutLine(route: checkout!, onCall: onCallCheckout, big: far),
+                _CheckoutLine(route: checkout!, onCall: onCallCheckout, big: far, short: short),
             ],
           ),
         ),
         for (final p in others)
           Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: _OtherPlayer(player: p, figures: _otherFigures(l10n, p), legs: _legs(p), big: far),
+            padding: EdgeInsets.only(top: short ? 6 : 8),
+            child: _OtherPlayer(player: p, figures: _otherFigures(l10n, p), legs: _legs(p), big: far, short: short),
           ),
       ],
     );
   }
 
-  Widget _scoreboard(BuildContext context, double width) {
+  Widget _scoreboard(BuildContext context, double width, double height, {required bool short}) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final palette = AppPalette.of(context);
@@ -143,16 +196,7 @@ class X01Panel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: palette.bad, width: 3)),
-          ),
-          child: Text(
-            _meta(l10n).toUpperCase(),
-            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800, letterSpacing: 1),
-          ),
-        ),
+        ?_metaLine(l10n, theme, short: short, scoreboard: true),
         if (legWon != null)
           Padding(
             padding: const EdgeInsets.only(top: 8),
@@ -161,7 +205,7 @@ class X01Panel extends StatelessWidget {
         Container(
           key: const ValueKey('active-player'),
           color: block,
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          padding: EdgeInsets.fromLTRB(16, short ? 4 : 8, 16, short ? 4 : 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -176,10 +220,8 @@ class X01Panel extends StatelessWidget {
                   Expanded(
                     child: Text(
                       active.name.toUpperCase(),
-                      style: (far ? theme.textTheme.headlineSmall : theme.textTheme.titleLarge)?.copyWith(
-                        color: onBlock,
-                        fontWeight: FontWeight.w900,
-                      ),
+                      style: scoreStyle(far ? theme.textTheme.headlineMedium : theme.textTheme.headlineSmall)
+                          ?.copyWith(color: onBlock, fontWeight: FontWeight.w700, letterSpacing: 0.5),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -195,7 +237,7 @@ class X01Panel extends StatelessWidget {
                 key: _rollKey,
                 name: active.name,
                 remaining: _shownRemaining,
-                size: _bigSize(width) * 1.15,
+                size: _bigSize(width, height, short: short, scoreboard: true),
                 color: onBlock,
               ),
             ],
@@ -205,24 +247,31 @@ class X01Panel extends StatelessWidget {
           Container(
             color: theme.colorScheme.surfaceContainerHigh,
             margin: const EdgeInsets.only(top: 2),
-            child: _OtherPlayer(player: p, figures: _otherFigures(l10n, p), legs: _legs(p), big: far, flat: true),
+            child: _OtherPlayer(
+              player: p,
+              figures: _otherFigures(l10n, p),
+              legs: _legs(p),
+              big: far,
+              short: short,
+              flat: true,
+            ),
           ),
-        const SizedBox(height: 8),
+        SizedBox(height: short ? 4 : 8),
         Container(
           color: theme.colorScheme.surfaceContainerHigh,
-          padding: const EdgeInsets.all(8),
+          padding: EdgeInsets.all(short ? 4 : 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (details.contains(PanelDetail.visitDarts))
-                _VisitRow(texts: dartTexts, total: visit.points, bust: visit.isBust, big: far)
+                _VisitRow(texts: dartTexts, total: visit.points, bust: visit.isBust, big: far, short: short)
               else if (visit.isBust)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(l10n.bust, style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.error)),
                 ),
               if (checkout != null && details.contains(PanelDetail.checkout))
-                _CheckoutLine(route: checkout!, onCall: onCallCheckout, big: far),
+                _CheckoutLine(route: checkout!, onCall: onCallCheckout, big: far, short: short),
             ],
           ),
         ),
@@ -290,10 +339,8 @@ class _LegsBadge extends StatelessWidget {
       child: Text(
         l10n.x01Legs(legs),
         key: ValueKey('legs-$name'),
-        style: (big ? theme.textTheme.titleLarge : theme.textTheme.titleSmall)?.copyWith(
-          color: colour,
-          fontWeight: FontWeight.w800,
-        ),
+        style: scoreStyle(big ? theme.textTheme.headlineSmall : theme.textTheme.titleMedium)
+            ?.copyWith(color: colour, fontWeight: FontWeight.w700),
       ),
     );
   }
@@ -373,6 +420,7 @@ class _OtherPlayer extends StatelessWidget {
     required this.figures,
     required this.legs,
     required this.big,
+    this.short = false,
     this.flat = false,
   });
 
@@ -380,13 +428,30 @@ class _OtherPlayer extends StatelessWidget {
   final String? figures;
   final Widget? legs;
   final bool big;
+
+  /// One line with the figures beside the name, for a short window
+  final bool short;
   final bool flat;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final name = Text(
+      player.name,
+      style: big ? theme.textTheme.headlineSmall : theme.textTheme.titleMedium,
+      overflow: TextOverflow.ellipsis,
+    );
+    final figures = this.figures == null
+        ? null
+        : Text(
+            this.figures!,
+            overflow: TextOverflow.ellipsis,
+            style: (big ? theme.textTheme.titleLarge : theme.textTheme.bodySmall)?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          );
     final row = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: short ? 2 : 8),
       child: Row(
         children: [
           if (StatisticsScope.maybeOf(context)?.colourOf(player.name) case final colour?) ...[
@@ -394,31 +459,26 @@ class _OtherPlayer extends StatelessWidget {
             const SizedBox(width: 12),
           ],
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  player.name,
-                  style: big ? theme.textTheme.titleLarge : theme.textTheme.titleMedium,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (figures != null)
-                  Text(
-                    figures!,
-                    style: (big ? theme.textTheme.titleMedium : theme.textTheme.bodySmall)?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-              ],
-            ),
+            child: short
+                ? Row(
+                    children: [
+                      Flexible(child: name),
+                      if (figures != null) ...[const SizedBox(width: 8), Flexible(flex: 2, child: figures)],
+                    ],
+                  )
+                : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [name, ?figures]),
           ),
           if (legs != null) ...[legs!, const SizedBox(width: 16)],
           Text(
             '${player.remaining}',
             key: ValueKey('remaining-${player.name}'),
-            style: (big ? theme.textTheme.displayMedium : theme.textTheme.headlineMedium)?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+            style: scoreStyle(
+              big
+                  ? theme.textTheme.displayMedium
+                  : short
+                  ? theme.textTheme.headlineMedium
+                  : theme.textTheme.headlineLarge,
+            )?.copyWith(fontWeight: FontWeight.w700, height: short ? 1.1 : null),
           ),
         ],
       ),
@@ -429,26 +489,40 @@ class _OtherPlayer extends StatelessWidget {
 
 /// The three darts of the visit and what they come to, or that the visit is bust
 class _VisitRow extends StatelessWidget {
-  const _VisitRow({required this.texts, required this.total, required this.bust, required this.big});
+  const _VisitRow({
+    required this.texts,
+    required this.total,
+    required this.bust,
+    required this.big,
+    this.short = false,
+  });
 
   final List<String> texts;
   final int total;
   final bool bust;
   final bool big;
+  final bool short;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    final style = scoreStyle(
+      big
+          ? theme.textTheme.headlineMedium
+          : short
+          ? theme.textTheme.titleLarge
+          : theme.textTheme.headlineSmall,
+    );
     return Padding(
-      padding: const EdgeInsets.only(top: 8),
+      padding: EdgeInsets.only(top: short ? 4 : 8),
       child: Row(
         children: [
           for (var i = 0; i < 3; ++i) ...[
             if (i > 0) const SizedBox(width: 8),
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: EdgeInsets.symmetric(vertical: short ? 2 : 8),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surfaceContainerHigh,
                   borderRadius: BorderRadius.circular(12),
@@ -459,7 +533,8 @@ class _VisitRow extends StatelessWidget {
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: (big ? theme.textTheme.headlineMedium : theme.textTheme.titleLarge)?.copyWith(
+                  style: style?.copyWith(
+                    fontWeight: FontWeight.w600,
                     color: i < texts.length ? null : theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
@@ -470,7 +545,7 @@ class _VisitRow extends StatelessWidget {
           Expanded(
             flex: bust ? 2 : 1,
             child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+              padding: EdgeInsets.symmetric(vertical: short ? 2 : 8, horizontal: 4),
               decoration: BoxDecoration(
                 color: bust
                     ? theme.colorScheme.errorContainer
@@ -485,8 +560,8 @@ class _VisitRow extends StatelessWidget {
                   bust ? l10n.bust : (texts.isEmpty ? '–' : '$total'),
                   key: const ValueKey('visit-total'),
                   maxLines: 1,
-                  style: (big ? theme.textTheme.headlineMedium : theme.textTheme.titleLarge)?.copyWith(
-                    fontWeight: FontWeight.w800,
+                  style: style?.copyWith(
+                    fontWeight: FontWeight.w700,
                     color: bust
                         ? theme.colorScheme.onErrorContainer
                         : texts.isEmpty
@@ -504,11 +579,12 @@ class _VisitRow extends StatelessWidget {
 }
 
 class _CheckoutLine extends StatelessWidget {
-  const _CheckoutLine({required this.route, required this.onCall, required this.big});
+  const _CheckoutLine({required this.route, required this.onCall, required this.big, this.short = false});
 
   final List<String> route;
   final VoidCallback onCall;
   final bool big;
+  final bool short;
 
   @override
   Widget build(BuildContext context) {
@@ -516,7 +592,7 @@ class _CheckoutLine extends StatelessWidget {
     final theme = Theme.of(context);
     final good = StatusColors.of(context).good;
     return Padding(
-      padding: const EdgeInsets.only(top: 8),
+      padding: EdgeInsets.only(top: short ? 0 : 8),
       child: Row(
         children: [
           Icon(Icons.flag, color: good, size: big ? 32 : 20),
@@ -532,16 +608,15 @@ class _CheckoutLine extends StatelessWidget {
             child: Text(
               route.join('  '),
               key: const ValueKey('checkout'),
-              style: (big ? theme.textTheme.headlineSmall : theme.textTheme.titleMedium)?.copyWith(
-                color: good,
-                fontWeight: FontWeight.w700,
-              ),
+              style: scoreStyle(big ? theme.textTheme.headlineMedium : theme.textTheme.titleLarge)
+                  ?.copyWith(color: good, fontWeight: FontWeight.w700),
             ),
           ),
           IconButton(
             key: const ValueKey('call-checkout'),
             icon: const Icon(Icons.volume_up),
             tooltip: l10n.callCheckout,
+            visualDensity: short ? VisualDensity.compact : null,
             onPressed: onCall,
           ),
         ],

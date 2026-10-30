@@ -58,33 +58,50 @@ class GameLayout extends StatelessWidget {
   }
 }
 
-/// A score panel: [top] from the top, [bottom] at its foot when there is room; the whole panel scrolls when there is not
+/// A score panel: [top] from the top and [bottom], such as Undo, always at its foot, the top scrolling when it does not
+/// fit; a panel too short even for that scrolls as one.
 class ScrollingPanel extends StatelessWidget {
   const ScrollingPanel({super.key, required this.top, this.bottom = const []});
 
   final List<Widget> top;
   final List<Widget> bottom;
 
+  /// Below this height the top would have no room left above the bottom
+  static const double pinnedFrom = 240;
+
   @override
   Widget build(BuildContext context) {
+    final topColumn = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: top);
     return LayoutBuilder(
-      builder: (context, constraints) => SingleChildScrollView(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: constraints.maxHeight),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      builder: (context, constraints) {
+        if (bottom.isNotEmpty && constraints.maxHeight >= pinnedFrom) {
+          return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: top),
-              if (bottom.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: bottom),
-              ],
+              Expanded(child: SingleChildScrollView(child: topColumn)),
+              const SizedBox(height: 12),
+              ...bottom,
             ],
+          );
+        }
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                topColumn,
+                if (bottom.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: bottom),
+                ],
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -100,7 +117,7 @@ class VisitDarts extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = Theme.of(context).textTheme.titleLarge;
+    final style = scoreStyle(Theme.of(context).textTheme.headlineSmall)?.copyWith(fontWeight: FontWeight.w600);
     final l10n = AppLocalizations.of(context);
     final colours = StatusColors.of(context);
     final hits = this.hits;

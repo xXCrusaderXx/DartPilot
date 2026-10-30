@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
@@ -354,8 +355,15 @@ class _GameInputState extends State<GameInput> {
       for (final c in pending?.candidates ?? const <ThrowCandidate>[])
         DartThrow(c.point, ThrowInput.engine, geometry: _geometry),
     ];
-    final throws = widget.game.throws;
-    final recentStart = throws.length > 3 ? throws.length - 3 : 0;
+    final game = widget.game;
+    final throws = game.throws;
+    // The visit that ended last, with whose it was and, where the game knows, what it came to, so a bust is not read
+    // as the next player's darts. While the next visit is under way it stays, dimmed, so a misread dart of it can
+    // still be corrected; the new visit's darts follow after a divider.
+    final inVisit = game.dartsInVisit;
+    final lastVisit = game is TellsVisits ? (game as TellsVisits).lastVisit : null;
+    final visitStart = throws.length - inVisit;
+    final endedStart = math.max(0, visitStart - (game is TellsVisits ? lastVisit?.darts ?? 0 : 3));
     final correcting = _correcting;
 
     final waiting = _waiting;
@@ -454,15 +462,37 @@ class _GameInputState extends State<GameInput> {
               spacing: 8,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                Text(l10n.recentDarts, style: theme.textTheme.labelLarge),
-                for (var i = recentStart; i < throws.length; ++i)
-                  ChoiceChip(
-                    key: ValueKey('recent-$i'),
-                    avatar: Icon(throws[i].input == ThrowInput.engine ? Icons.videocam : Icons.touch_app, size: 16),
-                    label: Text(throws[i].score.text(l10n)),
-                    selected: correcting == i,
-                    onSelected: (_) => setState(() => _correcting = correcting == i ? null : i),
+                if (lastVisit == null || endedStart == visitStart)
+                  Text(l10n.recentDarts, style: theme.textTheme.labelLarge)
+                else
+                  Text(
+                    [lastVisit.player, if (lastVisit.bust) l10n.bust else ?lastVisit.points?.toString()].join(' · '),
+                    key: const ValueKey('recent-visit'),
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: lastVisit.bust ? theme.colorScheme.error : null,
+                      fontWeight: lastVisit.bust ? FontWeight.w700 : null,
+                    ),
                   ),
+                for (var i = endedStart; i < throws.length; ++i) ...[
+                  if (i == visitStart && i > endedStart)
+                    SizedBox(
+                      key: const ValueKey('recent-divider'),
+                      height: 24,
+                      child: VerticalDivider(width: 9, thickness: 1, color: theme.colorScheme.outline),
+                    ),
+                  Opacity(
+                    opacity: i < visitStart && inVisit > 0 && correcting != i ? 0.55 : 1,
+                    child: ChoiceChip(
+                      key: ValueKey('recent-$i'),
+                      // Narrow, so a visit's three darts and whose they were fit one line on a phone
+                      labelPadding: const EdgeInsets.only(left: 2, right: 6),
+                      avatar: Icon(throws[i].input == ThrowInput.engine ? Icons.videocam : Icons.touch_app, size: 16),
+                      label: Text(throws[i].score.text(l10n)),
+                      selected: correcting == i,
+                      onSelected: (_) => setState(() => _correcting = correcting == i ? null : i),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

@@ -375,6 +375,12 @@ class StatusColors extends ThemeExtension<StatusColors> {
         );
 }
 
+/// Scores and figures keep their width while they change, so 141 → 111 does not jitter.
+const tabularFigures = [FontFeature.tabularFigures()];
+
+/// [style] for scores, with figures of one width: remaining scores, visit totals, legs, points
+TextStyle? scoreStyle(TextStyle? style) => style?.copyWith(fontFeatures: tabularFigures);
+
 /// The app's theme for one palette, dark by default
 ThemeData dartPilotTheme([AppPalette p = AppPalette.dark]) {
   final scheme = ColorScheme(
@@ -405,15 +411,14 @@ ThemeData dartPilotTheme([AppPalette p = AppPalette.dark]) {
     outlineVariant: p.border,
   );
   final base = ThemeData(colorScheme: scheme, useMaterial3: true);
-  // Scores and figures keep their width while they change, so 141 → 111 does not jitter.
-  const tabular = [FontFeature.tabularFigures()];
-  TextStyle? figures(TextStyle? style) => style?.copyWith(fontFeatures: tabular);
+  TextStyle? figures(TextStyle? style) => style?.copyWith(fontFeatures: tabularFigures);
   final text = base.textTheme;
   return base.copyWith(
     textTheme: text.copyWith(
-      displayLarge: figures(text.displayLarge),
-      displayMedium: figures(text.displayMedium),
-      displaySmall: figures(text.displaySmall),
+      // The display sizes are the big numbers
+      displayLarge: scoreStyle(text.displayLarge),
+      displayMedium: scoreStyle(text.displayMedium),
+      displaySmall: scoreStyle(text.displaySmall),
       headlineLarge: figures(text.headlineLarge),
       headlineMedium: figures(text.headlineMedium),
       headlineSmall: figures(text.headlineSmall),

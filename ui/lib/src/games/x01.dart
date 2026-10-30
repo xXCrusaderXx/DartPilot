@@ -71,7 +71,7 @@ class X01PlayerState {
 
 /// X01 state, derived by replaying all darts from the settings. Undo removes the last dart and replays, so the state
 /// can never drift from the throws.
-class X01Game implements DartGame {
+class X01Game implements DartGame, TellsVisits {
   X01Game(this.settings) {
     if (settings.players.isEmpty) throw ArgumentError('at least one player');
     _replay();
@@ -100,6 +100,19 @@ class X01Game implements DartGame {
 
   @override
   int get dartsInVisit => currentVisit.isComplete ? 0 : currentVisit.darts.length;
+
+  @override
+  VisitResult? get lastVisit {
+    final index = currentVisit.isComplete ? visits.length - 1 : visits.length - 2;
+    if (index < 0) return null;
+    final visit = visits[index];
+    return VisitResult(
+      player: players[visit.player].name,
+      darts: visit.darts.length,
+      points: visit.points,
+      bust: visit.isBust,
+    );
+  }
 
   @override
   void replace(int index, DartThrow dart) {
