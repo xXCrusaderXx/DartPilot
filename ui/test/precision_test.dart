@@ -322,11 +322,23 @@ void main() {
     expect(statistics.games.single.mode, GameMode.doubles);
     expect(doublesRanking(computePlayerPrecision(statistics.games, 'Anna')), hasLength(10));
 
+    // Three darts at each double are too few to rank them: the setup lists them as such and offers no weakest five.
     await openTraining(tester, 'Doppel-Training');
-    expect(find.text('Deine Doppel, die besten zuerst'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('doubles-set-weakest')));
-    await tester.pumpAndSettle();
-    expect(tester.widget<Text>(find.byKey(const ValueKey('doubles-targets'))).data!.split('  '), hasLength(5));
+    expect(find.text('Deine Doppel, die besten zuerst'), findsNothing);
+    expect(find.textContaining('Noch zu wenig Darts für eine Wertung: '), findsOneWidget);
+    expect(tester.widget<ChoiceChip>(find.byKey(const ValueKey('doubles-set-weakest'))).onSelected, isNull);
+  });
+
+  test('doubles are ranked only with enough darts', () {
+    final d16 = const PrecisionTarget(Ring.double, 16);
+    DartThrow at(PrecisionTarget t) => DartThrow(t.centre(), ThrowInput.board);
+    final precision = computePrecision([
+      (target: d16, dart: at(d16), thrown: DateTime(2026, 10, 26)),
+      for (var i = 0; i < 6; ++i) (target: t20d, dart: at(i < 4 ? t20d : t20), thrown: DateTime(2026, 10, 26)),
+    ]);
+    // D16 hit once in one dart is not ranked above D20 at four in six.
+    expect(doublesRanking(precision, minDarts: minRankedDarts).map((p) => p.target.label), ['D20']);
+    expect(doublesRanking(precision).first.target.label, 'D16');
   });
 
   testWidgets('the checkout trainer shows the field to aim at and counts the checkouts', (tester) async {

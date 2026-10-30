@@ -98,7 +98,7 @@ void main() {
     expect((record.replay().game as CricketGame).cutThroat, isTrue);
   });
 
-  test('121: a checkout made moves up by one, a missed one is tried again', () {
+  test('121: a checkout made moves up by one, a missed one steps down by one, never below 121', () {
     final starts = checkoutStarts(1, 3, CheckoutRange.ladder);
     expect(starts, [121, 121, 121]);
     final game = CheckoutTrainer(starts, dartsPerAttempt: 3, ladder: true);
@@ -110,8 +110,10 @@ void main() {
     expect(game.attempts.first.checkedOut, isTrue);
     expect(game.current.start, 122);
     [miss, miss, miss].forEach(game.add);
-    expect(game.current.start, 122);
+    expect(game.current.start, 121);
     expect(game.attempts, hasLength(3));
     expect(game.bestCheckout, 121);
+    expect(CheckoutTrainer.nextLadderStart(CheckoutAttempt(121)), 121);
+    expect(CheckoutTrainer.nextLadderStart(CheckoutAttempt(170)..checkedOut = true), 170);
   });
 }

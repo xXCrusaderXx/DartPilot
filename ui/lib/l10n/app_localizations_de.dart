@@ -37,7 +37,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get modeTraining => 'Freies Werfen';
 
   @override
-  String get modeTrainingDescription => 'Jeder Dart wird angezeigt und gezählt';
+  String get modeTrainingDescription => 'Zum Einwerfen: jeder Dart wird angezeigt und gezählt, aber nicht gespeichert';
 
   @override
   String get inputBoard => 'Scheibe';
@@ -949,7 +949,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get statsDarts => 'Darts';
 
   @override
-  String get statsFirst9 => 'First-9-Average';
+  String get statsFirst9 => 'Schnitt erste 9';
 
   @override
   String get statsLegs => 'Legs';
@@ -1540,7 +1540,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get saveCameraOrder => 'Übernehmen';
 
   @override
-  String get statsAverageTrend => 'Average-Verlauf (X01)';
+  String get statsAverageTrend => '3-Dart-Schnitt pro Spiel (X01)';
 
   @override
   String get statsHitBoard => 'Trefferbild';
@@ -2066,14 +2066,14 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get statsPrecisionEmpty =>
-      'Spiel das Gruppieren-Training, um deine Streuung und deinen Versatz pro Ziel zu sehen.';
+      'Spiel Gruppieren, das Doppel-Training oder den Checkout-Trainer und tippe die Darts auf der Scheibe an (oder lass sie die Kameras erkennen). Dann siehst du hier, wie eng und wie genau du jedes Ziel triffst.';
 
   @override
-  String get statsPrecisionTrend => 'Streuung pro Woche';
+  String get statsPrecisionTrend => 'Streuung pro Woche in mm, kleiner ist besser';
 
   @override
   String get statsPrecisionHelp =>
-      'Streuung: wie weit die Darts im Mittel von ihrer eigenen Mitte liegen (quadratisches Mittel). Versatz: wie weit diese Mitte vom Ziel liegt. In der Ellipse liegen etwa zwei von fünf Darts.';
+      'Streuung: wie eng deine Darts beieinander liegen, kleiner ist besser. Zum Vergleich: ein Triple-Feld ist 8 mm breit. Versatz: wie weit die Mitte deiner Darts vom Ziel liegt. Die Ellipse zeigt deinen typischen Bereich. Angetippte Darts sind so genau wie dein Tipp.';
 
   @override
   String get modeDoubles => 'Doppel-Training';
@@ -2104,7 +2104,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get modeCheckoutDescription =>
-      'Zufällige Finishes oder die 121-Leiter; jeder Fehlwurf gemessen am Feld, auf das du zielen solltest';
+      'Zufällige Finishes; jeder Fehlwurf gemessen am Feld, auf das du zielen solltest';
 
   @override
   String get checkoutRange => 'Finishes';
@@ -2145,7 +2145,8 @@ class AppLocalizationsDe extends AppLocalizations {
   String get modePrecision => 'Präzisionstraining';
 
   @override
-  String get modePrecisionDescription => 'Gruppieren, Doppel und Checkouts, gemessen in Millimetern';
+  String get modePrecisionDescription =>
+      'Gruppieren, Doppel, Checkouts und die 121-Leiter; mit Millimetern, wenn du die Darts antippst oder Kameras sie erkennen';
 
   @override
   String get or => 'oder';
@@ -2206,6 +2207,92 @@ class AppLocalizationsDe extends AppLocalizations {
   String ladderBest(String score) {
     return 'Höchster Checkout: $score';
   }
+
+  @override
+  String get statsMatches => 'Matches';
+
+  @override
+  String get statsMatchLegs => 'Match-Legs';
+
+  @override
+  String get statsTrainings => 'Trainings';
+
+  @override
+  String get statsHighestVisit => 'Höchste Aufnahme';
+
+  @override
+  String statsBestLegOf(int start) {
+    return 'Bestes Leg $start';
+  }
+
+  @override
+  String get periodLastGameShort => 'Zuletzt';
+
+  @override
+  String get statsHitBoardHint => 'Aus deinen Spielen; Darts aus Trainings zählen hier nicht.';
+
+  @override
+  String statsShowAllGames(int count) {
+    return 'Alle $count anzeigen';
+  }
+
+  @override
+  String statsFewDartsTargets(int count, int min) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count weitere Ziele',
+      one: '1 weiteres Ziel',
+    );
+    return '$_temp0 mit weniger als $min Darts';
+  }
+
+  @override
+  String doublesTooFewDarts(String targets) {
+    return 'Noch zu wenig Darts für eine Wertung: $targets';
+  }
+
+  @override
+  String get precisionNeedsPoints =>
+      'Millimeter gibt es nur für Darts, die du auf der Scheibe antippst oder die die Kameras erkennen. Über das Tastenfeld zählt nur, ob der Dart getroffen hat.';
+
+  @override
+  String trainingNewBest(String best) {
+    return 'Neuer Bestwert! Bisher: $best';
+  }
+
+  @override
+  String trainingLastAndBest(String last, String best) {
+    return 'Letztes Mal: $last  ·  Bestwert: $best';
+  }
+
+  @override
+  String get modeLadder => '121-Leiter';
+
+  @override
+  String get modeLadderDescription => 'Checke 121 aus: geschafft geht es eins hoch, verpasst eins runter';
+
+  @override
+  String get ladderAttempts => 'Versuche pro Runde';
+
+  @override
+  String ladderLevel(int score) {
+    return 'Stufe $score';
+  }
+
+  @override
+  String ladderRecord(String score) {
+    return 'Rekord $score';
+  }
+
+  @override
+  String attemptOf(int number, int total) {
+    return 'Versuch $number von $total';
+  }
+
+  @override
+  String get trainingNotKept =>
+      'Freies Werfen wird nicht gespeichert. Für deine Statistik spiel X01 oder ein Training.';
 
   @override
   String get modeKiller => 'Killer';

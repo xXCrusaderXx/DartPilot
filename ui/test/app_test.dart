@@ -29,7 +29,9 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('keypad-20')));
     await tester.pump();
     expect(visitDart(1), 'T20');
-    expect(find.descendant(of: find.byKey(const ValueKey('total-points')), matching: find.text('110')), findsOneWidget);
+    expect(tester.widget<Text>(find.byKey(const ValueKey('visit-total'))).data, '110');
+    expect(tester.widget<Text>(find.byKey(const ValueKey('total-points'))).data, contains('Punkte: 110'));
+    expect(find.byKey(const ValueKey('training-not-kept')), findsOneWidget);
 
     await tester.tap(find.text('Rückgängig'));
     await tester.pump();

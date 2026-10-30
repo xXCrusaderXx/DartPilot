@@ -149,7 +149,7 @@ abstract class AppLocalizations {
   /// No description provided for @modeTrainingDescription.
   ///
   /// In en, this message translates to:
-  /// **'Every dart is shown and counted'**
+  /// **'To warm up: every dart is shown and counted, but not kept'**
   String get modeTrainingDescription;
 
   /// No description provided for @inputBoard.
@@ -2729,7 +2729,7 @@ abstract class AppLocalizations {
   /// No description provided for @statsAverageTrend.
   ///
   /// In en, this message translates to:
-  /// **'Average over games (X01)'**
+  /// **'3-dart average per game (X01)'**
   String get statsAverageTrend;
 
   /// No description provided for @statsHitBoard.
@@ -3665,19 +3665,19 @@ abstract class AppLocalizations {
   /// No description provided for @statsPrecisionEmpty.
   ///
   /// In en, this message translates to:
-  /// **'Play the grouping training to see your spread and offset per target.'**
+  /// **'Play grouping, doubles practice or the checkout trainer and tap the darts on the board (or let the cameras detect them). Then you see here how tight and how true you hit each target.'**
   String get statsPrecisionEmpty;
 
   /// No description provided for @statsPrecisionTrend.
   ///
   /// In en, this message translates to:
-  /// **'Spread per week'**
+  /// **'Spread per week in mm, lower is better'**
   String get statsPrecisionTrend;
 
   /// No description provided for @statsPrecisionHelp.
   ///
   /// In en, this message translates to:
-  /// **'Spread: how far the darts lie from their own middle (root mean square). Offset: how far that middle lies from the target. The ellipse holds about two in five darts.'**
+  /// **'Spread: how tightly your darts sit together; lower is better. For comparison, a treble is 8 mm wide. Offset: how far the middle of your darts lies from the target. The ellipse shows your usual area. Tapped darts are as exact as your tap.'**
   String get statsPrecisionHelp;
 
   /// No description provided for @modeDoubles.
@@ -3737,7 +3737,7 @@ abstract class AppLocalizations {
   /// No description provided for @modeCheckoutDescription.
   ///
   /// In en, this message translates to:
-  /// **'Random finishes or the 121 ladder; every miss measured against the field to aim at'**
+  /// **'Random finishes; every miss measured against the field to aim at'**
   String get modeCheckoutDescription;
 
   /// No description provided for @checkoutRange.
@@ -3803,7 +3803,7 @@ abstract class AppLocalizations {
   /// No description provided for @modePrecisionDescription.
   ///
   /// In en, this message translates to:
-  /// **'Grouping, doubles and checkouts, measured in millimetres'**
+  /// **'Grouping, doubles, checkouts and the 121 ladder; in millimetres when you tap the darts or cameras detect them'**
   String get modePrecisionDescription;
 
   /// No description provided for @or.
@@ -3913,6 +3913,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Highest checkout: {score}'**
   String ladderBest(String score);
+
+  /// No description provided for @statsMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'Matches'**
+  String get statsMatches;
+
+  /// No description provided for @statsMatchLegs.
+  ///
+  /// In en, this message translates to:
+  /// **'Match legs'**
+  String get statsMatchLegs;
+
+  /// No description provided for @statsTrainings.
+  ///
+  /// In en, this message translates to:
+  /// **'Training rounds'**
+  String get statsTrainings;
+
+  /// No description provided for @statsHighestVisit.
+  ///
+  /// In en, this message translates to:
+  /// **'Highest visit'**
+  String get statsHighestVisit;
+
+  /// No description provided for @statsBestLegOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Best leg {start}'**
+  String statsBestLegOf(int start);
+
+  /// No description provided for @periodLastGameShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Last'**
+  String get periodLastGameShort;
+
+  /// No description provided for @statsHitBoardHint.
+  ///
+  /// In en, this message translates to:
+  /// **'From your games; training darts do not count here.'**
+  String get statsHitBoardHint;
+
+  /// No description provided for @statsShowAllGames.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all {count}'**
+  String statsShowAllGames(int count);
+
+  /// No description provided for @statsFewDartsTargets.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 more target} other{{count} more targets}} with fewer than {min} darts'**
+  String statsFewDartsTargets(int count, int min);
+
+  /// No description provided for @doublesTooFewDarts.
+  ///
+  /// In en, this message translates to:
+  /// **'Too few darts to rank yet: {targets}'**
+  String doublesTooFewDarts(String targets);
+
+  /// No description provided for @precisionNeedsPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Millimetres come only from darts you tap on the board or the cameras detect. With the keypad only hit or miss counts.'**
+  String get precisionNeedsPoints;
+
+  /// No description provided for @trainingNewBest.
+  ///
+  /// In en, this message translates to:
+  /// **'New personal best! Before: {best}'**
+  String trainingNewBest(String best);
+
+  /// No description provided for @trainingLastAndBest.
+  ///
+  /// In en, this message translates to:
+  /// **'Last time: {last}  ·  Best: {best}'**
+  String trainingLastAndBest(String last, String best);
+
+  /// No description provided for @modeLadder.
+  ///
+  /// In en, this message translates to:
+  /// **'121 ladder'**
+  String get modeLadder;
+
+  /// No description provided for @modeLadderDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Check out 121: made moves you up one, missed moves you down one'**
+  String get modeLadderDescription;
+
+  /// No description provided for @ladderAttempts.
+  ///
+  /// In en, this message translates to:
+  /// **'Attempts per round'**
+  String get ladderAttempts;
+
+  /// No description provided for @ladderLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Level {score}'**
+  String ladderLevel(int score);
+
+  /// No description provided for @ladderRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Record {score}'**
+  String ladderRecord(String score);
+
+  /// No description provided for @attemptOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Attempt {number} of {total}'**
+  String attemptOf(int number, int total);
+
+  /// No description provided for @trainingNotKept.
+  ///
+  /// In en, this message translates to:
+  /// **'Free throwing is not kept. For your statistics, play X01 or a training.'**
+  String get trainingNotKept;
 
   /// No description provided for @modeKiller.
   ///

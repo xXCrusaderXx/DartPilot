@@ -5,8 +5,11 @@ import 'package:intl/intl.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../board/dart_throw.dart';
+import '../display.dart';
 import '../stats/precision.dart';
+import '../stats/training_best.dart';
 import '../board/score_text.dart';
+import '../theme.dart';
 
 /// The offset of a mean or a dart from the target in words: "6 mm left, 4 mm low"
 String offsetText(AppLocalizations l10n, double dxMm, double dyMm) {
@@ -60,6 +63,77 @@ class MissTile extends StatelessWidget {
       leading: Text('$number', style: theme.textTheme.titleMedium),
       title: Text([dart.score.text(l10n), if (showTarget && aim != null) l10n.aimedAt(aim.label)].join('  ')),
       subtitle: miss == null ? null : Text(miss),
+    );
+  }
+}
+
+/// Whether the game screen is read from the oche
+bool readFromAfar(BuildContext context) => DisplayScope.of(context).farFor(WindowClass.of(context));
+
+/// The field to aim at next and the rest of the route, large enough to read from the oche
+class AimLine extends StatelessWidget {
+  const AimLine({super.key, required this.field, this.rest = const [], required this.fieldKey});
+
+  final String field;
+
+  /// The darts after this one on the way to the finish
+  final List<String> rest;
+  final Key fieldKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final far = readFromAfar(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Wrap(
+        spacing: 16,
+        crossAxisAlignment: WrapCrossAlignment.end,
+        children: [
+          Text(
+            l10n.checkoutAim(field),
+            key: fieldKey,
+            style: (far ? theme.textTheme.displaySmall : theme.textTheme.headlineMedium)?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+          if (rest.isNotEmpty)
+            Text(
+              rest.join('  '),
+              style: (far ? theme.textTheme.headlineMedium : theme.textTheme.titleLarge)?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A training's result against the player's earlier rounds: a new best, or the last and the best round
+class PersonalBestLine extends StatelessWidget {
+  const PersonalBestLine({super.key, required this.comparison, required this.value, required this.format});
+
+  final TrainingComparison comparison;
+  final double value;
+  final String Function(double) format;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    if (comparison.isNewBest(value)) {
+      return Text(
+        l10n.trainingNewBest(format(comparison.best)),
+        key: const ValueKey('training-new-best'),
+        style: theme.textTheme.titleMedium?.copyWith(color: StatusColors.of(context).good, fontWeight: FontWeight.w700),
+      );
+    }
+    return Text(
+      l10n.trainingLastAndBest(format(comparison.last), format(comparison.best)),
+      key: const ValueKey('training-last-best'),
     );
   }
 }

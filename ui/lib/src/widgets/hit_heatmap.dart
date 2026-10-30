@@ -84,7 +84,9 @@ class _HeatmapPainter extends CustomPainter {
         final count = hits[(ring, sector)] ?? 0;
         canvas.drawPath(path, Paint()..color = colour(count));
         canvas.drawPath(path, stroke);
-        if (count > 0) _label(canvas, '$count', _at(centre, (inner + outer) / 2 * scale, middle), countText, count);
+        if (count > 0) {
+          _label(canvas, '$count', _at(centre, (inner + outer) / 2 * scale, middle), countText, colour(count));
+        }
       }
       _label(canvas, '$sector', _at(centre, (g.doubleOuterRadiusMm + numbersMm / 2) * scale, middle), text, null);
     }
@@ -94,7 +96,7 @@ class _HeatmapPainter extends CustomPainter {
       canvas.drawCircle(centre, radius * scale, stroke);
     }
     final bulls = (hits[(Ring.outerBull, 0)] ?? 0) + (hits[(Ring.innerBull, 0)] ?? 0);
-    if (bulls > 0) _label(canvas, '$bulls', centre, countText, bulls);
+    if (bulls > 0) _label(canvas, '$bulls', centre, countText, colour(hits[(Ring.innerBull, 0)] ?? 0));
   }
 
   Offset _at(Offset centre, double radius, double angleDeg) {
@@ -112,13 +114,12 @@ class _HeatmapPainter extends CustomPainter {
       ..close();
   }
 
-  void _label(Canvas canvas, String value, Offset at, TextStyle style, int? count) {
-    final contrast = count == null
+  /// A count is written black or white, whichever reads on the [fill] of its own field.
+  void _label(Canvas canvas, String value, Offset at, TextStyle style, Color? fill) {
+    final contrast = fill == null
         ? style
         : style.copyWith(
-            color: ThemeData.estimateBrightnessForColor(Color.lerp(empty, hot, 0.6)!) == Brightness.dark
-                ? Colors.white
-                : Colors.black,
+            color: ThemeData.estimateBrightnessForColor(fill) == Brightness.dark ? Colors.white : Colors.black,
           );
     final painter = TextPainter(
       text: TextSpan(text: value, style: contrast),

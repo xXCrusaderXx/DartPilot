@@ -130,7 +130,7 @@ class StatisticsScreen extends StatelessWidget {
             ),
         ],
       ),
-      floatingActionButton: statistics == null
+      floatingActionButton: statistics == null || players.isEmpty
           ? null
           : FloatingActionButton.extended(
               key: const ValueKey('create-profile'),
@@ -144,7 +144,23 @@ class StatisticsScreen extends StatelessWidget {
           child: players.isEmpty
               ? Padding(
                   padding: const EdgeInsets.all(24),
-                  child: Text(l10n.statisticsEmpty, textAlign: TextAlign.center),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.person_add_alt_1, size: 64, color: Theme.of(context).colorScheme.primary),
+                      const SizedBox(height: 16),
+                      Text(l10n.statisticsEmpty, textAlign: TextAlign.center),
+                      if (statistics != null) ...[
+                        const SizedBox(height: 24),
+                        FilledButton.icon(
+                          key: const ValueKey('create-profile'),
+                          onPressed: () => createProfile(context),
+                          icon: const Icon(Icons.person_add),
+                          label: Text(l10n.newProfile),
+                        ),
+                      ],
+                    ],
+                  ),
                 )
               : ListView(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
@@ -233,6 +249,10 @@ class PlayerStatsScreen extends StatefulWidget {
 class _PlayerStatsScreenState extends State<PlayerStatsScreen> {
   StatsPeriod _period = StatsPeriod.all;
 
+  /// The history lists the newest games until the player asks for all of them.
+  bool _allGames = false;
+  static const _gamesShown = 5;
+
   DateTime? _since(List<GameRecord> games) {
     final now = DateTime.now();
     return switch (_period) {
@@ -259,25 +279,51 @@ class _PlayerStatsScreenState extends State<PlayerStatsScreen> {
         statistics?.precisionOf(widget.player, since: since) ?? computePlayerPrecision(games, widget.player);
     String n(double? v, [int decimals = 1]) => v == null ? '–' : _number(l10n, v, decimals);
     String percent(double? v) => v == null ? '–' : percentText(l10n, v);
+    String day(DateTime d) => DateFormat.yMd(l10n.localeName).format(d);
     // X01 games, oldest first, the last 30
-    final averages = [for (final g in stats.history.reversed) ?g.average];
-    if (averages.length > 30) averages.removeRange(0, averages.length - 30);
-
-    final figures = <(String, String)>[
-      (l10n.statsGames, '${stats.games} (${l10n.statsWon(stats.gamesWon)})'),
-      (l10n.statsDarts, '${stats.darts}'),
-      (l10n.average, n(stats.threeDartAverage)),
-      (l10n.statsFirst9, n(stats.first9Average)),
-      (l10n.statsLegs, '${stats.legs} (${l10n.statsWon(stats.legsWon)})'),
-      (l10n.statsBestLeg, stats.bestLegDarts == null ? '–' : l10n.statsDartsCount(stats.bestLegDarts!)),
-      (l10n.statsCheckoutRate, percent(stats.checkoutRate)),
-      (l10n.statsHighestFinish, stats.highestFinish?.toString() ?? '–'),
-      ('100+', '${stats.visits100}'),
-      ('140+', '${stats.visits140}'),
-      ('180', '${stats.visits180}'),
-      (l10n.statsMarksPerRound, n(stats.marksPerRound, 2)),
-      (l10n.statsClockHitRate, percent(stats.clockHitRate)),
+    final x01Games = [
+      for (final g in stats.history.reversed)
+        if (g.average != null) g,
     ];
+    if (x01Games.length > 30) x01Games.removeRange(0, x01Games.length - 30);
+    final measured = [
+      for (final p in precision)
+        if (p.points.length >= minRankedDarts) p,
+    ];
+    final fewDarts = [
+      for (final p in precision)
+        if (p.points.length < minRankedDarts) p,
+    ];
+
+    // Only the figures of what the player played in the period; a mode never played has nothing to say.
+    final figures = <(String, String)>[
+      (l10n.statsGames, '${stats.games}'),
+      if (stats.matches > 0) (l10n.statsMatches, '${stats.matches} (${l10n.statsWon(stats.gamesWon)})'),
+      if (stats.trainings > 0) (l10n.statsTrainings, '${stats.trainings}'),
+      if (stats.darts > 0) (l10n.statsDarts, '${stats.darts}'),
+      if (stats.x01Darts > 0) ...[
+        (l10n.average, n(stats.threeDartAverage)),
+        (l10n.statsFirst9, n(stats.first9Average)),
+        (
+          l10n.statsCheckoutRate,
+          stats.checkoutAttempts == 0
+              ? '–'
+              : '${percent(stats.checkoutRate)} (${stats.checkouts}/${stats.checkoutAttempts})',
+        ),
+        (l10n.statsHighestFinish, stats.highestFinish?.toString() ?? '–'),
+        (l10n.statsHighestVisit, stats.highestVisit?.toString() ?? '–'),
+        ('180', '${stats.visits180}'),
+        ('140+', '${stats.visits140}'),
+        ('100+', '${stats.visits100}'),
+        (l10n.statsLegs, '${stats.legs}'),
+        if (stats.matchLegs > 0) (l10n.statsMatchLegs, '${stats.matchLegs} (${l10n.statsWon(stats.legsWon)})'),
+        for (final start in stats.bestLegByStart.keys.toList()..sort((a, b) => b.compareTo(a)))
+          (l10n.statsBestLegOf(start), l10n.statsDartsCount(stats.bestLegByStart[start]!)),
+      ],
+      if (stats.cricketDarts > 0) (l10n.statsMarksPerRound, n(stats.marksPerRound, 2)),
+      if (stats.clockDarts > 0) (l10n.statsClockHitRate, percent(stats.clockHitRate)),
+    ];
+    final history = _allGames ? stats.history : stats.history.take(_gamesShown);
 
     return Scaffold(
       appBar: AppBar(title: Text(widget.player)),
@@ -287,52 +333,89 @@ class _PlayerStatsScreenState extends State<PlayerStatsScreen> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: SegmentedButton<StatsPeriod>(
-                  segments: [
-                    ButtonSegment(value: StatsPeriod.lastGame, label: Text(l10n.periodLastGame)),
-                    ButtonSegment(value: StatsPeriod.week, label: Text(l10n.periodWeek)),
-                    ButtonSegment(value: StatsPeriod.month, label: Text(l10n.periodMonth)),
-                    ButtonSegment(value: StatsPeriod.all, label: Text(l10n.periodAll)),
-                  ],
-                  selected: {_period},
-                  onSelectionChanged: (s) => setState(() => _period = s.first),
-                ),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final narrow = constraints.maxWidth < 480;
+                  return SegmentedButton<StatsPeriod>(
+                    showSelectedIcon: false,
+                    segments: [
+                      ButtonSegment(
+                        value: StatsPeriod.lastGame,
+                        label: Text(narrow ? l10n.periodLastGameShort : l10n.periodLastGame),
+                      ),
+                      ButtonSegment(value: StatsPeriod.week, label: Text(l10n.periodWeek)),
+                      ButtonSegment(value: StatsPeriod.month, label: Text(l10n.periodMonth)),
+                      ButtonSegment(value: StatsPeriod.all, label: Text(l10n.periodAll)),
+                    ],
+                    selected: {_period},
+                    onSelectionChanged: (s) => setState(() => _period = s.first),
+                  );
+                },
               ),
               const SizedBox(height: 16),
               if (stats.games == 0)
                 Text(l10n.statsNoGamesInPeriod)
               else ...[
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final (label, value) in figures)
-                      SizedBox(
-                        width: 160,
-                        child: Card(
-                          margin: EdgeInsets.zero,
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(label, style: theme.textTheme.bodySmall),
-                                const SizedBox(height: 4),
-                                Text(value, key: ValueKey('figure-$label'), style: theme.textTheme.titleLarge),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                if (averages.length >= 2) ...[
+                _FigureGrid(figures: figures),
+                if (x01Games.length >= 2) ...[
                   const SizedBox(height: 24),
                   Text(l10n.statsAverageTrend, style: theme.textTheme.titleMedium),
                   const SizedBox(height: 8),
-                  AverageTrend(key: const ValueKey('average-trend'), averages: averages),
+                  AverageTrend(
+                    key: const ValueKey('average-trend'),
+                    averages: [for (final g in x01Games) g.average!],
+                    from: day(x01Games.first.record.ended),
+                    to: day(x01Games.last.record.ended),
+                  ),
+                ],
+                const SizedBox(height: 24),
+                Text(l10n.statsHistory, style: theme.textTheme.titleMedium),
+                for (final game in history) _HistoryTile(game: game),
+                if (!_allGames && stats.history.length > _gamesShown)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton(
+                      key: const ValueKey('history-all'),
+                      onPressed: () => setState(() => _allGames = true),
+                      child: Text(l10n.statsShowAllGames(stats.history.length)),
+                    ),
+                  ),
+                if (stats.darts > 0) ...[
+                  const SizedBox(height: 24),
+                  Text(l10n.statsHitBoard, style: theme.textTheme.titleMedium),
+                  Text(l10n.statsHitBoardHint, style: theme.textTheme.bodySmall),
+                  const SizedBox(height: 8),
+                  Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 420),
+                      child: HitHeatmap(
+                        key: const ValueKey('hit-heatmap'),
+                        hits: stats.hits,
+                        geometry: EngineScope.of(context).geometry,
+                      ),
+                    ),
+                  ),
+                  if (stats.rings[Ring.miss]! > 0)
+                    Center(child: Text(l10n.statsMisses(stats.rings[Ring.miss]!), style: theme.textTheme.bodySmall)),
+                  const SizedBox(height: 24),
+                  Text(l10n.statsHits, style: theme.textTheme.titleMedium),
+                  const SizedBox(height: 8),
+                  for (final (ring, label) in [
+                    (Ring.triple, l10n.ringTriple),
+                    (Ring.double, l10n.ringDouble),
+                    (Ring.innerSingle, l10n.ringSingleInner),
+                    (Ring.outerSingle, l10n.ringSingleOuter),
+                    (Ring.outerBull, l10n.ringOuterBull),
+                    (Ring.innerBull, l10n.ringBull),
+                    (Ring.miss, l10n.ringMiss),
+                  ])
+                    _ShareBar(label: label, share: stats.ringShare(ring), text: percent(stats.ringShare(ring))),
+                  if (stats.favouriteDoubles.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    Text(l10n.statsFavouriteDoubles, style: theme.textTheme.titleMedium),
+                    const SizedBox(height: 4),
+                    Text(stats.favouriteDoubles.take(5).map((e) => '${e.key} × ${e.value}').join('   ')),
+                  ],
                 ],
                 const SizedBox(height: 24),
                 Text(l10n.statsPrecision, style: theme.textTheme.titleMedium),
@@ -342,50 +425,78 @@ class _PlayerStatsScreenState extends State<PlayerStatsScreen> {
                 else ...[
                   Text(l10n.statsPrecisionHelp, style: theme.textTheme.bodySmall),
                   const SizedBox(height: 8),
-                  for (final target in precision) _TargetPrecisionCard(precision: target),
-                ],
-                const SizedBox(height: 24),
-                Text(l10n.statsHitBoard, style: theme.textTheme.titleMedium),
-                const SizedBox(height: 8),
-                Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 420),
-                    child: HitHeatmap(
-                      key: const ValueKey('hit-heatmap'),
-                      hits: stats.hits,
-                      geometry: EngineScope.of(context).geometry,
+                  for (final target in measured) _TargetPrecisionCard(precision: target),
+                  if (fewDarts.isNotEmpty)
+                    ExpansionTile(
+                      key: const ValueKey('precision-few-darts'),
+                      tilePadding: EdgeInsets.zero,
+                      title: Text(l10n.statsFewDartsTargets(fewDarts.length, minRankedDarts)),
+                      children: [
+                        for (final p in fewDarts)
+                          ListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(p.target.label),
+                            trailing: Text(
+                              '${l10n.statsDartsCount(p.points.length)}  ·  '
+                              '${l10n.labelValue(l10n.hitRate, percentText(l10n, p.hitRate))}',
+                            ),
+                          ),
+                      ],
                     ),
-                  ),
-                ),
-                if (stats.rings[Ring.miss]! > 0)
-                  Center(child: Text(l10n.statsMisses(stats.rings[Ring.miss]!), style: theme.textTheme.bodySmall)),
-                const SizedBox(height: 24),
-                Text(l10n.statsHits, style: theme.textTheme.titleMedium),
-                const SizedBox(height: 8),
-                for (final (ring, label) in [
-                  (Ring.triple, l10n.ringTriple),
-                  (Ring.double, l10n.ringDouble),
-                  (Ring.innerSingle, l10n.ringSingleInner),
-                  (Ring.outerSingle, l10n.ringSingleOuter),
-                  (Ring.outerBull, l10n.ringOuterBull),
-                  (Ring.innerBull, l10n.ringBull),
-                  (Ring.miss, l10n.ringMiss),
-                ])
-                  _ShareBar(label: label, share: stats.ringShare(ring), text: percent(stats.ringShare(ring))),
-                if (stats.favouriteDoubles.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  Text(l10n.statsFavouriteDoubles, style: theme.textTheme.titleMedium),
-                  const SizedBox(height: 4),
-                  Text(stats.favouriteDoubles.take(5).map((e) => '${e.key} × ${e.value}').join('   ')),
                 ],
-                const SizedBox(height: 24),
-                Text(l10n.statsHistory, style: theme.textTheme.titleMedium),
-                for (final game in stats.history) _HistoryTile(game: game),
               ],
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The player's figures as cards in equal columns: two on a phone, more as the page gets wider
+class _FigureGrid extends StatelessWidget {
+  const _FigureGrid({required this.figures});
+
+  final List<(String, String)> figures;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const gap = 8.0;
+        final columns = (constraints.maxWidth / 170).floor().clamp(2, 5);
+        final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: [
+            for (final (label, value) in figures)
+              SizedBox(
+                width: width,
+                child: Card(
+                  margin: EdgeInsets.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(label, style: theme.textTheme.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 4),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(value, key: ValueKey('figure-$label'), style: theme.textTheme.titleLarge),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }
@@ -441,6 +552,9 @@ class _TargetPrecisionCard extends StatelessWidget {
               AverageTrend(
                 key: ValueKey('precision-trend-$label'),
                 averages: [for (final w in precision.weeks) w.spread.spreadMm],
+                unit: 'mm',
+                from: DateFormat.yMd(l10n.localeName).format(precision.weeks.first.week),
+                to: DateFormat.yMd(l10n.localeName).format(precision.weeks.last.week),
               ),
             ],
           ],
