@@ -2436,4 +2436,62 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appearancePreviewHint => 'A game screen shows every change at once';
+
+  @override
+  String get aboutTitle => 'About DartPilot';
+
+  @override
+  String get aboutHint => 'Version, licence and source code';
+
+  @override
+  String aboutVersion(String version) {
+    return 'Version $version';
+  }
+
+  @override
+  String get aboutDevelopmentBuild => 'Development build';
+
+  @override
+  String get aboutDescription =>
+      'Scores steel darts with cameras on the board, or by hand without any. Free and open source, made for playing at home.';
+
+  @override
+  String get aboutLicence => 'Licence';
+
+  @override
+  String get aboutLicenceText =>
+      'Free software under the GNU General Public License, version 3 or later (GPL-3.0-or-later). It comes without any warranty. You may share and change it under that licence.';
+
+  @override
+  String get aboutLegalese => 'Copyright (C) DartPilot contributors. GPL-3.0-or-later, without any warranty.';
+
+  @override
+  String get aboutSource => 'Source code';
+
+  @override
+  String get aboutGuide => 'Player guide';
+
+  @override
+  String get aboutCopyLink => 'Copy link';
+
+  @override
+  String get aboutLinkCopied => 'Link copied';
+
+  @override
+  String get aboutThirdParty => 'Licences of included software';
+
+  @override
+  String get aboutThirdPartyHint => 'Flutter and the packages this app is built with';
+
+  @override
+  String get aboutCredits => 'Credits';
+
+  @override
+  String get aboutCreditsText =>
+      'The DartPilot icon is part of DartPilot and under its licence. The icons in the app are Material Icons by Google (Apache License 2.0) and Cupertino Icons by the Flutter authors (MIT License). The app is built with Flutter. Thanks to everyone who reports bugs, tests and contributes.';
+
+  @override
+  String exportDownloaded(String name) {
+    return 'Downloaded: $name';
+  }
 }

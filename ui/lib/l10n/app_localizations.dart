@@ -4333,6 +4333,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A game screen shows every change at once'**
   String get appearancePreviewHint;
+
+  /// No description provided for @aboutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'About DartPilot'**
+  String get aboutTitle;
+
+  /// No description provided for @aboutHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Version, licence and source code'**
+  String get aboutHint;
+
+  /// No description provided for @aboutVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version}'**
+  String aboutVersion(String version);
+
+  /// No description provided for @aboutDevelopmentBuild.
+  ///
+  /// In en, this message translates to:
+  /// **'Development build'**
+  String get aboutDevelopmentBuild;
+
+  /// No description provided for @aboutDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Scores steel darts with cameras on the board, or by hand without any. Free and open source, made for playing at home.'**
+  String get aboutDescription;
+
+  /// No description provided for @aboutLicence.
+  ///
+  /// In en, this message translates to:
+  /// **'Licence'**
+  String get aboutLicence;
+
+  /// No description provided for @aboutLicenceText.
+  ///
+  /// In en, this message translates to:
+  /// **'Free software under the GNU General Public License, version 3 or later (GPL-3.0-or-later). It comes without any warranty. You may share and change it under that licence.'**
+  String get aboutLicenceText;
+
+  /// No description provided for @aboutLegalese.
+  ///
+  /// In en, this message translates to:
+  /// **'Copyright (C) DartPilot contributors. GPL-3.0-or-later, without any warranty.'**
+  String get aboutLegalese;
+
+  /// No description provided for @aboutSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Source code'**
+  String get aboutSource;
+
+  /// No description provided for @aboutGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Player guide'**
+  String get aboutGuide;
+
+  /// No description provided for @aboutCopyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get aboutCopyLink;
+
+  /// No description provided for @aboutLinkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied'**
+  String get aboutLinkCopied;
+
+  /// No description provided for @aboutThirdParty.
+  ///
+  /// In en, this message translates to:
+  /// **'Licences of included software'**
+  String get aboutThirdParty;
+
+  /// No description provided for @aboutThirdPartyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Flutter and the packages this app is built with'**
+  String get aboutThirdPartyHint;
+
+  /// No description provided for @aboutCredits.
+  ///
+  /// In en, this message translates to:
+  /// **'Credits'**
+  String get aboutCredits;
+
+  /// No description provided for @aboutCreditsText.
+  ///
+  /// In en, this message translates to:
+  /// **'The DartPilot icon is part of DartPilot and under its licence. The icons in the app are Material Icons by Google (Apache License 2.0) and Cupertino Icons by the Flutter authors (MIT License). The app is built with Flutter. Thanks to everyone who reports bugs, tests and contributes.'**
+  String get aboutCreditsText;
+
+  /// No description provided for @exportDownloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded: {name}'**
+  String exportDownloaded(String name);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
