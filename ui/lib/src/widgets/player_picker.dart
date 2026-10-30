@@ -83,6 +83,12 @@ String botLevelName(AppLocalizations l10n, int level) => switch (level) {
   _ => l10n.botLevel10,
 };
 
+/// A bot's name without the word bot, for a column too narrow for the whole name: "Stark" for "Bot · Stark"
+String botShortName(AppLocalizations l10n, String name) {
+  final prefix = l10n.botName(1, '');
+  return name.startsWith(prefix) && name.length > prefix.length ? name.substring(prefix.length) : name;
+}
+
 /// Asks which level a bot plays at; the level, or null when cancelled.
 Future<int?> pickBotLevel(BuildContext context) {
   final l10n = AppLocalizations.of(context);
@@ -238,6 +244,50 @@ class PlayerPicker extends StatelessWidget {
                     if (name != null) selection.toggle(name);
                   },
                 ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Who throws first, chosen among the whole line-up, bots included; the others follow in their order.
+class StarterChoice extends StatelessWidget {
+  const StarterChoice({super.key, required this.selection});
+
+  final PlayerSelection selection;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    return ListenableBuilder(
+      listenable: selection,
+      builder: (context, _) {
+        final players = selection.players;
+        if (players.length < 2) return const SizedBox.shrink();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: 16),
+            Text(l10n.x01ThrowsFirst, style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final name in players)
+                  ChoiceChip(
+                    key: ValueKey('first-$name'),
+                    avatar: selection.bots.containsKey(name)
+                        ? const Icon(Icons.smart_toy_outlined)
+                        : _dot(context, name),
+                    label: Text(name),
+                    selected: name == players.first,
+                    onSelected: (_) => selection.startWith(name),
+                  ),
               ],
             ),
           ],

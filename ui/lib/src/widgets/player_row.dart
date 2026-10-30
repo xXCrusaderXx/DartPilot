@@ -20,6 +20,8 @@ class PlayerRow extends StatelessWidget {
     this.valueColour,
     this.detailsFromAfar = false,
     this.valueIcons,
+    this.heroValue = true,
+    this.valueLabel,
   });
 
   final String name;
@@ -42,6 +44,13 @@ class PlayerRow extends StatelessWidget {
   /// Draws the value as icons, as Killer's lives, sized like the value's text; [value] is then what screen readers say
   final Widget? valueIcons;
 
+  /// Whether the active player's value is the panel's largest figure; false where the game shows what matters more
+  /// elsewhere, as Killer does with the double to throw at
+  final bool heroValue;
+
+  /// What the value is, small before it, where the bare figure could be read as points: "Target"
+  final String? valueLabel;
+
   /// The active player's value from afar: like the X01 score, by the panel's width within bounds
   static double _farSize(double width) => (width * 0.18).clamp(57, 140).toDouble();
 
@@ -56,7 +65,7 @@ class PlayerRow extends StatelessWidget {
     final onBlock = active && scoreboard ? palette.onHighlight : null;
     final colour = StatisticsScope.maybeOf(context)?.colourOf(name);
     final valueStyle = scoreStyle(
-      active
+      active && heroValue
           ? (far ? theme.textTheme.displayLarge : theme.textTheme.displayMedium)
           : (far ? theme.textTheme.displaySmall : theme.textTheme.headlineMedium),
     )?.copyWith(fontWeight: FontWeight.w700, color: valueColour ?? onBlock);
@@ -115,7 +124,17 @@ class PlayerRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          if (active && far)
+          if (valueLabel != null) ...[
+            Text(
+              valueLabel!.toUpperCase(),
+              style: theme.textTheme.labelMedium?.copyWith(
+                letterSpacing: 1.2,
+                color: onBlock ?? theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
+          if (active && far && heroValue)
             // From the oche the value at stake grows with the panel, as the X01 score does; long values shrink to fit
             ConstrainedBox(
               constraints: BoxConstraints(maxWidth: width * 0.6),

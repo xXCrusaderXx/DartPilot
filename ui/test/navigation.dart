@@ -35,6 +35,9 @@ Future<void> pickPlayers(WidgetTester tester, List<String> names) async {
       await tester.enterText(find.byKey(const ValueKey('new-profile-name')), name);
       await tester.tap(find.byKey(const ValueKey('new-profile-save')));
     } else if (!_picked(tester, existing)) {
+      // On a low screen the profiles may be below the rules
+      await tester.ensureVisible(existing);
+      await tester.pumpAndSettle();
       await tester.tap(existing);
     }
     await tester.pumpAndSettle();

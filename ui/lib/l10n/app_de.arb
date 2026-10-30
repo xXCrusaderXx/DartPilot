@@ -42,7 +42,7 @@
   "startGame": "Spiel starten",
   "leg": "Leg {number}",
   "legs": "Legs",
-  "x01LegOf": "Leg {number} · {total} zum Sieg",
+  "x01LegOf": "Leg {number} · First to {total}",
   "x01PlayerFigures": "Ø {average}",
   "checkout": "Checkout",
   "bust": "Überworfen",
@@ -826,5 +826,10 @@
   "enterMissingDartsHint": "Die nächsten Darts der Kameras warten, bis diese Aufnahme vollständig ist.",
   "correctDartTooltip": "Tippen, um diesen Dart zu korrigieren",
   "x01RemainingSpoken": "{score} Rest",
-  "homeConnectedNotDetecting": "Kamera-Erkennung verbunden – erkennt noch keine Darts"
+  "homeConnectedNotDetecting": "Kamera-Erkennung verbunden – erkennt noch keine Darts",
+  "celebrateNineDarter": "Neun-Darter!",
+  "legsFormat": "First to {first} · Best of {bestOf}",
+  "legsSingle": "Ein Leg entscheidet",
+  "cutThroatLowestWins": "Wenigste Punkte gewinnen",
+  "modeCricketCutThroat": "Cricket · Cut-Throat"
 }

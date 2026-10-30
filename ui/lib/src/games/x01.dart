@@ -101,6 +101,15 @@ class X01Game implements DartGame, TellsVisits {
   @override
   int get dartsInVisit => currentVisit.isComplete ? 0 : currentVisit.darts.length;
 
+  /// Whether [checkout] finished a 501 leg in nine darts, the fewest it can take
+  bool isNineDarter(X01Visit checkout) {
+    if (!checkout.isCheckout || settings.startScore != 501) return false;
+    final darts = visits
+        .where((v) => v.leg == checkout.leg && v.player == checkout.player)
+        .fold(0, (sum, v) => sum + v.darts.length);
+    return darts == 9;
+  }
+
   @override
   VisitResult? get lastVisit {
     final index = currentVisit.isComplete ? visits.length - 1 : visits.length - 2;

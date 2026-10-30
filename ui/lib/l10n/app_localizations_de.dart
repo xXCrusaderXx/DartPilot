@@ -143,7 +143,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String x01LegOf(int number, int total) {
-    return 'Leg $number · $total zum Sieg';
+    return 'Leg $number · First to $total';
   }
 
   @override
@@ -362,7 +362,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String correctingDart(String label) {
-    return '$label korrigieren – tipp das richtige Feld an';
+    return '$label korrigieren – tippe auf die Scheibe';
   }
 
   @override
@@ -2829,63 +2829,19 @@ class AppLocalizationsDe extends AppLocalizations {
   String get marksPerRoundShort => 'MPR';
 
   @override
-  String get gameCamerasNotCounting => 'Kameras zählen gerade nicht – trag die Darts von Hand ein';
+  String get celebrateNineDarter => 'Neun-Darter!';
 
   @override
-  String get gameCameraLost => 'Eine Kamera liefert keine Bilder.';
-
-  @override
-  String get gameConnectionLost => 'Verbindung zur Kamera-Erkennung weg';
-
-  @override
-  String get gameConnectionLostHint =>
-      'Prüf die Darts dieser Aufnahme oder trag sie von Hand ein. Korrekturen gehen raus, sobald sie wieder da ist.';
-
-  @override
-  String get gameReconnected => 'Wieder verbunden';
-
-  @override
-  String get gameReconnectedHint => 'Darts aus der Unterbrechung fehlen vielleicht – prüf die letzte Aufnahme.';
-
-  @override
-  String get noticeOk => 'OK';
-
-  @override
-  String correctedElsewhere(String old, String corrected) {
-    return 'Auf einem anderen Gerät korrigiert: $old → $corrected';
+  String legsFormat(int first, int bestOf) {
+    return 'First to $first · Best of $bestOf';
   }
 
   @override
-  String rejectedElsewhere(String label) {
-    return 'Auf einem anderen Gerät gestrichen: $label';
-  }
+  String get legsSingle => 'Ein Leg entscheidet';
 
   @override
-  String get missingDartsHint =>
-      'Die Darts sind aus dem Board. Zähl den Rest als Daneben oder trag ihn selbst ein, bevor der Nächste wirft.';
+  String get cutThroatLowestWins => 'Wenigste Punkte gewinnen';
 
   @override
-  String enterMissingDarts(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Noch $count Darts von Hand eingeben',
-      one: 'Noch 1 Dart von Hand eingeben',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get enterMissingDartsHint => 'Die nächsten Darts der Kameras warten, bis diese Aufnahme vollständig ist.';
-
-  @override
-  String get correctDartTooltip => 'Tippen, um diesen Dart zu korrigieren';
-
-  @override
-  String x01RemainingSpoken(int score) {
-    return '$score Rest';
-  }
-
-  @override
-  String get homeConnectedNotDetecting => 'Kamera-Erkennung verbunden – erkennt noch keine Darts';
+  String get modeCricketCutThroat => 'Cricket · Cut-Throat';
 }

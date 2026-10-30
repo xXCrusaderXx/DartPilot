@@ -125,12 +125,13 @@ class PersonalBestLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
     if (comparison.isNewBest(value)) {
       return Text(
         l10n.trainingNewBest(format(comparison.best)),
         key: const ValueKey('training-new-best'),
-        style: theme.textTheme.titleMedium?.copyWith(color: StatusColors.of(context).good, fontWeight: FontWeight.w700),
+        // As large as the text around it, which a round's result sets
+        style: DefaultTextStyle.of(context).style
+            .copyWith(color: StatusColors.of(context).good, fontWeight: FontWeight.w700),
       );
     }
     return Text(

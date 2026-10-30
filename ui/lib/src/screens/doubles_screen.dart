@@ -20,6 +20,7 @@ import 'game_layout.dart';
 import '../widgets/player_row.dart';
 import 'game_scaffold.dart';
 import 'my_darts_screen.dart';
+import '../widgets/game_result.dart';
 import '../widgets/winner_dialog.dart';
 
 /// Doubles practice (#125): one visit at each double, with the miss of every dart, and the doubles ranked by the
@@ -30,6 +31,7 @@ class DoublesScreen extends StatefulWidget {
     required this.player,
     required this.targets,
     this.dartsPerTarget = 3,
+    this.weakest = false,
     this.replay = const [],
     this.watching = false,
   });
@@ -37,6 +39,9 @@ class DoublesScreen extends StatefulWidget {
   final String player;
   final List<PrecisionTarget> targets;
   final int dartsPerTarget;
+
+  /// Whether [targets] are the player's five weakest doubles, which another round finds anew
+  final bool weakest;
 
   /// Darts already thrown, for a game rebuilt from a shared record
   final List<DartThrow> replay;
@@ -86,6 +91,7 @@ class _DoublesScreenState extends State<DoublesScreen> with RecordsGame {
     settings: {
       'targets': [for (final t in widget.targets) t.label],
       'darts_per_target': widget.dartsPerTarget,
+      if (widget.weakest) 'weakest': true,
     },
     throws: _game.throws,
   );
@@ -100,7 +106,7 @@ class _DoublesScreenState extends State<DoublesScreen> with RecordsGame {
 
   void _add(DartThrow dart) {
     setState(() => _game.add(dart));
-    dartFeedback(context, dart, effect: gameEffect(dart, finished: _game.isFinished, training: true));
+    dartFeedback(context, dart, effect: doublesEffect(_game, dart));
     if (_game.isFinished) _showResult();
   }
 
@@ -110,22 +116,29 @@ class _DoublesScreenState extends State<DoublesScreen> with RecordsGame {
     final earlier = _earlier;
     return showRoundResult(
       context,
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
+      content: SoloResult(
+        headline: l10n.resultHitRate(percentText(l10n, _game.hitRate)),
+        headlineKey: const ValueKey('doubles-result-rate'),
+        comparison: earlier == null
+            ? null
+            : PersonalBestLine(comparison: earlier, value: _game.hitRate, format: (v) => percentText(l10n, v)),
+      ),
+      // The doubles of the round, best first, for those who want to look closer
+      details: Column(
+        key: const ValueKey('doubles-result-ranking'),
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(l10n.resultHitRate(percentText(l10n, _game.hitRate)), key: const ValueKey('doubles-result-rate')),
-          if (earlier != null) ...[
-            const SizedBox(height: 8),
-            PersonalBestLine(comparison: earlier, value: _game.hitRate, format: (v) => percentText(l10n, v)),
-          ],
-          const SizedBox(height: 8),
-          for (final p in ranking) Text(rankingLine(l10n, p)),
-        ],
+        children: [for (final p in ranking) Text(rankingLine(l10n, p))],
       ),
       onUndo: () => setState(_game.undo),
-      again: (_) =>
-          DoublesScreen(player: widget.player, targets: widget.targets, dartsPerTarget: widget.dartsPerTarget),
+      again: (context) => DoublesScreen(
+        player: widget.player,
+        // The weakest doubles are found again, now with this round's darts among them.
+        targets: widget.weakest
+            ? weakestDoubles(StatisticsScope.read(context)?.games ?? const [], widget.player) ?? widget.targets
+            : widget.targets,
+        dartsPerTarget: widget.dartsPerTarget,
+        weakest: widget.weakest,
+      ),
     );
   }
 
@@ -210,6 +223,13 @@ class _DoublesScreenState extends State<DoublesScreen> with RecordsGame {
 
 enum DoublesSet { top10, all, weakest }
 
+/// The five doubles [player] hits least often, among those with enough darts to rank; null with fewer than five
+List<PrecisionTarget>? weakestDoubles(List<GameRecord> games, String? player) {
+  if (player == null) return null;
+  final ranking = doublesRanking(computePlayerPrecision(games, player), minDarts: minRankedDarts);
+  return ranking.length >= 5 ? [for (final p in ranking.reversed.take(5)) p.target] : null;
+}
+
 /// Who throws and at which doubles, with the player's ranking so far
 class DoublesSetupScreen extends StatefulWidget {
   const DoublesSetupScreen({super.key});
@@ -237,7 +257,7 @@ class _DoublesSetupScreenState extends State<DoublesSetupScreen> {
       for (final p in doublesRanking(precision))
         if (p.points.length < minRankedDarts) p.target.label,
     ];
-    final weakest = ranking.length >= 5 ? [for (final p in ranking.reversed.take(5)) p.target] : null;
+    final weakest = weakestDoubles(statistics?.games ?? const [], player);
     final set = _set == DoublesSet.weakest && weakest == null ? DoublesSet.top10 : _set;
     final targets = switch (set) {
       DoublesSet.top10 => allDoubles.take(10).toList(),
@@ -302,7 +322,8 @@ class _DoublesSetupScreenState extends State<DoublesSetupScreen> {
                         if (!await confirmBoardEmpty(context) || !context.mounted) return;
                         Navigator.of(context).pushReplacement(
                           MaterialPageRoute<void>(
-                            builder: (_) => DoublesScreen(player: player, targets: targets),
+                            builder: (_) =>
+                                DoublesScreen(player: player, targets: targets, weakest: set == DoublesSet.weakest),
                           ),
                         );
                       },

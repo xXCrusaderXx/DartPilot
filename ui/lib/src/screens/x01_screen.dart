@@ -23,7 +23,7 @@ import 'my_darts_screen.dart';
 import 'game_layout.dart';
 import 'x01_panel.dart';
 import '../display.dart';
-import '../engine/engine_connection.dart';
+import 'game_flow.dart';
 import 'game_scaffold.dart';
 import 'x01_setup_screen.dart';
 import '../board/score_text.dart';
@@ -49,13 +49,13 @@ class X01Screen extends StatefulWidget {
   final bool watching;
 
   /// How long a visit that ended stays on the panel when no takeout holds it, unless the next dart comes first
-  static const Duration holdTime = Duration(milliseconds: 1500);
+  static const Duration holdTime = HoldsVisits.holdTime;
 
   @override
   State<X01Screen> createState() => _X01ScreenState();
 }
 
-class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
+class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns, HoldsVisits {
   @override
   bool get watching => widget.watching;
 
@@ -63,37 +63,21 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
   final TakeoutGate _takeout = TakeoutGate();
   final Celebrations _celebrations = Celebrations();
 
-  /// The visit that ended stays on show while the game has this many darts
-  int? _heldAt;
-  Timer? _holdTimer;
   Timer? _winnerTimer;
 
   @override
+  DartGame get heldGame => _game;
+
+  @override
   void dispose() {
-    _holdTimer?.cancel();
     _winnerTimer?.cancel();
     _celebrations.dispose();
     super.dispose();
   }
 
-  /// Whether the visit that just ended is still on show: an undo or the next dart ends that
-  bool get _holding =>
-      _heldAt == _game.throws.length &&
-      !_game.isFinished &&
-      _game.currentVisit.darts.isEmpty &&
-      _game.visits.length > 1;
-
-  void _hold() {
-    _holdTimer?.cancel();
-    _heldAt = _game.throws.length;
-    _holdTimer = Timer(X01Screen.holdTime, () {
-      if (mounted) setState(() => _heldAt = null);
-    });
-  }
-
   // A bot waits until the players have seen the visit before it.
   @override
-  bool get waitsForTakeout => _takeout.isClosed(_game) || _holding;
+  bool get waitsForTakeout => _takeout.isClosed(_game) || holding;
 
   @override
   GameRecord buildRecord(String id, DateTime started, DateTime ended) => GameRecord(
@@ -124,13 +108,10 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
     final before = _outcome;
     final legBefore = _game.legNumber;
     final visitsBefore = _game.visits.length;
-    // With an engine, the player's darts wait for their takeout instead; a bot's darts never go to the board.
     final bot = isBotTurn;
-    final holds = bot || !EngineScope.read(context).isConnected;
     setState(() {
       _game.add(dart);
-      // The visit that ended stays on show for a moment, so its total or bust is seen before the next player's.
-      if (holds && _game.visits.length > visitsBefore && !_game.isFinished) _hold();
+      holdEndedVisit(bot: bot);
     });
     if (!widget.watching) {
       dartFeedback(
@@ -156,8 +137,12 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
     if (!won && _game.legNumber <= legBefore) return;
     final checkout = _game.visits.lastWhere((v) => v.isCheckout);
     final l10n = AppLocalizations.of(context);
-    // A ton-plus finish gets the large plate, any other the small one.
-    _celebrations.show(l10n.celebrateCheckout(checkout.startRemaining), big: checkout.startRemaining >= 100);
+    // A nine-darter and a ton-plus finish get the large plate, any other the small one.
+    if (_game.isNineDarter(checkout)) {
+      _celebrations.show(l10n.celebrateNineDarter);
+    } else {
+      _celebrations.show(l10n.celebrateCheckout(checkout.startRemaining), big: checkout.startRemaining >= 100);
+    }
     if (!won) return;
     _winnerTimer?.cancel();
     _winnerTimer = Timer(Celebrations.playTime(context), () {
@@ -229,7 +214,7 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
     final l10n = AppLocalizations.of(context);
     // While its darts are in the board, and a moment longer without an engine, the visit that ended stays on the
     // scoreboard with its player.
-    final waiting = _takeout.isClosed(_game) || _holding;
+    final waiting = _takeout.isClosed(_game) || holding;
     final visit = waiting ? _game.visits[_game.visits.length - 2] : _game.currentVisit;
     final checkout = waiting ? null : _game.checkoutSuggestion;
 

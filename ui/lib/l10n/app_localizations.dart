@@ -713,7 +713,7 @@ abstract class AppLocalizations {
   /// No description provided for @correctingDart.
   ///
   /// In en, this message translates to:
-  /// **'Correct {label} – tap the right field'**
+  /// **'Correcting {label} – tap the board'**
   String correctingDart(String label);
 
   /// No description provided for @cancel.
@@ -4964,95 +4964,35 @@ abstract class AppLocalizations {
   /// **'MPR'**
   String get marksPerRoundShort;
 
-  /// No description provided for @gameCamerasNotCounting.
+  /// No description provided for @celebrateNineDarter.
   ///
   /// In en, this message translates to:
-  /// **'The cameras are not counting right now – enter the darts by hand'**
-  String get gameCamerasNotCounting;
+  /// **'Nine-darter!'**
+  String get celebrateNineDarter;
 
-  /// No description provided for @gameCameraLost.
+  /// No description provided for @legsFormat.
   ///
   /// In en, this message translates to:
-  /// **'A camera delivers no pictures.'**
-  String get gameCameraLost;
+  /// **'First to {first} · best of {bestOf}'**
+  String legsFormat(int first, int bestOf);
 
-  /// No description provided for @gameConnectionLost.
+  /// No description provided for @legsSingle.
   ///
   /// In en, this message translates to:
-  /// **'Connection to the camera detection lost'**
-  String get gameConnectionLost;
+  /// **'A single leg decides'**
+  String get legsSingle;
 
-  /// No description provided for @gameConnectionLostHint.
+  /// No description provided for @cutThroatLowestWins.
   ///
   /// In en, this message translates to:
-  /// **'Check the darts of this visit or enter them by hand. Corrections are sent once it is back.'**
-  String get gameConnectionLostHint;
+  /// **'Fewest points win'**
+  String get cutThroatLowestWins;
 
-  /// No description provided for @gameReconnected.
+  /// No description provided for @modeCricketCutThroat.
   ///
   /// In en, this message translates to:
-  /// **'Connected again'**
-  String get gameReconnected;
-
-  /// No description provided for @gameReconnectedHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Darts thrown while the connection was gone may be missing – check the last visit.'**
-  String get gameReconnectedHint;
-
-  /// No description provided for @noticeOk.
-  ///
-  /// In en, this message translates to:
-  /// **'OK'**
-  String get noticeOk;
-
-  /// No description provided for @correctedElsewhere.
-  ///
-  /// In en, this message translates to:
-  /// **'Corrected on another device: {old} → {corrected}'**
-  String correctedElsewhere(String old, String corrected);
-
-  /// No description provided for @rejectedElsewhere.
-  ///
-  /// In en, this message translates to:
-  /// **'Removed on another device: {label}'**
-  String rejectedElsewhere(String label);
-
-  /// No description provided for @missingDartsHint.
-  ///
-  /// In en, this message translates to:
-  /// **'The darts are out of the board. Count the rest as misses, or enter them yourself before the next player throws.'**
-  String get missingDartsHint;
-
-  /// No description provided for @enterMissingDarts.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{Enter 1 more dart by hand} other{Enter {count} more darts by hand}}'**
-  String enterMissingDarts(int count);
-
-  /// No description provided for @enterMissingDartsHint.
-  ///
-  /// In en, this message translates to:
-  /// **'The cameras\' next darts wait until this visit is complete.'**
-  String get enterMissingDartsHint;
-
-  /// No description provided for @correctDartTooltip.
-  ///
-  /// In en, this message translates to:
-  /// **'Tap to correct this dart'**
-  String get correctDartTooltip;
-
-  /// No description provided for @x01RemainingSpoken.
-  ///
-  /// In en, this message translates to:
-  /// **'{score} left'**
-  String x01RemainingSpoken(int score);
-
-  /// No description provided for @homeConnectedNotDetecting.
-  ///
-  /// In en, this message translates to:
-  /// **'Camera detection connected – not detecting darts yet'**
-  String get homeConnectedNotDetecting;
+  /// **'Cricket · Cut-Throat'**
+  String get modeCricketCutThroat;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

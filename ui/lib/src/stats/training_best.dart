@@ -25,6 +25,8 @@ TrainingScore? trainingScore(GameRecord record) {
 /// Rounds of one kind compare: the same target, the same doubles, the same range of finishes and darts for each.
 String? trainingKind(GameRecord record) => switch (record.mode) {
   GameMode.grouping => 'grouping ${record.groupingTarget.label}',
+  // The weakest five change as the player improves; their rounds compare with each other all the same.
+  GameMode.doubles when record.settings['weakest'] == true => 'doubles weakest',
   GameMode.doubles => 'doubles ${[for (final t in record.doublesGame.targets) t.label].join(' ')}',
   GameMode.checkout => switch (record.checkoutTrainer) {
     final t when t.ladder => 'ladder ${t.dartsPerAttempt}',

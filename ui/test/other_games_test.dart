@@ -5,6 +5,7 @@ import 'package:dartpilot/src/games/around_the_clock.dart';
 import 'package:dartpilot/src/games/cricket.dart';
 import 'package:dartpilot/src/games/killer.dart';
 import 'package:dartpilot/src/games/round_games.dart';
+import 'package:dartpilot/src/screens/game_flow.dart';
 import 'package:dartpilot/src/sound/game_calls.dart';
 import 'package:dartpilot/src/stats/game_record.dart';
 import 'package:dartpilot/src/stats/personal_best.dart';
@@ -217,10 +218,14 @@ void main() {
     expect(tester.widget<Text>(find.byKey(const ValueKey('round-target'))).data, '15');
     expect(find.text('ZIEL'), findsOneWidget);
     await tapMiss(tester);
+    // Without an engine the visit that ended stays on show for a moment, with its player at the oche.
+    expect(tester.widget<Text>(find.byKey(const ValueKey('visit-dart-0'))).data, 'Daneben');
+    await tester.pump(HoldsVisits.holdTime);
+    await tester.pumpAndSettle();
     expect(tester.widget<Text>(find.byKey(const ValueKey('visit-dart-0'))).data, '–');
   });
 
-  testWidgets('Killer draws the lives as hearts and offers five lives', (tester) async {
+  testWidgets('Killer draws the lives as pips and offers five lives', (tester) async {
     final semantics = tester.ensureSemantics();
     await resume(
       tester,
@@ -235,7 +240,7 @@ void main() {
       ),
     );
     expect(
-      find.descendant(of: find.byKey(const ValueKey('lives-Anna')), matching: find.byIcon(Icons.favorite)),
+      find.descendant(of: find.byKey(const ValueKey('lives-Anna')), matching: find.byIcon(Icons.circle)),
       findsNWidgets(5),
     );
     expect(find.bySemanticsLabel(RegExp('5 Leben')), findsWidgets);

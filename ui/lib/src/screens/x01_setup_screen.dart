@@ -152,7 +152,6 @@ class _X01SetupScreenState extends State<X01SetupScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final players = _players.players;
     return Scaffold(
       appBar: AppBar(title: Text(l10n.x01Setup)),
       body: Center(
@@ -162,24 +161,7 @@ class _X01SetupScreenState extends State<X01SetupScreen> {
             padding: const EdgeInsets.all(16),
             children: [
               PlayerPicker(selection: _players),
-              if (players.length > 1) ...[
-                const SizedBox(height: 16),
-                Text(l10n.x01ThrowsFirst, style: theme.textTheme.titleMedium),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final name in players)
-                      ChoiceChip(
-                        key: ValueKey('first-$name'),
-                        label: Text(name),
-                        selected: name == players.first,
-                        onSelected: (_) => _players.startWith(name),
-                      ),
-                  ],
-                ),
-              ],
+              StarterChoice(selection: _players),
               const SizedBox(height: 16),
               Text(l10n.startScore, style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),
@@ -203,6 +185,11 @@ class _X01SetupScreenState extends State<X01SetupScreen> {
               ),
               ListTile(
                 title: Text(l10n.legsToWin),
+                // Players count a match as first to or best of: the same match in both words
+                subtitle: Text(
+                  _legsToWin > 1 ? l10n.legsFormat(_legsToWin, 2 * _legsToWin - 1) : l10n.legsSingle,
+                  key: const ValueKey('legs-format'),
+                ),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
