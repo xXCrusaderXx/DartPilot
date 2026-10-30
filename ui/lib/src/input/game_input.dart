@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../board/dart_throw.dart';
+import '../bots/bot_turns.dart';
 import '../board/scoring.dart';
 import '../engine/engine_connection.dart';
 import '../engine/engine_events.dart';
@@ -173,7 +174,9 @@ class _GameInputState extends State<GameInput> {
   bool _holds(EngineThrowCorrected event) =>
       event.action == 'added' || _held.any((e) => e is EngineThrow && e.throwId == event.throwId);
 
-  /// Takes the dart at `index` out of the game, wherever in the game it is: the darts after it are thrown again.
+  /// Takes the dart at `index` out of the game, wherever in the game it is: the darts after it are thrown again in the
+  /// same order. They keep their place, not their player, so in a bot game a bot's dart can move into the visit before.
+  /// The last dart that counts goes through the screen, so a leg or match it now wins is announced as when thrown.
   void _remove(int index) {
     final game = widget.game;
     final after = game.throws.sublist(index + 1);
@@ -181,6 +184,13 @@ class _GameInputState extends State<GameInput> {
       game.undo();
     }
     after.forEach(game.add);
+    // A dart fewer here is no undo: the bots must not take back further darts for it.
+    context.findAncestorStateOfType<BotTurns>()?.dartsReplaced();
+    if (game.throws.length > index) {
+      final last = game.throws.last;
+      game.undo();
+      widget.onDart(last);
+    }
     _engineIds = _gameEngineIds;
     widget.onChanged();
   }

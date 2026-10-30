@@ -28,7 +28,11 @@ void main() {
       tester.widget<Text>(find.byKey(ValueKey('remaining-$player'))).data!;
 
   /// X01 301 for Anna and Ben with a connected engine; the messages the app sends land in `sent`
-  Future<EngineConnection> startEngineGame(WidgetTester tester, List<Map<String, dynamic>> sent) async {
+  Future<EngineConnection> startEngineGame(
+    WidgetTester tester,
+    List<Map<String, dynamic>> sent, {
+    List<String> players = const ['Anna', 'Ben'],
+  }) async {
     tester.view.physicalSize = const Size(1400, 1100);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -41,7 +45,7 @@ void main() {
     engine.state = EngineConnectionState.connected;
     await tester.tap(find.text('X01'));
     await tester.pumpAndSettle();
-    await pickPlayers(tester, ['Anna', 'Ben']);
+    await pickPlayers(tester, players);
     await tester.tap(find.text('301'));
     await tester.tap(find.byKey(const ValueKey('start-game')));
     await tester.pumpAndSettle();
@@ -90,6 +94,29 @@ void main() {
     await receive(tester, engine, correctionJson('s/1', 'rejected'));
     expect(remaining(tester, 'Anna'), '281');
     expect(tester.widget<Text>(find.byKey(const ValueKey('visit-dart-0'))).data, 'S20');
+  });
+
+  testWidgets('a dart rejected elsewhere that lets a later dart win announces the winner', (tester) async {
+    final engine = await startEngineGame(tester, [], players: ['Anna']);
+    var id = 0;
+    Future<void> visit(List<(double, double)> darts) async {
+      for (final (x, y) in darts) {
+        await receive(tester, engine, throwJson('s/${++id}', x, y));
+      }
+    }
+
+    const t20 = (0.0, 103.0), s20 = (0.0, 57.0), s1 = (17.6, 54.2), d20 = (0.0, 166.0);
+    await visit([t20, t20, t20]);
+    await receive(tester, engine, takeoutJson);
+    await visit([t20, s20, s1]);
+    await receive(tester, engine, takeoutJson);
+    expect(remaining(tester, 'Anna'), '40');
+    // S1 leaves 39, so D20 busts; without the S1 the same D20 wins.
+    await visit([s1, d20]);
+    expect(remaining(tester, 'Anna'), '40');
+    expect(find.text('Anna gewinnt!'), findsNothing);
+    await receive(tester, engine, correctionJson('s/7', 'rejected'));
+    expect(find.text('Anna gewinnt!'), findsOneWidget);
   });
 
   testWidgets('a dart added elsewhere while the darts are in the board belongs to the next visit', (tester) async {

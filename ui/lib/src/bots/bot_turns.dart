@@ -48,6 +48,14 @@ mixin BotTurns<T extends StatefulWidget> on State<T> {
     });
   }
 
+  /// Call when darts were taken out without an undo, such as a dart rejected on another display: the bots play on from
+  /// the darts as they are now.
+  void dartsReplaced() {
+    _timer?.cancel();
+    _timer = null;
+    _darts = botGame.throws.length;
+  }
+
   /// After an undo that left a bot at the oche: its pending dart is dropped, and the bots' darts are taken back up to
   /// and including the last dart of a person, which is the one the player meant to undo.
   void _undone() {
