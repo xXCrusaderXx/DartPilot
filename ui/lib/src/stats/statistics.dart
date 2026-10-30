@@ -24,7 +24,7 @@ abstract interface class GameStore {
 }
 
 /// One JSON line per game in the app's support directory, appended at the end of every game; lines this version
-/// cannot read are kept in the file and skipped.
+/// cannot read, also lines with fields of an unexpected type, are kept in the file and skipped.
 class FileGameStore implements GameStore {
   FileGameStore([this._file]);
 
@@ -43,8 +43,9 @@ class FileGameStore implements GameStore {
       try {
         final record = GameRecord.fromJson(jsonDecode(line) as Map<String, dynamic>);
         if (record != null) records.add(record);
-      } on FormatException {
-        continue;
+      } catch (e) {
+        // One damaged or hand-edited line must not take the other games with it.
+        debugPrint('Skipping a game line that cannot be read: $e');
       }
     }
     return records;
@@ -65,7 +66,8 @@ class FileGameStore implements GameStore {
     if (!await f.exists()) return null;
     try {
       return GameRecord.fromJson(jsonDecode(await f.readAsString()) as Map<String, dynamic>);
-    } on FormatException {
+    } catch (e) {
+      debugPrint('Skipping a running game that cannot be read: $e');
       return null;
     }
   }
@@ -227,11 +229,37 @@ class Statistics extends ChangeNotifier {
   /// A game the app was killed in, to resume or end; null when there is none
   GameRecord? interrupted;
 
-  Future<void> load() async {
-    games = await store.load();
-    interrupted = await store.loadRunning();
-    profiles = await profileStore.load();
-    _colours = {for (final MapEntry(:key, :value) in (await profileStore.loadColours()).entries) key: Color(value)};
+  Future<void>? _loading;
+
+  /// False when the stored profiles could not be read: then nothing is saved over them.
+  bool _profilesRead = true;
+
+  /// Reads the profiles and the games; each part that cannot be read is left empty without failing the others.
+  Future<void> load() => _loading = _load();
+
+  Future<void> _load() async {
+    try {
+      profiles = await profileStore.load();
+      _profilesRead = true;
+    } catch (e) {
+      debugPrint('The player profiles cannot be read: $e');
+      _profilesRead = false;
+    }
+    try {
+      _colours = {for (final MapEntry(:key, :value) in (await profileStore.loadColours()).entries) key: Color(value)};
+    } catch (e) {
+      debugPrint('The player colours cannot be read: $e');
+    }
+    try {
+      games = await store.load();
+    } catch (e) {
+      debugPrint('The played games cannot be read: $e');
+    }
+    try {
+      interrupted = await store.loadRunning();
+    } catch (e) {
+      debugPrint('The running game cannot be read: $e');
+    }
     // Players of games kept before profiles existed become profiles, so their statistics stay reachable.
     final known = {for (final p in profiles) p.toLowerCase()};
     final missing = [
@@ -240,10 +268,20 @@ class Statistics extends ChangeNotifier {
     ];
     if (missing.isNotEmpty) {
       profiles = [...profiles, ...missing];
-      await profileStore.save(profiles);
+      await _saveProfiles();
     }
     loaded = true;
     notifyListeners();
+  }
+
+  /// A profile changed while the app starts waits for the stored ones, so it cannot replace them.
+  Future<void> _loaded() async {
+    final loading = _loading;
+    if (loading != null && !loaded) await loading;
+  }
+
+  Future<void> _saveProfiles() async {
+    if (_profilesRead) await profileStore.save(profiles);
   }
 
   Iterable<String> _playedNames() sync* {
@@ -256,23 +294,25 @@ class Statistics extends ChangeNotifier {
 
   /// Adds a profile; null when it was added. Names are compared without case, so "anna" and "Anna" are one player.
   Future<ProfileError?> addProfile(String name) async {
+    await _loaded();
     final trimmed = name.trim();
     if (trimmed.isEmpty) return ProfileError.empty;
     if (profiles.any((p) => p.toLowerCase() == trimmed.toLowerCase())) return ProfileError.exists;
     profiles = [...profiles, trimmed];
     notifyListeners();
-    await profileStore.save(profiles);
+    await _saveProfiles();
     return null;
   }
 
   /// Removes a profile; its games stay kept and count again if a profile of the same name is created.
   Future<void> removeProfile(String name) async {
+    await _loaded();
     profiles = [
       for (final p in profiles)
         if (p != name) p,
     ];
     notifyListeners();
-    await profileStore.save(profiles);
+    await _saveProfiles();
     if (hasOwnColour(name)) await setColour(name, null);
   }
 

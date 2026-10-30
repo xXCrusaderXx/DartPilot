@@ -37,7 +37,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get modeTraining => 'Free throwing';
 
   @override
-  String get modeTrainingDescription => 'Every dart is shown and counted';
+  String get modeTrainingDescription => 'To warm up: every dart is shown and counted, but not kept';
 
   @override
   String get inputBoard => 'Board';
@@ -1540,7 +1540,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saveCameraOrder => 'Apply';
 
   @override
-  String get statsAverageTrend => 'Average over games (X01)';
+  String get statsAverageTrend => '3-dart average per game (X01)';
 
   @override
   String get statsHitBoard => 'Hit board';
@@ -2063,14 +2063,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statsPrecision => 'Precision';
 
   @override
-  String get statsPrecisionEmpty => 'Play the grouping training to see your spread and offset per target.';
+  String get statsPrecisionEmpty =>
+      'Play grouping, doubles practice or the checkout trainer and tap the darts on the board (or let the cameras detect them). Then you see here how tight and how true you hit each target.';
 
   @override
-  String get statsPrecisionTrend => 'Spread per week';
+  String get statsPrecisionTrend => 'Spread per week in mm, lower is better';
 
   @override
   String get statsPrecisionHelp =>
-      'Spread: how far the darts lie from their own middle (root mean square). Offset: how far that middle lies from the target. The ellipse holds about two in five darts.';
+      'Spread: how tightly your darts sit together; lower is better. For comparison, a treble is 8 mm wide. Offset: how far the middle of your darts lies from the target. The ellipse shows your usual area. Tapped darts are as exact as your tap.';
 
   @override
   String get modeDoubles => 'Doubles practice';
@@ -2100,8 +2101,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get modeCheckout => 'Checkout trainer';
 
   @override
-  String get modeCheckoutDescription =>
-      'Random finishes or the 121 ladder; every miss measured against the field to aim at';
+  String get modeCheckoutDescription => 'Random finishes; every miss measured against the field to aim at';
 
   @override
   String get checkoutRange => 'Finishes';
@@ -2142,7 +2142,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get modePrecision => 'Precision training';
 
   @override
-  String get modePrecisionDescription => 'Grouping, doubles and checkouts, measured in millimetres';
+  String get modePrecisionDescription =>
+      'Grouping, doubles, checkouts and the 121 ladder; in millimetres when you tap the darts or cameras detect them';
 
   @override
   String get or => 'or';
@@ -2203,6 +2204,88 @@ class AppLocalizationsEn extends AppLocalizations {
   String ladderBest(String score) {
     return 'Highest checkout: $score';
   }
+
+  @override
+  String get statsMatches => 'Matches';
+
+  @override
+  String get statsTrainings => 'Training rounds';
+
+  @override
+  String get statsHighestVisit => 'Highest visit';
+
+  @override
+  String statsBestLegOf(int start) {
+    return 'Best leg $start';
+  }
+
+  @override
+  String get periodLastGameShort => 'Last';
+
+  @override
+  String get statsHitBoardHint => 'From your games; training darts do not count here.';
+
+  @override
+  String statsShowAllGames(int count) {
+    return 'Show all $count';
+  }
+
+  @override
+  String statsFewDartsTargets(int count, int min) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count more targets',
+      one: '1 more target',
+    );
+    return '$_temp0 with fewer than $min darts';
+  }
+
+  @override
+  String doublesTooFewDarts(String targets) {
+    return 'Too few darts to rank yet: $targets';
+  }
+
+  @override
+  String get precisionNeedsPoints =>
+      'Millimetres come only from darts you tap on the board or the cameras detect. With the keypad only hit or miss counts.';
+
+  @override
+  String trainingNewBest(String best) {
+    return 'New personal best! Before: $best';
+  }
+
+  @override
+  String trainingLastAndBest(String last, String best) {
+    return 'Last time: $last  ·  Best: $best';
+  }
+
+  @override
+  String get modeLadder => '121 ladder';
+
+  @override
+  String get modeLadderDescription => 'Check out 121: made moves you up one, missed moves you down one';
+
+  @override
+  String get ladderAttempts => 'Attempts per round';
+
+  @override
+  String ladderLevel(int score) {
+    return 'Level $score';
+  }
+
+  @override
+  String ladderRecord(String score) {
+    return 'Record $score';
+  }
+
+  @override
+  String attemptOf(int number, int total) {
+    return 'Attempt $number of $total';
+  }
+
+  @override
+  String get trainingNotKept => 'Free throwing is not kept. For your statistics, play X01 or a training.';
 
   @override
   String get modeKiller => 'Killer';

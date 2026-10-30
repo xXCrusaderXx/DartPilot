@@ -117,10 +117,11 @@ class GameSummary extends StatelessWidget {
             builder: (context) {
               final s = computePlayerStats([record], player);
               final figures = <(String, String)>[
-                (l10n.statsDarts, '${s.darts}'),
+                (l10n.statsDarts, '${s.darts + s.trainingDarts}'),
                 ...switch (record.mode) {
                   GameMode.x01 => [
-                    (l10n.statsLegs, '${s.legsWon}'),
+                    // Solo, every leg played is the player's own
+                    (l10n.statsLegs, '${record.players.length > 1 ? s.legsWon : s.legs}'),
                     (l10n.average, n(s.threeDartAverage)),
                     (l10n.statsFirst9, n(s.first9Average)),
                     (l10n.statsCheckoutRate, percent(s.checkoutRate)),

@@ -193,11 +193,16 @@ List<TargetPrecision> computePrecision(Iterable<AimedDart> darts) {
   return byTarget.values.toList()..sort((a, b) => b.points.length.compareTo(a.points.length));
 }
 
-/// The doubles and the bull, best first: the highest hit rate, then the smallest spread; targets without a spread last
-List<TargetPrecision> doublesRanking(List<TargetPrecision> precision) {
+/// Darts at a target before its hit rate and spread say something about the player: a target with fewer is shown, but
+/// not ranked or given its own card.
+const int minRankedDarts = 6;
+
+/// The doubles and the bull with at least [minDarts] measured darts, best first: the highest hit rate, then the
+/// smallest spread; targets without a spread last
+List<TargetPrecision> doublesRanking(List<TargetPrecision> precision, {int minDarts = 0}) {
   final doubles = [
     for (final p in precision)
-      if (p.target.ring == Ring.double || p.target.ring == Ring.innerBull) p,
+      if ((p.target.ring == Ring.double || p.target.ring == Ring.innerBull) && p.points.length >= minDarts) p,
   ];
   return doubles..sort((a, b) {
     final byRate = b.hitRate.compareTo(a.hitRate);

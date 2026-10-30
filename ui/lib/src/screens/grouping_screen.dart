@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
@@ -8,6 +10,7 @@ import '../input/takeout_gate.dart';
 import '../stats/game_record.dart';
 import '../stats/precision.dart';
 import '../stats/statistics.dart';
+import '../stats/training_best.dart';
 import '../widgets/board_check.dart';
 import '../widgets/player_picker.dart';
 import '../widgets/precision_plot.dart';
@@ -52,6 +55,19 @@ class _GroupingScreenState extends State<GroupingScreen> with RecordsGame {
   late final GroupingGame _game = replayed(GroupingGame(widget.target, dartCount: widget.dartCount), widget.replay);
   final TakeoutGate _takeout = TakeoutGate();
 
+  /// The player's earlier rounds at this target, read once: the games do not change while this one is played
+  TrainingComparison? _earlier;
+  bool _comparedEarlier = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_comparedEarlier || watching) return;
+    _comparedEarlier = true;
+    final games = StatisticsScope.read(context)?.games ?? const <GameRecord>[];
+    _earlier = compareWithEarlier(games, currentRecord, widget.player);
+  }
+
   @override
   GameRecord buildRecord(String id, DateTime started, DateTime ended) => GameRecord(
     id: id,
@@ -82,6 +98,10 @@ class _GroupingScreenState extends State<GroupingScreen> with RecordsGame {
             key: const ValueKey('grouping-result-spread'),
           ),
           if (spread != null) Text(l10n.resultOffset(offsetText(l10n, spread.offsetXMm, spread.offsetYMm))),
+          if (spread != null && _earlier != null) ...[
+            const SizedBox(height: 8),
+            PersonalBestLine(comparison: _earlier!, value: spread.spreadMm, format: (v) => mmText(l10n, v)),
+          ],
         ],
       ),
       onUndo: () => setState(_game.undo),
@@ -101,6 +121,13 @@ class _GroupingScreenState extends State<GroupingScreen> with RecordsGame {
     final throws = _game.throws;
     final spread = _game.spread;
     final unmeasured = throws.length - _game.measured.length;
+    final far = readFromAfar(context);
+    final figureStyle = (far ? theme.textTheme.headlineMedium : theme.textTheme.titleLarge)?.copyWith(
+      fontWeight: FontWeight.w700,
+    );
+    final labelStyle = far ? theme.textTheme.titleLarge : null;
+    // From the oche only the last darts' misses are listed; the plot shows them all.
+    final listed = far ? math.min(3, throws.length) : throws.length;
 
     final panel = ScrollingPanel(
       top: [
@@ -125,22 +152,21 @@ class _GroupingScreenState extends State<GroupingScreen> with RecordsGame {
           ),
         ),
         const SizedBox(height: 12),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          title: Text(l10n.precisionSpread),
-          trailing: Text(
-            spread == null ? '–' : mmText(l10n, spread.spreadMm),
-            key: const ValueKey('grouping-spread'),
-            style: theme.textTheme.titleLarge,
-          ),
+        _Figure(
+          label: l10n.precisionSpread,
+          labelStyle: labelStyle,
+          value: spread == null ? '–' : mmText(l10n, spread.spreadMm),
+          valueKey: const ValueKey('grouping-spread'),
+          valueStyle: figureStyle,
         ),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          title: Text(l10n.precisionOffset),
-          trailing: Text(spread == null ? '–' : offsetText(l10n, spread.offsetXMm, spread.offsetYMm)),
+        _Figure(
+          label: l10n.precisionOffset,
+          labelStyle: labelStyle,
+          value: spread == null ? '–' : offsetText(l10n, spread.offsetXMm, spread.offsetYMm),
+          valueStyle: far ? figureStyle : theme.textTheme.titleMedium,
         ),
-        if (unmeasured > 0) Text(l10n.groupingNotMeasured, style: theme.textTheme.bodySmall),
-        for (var i = throws.length - 1; i >= 0; --i)
+        if (unmeasured > 0 && !far) Text(l10n.groupingNotMeasured, style: theme.textTheme.bodySmall),
+        for (var i = throws.length - 1; i >= throws.length - listed; --i)
           MissTile(key: ValueKey('grouping-dart-$i'), number: i + 1, dart: throws[i], target: widget.target),
       ],
       bottom: [
@@ -162,6 +188,30 @@ class _GroupingScreenState extends State<GroupingScreen> with RecordsGame {
       panel: panel,
     );
   }
+}
+
+/// A figure of the group: its name, and the value beside it or, when that does not fit, below it
+class _Figure extends StatelessWidget {
+  const _Figure({required this.label, required this.value, this.labelStyle, this.valueStyle, this.valueKey});
+
+  final String label;
+  final String value;
+  final TextStyle? labelStyle;
+  final TextStyle? valueStyle;
+  final Key? valueKey;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 6),
+    child: Wrap(
+      spacing: 12,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Text(label, style: labelStyle ?? Theme.of(context).textTheme.bodyLarge),
+        Text(value, key: valueKey, style: valueStyle),
+      ],
+    ),
+  );
 }
 
 /// Who throws, at which target, and how many darts
@@ -218,6 +268,8 @@ class _GroupingSetupScreenState extends State<GroupingSetupScreen> {
                 selected: {_dartCount},
                 onSelectionChanged: (s) => setState(() => _dartCount = s.first),
               ),
+              const SizedBox(height: 16),
+              Text(l10n.precisionNeedsPoints, style: theme.textTheme.bodySmall),
               const SizedBox(height: 24),
               FilledButton.icon(
                 key: const ValueKey('start-game'),

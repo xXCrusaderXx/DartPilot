@@ -9,6 +9,7 @@ import '../stats/game_record.dart';
 import '../stats/player_stats.dart';
 import '../stats/precision.dart';
 import '../stats/statistics.dart';
+import '../stats/training_best.dart';
 import '../widgets/board_check.dart';
 import '../widgets/player_picker.dart';
 import '../widgets/precision_plot.dart';
@@ -47,11 +48,12 @@ class DoublesScreen extends StatefulWidget {
   State<DoublesScreen> createState() => _DoublesScreenState();
 }
 
-/// One line of a ranking: "D16  67 %  ·  14,2 mm"
+/// One line of a ranking, with the darts it rests on: "D16  4/6  ·  67 %  ·  14,2 mm"
 String rankingLine(AppLocalizations l10n, TargetPrecision p) {
   final spread = p.spread;
   return [
-    '${p.target.label}  ${percentText(l10n, p.hitRate)}',
+    '${p.target.label}  ${p.hits}/${p.points.length}',
+    percentText(l10n, p.hitRate),
     if (spread != null) mmText(l10n, spread.spreadMm),
   ].join('  ·  ');
 }
@@ -65,6 +67,19 @@ class _DoublesScreenState extends State<DoublesScreen> with RecordsGame {
     widget.replay,
   );
   final TakeoutGate _takeout = TakeoutGate();
+
+  /// The player's earlier rounds at these doubles, read once: the games do not change while this one is played
+  TrainingComparison? _earlier;
+  bool _comparedEarlier = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_comparedEarlier || watching) return;
+    _comparedEarlier = true;
+    final games = StatisticsScope.read(context)?.games ?? const <GameRecord>[];
+    _earlier = compareWithEarlier(games, currentRecord, widget.player);
+  }
 
   @override
   GameRecord buildRecord(String id, DateTime started, DateTime ended) => GameRecord(
@@ -103,6 +118,10 @@ class _DoublesScreenState extends State<DoublesScreen> with RecordsGame {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(l10n.resultHitRate(percentText(l10n, _game.hitRate)), key: const ValueKey('doubles-result-rate')),
+          if (_earlier != null) ...[
+            const SizedBox(height: 8),
+            PersonalBestLine(comparison: _earlier!, value: _game.hitRate, format: (v) => percentText(l10n, v)),
+          ],
           const SizedBox(height: 8),
           for (final p in ranking) Text(rankingLine(l10n, p)),
         ],
@@ -134,6 +153,8 @@ class _DoublesScreenState extends State<DoublesScreen> with RecordsGame {
       for (var i = 0; i < throws.length; ++i)
         if (_game.targetOf(i) == shown) i,
     ];
+    final far = readFromAfar(context);
+    final unmeasured = throws.any((t) => !hasMeasuredPoint(t));
 
     final panel = ScrollingPanel(
       top: [
@@ -148,8 +169,7 @@ class _DoublesScreenState extends State<DoublesScreen> with RecordsGame {
           detailsFromAfar: true,
           active: true,
         ),
-        if (next != null)
-          Text(l10n.checkoutAim(next.label), key: const ValueKey('doubles-next'), style: theme.textTheme.titleLarge),
+        if (next != null) AimLine(field: next.label, fieldKey: const ValueKey('doubles-next')),
         const SizedBox(height: 12),
         Center(
           child: ConstrainedBox(
@@ -159,7 +179,12 @@ class _DoublesScreenState extends State<DoublesScreen> with RecordsGame {
         ),
         for (final i in shownIndexes.reversed)
           MissTile(key: ValueKey('doubles-dart-$i'), number: i + 1, dart: throws[i], target: shown),
-        if (throws.length > _game.dartsPerTarget) ...[
+        if (unmeasured && !far) ...[
+          const SizedBox(height: 8),
+          Text(l10n.precisionNeedsPoints, style: theme.textTheme.bodySmall),
+        ],
+        // From the oche the round's ranking is left for the result at the end.
+        if (throws.length > _game.dartsPerTarget && !far) ...[
           const SizedBox(height: 12),
           Text(l10n.doublesRound, style: theme.textTheme.titleSmall),
           for (final p in _roundRanking) Text(rankingLine(l10n, p)),
@@ -206,9 +231,15 @@ class _DoublesSetupScreenState extends State<DoublesSetupScreen> {
     final theme = Theme.of(context);
     final statistics = StatisticsScope.maybeOf(context);
     final player = _player ?? statistics?.players.firstOrNull;
-    final ranking = player == null
+    final precision = player == null
         ? const <TargetPrecision>[]
-        : doublesRanking(computePlayerPrecision(statistics?.games ?? const [], player));
+        : computePlayerPrecision(statistics?.games ?? const [], player);
+    // Only doubles with enough darts are ranked; one lucky dart is no strong double.
+    final ranking = doublesRanking(precision, minDarts: minRankedDarts);
+    final unranked = [
+      for (final p in doublesRanking(precision))
+        if (p.points.length < minRankedDarts) p.target.label,
+    ];
     final weakest = ranking.length >= 5 ? [for (final p in ranking.reversed.take(5)) p.target] : null;
     final set = _set == DoublesSet.weakest && weakest == null ? DoublesSet.top10 : _set;
     final targets = switch (set) {
@@ -255,6 +286,16 @@ class _DoublesSetupScreenState extends State<DoublesSetupScreen> {
                 const SizedBox(height: 4),
                 for (final p in ranking) Text(rankingLine(l10n, p)),
               ],
+              if (unranked.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  l10n.doublesTooFewDarts(unranked.join(' ')),
+                  key: const ValueKey('doubles-unranked'),
+                  style: theme.textTheme.bodySmall,
+                ),
+              ],
+              const SizedBox(height: 16),
+              Text(l10n.precisionNeedsPoints, style: theme.textTheme.bodySmall),
               const SizedBox(height: 24),
               FilledButton.icon(
                 key: const ValueKey('start-game'),

@@ -16,6 +16,7 @@ class PrecisionTrainingScreen extends StatelessWidget {
       (Icons.blur_circular, l10n.modeGrouping, l10n.modeGroupingDescription, GroupingScreen.setup),
       (Icons.radio_button_unchecked, l10n.modeDoubles, l10n.modeDoublesDescription, DoublesScreen.setup),
       (Icons.sports_score, l10n.modeCheckout, l10n.modeCheckoutDescription, CheckoutScreen.setup),
+      (Icons.stairs_outlined, l10n.modeLadder, l10n.modeLadderDescription, CheckoutScreen.ladderSetup),
     ];
     return Scaffold(
       appBar: AppBar(title: Text(l10n.modePrecision)),

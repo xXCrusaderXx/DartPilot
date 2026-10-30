@@ -5,8 +5,12 @@ import '../games/training.dart';
 import '../input/game_input.dart';
 import '../input/takeout_gate.dart';
 import '../board/score_text.dart';
+import '../widgets/player_row.dart';
 import '../widgets/precision_text.dart';
+import 'game_layout.dart';
 
+/// Free throwing to warm up: the visit's total large, the running figures below it. Nothing is kept, and the screen
+/// says so, so a player who wants the darts in the statistics picks X01 or a training.
 class TrainingScreen extends StatefulWidget {
   const TrainingScreen({super.key});
 
@@ -23,37 +27,29 @@ class _TrainingScreenState extends State<TrainingScreen> {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final visit = _training.currentVisit;
+    final visitTotal = visit.fold(0, (sum, t) => sum + t.score.points);
 
-    final scorePanel = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text('${l10n.visit} ${_training.visitNumber}', style: theme.textTheme.titleMedium),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            for (var i = 0; i < 3; ++i)
-              Expanded(
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Text(
-                      i < visit.length ? visit[i].score.text(l10n) : '–',
-                      key: ValueKey('visit-dart-$i'),
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.headlineSmall,
-                    ),
-                  ),
-                ),
-              ),
-          ],
+    final panel = ScrollingPanel(
+      top: [
+        PlayerRow(
+          name: '${l10n.visit} ${_training.visitNumber}',
+          value: '$visitTotal',
+          valueKey: const ValueKey('visit-total'),
+          details: [
+            l10n.labelValue(l10n.darts, '${_training.dartCount}'),
+            l10n.labelValue(l10n.points, '${_training.totalPoints}'),
+            l10n.labelValue(l10n.average, decimal(l10n, _training.threeDartAverage)),
+          ].join('  ·  '),
+          detailsKey: const ValueKey('total-points'),
+          detailsFromAfar: true,
+          active: true,
         ),
-        const SizedBox(height: 16),
-        _Stat(l10n.darts, '${_training.dartCount}'),
-        _Stat(l10n.points, '${_training.totalPoints}', key: const ValueKey('total-points')),
-        _Stat(l10n.average, decimal(l10n, _training.threeDartAverage)),
-        const SizedBox(height: 16),
+        VisitDarts([for (final t in visit) t.score.text(l10n)]),
+        const SizedBox(height: 12),
         if (_training.dartCount == 0) Text(l10n.noThrowsYet, style: theme.textTheme.bodyMedium),
-        const Spacer(),
+        Text(l10n.trainingNotKept, key: const ValueKey('training-not-kept'), style: theme.textTheme.bodySmall),
+      ],
+      bottom: [
         OutlinedButton.icon(
           onPressed: _training.dartCount == 0 ? null : () => setState(_training.undo),
           icon: const Icon(Icons.undo),
@@ -71,47 +67,8 @@ class _TrainingScreenState extends State<TrainingScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.modeTraining)),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: LayoutBuilder(
-          builder: (context, constraints) => constraints.maxWidth > constraints.maxHeight
-              ? Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(flex: 3, child: input),
-                    const SizedBox(width: 24),
-                    SizedBox(width: 320, child: scorePanel),
-                  ],
-                )
-              : Column(
-                  children: [
-                    Expanded(flex: 3, child: input),
-                    const SizedBox(height: 16),
-                    Expanded(flex: 2, child: scorePanel),
-                  ],
-                ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Stat extends StatelessWidget {
-  const _Stat(this.label, this.value, {super.key});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Expanded(child: Text(label, style: theme.textTheme.bodyLarge)),
-          Text(value, style: theme.textTheme.titleLarge),
-        ],
+      body: SafeArea(
+        child: GameLayout(input: input, panel: panel),
       ),
     );
   }

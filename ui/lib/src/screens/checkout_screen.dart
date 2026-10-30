@@ -11,6 +11,7 @@ import '../input/takeout_gate.dart';
 import '../stats/game_record.dart';
 import '../stats/precision.dart';
 import '../stats/statistics.dart';
+import '../stats/training_best.dart';
 import '../widgets/board_check.dart';
 import '../widgets/player_picker.dart';
 import '../widgets/precision_plot.dart';
@@ -50,6 +51,8 @@ class CheckoutScreen extends StatefulWidget {
 
   static Widget setup(BuildContext context) => const CheckoutSetupScreen();
 
+  static Widget ladderSetup(BuildContext context) => const CheckoutSetupScreen(ladder: true);
+
   @override
   State<CheckoutScreen> createState() => _CheckoutScreenState();
 }
@@ -63,6 +66,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
     widget.replay,
   );
   final TakeoutGate _takeout = TakeoutGate();
+
+  /// The player's earlier rounds of this training, read once: the games do not change while this one is played
+  TrainingComparison? _earlier;
+  bool _comparedEarlier = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_comparedEarlier || watching) return;
+    _comparedEarlier = true;
+    final games = StatisticsScope.read(context)?.games ?? const <GameRecord>[];
+    _earlier = compareWithEarlier(games, currentRecord, widget.player);
+  }
 
   @override
   GameRecord buildRecord(String id, DateTime started, DateTime ended) => GameRecord(
@@ -82,14 +98,30 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
 
   Future<void> _showResult() {
     final l10n = AppLocalizations.of(context);
+    final earlier = _earlier;
+    final score = trainingScore(currentRecord);
     return showRoundResult(
       context,
-      content: Text(
-        [
-          l10n.resultCheckouts(_game.checkouts, _game.attemptsDone),
-          if (widget.ladder) l10n.ladderBest(_game.bestCheckout?.toString() ?? '–'),
-        ].join('\n'),
-        key: const ValueKey('checkout-result'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            [
+              l10n.resultCheckouts(_game.checkouts, _game.attemptsDone),
+              if (widget.ladder) l10n.ladderBest(_game.bestCheckout?.toString() ?? '–'),
+            ].join('\n'),
+            key: const ValueKey('checkout-result'),
+          ),
+          if (earlier != null && score != null) ...[
+            const SizedBox(height: 8),
+            PersonalBestLine(
+              comparison: earlier,
+              value: score.value,
+              format: (v) => widget.ladder ? v.toStringAsFixed(0) : percentText(l10n, v),
+            ),
+          ],
+        ],
       ),
       onUndo: () => setState(_game.undo),
       again: (_) => CheckoutScreen(
@@ -97,7 +129,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
         starts: checkoutStarts(
           math.Random().nextInt(1 << 31),
           widget.starts.length,
-          widget.ladder ? CheckoutRange.ladder : _rangeOf(widget.starts),
+          widget.ladder ? CheckoutRange.ladder : CheckoutRange.of(widget.starts.first),
         ),
         dartsPerAttempt: widget.dartsPerAttempt,
         ladder: widget.ladder,
@@ -105,8 +137,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
     );
   }
 
-  static CheckoutRange _rangeOf(List<int> starts) =>
-      CheckoutRange.values.firstWhere((r) => starts.first <= r.highest, orElse: () => CheckoutRange.high);
+  /// What the panel says about the round: the level and the record on the ladder, else the checkouts made
+  String _progress(AppLocalizations l10n) {
+    final attempt = l10n.attemptOf(_game.attempts.length, widget.starts.length);
+    if (!widget.ladder) {
+      return '${l10n.checkoutProgress(_game.attempts.length, widget.starts.length)}  ·  '
+          '${l10n.labelValue(l10n.statsCheckoutRate, l10n.countOf(_game.checkouts, _game.attemptsDone))}';
+    }
+    final earlier = _earlier?.best.round();
+    final now = _game.bestCheckout;
+    final record = earlier == null ? now : (now == null ? earlier : math.max(earlier, now));
+    return [
+      l10n.ladderLevel(_game.current.start),
+      attempt,
+      if (record != null) l10n.ladderRecord('$record'),
+    ].join('  ·  ');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -127,6 +173,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
     final lastDart = shown.darts.isEmpty ? null : shown.darts.last;
     final lastAim = shown.aims.isEmpty ? null : PrecisionTarget.parse(shown.aims.last);
     final route = _game.isFinished ? null : suggestCheckout(attempt.remaining, 3 - _game.dartsInVisit) ?? [_game.aim];
+    final far = readFromAfar(context);
+    final unmeasured = _game.throws.any((t) => !hasMeasuredPoint(t));
+    // From the oche only the last darts' misses are listed; the plot shows the newest.
+    final listed = far ? math.min(3, shown.darts.length) : shown.darts.length;
 
     final panel = ScrollingPanel(
       top: [
@@ -134,18 +184,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
           name: widget.player,
           value: '${_game.isFinished ? 0 : attempt.remaining}',
           valueKey: const ValueKey('checkout-remaining'),
-          details:
-              '${l10n.checkoutProgress(_game.attempts.length, widget.starts.length)}  ·  '
-              '${l10n.labelValue(l10n.statsCheckoutRate, l10n.countOf(_game.checkouts, _game.attemptsDone))}',
+          details: _progress(l10n),
           detailsKey: const ValueKey('checkout-progress'),
           detailsFromAfar: true,
           active: true,
         ),
-        if (route != null) ...[
-          const SizedBox(height: 8),
-          Text(l10n.checkoutAim(route.first), key: const ValueKey('checkout-aim'), style: theme.textTheme.titleLarge),
-          if (route.length > 1) Text(route.join('  ')),
-        ],
+        if (route != null)
+          AimLine(field: route.first, rest: route.skip(1).toList(), fieldKey: const ValueKey('checkout-aim')),
         const SizedBox(height: 12),
         if (lastDart != null && lastAim != null && hasMeasuredPoint(lastDart))
           Center(
@@ -156,11 +201,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
           ),
         if (shown != attempt)
           Text(
-            '${shown.start}: ${shown.checkedOut ? l10n.checkoutHit : l10n.checkoutMissed}',
+            '${shown.start}: ${shown.checkedOut ? l10n.checkoutHit : (shown.busted ? '${l10n.checkoutMissed} (${l10n.bust})' : l10n.checkoutMissed)}',
             key: const ValueKey('checkout-last-result'),
-            style: theme.textTheme.titleMedium,
+            style: far ? theme.textTheme.headlineSmall : theme.textTheme.titleMedium,
           ),
-        for (var i = shown.darts.length - 1; i >= 0; --i)
+        for (var i = shown.darts.length - 1; i >= shown.darts.length - listed; --i)
           MissTile(
             key: ValueKey('checkout-dart-${firstDart + i}'),
             number: i + 1,
@@ -168,6 +213,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
             target: PrecisionTarget.parse(shown.aims[i]),
             showTarget: true,
           ),
+        if (unmeasured && !far) ...[
+          const SizedBox(height: 8),
+          Text(l10n.precisionNeedsPoints, style: theme.textTheme.bodySmall),
+        ],
       ],
       bottom: [
         OutlinedButton.icon(
@@ -178,7 +227,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
       ],
     );
     return GameScaffold(
-      title: l10n.modeCheckout,
+      title: widget.ladder ? l10n.modeLadder : l10n.modeCheckout,
       game: _game,
       takeout: _takeout,
       shownThrows: shown.darts,
@@ -190,9 +239,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
   }
 }
 
-/// Who throws, how hard the finishes are, how many, and the darts for each
+/// Who throws, how hard the finishes are, how many, and the darts for each; for the 121 [ladder], how many attempts
 class CheckoutSetupScreen extends StatefulWidget {
-  const CheckoutSetupScreen({super.key});
+  const CheckoutSetupScreen({super.key, this.ladder = false});
+
+  final bool ladder;
 
   @override
   State<CheckoutSetupScreen> createState() => _CheckoutSetupScreenState();
@@ -204,13 +255,16 @@ class _CheckoutSetupScreenState extends State<CheckoutSetupScreen> {
   int _count = 10;
   int _darts = 9;
 
+  static const _ranges = [CheckoutRange.low, CheckoutRange.middle, CheckoutRange.high];
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final player = _player ?? StatisticsScope.maybeOf(context)?.players.firstOrNull;
+    final ladder = widget.ladder;
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.modeCheckout)),
+      appBar: AppBar(title: Text(ladder ? l10n.modeLadder : l10n.modeCheckout)),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 560),
@@ -218,26 +272,26 @@ class _CheckoutSetupScreenState extends State<CheckoutSetupScreen> {
             padding: const EdgeInsets.all(16),
             children: [
               ProfileChoice(selected: player, onSelected: (name) => setState(() => _player = name)),
+              if (ladder) ...[
+                const SizedBox(height: 16),
+                Text(l10n.modeLadderDescription),
+              ] else ...[
+                const SizedBox(height: 24),
+                Text(l10n.checkoutRange, style: theme.textTheme.titleMedium),
+                const SizedBox(height: 8),
+                SegmentedButton<CheckoutRange>(
+                  segments: [for (final r in _ranges) ButtonSegment(value: r, label: Text('${r.lowest}–${r.highest}'))],
+                  selected: {_range},
+                  onSelectionChanged: (s) => setState(() => _range = s.first),
+                ),
+              ],
               const SizedBox(height: 24),
-              Text(l10n.checkoutRange, style: theme.textTheme.titleMedium),
-              const SizedBox(height: 8),
-              SegmentedButton<CheckoutRange>(
-                segments: [
-                  for (final r in CheckoutRange.values)
-                    ButtonSegment(
-                      value: r,
-                      label: Text(r == CheckoutRange.ladder ? '121 ↑' : '${r.lowest}–${r.highest}'),
-                    ),
-                ],
-                selected: {_range},
-                onSelectionChanged: (s) => setState(() => _range = s.first),
-              ),
-              const SizedBox(height: 24),
-              Text(l10n.checkoutCount, style: theme.textTheme.titleMedium),
+              Text(ladder ? l10n.ladderAttempts : l10n.checkoutCount, style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),
               SegmentedButton<int>(
                 segments: [
-                  for (final n in const [5, 10, 20]) ButtonSegment(value: n, label: Text('$n')),
+                  for (final n in ladder ? const [10, 20, 30] : const [5, 10, 20])
+                    ButtonSegment(value: n, label: Text('$n')),
                 ],
                 selected: {_count},
                 onSelectionChanged: (s) => setState(() => _count = s.first),
@@ -252,6 +306,8 @@ class _CheckoutSetupScreenState extends State<CheckoutSetupScreen> {
                 selected: {_darts},
                 onSelectionChanged: (s) => setState(() => _darts = s.first),
               ),
+              const SizedBox(height: 16),
+              Text(l10n.precisionNeedsPoints, style: theme.textTheme.bodySmall),
               const SizedBox(height: 24),
               FilledButton.icon(
                 key: const ValueKey('start-game'),
@@ -259,15 +315,15 @@ class _CheckoutSetupScreenState extends State<CheckoutSetupScreen> {
                     ? null
                     : () async {
                         if (!await confirmBoardEmpty(context) || !context.mounted) return;
-                        final starts = checkoutStarts(math.Random().nextInt(1 << 31), _count, _range);
+                        final starts = checkoutStarts(
+                          math.Random().nextInt(1 << 31),
+                          _count,
+                          ladder ? CheckoutRange.ladder : _range,
+                        );
                         Navigator.of(context).pushReplacement(
                           MaterialPageRoute<void>(
-                            builder: (_) => CheckoutScreen(
-                              player: player,
-                              starts: starts,
-                              dartsPerAttempt: _darts,
-                              ladder: _range == CheckoutRange.ladder,
-                            ),
+                            builder: (_) =>
+                                CheckoutScreen(player: player, starts: starts, dartsPerAttempt: _darts, ladder: ladder),
                           ),
                         );
                       },

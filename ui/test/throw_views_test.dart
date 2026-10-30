@@ -112,8 +112,8 @@ void main() {
     await tester.pumpAndSettle();
     await openGameDarts(tester);
 
-    // The keypad dart has no camera views.
-    expect(tester.widget<ActionChip>(find.byKey(const ValueKey('game-dart-1'))).onPressed, isNull);
+    // An entered dart has no camera views: a plain chip, not a disabled button
+    expect(tester.widget(find.byKey(const ValueKey('game-dart-1'))), isA<Chip>());
     await tester.tap(find.byKey(const ValueKey('game-dart-0')));
     // The spinner never settles: a page transition's worth of frames instead
     await tester.pump();

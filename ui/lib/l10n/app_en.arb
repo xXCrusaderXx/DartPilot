@@ -9,7 +9,7 @@
   "modeAroundTheClock": "Around the Clock",
   "modeAroundTheClockDescription": "Hit 1 to 20 in order",
   "modeTraining": "Free throwing",
-  "modeTrainingDescription": "Every dart is shown and counted",
+  "modeTrainingDescription": "To warm up: every dart is shown and counted, but not kept",
   "inputBoard": "Board",
   "inputKeypad": "Keypad",
   "single": "Single",
@@ -1035,7 +1035,7 @@
   "moveCameraUp": "Move up",
   "moveCameraDown": "Move down",
   "saveCameraOrder": "Apply",
-  "statsAverageTrend": "Average over games (X01)",
+  "statsAverageTrend": "3-dart average per game (X01)",
   "statsHitBoard": "Hit board",
   "statsMisses": "Misses: {count}",
   "@statsMisses": {
@@ -1371,9 +1371,9 @@
     }
   },
   "statsPrecision": "Precision",
-  "statsPrecisionEmpty": "Play the grouping training to see your spread and offset per target.",
-  "statsPrecisionTrend": "Spread per week",
-  "statsPrecisionHelp": "Spread: how far the darts lie from their own middle (root mean square). Offset: how far that middle lies from the target. The ellipse holds about two in five darts.",
+  "statsPrecisionEmpty": "Play grouping, doubles practice or the checkout trainer and tap the darts on the board (or let the cameras detect them). Then you see here how tight and how true you hit each target.",
+  "statsPrecisionTrend": "Spread per week in mm, lower is better",
+  "statsPrecisionHelp": "Spread: how tightly your darts sit together; lower is better. For comparison, a treble is 8 mm wide. Offset: how far the middle of your darts lies from the target. The ellipse shows your usual area. Tapped darts are as exact as your tap.",
   "modeDoubles": "Doubles practice",
   "modeDoublesDescription": "One visit at each double; your doubles ranked by hit rate and spread",
   "doublesSet": "Doubles",
@@ -1383,7 +1383,7 @@
   "doublesRanking": "Your doubles, best first",
   "doublesRound": "This round",
   "modeCheckout": "Checkout trainer",
-  "modeCheckoutDescription": "Random finishes or the 121 ladder; every miss measured against the field to aim at",
+  "modeCheckoutDescription": "Random finishes; every miss measured against the field to aim at",
   "checkoutRange": "Finishes",
   "checkoutCount": "Checkouts per round",
   "checkoutDarts": "Darts per checkout",
@@ -1425,7 +1425,7 @@
     }
   },
   "modePrecision": "Precision training",
-  "modePrecisionDescription": "Grouping, doubles and checkouts, measured in millimetres",
+  "modePrecisionDescription": "Grouping, doubles, checkouts and the 121 ladder; in millimetres when you tap the darts or cameras detect them",
   "or": "or",
   "pickCandidate": "Tap the right field, or tap the board where the dart is.",
   "callCheckout": "Say the checkout",
@@ -1461,6 +1461,97 @@
       }
     }
   },
+  "statsMatches": "Matches",
+  "statsTrainings": "Training rounds",
+  "statsHighestVisit": "Highest visit",
+  "statsBestLegOf": "Best leg {start}",
+  "@statsBestLegOf": {
+    "placeholders": {
+      "start": {
+        "type": "int"
+      }
+    }
+  },
+  "periodLastGameShort": "Last",
+  "statsHitBoardHint": "From your games; training darts do not count here.",
+  "statsShowAllGames": "Show all {count}",
+  "@statsShowAllGames": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "statsFewDartsTargets": "{count, plural, =1{1 more target} other{{count} more targets}} with fewer than {min} darts",
+  "@statsFewDartsTargets": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "doublesTooFewDarts": "Too few darts to rank yet: {targets}",
+  "@doublesTooFewDarts": {
+    "placeholders": {
+      "targets": {
+        "type": "String"
+      }
+    }
+  },
+  "precisionNeedsPoints": "Millimetres come only from darts you tap on the board or the cameras detect. With the keypad only hit or miss counts.",
+  "trainingNewBest": "New personal best! Before: {best}",
+  "@trainingNewBest": {
+    "placeholders": {
+      "best": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingLastAndBest": "Last time: {last}  ·  Best: {best}",
+  "@trainingLastAndBest": {
+    "placeholders": {
+      "last": {
+        "type": "String"
+      },
+      "best": {
+        "type": "String"
+      }
+    }
+  },
+  "modeLadder": "121 ladder",
+  "modeLadderDescription": "Check out 121: made moves you up one, missed moves you down one",
+  "ladderAttempts": "Attempts per round",
+  "ladderLevel": "Level {score}",
+  "@ladderLevel": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "ladderRecord": "Record {score}",
+  "@ladderRecord": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "attemptOf": "Attempt {number} of {total}",
+  "@attemptOf": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingNotKept": "Free throwing is not kept. For your statistics, play X01 or a training.",
   "modeKiller": "Killer",
   "modeKillerDescription": "Hit your own double three times to become a killer, then take your opponents' lives",
   "killerIsKiller": "Killer",

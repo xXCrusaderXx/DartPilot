@@ -85,15 +85,19 @@ void main() {
     String figure(String label) => tester.widget<Text>(find.byKey(ValueKey('figure-$label'))).data!;
     // All: 161 points in 7 darts.
     expect(figure('3-Dart-Schnitt'), '69,0');
-    expect(figure('Bestes Leg'), '4 Darts');
-    expect(figure('Checkout-Quote'), '100\u00a0%');
+    expect(figure('Bestes Leg 101'), '4 Darts');
+    expect(figure('Checkout-Quote'), '100\u00a0% (1/1)');
     expect(figure('Höchstes Finish'), '20');
     expect(find.text('D10 × 1'), findsOneWidget);
 
     await tester.tap(find.text('7 Tage'));
     await tester.pumpAndSettle();
     expect(figure('3-Dart-Schnitt'), '60,0');
-    expect(figure('Bestes Leg'), '–');
-    expect(figure('Spiele'), '1 (0 gewonnen)');
+    // Nothing finished in the week, and a solo game is neither won nor lost; Cricket was never played.
+    expect(find.byKey(const ValueKey('figure-Bestes Leg 101')), findsNothing);
+    expect(figure('Spiele'), '1');
+    expect(find.byKey(const ValueKey('figure-Matches')), findsNothing);
+    expect(find.byKey(const ValueKey('figure-Marks pro Runde')), findsNothing);
+    expect(figure('Höchste Aufnahme'), '60');
   });
 }
