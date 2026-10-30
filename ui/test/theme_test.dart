@@ -204,6 +204,7 @@ void main() {
     expect(palette().background, AppPalette.highContrastDark.background);
 
     await tester.ensureVisible(find.byKey(const ValueKey('appearance-reset')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('appearance-reset')));
     await tester.pumpAndSettle();
     expect(palette(), AppPalette.dark);

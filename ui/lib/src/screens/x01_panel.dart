@@ -19,6 +19,7 @@ class X01Panel extends StatelessWidget {
     required this.onCallCheckout,
     required this.style,
     required this.far,
+    this.details = DisplaySettings.defaultPanelDetails,
   });
 
   final X01Game game;
@@ -30,6 +31,9 @@ class X01Panel extends StatelessWidget {
   final VoidCallback onCallCheckout;
   final DisplayStyle style;
   final bool far;
+
+  /// What the panel shows besides the score
+  final Set<PanelDetail> details;
 
   @override
   Widget build(BuildContext context) {
@@ -80,24 +84,25 @@ class X01Panel extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (!far) Text(_figures(l10n, active), style: theme.textTheme.bodyMedium),
+                  if (_figures(l10n, active) case final figures?) Text(figures, style: theme.textTheme.bodyMedium),
                 ],
               ),
               _Remaining(player: active, size: _bigSize(width)),
-              _VisitRow(texts: dartTexts, big: far),
+              if (details.contains(PanelDetail.visitDarts)) _VisitRow(texts: dartTexts, big: far),
               if (visit.isBust)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(l10n.bust, style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.error)),
                 ),
-              if (checkout != null) _CheckoutLine(route: checkout!, onCall: onCallCheckout, big: far),
+              if (checkout != null && details.contains(PanelDetail.checkout))
+                _CheckoutLine(route: checkout!, onCall: onCallCheckout, big: far),
             ],
           ),
         ),
         for (final p in others)
           Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: _OtherPlayer(player: p, figures: far ? null : _figures(l10n, p), big: far),
+            child: _OtherPlayer(player: p, figures: _figures(l10n, p), big: far),
           ),
       ],
     );
@@ -148,9 +153,9 @@ class X01Panel extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (!far)
+                  if (_figures(l10n, active) case final figures?)
                     Text(
-                      _figures(l10n, active),
+                      figures,
                       style: theme.textTheme.bodyMedium?.copyWith(color: onBlock, fontWeight: FontWeight.w700),
                     ),
                 ],
@@ -163,7 +168,7 @@ class X01Panel extends StatelessWidget {
           Container(
             color: theme.colorScheme.surfaceContainerHigh,
             margin: const EdgeInsets.only(top: 2),
-            child: _OtherPlayer(player: p, figures: far ? null : _figures(l10n, p), big: far, flat: true),
+            child: _OtherPlayer(player: p, figures: _figures(l10n, p), big: far, flat: true),
           ),
         const SizedBox(height: 8),
         Container(
@@ -172,13 +177,14 @@ class X01Panel extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _VisitRow(texts: dartTexts, big: far),
+              if (details.contains(PanelDetail.visitDarts)) _VisitRow(texts: dartTexts, big: far),
               if (visit.isBust)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(l10n.bust, style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.error)),
                 ),
-              if (checkout != null) _CheckoutLine(route: checkout!, onCall: onCallCheckout, big: far),
+              if (checkout != null && details.contains(PanelDetail.checkout))
+                _CheckoutLine(route: checkout!, onCall: onCallCheckout, big: far),
             ],
           ),
         ),
@@ -189,9 +195,16 @@ class X01Panel extends StatelessWidget {
   String _meta(AppLocalizations l10n) =>
       game.settings.legsToWin > 1 ? l10n.x01LegOf(game.legNumber, game.settings.legsToWin) : l10n.leg(game.legNumber);
 
-  String _figures(AppLocalizations l10n, X01PlayerState p) => game.settings.legsToWin > 1
-      ? l10n.x01PlayerFiguresLegs(p.legsWon, decimal(l10n, p.threeDartAverage))
-      : l10n.x01PlayerFigures(decimal(l10n, p.threeDartAverage));
+  /// Legs won and the figures the player chose, or null from afar or when there are none
+  String? _figures(AppLocalizations l10n, X01PlayerState p) {
+    if (far) return null;
+    final parts = [
+      if (game.settings.legsToWin > 1) l10n.x01Legs(p.legsWon),
+      if (details.contains(PanelDetail.average)) l10n.x01PlayerFigures(decimal(l10n, p.threeDartAverage)),
+      if (details.contains(PanelDetail.dartsThrown)) l10n.x01DartsThrown(p.dartsThrown),
+    ];
+    return parts.isEmpty ? null : parts.join(' · ');
+  }
 }
 
 /// The remaining score, counting to its new value when a visit scores

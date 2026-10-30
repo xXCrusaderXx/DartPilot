@@ -356,12 +356,6 @@ abstract class AppLocalizations {
   /// **'Ø {average}'**
   String x01PlayerFigures(String average);
 
-  /// No description provided for @x01PlayerFiguresLegs.
-  ///
-  /// In en, this message translates to:
-  /// **'{legs, plural, =1{1 leg} other{{legs} legs}} · Ø {average}'**
-  String x01PlayerFiguresLegs(int legs, String average);
-
   /// No description provided for @checkout.
   ///
   /// In en, this message translates to:
@@ -4039,6 +4033,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Darts of the game'**
   String get gameThrowsTitle;
+
+  /// No description provided for @x01Legs.
+  ///
+  /// In en, this message translates to:
+  /// **'{legs, plural, =1{1 leg} other{{legs} legs}}'**
+  String x01Legs(int legs);
+
+  /// No description provided for @x01DartsThrown.
+  ///
+  /// In en, this message translates to:
+  /// **'{darts, plural, =1{1 dart} other{{darts} darts}}'**
+  String x01DartsThrown(int darts);
+
+  /// No description provided for @gameScreenLayout.
+  ///
+  /// In en, this message translates to:
+  /// **'Game screen'**
+  String get gameScreenLayout;
+
+  /// No description provided for @gameScreenLayoutHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept for this device, whatever the preset'**
+  String get gameScreenLayoutHint;
+
+  /// No description provided for @boardSide.
+  ///
+  /// In en, this message translates to:
+  /// **'Board side'**
+  String get boardSide;
+
+  /// No description provided for @boardSideHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Where the board stands when it fits beside the score'**
+  String get boardSideHint;
+
+  /// No description provided for @boardLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Left'**
+  String get boardLeft;
+
+  /// No description provided for @boardRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Right'**
+  String get boardRight;
+
+  /// No description provided for @boardSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Board size'**
+  String get boardSize;
+
+  /// No description provided for @boardSizeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'How much of the game screen the board takes; the score always keeps room to be read'**
+  String get boardSizeHint;
+
+  /// No description provided for @boardSmall.
+  ///
+  /// In en, this message translates to:
+  /// **'Small'**
+  String get boardSmall;
+
+  /// No description provided for @boardMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get boardMedium;
+
+  /// No description provided for @boardLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Large'**
+  String get boardLarge;
+
+  /// No description provided for @panelDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Score panel shows'**
+  String get panelDetails;
+
+  /// No description provided for @detailVisitDarts.
+  ///
+  /// In en, this message translates to:
+  /// **'Darts of the visit'**
+  String get detailVisitDarts;
+
+  /// No description provided for @detailCheckout.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkout route'**
+  String get detailCheckout;
+
+  /// No description provided for @detailAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Average'**
+  String get detailAverage;
+
+  /// No description provided for @detailDartsThrown.
+  ///
+  /// In en, this message translates to:
+  /// **'Darts thrown'**
+  String get detailDartsThrown;
+
+  /// No description provided for @celebration.
+  ///
+  /// In en, this message translates to:
+  /// **'180 and checkout'**
+  String get celebration;
+
+  /// No description provided for @celebrationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'How a 180 or a checkout shows on the game screen; where the system asks for less motion, it shows without moving'**
+  String get celebrationHint;
+
+  /// No description provided for @celebrationFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Full'**
+  String get celebrationFull;
+
+  /// No description provided for @celebrationSubtle.
+  ///
+  /// In en, this message translates to:
+  /// **'Subtle'**
+  String get celebrationSubtle;
+
+  /// No description provided for @celebrationOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get celebrationOff;
+
+  /// No description provided for @celebrateCheckout.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkout {points}'**
+  String celebrateCheckout(int points);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

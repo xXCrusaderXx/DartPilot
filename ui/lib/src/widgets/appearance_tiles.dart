@@ -242,3 +242,87 @@ class _HueDialogState extends State<_HueDialog> {
     );
   }
 }
+
+/// The game screen's layout and how it celebrates; kept for the device whatever the preset
+class GameScreenTiles extends StatelessWidget {
+  const GameScreenTiles({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final display = DisplayScope.of(context);
+    Widget segmented<T>(String key, List<(T, String)> values, T selected, ValueChanged<T> onChanged) => Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: SegmentedButton<T>(
+        key: ValueKey(key),
+        segments: [for (final (value, label) in values) ButtonSegment(value: value, label: Text(label))],
+        selected: {selected},
+        onSelectionChanged: (s) => onChanged(s.first),
+      ),
+    );
+    final details = [
+      (PanelDetail.visitDarts, l10n.detailVisitDarts),
+      (PanelDetail.checkout, l10n.detailCheckout),
+      (PanelDetail.average, l10n.detailAverage),
+      (PanelDetail.dartsThrown, l10n.detailDartsThrown),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ListTile(
+          title: Text(l10n.gameScreenLayout, style: Theme.of(context).textTheme.titleMedium),
+          subtitle: Text(l10n.gameScreenLayoutHint),
+        ),
+        ListTile(title: Text(l10n.boardSide), subtitle: Text(l10n.boardSideHint)),
+        segmented(
+          'board-side',
+          [(BoardSide.left, l10n.boardLeft), (BoardSide.right, l10n.boardRight)],
+          display.boardSide,
+          (v) => display.set(boardSide: v),
+        ),
+        ListTile(title: Text(l10n.boardSize), subtitle: Text(l10n.boardSizeHint)),
+        segmented(
+          'board-size',
+          [
+            (BoardSize.small, l10n.boardSmall),
+            (BoardSize.medium, l10n.boardMedium),
+            (BoardSize.large, l10n.boardLarge),
+          ],
+          display.boardSize,
+          (v) => display.set(boardSize: v),
+        ),
+        ListTile(title: Text(l10n.panelDetails)),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final (detail, label) in details)
+                  FilterChip(
+                    key: ValueKey('detail-${detail.name}'),
+                    label: Text(label),
+                    selected: display.shows(detail),
+                    onSelected: (on) => display.showDetail(detail, on),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        ListTile(title: Text(l10n.celebration), subtitle: Text(l10n.celebrationHint)),
+        segmented(
+          'celebration',
+          [
+            (Celebration.full, l10n.celebrationFull),
+            (Celebration.subtle, l10n.celebrationSubtle),
+            (Celebration.off, l10n.celebrationOff),
+          ],
+          display.celebration,
+          (v) => display.set(celebration: v),
+        ),
+      ],
+    );
+  }
+}

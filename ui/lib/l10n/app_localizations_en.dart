@@ -152,12 +152,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String x01PlayerFiguresLegs(int legs, String average) {
-    String _temp0 = intl.Intl.pluralLogic(legs, locale: localeName, other: '$legs legs', one: '1 leg');
-    return '$_temp0 · Ø $average';
-  }
-
-  @override
   String get checkout => 'Checkout';
 
   @override
@@ -2280,4 +2274,85 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gameThrowsTitle => 'Darts of the game';
+
+  @override
+  String x01Legs(int legs) {
+    String _temp0 = intl.Intl.pluralLogic(legs, locale: localeName, other: '$legs legs', one: '1 leg');
+    return '$_temp0';
+  }
+
+  @override
+  String x01DartsThrown(int darts) {
+    String _temp0 = intl.Intl.pluralLogic(darts, locale: localeName, other: '$darts darts', one: '1 dart');
+    return '$_temp0';
+  }
+
+  @override
+  String get gameScreenLayout => 'Game screen';
+
+  @override
+  String get gameScreenLayoutHint => 'Kept for this device, whatever the preset';
+
+  @override
+  String get boardSide => 'Board side';
+
+  @override
+  String get boardSideHint => 'Where the board stands when it fits beside the score';
+
+  @override
+  String get boardLeft => 'Left';
+
+  @override
+  String get boardRight => 'Right';
+
+  @override
+  String get boardSize => 'Board size';
+
+  @override
+  String get boardSizeHint => 'How much of the game screen the board takes; the score always keeps room to be read';
+
+  @override
+  String get boardSmall => 'Small';
+
+  @override
+  String get boardMedium => 'Medium';
+
+  @override
+  String get boardLarge => 'Large';
+
+  @override
+  String get panelDetails => 'Score panel shows';
+
+  @override
+  String get detailVisitDarts => 'Darts of the visit';
+
+  @override
+  String get detailCheckout => 'Checkout route';
+
+  @override
+  String get detailAverage => 'Average';
+
+  @override
+  String get detailDartsThrown => 'Darts thrown';
+
+  @override
+  String get celebration => '180 and checkout';
+
+  @override
+  String get celebrationHint =>
+      'How a 180 or a checkout shows on the game screen; where the system asks for less motion, it shows without moving';
+
+  @override
+  String get celebrationFull => 'Full';
+
+  @override
+  String get celebrationSubtle => 'Subtle';
+
+  @override
+  String get celebrationOff => 'Off';
+
+  @override
+  String celebrateCheckout(int points) {
+    return 'Checkout $points';
+  }
 }
