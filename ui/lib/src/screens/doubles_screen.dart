@@ -8,7 +8,6 @@ import '../games/dart_game.dart';
 import '../games/doubles.dart';
 import '../input/takeout_gate.dart';
 import '../stats/game_record.dart';
-import '../stats/player_stats.dart';
 import '../stats/precision.dart';
 import '../stats/statistics.dart';
 import '../stats/training_best.dart';
@@ -59,13 +58,16 @@ class DoublesScreen extends StatefulWidget {
 String rankingLine(AppLocalizations l10n, TargetPrecision p) {
   final spread = p.spread;
   return [
-    '${p.target.label}  ${p.hits}/${p.points.length}',
+    '${p.target.label}  ${p.hits}/${p.darts}',
     percentText(l10n, p.hitRate),
     if (spread != null) mmText(l10n, spread.spreadMm),
   ].join('  ·  ');
 }
 
-class _DoublesScreenState extends State<DoublesScreen> with RecordsGame {
+class _DoublesScreenState extends State<DoublesScreen> with RecordsGame, ComparesTraining {
+  @override
+  String get trainingPlayer => widget.player;
+
   @override
   bool get watching => widget.watching;
 
@@ -75,11 +77,7 @@ class _DoublesScreenState extends State<DoublesScreen> with RecordsGame {
   );
   final TakeoutGate _takeout = TakeoutGate();
 
-  /// The player's earlier rounds at these doubles as kept now: the round played just before is kept only after this
-  /// screen opened, when its screen is gone
-  TrainingComparison? get _earlier => watching
-      ? null
-      : compareWithEarlier(StatisticsScope.read(context)?.games ?? const [], currentRecord, widget.player);
+  TrainingComparison? get _earlier => earlierRounds(StatisticsScope.read(context)?.games ?? const []);
 
   @override
   GameRecord buildRecord(String id, DateTime started, DateTime ended) => GameRecord(
@@ -250,12 +248,12 @@ class _DoublesSetupScreenState extends State<DoublesSetupScreen> {
     final player = _player ?? statistics?.players.firstOrNull;
     final precision = player == null
         ? const <TargetPrecision>[]
-        : computePlayerPrecision(statistics?.games ?? const [], player);
+        : statistics?.precisionOf(player) ?? const <TargetPrecision>[];
     // Only doubles with enough darts are ranked; one lucky dart is no strong double.
     final ranking = doublesRanking(precision, minDarts: minRankedDarts);
     final unranked = [
       for (final p in doublesRanking(precision))
-        if (p.points.length < minRankedDarts) p.target.label,
+        if (p.darts < minRankedDarts) p.target.label,
     ];
     final weakest = weakestDoubles(statistics?.games ?? const [], player);
     final set = _set == DoublesSet.weakest && weakest == null ? DoublesSet.top10 : _set;

@@ -61,7 +61,10 @@ class CheckoutScreen extends StatefulWidget {
   State<CheckoutScreen> createState() => _CheckoutScreenState();
 }
 
-class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
+class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame, ComparesTraining {
+  @override
+  String get trainingPlayer => widget.player;
+
   @override
   bool get watching => widget.watching;
 
@@ -71,19 +74,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
   );
   final TakeoutGate _takeout = TakeoutGate();
 
-  List<GameRecord>? _comparedGames;
-  TrainingComparison? _comparison;
-
-  /// The player's earlier rounds of this training as kept now: the round played just before is kept only after this
-  /// screen opened, when its screen is gone
-  TrainingComparison? _earlier(List<GameRecord> games) {
-    if (watching) return null;
-    if (!identical(games, _comparedGames)) {
-      _comparedGames = games;
-      _comparison = compareWithEarlier(games, currentRecord, widget.player);
-    }
-    return _comparison;
-  }
+  TrainingComparison? _earlier(List<GameRecord> games) => earlierRounds(games);
 
   @override
   GameRecord buildRecord(String id, DateTime started, DateTime ended) => GameRecord(

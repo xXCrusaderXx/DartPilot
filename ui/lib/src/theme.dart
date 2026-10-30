@@ -502,3 +502,9 @@ class PlayerDot extends StatelessWidget {
     );
   }
 }
+
+/// The confirm button of a dialog that deletes something: in the error colour, so it does not read as the safe choice
+ButtonStyle destructiveButtonStyle(BuildContext context) {
+  final scheme = Theme.of(context).colorScheme;
+  return FilledButton.styleFrom(backgroundColor: scheme.error, foregroundColor: scheme.onError);
+}

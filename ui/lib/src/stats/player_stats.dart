@@ -3,6 +3,7 @@ import '../board/scoring.dart';
 import '../games/around_the_clock.dart';
 import '../games/checkout_trainer.dart';
 import '../games/cricket.dart';
+import '../games/dart_game.dart';
 import '../games/doubles.dart';
 import '../games/grouping.dart';
 import '../games/killer.dart';
@@ -17,11 +18,13 @@ class PlayedGame {
     this.record, {
     required this.won,
     required this.darts,
+    this.finished = true,
     this.average,
     this.marksPerRound,
     this.hitRate,
     this.spreadMm,
     this.checkoutRate,
+    this.ladderBest,
     this.points,
     this.lives,
   });
@@ -31,6 +34,9 @@ class PlayedGame {
   /// Won against at least one other player or bot; a solo game or a training is never won
   final bool won;
   final int darts;
+
+  /// Played to its end; a game left before its end never counts as a match or a win and is not part of a trend
+  final bool finished;
 
   /// X01 three-dart average, Cricket marks per round, Around the Clock and doubles practice share of darts on the
   /// target
@@ -43,6 +49,9 @@ class PlayedGame {
 
   /// Checkout trainer: share of the checkouts finished
   final double? checkoutRate;
+
+  /// 121 ladder: the highest score checked out; null when none was
+  final int? ladderBest;
 
   /// Shanghai, Bob's 27, Halve-It: the final score
   final int? points;
@@ -58,7 +67,7 @@ class PlayerStats {
   /// Games and trainings
   int games = 0;
 
-  /// Games against at least one other player or bot, and how many of them were won
+  /// Games against at least one other player or bot played to their end, and how many of them were won
   int matches = 0;
   int gamesWon = 0;
   int trainings = 0;
@@ -112,6 +121,9 @@ class PlayerStats {
 
   final List<PlayedGame> history = [];
 
+  /// Games that are not trainings
+  int get playedGames => games - trainings;
+
   /// The best leg of the highest start score played, usually 501
   int? get bestLegDarts {
     if (bestLegByStart.isEmpty) return null;
@@ -135,7 +147,8 @@ class PlayerStats {
 /// A dart can finish a double-out leg when what is left is a double or the bull.
 bool isOneDartFinish(int remaining) => remaining == 50 || (remaining >= 2 && remaining <= 40 && remaining.isEven);
 
-/// The figures of [player] over [games], newest game first in the history; games before [since] are left out.
+/// The figures of [player] over [games], newest game first in the history; games before [since] are left out, and so
+/// are games the player threw no dart in.
 PlayerStats computePlayerStats(List<GameRecord> games, String player, {DateTime? since}) {
   final stats = PlayerStats();
   for (final record in games) {
@@ -147,8 +160,11 @@ PlayerStats computePlayerStats(List<GameRecord> games, String player, {DateTime?
       for (var i = 0; i < record.throws.length; ++i)
         if (playerOf[i] == index) record.throws[i],
     ];
+    // A game left after another player's first visit says nothing about this player.
+    if (mine.isEmpty) continue;
     final training = trainingModes.contains(record.mode);
-    final match = !training && record.players.length > 1;
+    final finished = game is DartGame && game.isFinished;
+    final match = !training && record.players.length > 1 && finished;
     stats.games++;
     if (training) {
       stats.trainings++;
@@ -167,27 +183,64 @@ PlayerStats computePlayerStats(List<GameRecord> games, String player, {DateTime?
     final PlayedGame played;
     switch (game) {
       case X01Game():
-        played = _addX01(stats, record, game, index, mine.length, match: match);
+        played = _addX01(stats, record, game, index, mine.length, match: match, finished: finished);
       case CricketGame():
         final state = game.players[index];
         stats.cricketDarts += state.dartsThrown;
         stats.cricketMarks += state.totalMarks;
-        played = PlayedGame(record, won: won(game.winner), darts: mine.length, marksPerRound: state.marksPerRound);
+        played = PlayedGame(
+          record,
+          won: won(game.winner),
+          darts: mine.length,
+          finished: finished,
+          marksPerRound: state.marksPerRound,
+        );
       case AroundTheClockGame():
         final state = game.players[index];
         stats.clockDarts += state.dartsThrown;
         stats.clockHits += state.hits;
-        played = PlayedGame(record, won: won(game.winner), darts: mine.length, hitRate: state.hitRate);
+        played = PlayedGame(
+          record,
+          won: won(game.winner),
+          darts: mine.length,
+          finished: finished,
+          hitRate: state.hitRate,
+        );
       case GroupingGame():
-        played = PlayedGame(record, won: false, darts: mine.length, spreadMm: game.spread?.spreadMm);
+        played = PlayedGame(
+          record,
+          won: false,
+          darts: mine.length,
+          finished: finished,
+          spreadMm: game.spread?.spreadMm,
+        );
       case DoublesGame():
-        played = PlayedGame(record, won: false, darts: mine.length, hitRate: game.hitRate);
+        played = PlayedGame(record, won: false, darts: mine.length, finished: finished, hitRate: game.hitRate);
       case KillerGame():
-        played = PlayedGame(record, won: won(game.winner), darts: mine.length, lives: game.players[index].lives);
+        played = PlayedGame(
+          record,
+          won: won(game.winner),
+          darts: mine.length,
+          finished: finished,
+          lives: game.players[index].lives,
+        );
       case RoundGame():
-        played = PlayedGame(record, won: won(game.winner), darts: mine.length, points: game.players[index].score);
+        played = PlayedGame(
+          record,
+          won: won(game.winner),
+          darts: mine.length,
+          finished: finished,
+          points: game.players[index].score,
+        );
       case CheckoutTrainer():
-        played = PlayedGame(record, won: false, darts: mine.length, checkoutRate: game.checkoutRate);
+        played = PlayedGame(
+          record,
+          won: false,
+          darts: mine.length,
+          finished: finished,
+          checkoutRate: game.ladder ? null : game.checkoutRate,
+          ladderBest: game.ladder ? game.bestCheckout : null,
+        );
       default:
         continue;
     }
@@ -198,7 +251,15 @@ PlayerStats computePlayerStats(List<GameRecord> games, String player, {DateTime?
   return stats;
 }
 
-PlayedGame _addX01(PlayerStats stats, GameRecord record, X01Game game, int index, int darts, {required bool match}) {
+PlayedGame _addX01(
+  PlayerStats stats,
+  GameRecord record,
+  X01Game game,
+  int index,
+  int darts, {
+  required bool match,
+  required bool finished,
+}) {
   final state = game.players[index];
   stats.x01Darts += state.dartsThrown;
   stats.x01Points += state.pointsScored;
@@ -260,7 +321,13 @@ PlayedGame _addX01(PlayerStats stats, GameRecord record, X01Game game, int index
     stats.legs++;
     if (match) stats.matchLegs++;
   }
-  return PlayedGame(record, won: match && game.winner == index, darts: darts, average: state.threeDartAverage);
+  return PlayedGame(
+    record,
+    won: match && game.winner == index,
+    darts: darts,
+    finished: finished,
+    average: state.threeDartAverage,
+  );
 }
 
 bool _hasSector(Ring ring) => ring != Ring.innerBull && ring != Ring.outerBull && ring != Ring.miss;

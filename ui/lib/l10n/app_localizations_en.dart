@@ -1566,7 +1566,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exportDartsCsv => 'All darts as CSV';
 
   @override
-  String get exportGamesJson => 'Games and figures as JSON';
+  String get exportGamesJson => 'Backup of all games and profiles (JSON)';
 
   @override
   String exportSaved(String path) {
@@ -2883,19 +2883,142 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeConnectedNotDetecting => 'Camera detection connected – not detecting darts yet';
 
   @override
-  String get celebrateNineDarter => 'Nine-darter!';
-
-  @override
-  String legsFormat(int first, int bestOf) {
-    return 'First to $first · best of $bestOf';
+  String hitFromCentre(String mm) {
+    return 'Hit, $mm mm from the middle';
   }
 
   @override
-  String get legsSingle => 'A single leg decides';
+  String get statsDartsInGames => 'Darts in games';
 
   @override
-  String get cutThroatLowestWins => 'Fewest points win';
+  String get statsTraining => 'Training';
 
   @override
-  String get modeCricketCutThroat => 'Cricket · Cut-Throat';
+  String statsTrainingRounds(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count rounds', one: '1 round');
+    return '$_temp0';
+  }
+
+  @override
+  String statsTrainingLast(String value) {
+    return 'Last $value';
+  }
+
+  @override
+  String statsTrainingBest(String value) {
+    return 'Best $value';
+  }
+
+  @override
+  String get statsTrainingNewBest => 'New best';
+
+  @override
+  String get statsTrainingDoubles => 'Doubles hit rate';
+
+  @override
+  String get statsTrainingLadder => '121 ladder, highest checkout';
+
+  @override
+  String statsTrainingCheckout(String from, String to) {
+    return 'Checkouts $from–$to';
+  }
+
+  @override
+  String statsTrainingGrouping(String target) {
+    return 'Grouping $target, spread';
+  }
+
+  @override
+  String statsTrainingDarts(String rounds, String darts) {
+    return '$rounds · $darts in trainings';
+  }
+
+  @override
+  String get statsUnfinished => 'not finished';
+
+  @override
+  String statsAgainst(String names) {
+    return 'against $names';
+  }
+
+  @override
+  String get renameProfile => 'Rename';
+
+  @override
+  String renameProfileTitle(String name) {
+    return 'Rename $name';
+  }
+
+  @override
+  String get deleteGame => 'Delete game';
+
+  @override
+  String get deleteGameText =>
+      'The game is removed from the statistics of everyone who played in it. This cannot be undone.';
+
+  @override
+  String get gameDeleted => 'Game deleted';
+
+  @override
+  String get statsDataMenu => 'Back up and export';
+
+  @override
+  String get backupImport => 'Restore a backup';
+
+  @override
+  String get backupImportTitle => 'Read the backup?';
+
+  @override
+  String backupGames(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count new games',
+      one: '1 new game',
+      zero: 'no new game',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String backupProfiles(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count new profiles',
+      one: '1 new profile',
+      zero: 'no new profile',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String backupImportText(String games, String profiles) {
+    return 'To be added: $games and $profiles. Nothing on this device is changed or removed.';
+  }
+
+  @override
+  String backupUnreadable(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count games in the file are from a newer version and are left out.',
+      one: 'One game in the file is from a newer version and is left out.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get backupAdd => 'Add';
+
+  @override
+  String get backupNothingNew => 'Everything in this backup is already here.';
+
+  @override
+  String backupImported(String games, String profiles) {
+    return 'Added: $games and $profiles';
+  }
+
+  @override
+  String get backupInvalid => 'This file is not a DartPilot backup. Nothing was changed.';
 }

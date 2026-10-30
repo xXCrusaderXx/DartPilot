@@ -1,9 +1,12 @@
 // A training round compared with the player's earlier rounds of the same training (#125).
+import 'dart:math' as math;
+
 import '../games/checkout_trainer.dart';
 import '../games/dart_game.dart';
 import '../games/doubles.dart';
 import '../games/grouping.dart';
 import 'game_record.dart';
+import 'precision.dart';
 
 /// The figure a training round is judged by
 typedef TrainingScore = ({double value, bool lowerIsBetter});
@@ -69,4 +72,85 @@ TrainingComparison? compareWithEarlier(List<GameRecord> games, GameRecord curren
   }
   if (last == null || best == null) return null;
   return TrainingComparison(last: last.value, best: best, lowerIsBetter: last.lowerIsBetter);
+}
+
+/// What the statistics follow over time: the doubles practice, the checkout trainer per range of finishes, the 121
+/// ladder, and the grouping per target. Rounds of one track compare, whatever doubles or darts per attempt they had.
+class TrainingTrack {
+  const TrainingTrack._(this.mode, {this.range, this.target});
+
+  final GameMode mode;
+
+  /// The checkout trainer's range of finishes; [CheckoutRange.ladder] for the 121 ladder
+  final CheckoutRange? range;
+
+  /// The grouping's target
+  final PrecisionTarget? target;
+
+  /// The track of a training round; null for games that are not trainings
+  static TrainingTrack? of(GameRecord record) => switch (record.mode) {
+    GameMode.doubles => const TrainingTrack._(GameMode.doubles),
+    GameMode.checkout => switch (record.checkoutTrainer) {
+      final t when t.ladder => const TrainingTrack._(GameMode.checkout, range: CheckoutRange.ladder),
+      final t => TrainingTrack._(GameMode.checkout, range: CheckoutRange.of(t.starts.first)),
+    },
+    GameMode.grouping => TrainingTrack._(GameMode.grouping, target: record.groupingTarget),
+    _ => null,
+  };
+
+  bool get isLadder => range == CheckoutRange.ladder;
+
+  /// Doubles first, then the checkout ranges from low to the ladder, then the grouping targets in the order offered
+  int get order => switch (mode) {
+    GameMode.doubles => 0,
+    GameMode.checkout => 1 + range!.index,
+    _ => 10 + math.max(0, trainingTargets.indexOf(target!)),
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      other is TrainingTrack && other.mode == mode && other.range == range && other.target == target;
+
+  @override
+  int get hashCode => Object.hash(mode, range, target);
+}
+
+/// The finished rounds of one training track, oldest first
+class TrainingProgress {
+  TrainingProgress(this.track, {required this.lowerIsBetter});
+
+  final TrainingTrack track;
+  final bool lowerIsBetter;
+  final List<({DateTime ended, double value})> rounds = [];
+
+  double get last => rounds.last.value;
+
+  double get best => rounds.map((r) => r.value).reduce((a, b) => (lowerIsBetter ? a <= b : a >= b) ? a : b);
+
+  /// Whether the last round set the best figure, beating every round before it
+  bool get lastIsBest {
+    if (rounds.length < 2) return false;
+    final before = rounds.sublist(0, rounds.length - 1).map((r) => r.value);
+    return before.every((v) => lowerIsBetter ? last < v : last > v);
+  }
+}
+
+/// The training rounds [player] finished, per track; rounds before [since] are left out.
+List<TrainingProgress> computeTrainingProgress(List<GameRecord> games, String player, {DateTime? since}) {
+  final byTrack = <TrainingTrack, TrainingProgress>{};
+  final sorted = [
+    for (final g in games)
+      if (g.players.contains(player) && (since == null || !g.ended.isBefore(since))) g,
+  ]..sort((a, b) => a.ended.compareTo(b.ended));
+  for (final record in sorted) {
+    final track = TrainingTrack.of(record);
+    if (track == null) continue;
+    final score = trainingScore(record);
+    if (score == null) continue;
+    byTrack.putIfAbsent(track, () => TrainingProgress(track, lowerIsBetter: score.lowerIsBetter)).rounds.add((
+      ended: record.ended,
+      value: score.value,
+    ));
+  }
+  return byTrack.values.toList()..sort((a, b) => a.track.order.compareTo(b.track.order));
 }

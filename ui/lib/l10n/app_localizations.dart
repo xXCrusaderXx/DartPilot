@@ -2771,7 +2771,7 @@ abstract class AppLocalizations {
   /// No description provided for @exportGamesJson.
   ///
   /// In en, this message translates to:
-  /// **'Games and figures as JSON'**
+  /// **'Backup of all games and profiles (JSON)'**
   String get exportGamesJson;
 
   /// No description provided for @exportSaved.
@@ -5054,35 +5054,185 @@ abstract class AppLocalizations {
   /// **'Camera detection connected – not detecting darts yet'**
   String get homeConnectedNotDetecting;
 
-  /// No description provided for @celebrateNineDarter.
+  /// No description provided for @hitFromCentre.
   ///
   /// In en, this message translates to:
-  /// **'Nine-darter!'**
-  String get celebrateNineDarter;
+  /// **'Hit, {mm} mm from the middle'**
+  String hitFromCentre(String mm);
 
-  /// No description provided for @legsFormat.
+  /// No description provided for @statsDartsInGames.
   ///
   /// In en, this message translates to:
-  /// **'First to {first} · best of {bestOf}'**
-  String legsFormat(int first, int bestOf);
+  /// **'Darts in games'**
+  String get statsDartsInGames;
 
-  /// No description provided for @legsSingle.
+  /// No description provided for @statsTraining.
   ///
   /// In en, this message translates to:
-  /// **'A single leg decides'**
-  String get legsSingle;
+  /// **'Training'**
+  String get statsTraining;
 
-  /// No description provided for @cutThroatLowestWins.
+  /// No description provided for @statsTrainingRounds.
   ///
   /// In en, this message translates to:
-  /// **'Fewest points win'**
-  String get cutThroatLowestWins;
+  /// **'{count, plural, =1{1 round} other{{count} rounds}}'**
+  String statsTrainingRounds(int count);
 
-  /// No description provided for @modeCricketCutThroat.
+  /// No description provided for @statsTrainingLast.
   ///
   /// In en, this message translates to:
-  /// **'Cricket · Cut-Throat'**
-  String get modeCricketCutThroat;
+  /// **'Last {value}'**
+  String statsTrainingLast(String value);
+
+  /// No description provided for @statsTrainingBest.
+  ///
+  /// In en, this message translates to:
+  /// **'Best {value}'**
+  String statsTrainingBest(String value);
+
+  /// No description provided for @statsTrainingNewBest.
+  ///
+  /// In en, this message translates to:
+  /// **'New best'**
+  String get statsTrainingNewBest;
+
+  /// No description provided for @statsTrainingDoubles.
+  ///
+  /// In en, this message translates to:
+  /// **'Doubles hit rate'**
+  String get statsTrainingDoubles;
+
+  /// No description provided for @statsTrainingLadder.
+  ///
+  /// In en, this message translates to:
+  /// **'121 ladder, highest checkout'**
+  String get statsTrainingLadder;
+
+  /// No description provided for @statsTrainingCheckout.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkouts {from}–{to}'**
+  String statsTrainingCheckout(String from, String to);
+
+  /// No description provided for @statsTrainingGrouping.
+  ///
+  /// In en, this message translates to:
+  /// **'Grouping {target}, spread'**
+  String statsTrainingGrouping(String target);
+
+  /// No description provided for @statsTrainingDarts.
+  ///
+  /// In en, this message translates to:
+  /// **'{rounds} · {darts} in trainings'**
+  String statsTrainingDarts(String rounds, String darts);
+
+  /// No description provided for @statsUnfinished.
+  ///
+  /// In en, this message translates to:
+  /// **'not finished'**
+  String get statsUnfinished;
+
+  /// No description provided for @statsAgainst.
+  ///
+  /// In en, this message translates to:
+  /// **'against {names}'**
+  String statsAgainst(String names);
+
+  /// No description provided for @renameProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get renameProfile;
+
+  /// No description provided for @renameProfileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename {name}'**
+  String renameProfileTitle(String name);
+
+  /// No description provided for @deleteGame.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete game'**
+  String get deleteGame;
+
+  /// No description provided for @deleteGameText.
+  ///
+  /// In en, this message translates to:
+  /// **'The game is removed from the statistics of everyone who played in it. This cannot be undone.'**
+  String get deleteGameText;
+
+  /// No description provided for @gameDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Game deleted'**
+  String get gameDeleted;
+
+  /// No description provided for @statsDataMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Back up and export'**
+  String get statsDataMenu;
+
+  /// No description provided for @backupImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore a backup'**
+  String get backupImport;
+
+  /// No description provided for @backupImportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the backup?'**
+  String get backupImportTitle;
+
+  /// No description provided for @backupGames.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{no new game} =1{1 new game} other{{count} new games}}'**
+  String backupGames(int count);
+
+  /// No description provided for @backupProfiles.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{no new profile} =1{1 new profile} other{{count} new profiles}}'**
+  String backupProfiles(int count);
+
+  /// No description provided for @backupImportText.
+  ///
+  /// In en, this message translates to:
+  /// **'To be added: {games} and {profiles}. Nothing on this device is changed or removed.'**
+  String backupImportText(String games, String profiles);
+
+  /// No description provided for @backupUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{One game in the file is from a newer version and is left out.} other{{count} games in the file are from a newer version and are left out.}}'**
+  String backupUnreadable(int count);
+
+  /// No description provided for @backupAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get backupAdd;
+
+  /// No description provided for @backupNothingNew.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything in this backup is already here.'**
+  String get backupNothingNew;
+
+  /// No description provided for @backupImported.
+  ///
+  /// In en, this message translates to:
+  /// **'Added: {games} and {profiles}'**
+  String backupImported(String games, String profiles);
+
+  /// No description provided for @backupInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'This file is not a DartPilot backup. Nothing was changed.'**
+  String get backupInvalid;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

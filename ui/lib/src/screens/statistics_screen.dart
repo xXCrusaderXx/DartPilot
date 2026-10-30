@@ -9,12 +9,15 @@ import '../theme.dart';
 import '../../l10n/app_localizations.dart';
 import '../board/scoring.dart';
 import '../engine/engine_connection.dart';
+import '../stats/backup.dart';
+import '../stats/backup_file.dart';
 import '../stats/export.dart';
 import '../stats/export_save.dart';
 import '../stats/game_record.dart';
 import '../stats/player_stats.dart';
 import '../stats/precision.dart';
 import '../stats/statistics.dart';
+import '../stats/training_best.dart';
 import '../widgets/average_trend.dart';
 import '../widgets/hit_heatmap.dart';
 import '../widgets/player_picker.dart';
@@ -36,11 +39,72 @@ class StatisticsScreen extends StatelessWidget {
         content: Text(l10n.deleteProfileText(player)),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.cancel)),
-          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.delete)),
+          FilledButton(
+            key: const ValueKey('delete-profile-confirm'),
+            style: destructiveButtonStyle(context),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.delete),
+          ),
         ],
       ),
     );
     if (confirmed == true) await statistics.removeProfile(player);
+  }
+
+  Future<void> _rename(BuildContext context, String player) => showDialog<void>(
+    context: context,
+    builder: (_) => _RenameDialog(player: player),
+  );
+
+  /// Reads a backup the player picks and adds what it holds after they confirm; a file that is no backup changes
+  /// nothing.
+  Future<void> _import(BuildContext context, Statistics statistics) async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final Backup backup;
+    try {
+      final text = await pickBackupText();
+      if (text == null) return;
+      backup = Backup.parse(text);
+    } on Object catch (e) {
+      debugPrint('The backup cannot be read: $e');
+      messenger.showSnackBar(SnackBar(key: const ValueKey('backup-invalid'), content: Text(l10n.backupInvalid)));
+      return;
+    }
+    final ids = {for (final g in statistics.games) g.id};
+    final names = {for (final p in statistics.profiles) p.toLowerCase()};
+    final newGames = backup.games.where((g) => !ids.contains(g.id)).length;
+    final newProfiles = backup.profiles.where((p) => !names.contains(p.trim().toLowerCase())).length;
+    if (!context.mounted) return;
+    if (newGames == 0 && newProfiles == 0) {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.backupNothingNew)));
+      return;
+    }
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.backupImportTitle),
+        content: Text(
+          [
+            l10n.backupImportText(l10n.backupGames(newGames), l10n.backupProfiles(newProfiles)),
+            if (backup.unreadable > 0) l10n.backupUnreadable(backup.unreadable),
+          ].join('\n\n'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.cancel)),
+          FilledButton(
+            key: const ValueKey('backup-add'),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.backupAdd),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final added = await statistics.importBackup(backup);
+    messenger.showSnackBar(
+      SnackBar(content: Text(l10n.backupImported(l10n.backupGames(added.games), l10n.backupProfiles(added.profiles)))),
+    );
   }
 
   Future<void> _pickColour(BuildContext context, Statistics statistics, String player) async {
@@ -89,7 +153,10 @@ class StatisticsScreen extends StatelessWidget {
     try {
       final where = kind == 'csv'
           ? await saveExport('dartpilot-darts-$stamp.csv', dartsCsv(statistics.games))
-          : await saveExport('dartpilot-games-$stamp.json', gamesJson(statistics.games, statistics.players));
+          : await saveExport(
+              'dartpilot-games-$stamp.json',
+              gamesJson(statistics.games, statistics.players, colours: statistics.chosenColours),
+            );
       messenger.showSnackBar(
         SnackBar(
           key: const ValueKey('export-done'),
@@ -117,15 +184,31 @@ class StatisticsScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(l10n.navStatistics),
         actions: [
-          if (statistics != null && statistics.games.isNotEmpty)
+          if (statistics != null)
             PopupMenuButton<String>(
               key: const ValueKey('stats-export'),
-              icon: const Icon(Icons.file_download_outlined),
-              tooltip: l10n.statsExport,
-              onSelected: (kind) => _export(context, statistics, kind),
+              icon: const Icon(Icons.import_export),
+              tooltip: l10n.statsDataMenu,
+              onSelected: (kind) =>
+                  kind == 'import' ? _import(context, statistics) : _export(context, statistics, kind),
               itemBuilder: (_) => [
-                PopupMenuItem(value: 'csv', key: const ValueKey('export-csv'), child: Text(l10n.exportDartsCsv)),
-                PopupMenuItem(value: 'json', key: const ValueKey('export-json'), child: Text(l10n.exportGamesJson)),
+                if (statistics.games.isNotEmpty || statistics.profiles.isNotEmpty)
+                  PopupMenuItem(
+                    value: 'json',
+                    key: const ValueKey('export-json'),
+                    child: ListTile(leading: const Icon(Icons.save_alt), title: Text(l10n.exportGamesJson)),
+                  ),
+                PopupMenuItem(
+                  value: 'import',
+                  key: const ValueKey('backup-import'),
+                  child: ListTile(leading: const Icon(Icons.restore), title: Text(l10n.backupImport)),
+                ),
+                if (statistics.games.isNotEmpty)
+                  PopupMenuItem(
+                    value: 'csv',
+                    key: const ValueKey('export-csv'),
+                    child: ListTile(leading: const Icon(Icons.table_chart_outlined), title: Text(l10n.exportDartsCsv)),
+                  ),
               ],
             ),
         ],
@@ -179,13 +262,19 @@ class StatisticsScreen extends StatelessWidget {
                                 stats.games == 0
                                     ? l10n.statsNoGamesYet
                                     : [
-                                        l10n.statsGamesCount(stats.games),
-                                        if (average != null) l10n.labelValue(l10n.average, _number(l10n, average)),
+                                        if (stats.playedGames > 0) l10n.statsGamesCount(stats.playedGames),
+                                        if (stats.trainings > 0) l10n.statsTrainingRounds(stats.trainings),
+                                        if (average != null) l10n.x01PlayerFigures(_number(l10n, average)),
                                       ].join('  ·  '),
                               ),
                               trailing: PopupMenuButton<void>(
                                 key: ValueKey('profile-menu-$player'),
                                 itemBuilder: (_) => [
+                                  PopupMenuItem(
+                                    key: ValueKey('profile-rename-$player'),
+                                    onTap: () => _rename(context, player),
+                                    child: Text(l10n.renameProfile),
+                                  ),
                                   PopupMenuItem(
                                     key: ValueKey('profile-colour-$player'),
                                     onTap: () => _pickColour(context, statistics, player),
@@ -193,7 +282,10 @@ class StatisticsScreen extends StatelessWidget {
                                   ),
                                   PopupMenuItem(
                                     onTap: () => _delete(context, statistics, player),
-                                    child: Text(l10n.deleteProfile),
+                                    child: Text(
+                                      l10n.deleteProfile,
+                                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -212,7 +304,7 @@ class StatisticsScreen extends StatelessWidget {
   }
 }
 
-/// The player's initial on their colour, black or white, whichever reads better
+/// The player's initial on their colour: white, unless the colour is too light for it
 class _Avatar extends StatelessWidget {
   const _Avatar({required this.player, required this.colour});
 
@@ -222,12 +314,68 @@ class _Avatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colour = this.colour;
-    final initial = Text(player.characters.first.toUpperCase());
+    final initial = Text(player.characters.first.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w600));
     if (colour == null) return CircleAvatar(child: initial);
-    final onColour = contrastRatio(colour, Colors.white) >= contrastRatio(colour, Colors.black)
-        ? Colors.white
-        : Colors.black;
+    final onColour = contrastRatio(colour, Colors.white) >= 3 ? Colors.white : Colors.black;
     return CircleAvatar(backgroundColor: colour, foregroundColor: onColour, child: initial);
+  }
+}
+
+/// Renames a profile; its games and colour follow the new name.
+class _RenameDialog extends StatefulWidget {
+  const _RenameDialog({required this.player});
+
+  final String player;
+
+  @override
+  State<_RenameDialog> createState() => _RenameDialogState();
+}
+
+class _RenameDialogState extends State<_RenameDialog> {
+  late final TextEditingController _name = TextEditingController(text: widget.player);
+  ProfileError? _error;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final error = await StatisticsScope.read(context)!.renameProfile(widget.player, _name.text);
+    if (!mounted) return;
+    if (error != null) {
+      setState(() => _error = error);
+      return;
+    }
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return AlertDialog(
+      title: Text(l10n.renameProfileTitle(widget.player)),
+      content: TextField(
+        key: const ValueKey('rename-profile-name'),
+        controller: _name,
+        autofocus: true,
+        textCapitalization: TextCapitalization.words,
+        decoration: InputDecoration(
+          labelText: l10n.profileName,
+          errorText: switch (_error) {
+            ProfileError.empty => l10n.profileNameEmpty,
+            ProfileError.exists => l10n.profileNameExists,
+            null => null,
+          },
+        ),
+        onSubmitted: (_) => _save(),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(l10n.cancel)),
+        FilledButton(key: const ValueKey('rename-profile-save'), onPressed: _save, child: Text(l10n.renameProfile)),
+      ],
+    );
   }
 }
 
@@ -253,12 +401,13 @@ class _PlayerStatsScreenState extends State<PlayerStatsScreen> {
   bool _allGames = false;
   static const _gamesShown = 5;
 
+  /// From the start of a day, so the period stays the same between rebuilds and its figures are computed once
   DateTime? _since(List<GameRecord> games) {
     final now = DateTime.now();
     return switch (_period) {
       StatsPeriod.all => null,
-      StatsPeriod.week => now.subtract(const Duration(days: 7)),
-      StatsPeriod.month => now.subtract(const Duration(days: 30)),
+      StatsPeriod.week => DateTime(now.year, now.month, now.day - 7),
+      StatsPeriod.month => DateTime(now.year, now.month, now.day - 30),
       StatsPeriod.lastGame =>
         games
             .where((g) => g.players.contains(widget.player))
@@ -277,30 +426,37 @@ class _PlayerStatsScreenState extends State<PlayerStatsScreen> {
     final stats = statistics?.statsOf(widget.player, since: since) ?? computePlayerStats(games, widget.player);
     final precision =
         statistics?.precisionOf(widget.player, since: since) ?? computePlayerPrecision(games, widget.player);
+    final training =
+        statistics?.trainingOf(widget.player, since: since) ?? computeTrainingProgress(games, widget.player);
     String n(double? v, [int decimals = 1]) => v == null ? '–' : _number(l10n, v, decimals);
     String percent(double? v) => v == null ? '–' : percentText(l10n, v);
     String day(DateTime d) => DateFormat.yMd(l10n.localeName).format(d);
-    // X01 games, oldest first, the last 30
+    // X01 games played to their end, oldest first, the last 30
     final x01Games = [
       for (final g in stats.history.reversed)
-        if (g.average != null) g,
+        if (g.average != null && g.finished) g,
     ];
     if (x01Games.length > 30) x01Games.removeRange(0, x01Games.length - 30);
     final measured = [
       for (final p in precision)
-        if (p.points.length >= minRankedDarts) p,
+        if (p.darts >= minRankedDarts) p,
     ];
     final fewDarts = [
       for (final p in precision)
-        if (p.points.length < minRankedDarts) p,
+        if (p.darts < minRankedDarts) p,
     ];
 
-    // Only the figures of what the player played in the period; a mode never played has nothing to say.
+    // Only the figures of what the player played in the period; a mode never played has nothing to say. Games and
+    // legs are one figure each when every one of them was a match; milestones not reached yet stay out.
     final figures = <(String, String)>[
-      (l10n.statsGames, '${stats.games}'),
-      if (stats.matches > 0) (l10n.statsMatches, '${stats.matches} (${l10n.statsWon(stats.gamesWon)})'),
-      if (stats.trainings > 0) (l10n.statsTrainings, '${stats.trainings}'),
-      if (stats.darts > 0) (l10n.statsDarts, '${stats.darts}'),
+      if (stats.playedGames > 0)
+        if (stats.matches == stats.playedGames)
+          (l10n.statsGames, '${stats.playedGames} (${l10n.statsWon(stats.gamesWon)})')
+        else ...[
+          (l10n.statsGames, '${stats.playedGames}'),
+          if (stats.matches > 0) (l10n.statsMatches, '${stats.matches} (${l10n.statsWon(stats.gamesWon)})'),
+        ],
+      if (stats.darts > 0) (l10n.statsDartsInGames, '${stats.darts}'),
       if (stats.x01Darts > 0) ...[
         (l10n.average, n(stats.threeDartAverage)),
         (l10n.statsFirst9, n(stats.first9Average)),
@@ -312,11 +468,15 @@ class _PlayerStatsScreenState extends State<PlayerStatsScreen> {
         ),
         (l10n.statsHighestFinish, stats.highestFinish?.toString() ?? '–'),
         (l10n.statsHighestVisit, stats.highestVisit?.toString() ?? '–'),
-        ('180', '${stats.visits180}'),
-        ('140+', '${stats.visits140}'),
-        ('100+', '${stats.visits100}'),
-        (l10n.statsLegs, '${stats.legs}'),
-        if (stats.matchLegs > 0) (l10n.statsMatchLegs, '${stats.matchLegs} (${l10n.statsWon(stats.legsWon)})'),
+        if (stats.visits180 > 0) ('180', '${stats.visits180}'),
+        if (stats.visits140 > 0) ('140+', '${stats.visits140}'),
+        if (stats.visits100 > 0) ('100+', '${stats.visits100}'),
+        if (stats.matchLegs == stats.legs)
+          (l10n.statsLegs, '${stats.legs} (${l10n.statsWon(stats.legsWon)})')
+        else ...[
+          (l10n.statsLegs, '${stats.legs}'),
+          if (stats.matchLegs > 0) (l10n.statsMatchLegs, '${stats.matchLegs} (${l10n.statsWon(stats.legsWon)})'),
+        ],
         for (final start in stats.bestLegByStart.keys.toList()..sort((a, b) => b.compareTo(a)))
           (l10n.statsBestLegOf(start), l10n.statsDartsCount(stats.bestLegByStart[start]!)),
       ],
@@ -356,7 +516,21 @@ class _PlayerStatsScreenState extends State<PlayerStatsScreen> {
               if (stats.games == 0)
                 Text(l10n.statsNoGamesInPeriod)
               else ...[
-                _FigureGrid(figures: figures),
+                if (figures.isNotEmpty) _FigureGrid(figures: figures),
+                if (stats.trainings > 0) ...[
+                  if (figures.isNotEmpty) const SizedBox(height: 24),
+                  Text(l10n.statsTraining, style: theme.textTheme.titleMedium),
+                  Text(
+                    l10n.statsTrainingDarts(
+                      l10n.statsTrainingRounds(stats.trainings),
+                      l10n.statsDartsCount(stats.trainingDarts),
+                    ),
+                    key: const ValueKey('training-summary'),
+                    style: theme.textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 8),
+                  _TrainingProgressGrid(progress: training),
+                ],
                 if (x01Games.length >= 2) ...[
                   const SizedBox(height: 24),
                   Text(l10n.statsAverageTrend, style: theme.textTheme.titleMedium),
@@ -370,7 +544,7 @@ class _PlayerStatsScreenState extends State<PlayerStatsScreen> {
                 ],
                 const SizedBox(height: 24),
                 Text(l10n.statsHistory, style: theme.textTheme.titleMedium),
-                for (final game in history) _HistoryTile(game: game),
+                for (final game in history) _HistoryTile(game: game, player: widget.player),
                 if (!_allGames && stats.history.length > _gamesShown)
                   Align(
                     alignment: Alignment.centerLeft,
@@ -438,7 +612,7 @@ class _PlayerStatsScreenState extends State<PlayerStatsScreen> {
                             contentPadding: EdgeInsets.zero,
                             title: Text(p.target.label),
                             trailing: Text(
-                              '${l10n.statsDartsCount(p.points.length)}  ·  '
+                              '${l10n.statsDartsCount(p.darts)}  ·  '
                               '${l10n.labelValue(l10n.hitRate, percentText(l10n, p.hitRate))}',
                             ),
                           ),
@@ -487,7 +661,11 @@ class _FigureGrid extends StatelessWidget {
                         FittedBox(
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerLeft,
-                          child: Text(value, key: ValueKey('figure-$label'), style: theme.textTheme.titleLarge),
+                          child: Text(
+                            value,
+                            key: ValueKey('figure-$label'),
+                            style: scoreStyle(theme.textTheme.headlineSmall)?.copyWith(fontWeight: FontWeight.w600),
+                          ),
                         ),
                       ],
                     ),
@@ -500,6 +678,109 @@ class _FigureGrid extends StatelessWidget {
     );
   }
 }
+
+/// The training tracks in equal columns: the last round's figure, the best, and the rounds as a small line
+class _TrainingProgressGrid extends StatelessWidget {
+  const _TrainingProgressGrid({required this.progress});
+
+  final List<TrainingProgress> progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const gap = 8.0;
+        final columns = (constraints.maxWidth / 300).floor().clamp(1, 3);
+        final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: [
+            for (final p in progress)
+              SizedBox(
+                width: width,
+                child: Card(
+                  key: ValueKey('training-${p.track.mode.name}-${p.track.range?.name ?? p.track.target?.label ?? ''}'),
+                  margin: EdgeInsets.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(_trackName(l10n, p.track), style: theme.textTheme.bodySmall),
+                        const SizedBox(height: 4),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: [
+                            Text(
+                              _trackValue(l10n, p.track, p.last),
+                              style: scoreStyle(theme.textTheme.headlineSmall)?.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text.rich(
+                                TextSpan(
+                                  children: [
+                                    if (p.lastIsBest)
+                                      TextSpan(
+                                        text: l10n.statsTrainingNewBest,
+                                        style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
+                                      )
+                                    else
+                                      TextSpan(text: l10n.statsTrainingBest(_trackValue(l10n, p.track, p.best))),
+                                    TextSpan(text: '  ·  ${l10n.statsTrainingRounds(p.rounds.length)}'),
+                                  ],
+                                ),
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (p.rounds.length >= 2) ...[
+                          const SizedBox(height: 4),
+                          AverageTrend(
+                            averages: [for (final r in p.rounds) _trackPlotted(p.track, r.value)],
+                            unit: _trackUnit(p.track),
+                            height: 72,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+String _trackName(AppLocalizations l10n, TrainingTrack track) => switch (track.mode) {
+  GameMode.doubles => l10n.statsTrainingDoubles,
+  GameMode.grouping => l10n.statsTrainingGrouping(track.target!.label),
+  _ when track.isLadder => l10n.statsTrainingLadder,
+  _ => l10n.statsTrainingCheckout('${track.range!.lowest}', '${track.range!.highest}'),
+};
+
+/// Rates as percent, the ladder as the score checked out, the grouping in mm
+String _trackValue(AppLocalizations l10n, TrainingTrack track, double value) => switch (track.mode) {
+  GameMode.grouping => mmText(l10n, value),
+  _ when track.isLadder => value.round().toString(),
+  _ => percentText(l10n, value),
+};
+
+double _trackPlotted(TrainingTrack track, double value) =>
+    track.mode == GameMode.grouping || track.isLadder ? value : value * 100;
+
+String? _trackUnit(TrainingTrack track) => switch (track.mode) {
+  GameMode.grouping => 'mm',
+  _ when track.isLadder => null,
+  _ => '%',
+};
 
 /// Spread and offset of the darts at one target, their plot, and the spread week by week
 class _TargetPrecisionCard extends StatelessWidget {
@@ -518,21 +799,26 @@ class _TargetPrecisionCard extends StatelessWidget {
       children: [
         Text(label, style: theme.textTheme.headlineSmall),
         Text(
-          '${l10n.statsDartsCount(precision.points.length)}  ·  '
+          '${l10n.statsDartsCount(precision.darts)}  ·  '
           '${l10n.labelValue(l10n.hitRate, percentText(l10n, precision.hitRate))}',
         ),
-        const SizedBox(height: 8),
-        Text(
-          l10n.labelValue(l10n.precisionSpread, spread == null ? '–' : mmText(l10n, spread.spreadMm)),
-          key: ValueKey('precision-spread-$label'),
-        ),
-        Text(
-          l10n.labelValue(
-            l10n.precisionOffset,
-            spread == null ? '–' : offsetText(l10n, spread.offsetXMm, spread.offsetYMm),
+        if (precision.points.isEmpty) ...[
+          const SizedBox(height: 4),
+          Text(l10n.precisionNeedsPoints, style: theme.textTheme.bodySmall),
+        ] else ...[
+          const SizedBox(height: 8),
+          Text(
+            l10n.labelValue(l10n.precisionSpread, spread == null ? '–' : mmText(l10n, spread.spreadMm)),
+            key: ValueKey('precision-spread-$label'),
           ),
-          key: ValueKey('precision-offset-$label'),
-        ),
+          Text(
+            l10n.labelValue(
+              l10n.precisionOffset,
+              spread == null ? '–' : offsetText(l10n, spread.offsetXMm, spread.offsetYMm),
+            ),
+            key: ValueKey('precision-offset-$label'),
+          ),
+        ],
       ],
     );
     final plot = SizedBox(
@@ -545,7 +831,7 @@ class _TargetPrecisionCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Wrap(spacing: 16, runSpacing: 12, children: [plot, figures]),
+            if (precision.points.isEmpty) figures else Wrap(spacing: 16, runSpacing: 12, children: [plot, figures]),
             if (precision.weeks.length >= 2) ...[
               const SizedBox(height: 12),
               Text(l10n.statsPrecisionTrend, style: theme.textTheme.titleSmall),
@@ -586,60 +872,83 @@ class _ShareBar extends StatelessWidget {
   );
 }
 
+/// A kept game's name in the history: the start score for X01, the training and its target for trainings
+String gameTitle(AppLocalizations l10n, GameRecord record) => switch (record.mode) {
+  GameMode.x01 => '${record.x01Settings.startScore}',
+  GameMode.cricket => record.settings['cut_throat'] == true ? '${l10n.modeCricket} Cut-Throat' : l10n.modeCricket,
+  GameMode.aroundTheClock => l10n.modeAroundTheClock,
+  GameMode.grouping => '${l10n.modeGrouping} ${record.groupingTarget.label}',
+  GameMode.doubles => l10n.modeDoubles,
+  GameMode.checkout => record.settings['ladder'] == true ? l10n.modeLadder : l10n.modeCheckout,
+  GameMode.shanghai || GameMode.bobs27 || GameMode.halveIt => RoundGameScreen.title(l10n, record.mode),
+  GameMode.killer => l10n.modeKiller,
+};
+
+/// The figure a game is judged by for the player, as "label: value"; empty when it has none
+String gameFigure(AppLocalizations l10n, PlayedGame game) {
+  final record = game.record;
+  if (game.average != null) return l10n.labelValue(l10n.average, _number(l10n, game.average!));
+  if (game.marksPerRound != null) {
+    return l10n.labelValue(l10n.statsMarksPerRound, _number(l10n, game.marksPerRound!, 2));
+  }
+  if (game.hitRate != null) {
+    return l10n.labelValue(
+      record.mode == GameMode.doubles ? l10n.hitRate : l10n.statsClockHitRate,
+      percentText(l10n, game.hitRate!),
+    );
+  }
+  if (game.spreadMm != null) return l10n.labelValue(l10n.precisionSpread, mmText(l10n, game.spreadMm!));
+  if (game.checkoutRate != null) return l10n.labelValue(l10n.statsCheckoutRate, percentText(l10n, game.checkoutRate!));
+  if (game.ladderBest != null) return l10n.ladderBest('${game.ladderBest}');
+  if (game.points != null) return l10n.labelValue(l10n.points, '${game.points}');
+  if (game.lives != null) return l10n.labelValue(l10n.statsLivesLeft, '${game.lives}');
+  return '';
+}
+
 class _HistoryTile extends StatelessWidget {
-  const _HistoryTile({required this.game});
+  const _HistoryTile({required this.game, required this.player});
 
   final PlayedGame game;
+  final String player;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
     final record = game.record;
-    final mode = switch (record.mode) {
-      GameMode.x01 => '${record.x01Settings.startScore}',
-      GameMode.cricket => record.settings['cut_throat'] == true ? '${l10n.modeCricket} Cut-Throat' : l10n.modeCricket,
-      GameMode.aroundTheClock => l10n.modeAroundTheClock,
-      GameMode.grouping => '${l10n.modeGrouping} ${record.groupingTarget.label}',
-      GameMode.doubles => l10n.modeDoubles,
-      GameMode.checkout => l10n.modeCheckout,
-      GameMode.shanghai || GameMode.bobs27 || GameMode.halveIt => RoundGameScreen.title(l10n, record.mode),
-      GameMode.killer => l10n.modeKiller,
+    final figure = gameFigure(l10n, game);
+    final people = [
+      for (var i = 0; i < record.players.length; ++i)
+        if (!record.bots.containsKey(i) && record.players[i] != player) record.players[i],
+    ];
+    final title = [gameTitle(l10n, record), if (figure.isNotEmpty) figure].join('  ·  ');
+    // A won match earns the trophy; the others say what kind of game it was, so a loss is not marked as one.
+    final (icon, colour) = switch (game) {
+      PlayedGame(won: true) => (Icons.emoji_events, StatusColors.of(context).warning),
+      PlayedGame(finished: false) => (Icons.timelapse, theme.colorScheme.onSurfaceVariant),
+      _ when trainingModes.contains(record.mode) => (Icons.track_changes, theme.colorScheme.onSurfaceVariant),
+      _ when record.players.length > 1 => (Icons.groups_outlined, theme.colorScheme.onSurfaceVariant),
+      _ => (Icons.person_outline, theme.colorScheme.onSurfaceVariant),
     };
-    final figure = game.average != null
-        ? l10n.labelValue(l10n.average, _number(l10n, game.average!))
-        : game.marksPerRound != null
-        ? l10n.labelValue(l10n.statsMarksPerRound, _number(l10n, game.marksPerRound!, 2))
-        : game.hitRate != null
-        ? l10n.labelValue(
-            record.mode == GameMode.doubles ? l10n.hitRate : l10n.statsClockHitRate,
-            percentText(l10n, game.hitRate!),
-          )
-        : game.spreadMm != null
-        ? l10n.labelValue(l10n.precisionSpread, mmText(l10n, game.spreadMm!))
-        : game.checkoutRate != null
-        ? l10n.labelValue(l10n.statsCheckoutRate, percentText(l10n, game.checkoutRate!))
-        : game.points != null
-        ? l10n.labelValue(l10n.points, '${game.points}')
-        : '';
-    final others = record.players.length - 1;
     return ListTile(
       key: ValueKey('history-${record.id}'),
       contentPadding: EdgeInsets.zero,
-      onTap: () =>
-          Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => GameThrowsScreen(record: record))),
-      trailing: const Icon(Icons.chevron_right),
-      leading: Icon(
-        game.won ? Icons.emoji_events : Icons.sports_score,
-        color: game.won ? StatusColors.of(context).warning : null,
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => GameThrowsScreen(record: record, title: title),
+        ),
       ),
-      title: Text('$mode  ·  $figure'),
+      trailing: const Icon(Icons.chevron_right),
+      leading: Icon(icon, color: colour),
+      title: Text(title),
       subtitle: Text(
         [
           DateFormat.yMMMd(l10n.localeName).add_Hm().format(record.ended),
           l10n.statsDartsCount(game.darts),
-          if (others - record.bots.length > 0) l10n.statsOpponents(others - record.bots.length),
+          if (people.isNotEmpty) l10n.statsAgainst(people.join(', ')),
           if (record.bots.isNotEmpty) l10n.statsAgainstBots(record.bots.values.join(', ')),
-          if (others == 0) l10n.statsSolo,
+          if (record.players.length == 1 && !trainingModes.contains(record.mode)) l10n.statsSolo,
+          if (!game.finished) l10n.statsUnfinished,
         ].join('  ·  '),
       ),
     );

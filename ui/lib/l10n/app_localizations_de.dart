@@ -143,7 +143,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String x01LegOf(int number, int total) {
-    return 'Leg $number · First to $total';
+    return 'Leg $number · $total zum Sieg';
   }
 
   @override
@@ -1566,7 +1566,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get exportDartsCsv => 'Alle Darts als CSV';
 
   @override
-  String get exportGamesJson => 'Spiele und Kennzahlen als JSON';
+  String get exportGamesJson => 'Sicherung aller Spiele und Profile (JSON)';
 
   @override
   String exportSaved(String path) {
@@ -2890,19 +2890,142 @@ class AppLocalizationsDe extends AppLocalizations {
   String get homeConnectedNotDetecting => 'Kamera-Erkennung verbunden – erkennt noch keine Darts';
 
   @override
-  String get celebrateNineDarter => 'Neun-Darter!';
-
-  @override
-  String legsFormat(int first, int bestOf) {
-    return 'First to $first · Best of $bestOf';
+  String hitFromCentre(String mm) {
+    return 'Treffer, $mm mm von der Mitte';
   }
 
   @override
-  String get legsSingle => 'Ein Leg entscheidet';
+  String get statsDartsInGames => 'Darts in Spielen';
 
   @override
-  String get cutThroatLowestWins => 'Wenigste Punkte gewinnen';
+  String get statsTraining => 'Training';
 
   @override
-  String get modeCricketCutThroat => 'Cricket · Cut-Throat';
+  String statsTrainingRounds(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Runden', one: '1 Runde');
+    return '$_temp0';
+  }
+
+  @override
+  String statsTrainingLast(String value) {
+    return 'Zuletzt $value';
+  }
+
+  @override
+  String statsTrainingBest(String value) {
+    return 'Bestwert $value';
+  }
+
+  @override
+  String get statsTrainingNewBest => 'Neuer Bestwert';
+
+  @override
+  String get statsTrainingDoubles => 'Doppelquote';
+
+  @override
+  String get statsTrainingLadder => '121-Leiter, höchster Checkout';
+
+  @override
+  String statsTrainingCheckout(String from, String to) {
+    return 'Checkouts $from–$to';
+  }
+
+  @override
+  String statsTrainingGrouping(String target) {
+    return 'Gruppieren $target, Streuung';
+  }
+
+  @override
+  String statsTrainingDarts(String rounds, String darts) {
+    return '$rounds · $darts im Training';
+  }
+
+  @override
+  String get statsUnfinished => 'nicht beendet';
+
+  @override
+  String statsAgainst(String names) {
+    return 'gegen $names';
+  }
+
+  @override
+  String get renameProfile => 'Umbenennen';
+
+  @override
+  String renameProfileTitle(String name) {
+    return '$name umbenennen';
+  }
+
+  @override
+  String get deleteGame => 'Spiel löschen';
+
+  @override
+  String get deleteGameText =>
+      'Das Spiel verschwindet aus der Statistik aller, die mitgespielt haben. Das lässt sich nicht rückgängig machen.';
+
+  @override
+  String get gameDeleted => 'Spiel gelöscht';
+
+  @override
+  String get statsDataMenu => 'Sichern und exportieren';
+
+  @override
+  String get backupImport => 'Sicherung einlesen';
+
+  @override
+  String get backupImportTitle => 'Sicherung einlesen?';
+
+  @override
+  String backupGames(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count neue Spiele',
+      one: '1 neues Spiel',
+      zero: 'kein neues Spiel',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String backupProfiles(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count neue Profile',
+      one: '1 neues Profil',
+      zero: 'kein neues Profil',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String backupImportText(String games, String profiles) {
+    return 'Dazu kommen: $games und $profiles. Auf diesem Gerät wird nichts geändert oder gelöscht.';
+  }
+
+  @override
+  String backupUnreadable(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Spiele der Datei stammen aus einer neueren Version und bleiben weg.',
+      one: 'Ein Spiel der Datei stammt aus einer neueren Version und bleibt weg.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get backupAdd => 'Hinzufügen';
+
+  @override
+  String get backupNothingNew => 'Alles aus dieser Sicherung ist schon da.';
+
+  @override
+  String backupImported(String games, String profiles) {
+    return 'Dazugekommen: $games und $profiles';
+  }
+
+  @override
+  String get backupInvalid => 'Diese Datei ist keine DartPilot-Sicherung. Es wurde nichts geändert.';
 }

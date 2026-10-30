@@ -43,6 +43,18 @@ class GameRecord {
   /// Bot level per player index; bots have no profile and no statistics
   final Map<int, int> bots;
 
+  /// The same game under other names, for a renamed profile
+  GameRecord withPlayers(List<String> players) => GameRecord(
+    id: id,
+    mode: mode,
+    started: started,
+    ended: ended,
+    players: players,
+    throws: throws,
+    settings: settings,
+    bots: bots,
+  );
+
   /// Replays the game: its final state, and for every dart the player who threw it
   ({Object game, List<int> playerOf}) replay() {
     final playerOf = <int>[];

@@ -1066,7 +1066,7 @@
   },
   "statsExport": "Export",
   "exportDartsCsv": "All darts as CSV",
-  "exportGamesJson": "Games and figures as JSON",
+  "exportGamesJson": "Backup of all games and profiles (JSON)",
   "exportSaved": "Saved: {path}",
   "exportFailed": "Export failed: {error}",
   "copyPath": "Copy path",
@@ -1948,5 +1948,145 @@
   },
   "legsSingle": "A single leg decides",
   "cutThroatLowestWins": "Fewest points win",
-  "modeCricketCutThroat": "Cricket · Cut-Throat"
+  "modeCricketCutThroat": "Cricket · Cut-Throat",
+  "hitFromCentre": "Hit, {mm} mm from the middle",
+  "@hitFromCentre": {
+    "placeholders": {
+      "mm": {
+        "type": "String"
+      }
+    }
+  },
+  "statsDartsInGames": "Darts in games",
+  "statsTraining": "Training",
+  "statsTrainingRounds": "{count, plural, =1{1 round} other{{count} rounds}}",
+  "@statsTrainingRounds": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "statsTrainingLast": "Last {value}",
+  "@statsTrainingLast": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "statsTrainingBest": "Best {value}",
+  "@statsTrainingBest": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "statsTrainingNewBest": "New best",
+  "statsTrainingDoubles": "Doubles hit rate",
+  "statsTrainingLadder": "121 ladder, highest checkout",
+  "statsTrainingCheckout": "Checkouts {from}–{to}",
+  "@statsTrainingCheckout": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "statsTrainingGrouping": "Grouping {target}, spread",
+  "@statsTrainingGrouping": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "statsTrainingDarts": "{rounds} · {darts} in trainings",
+  "@statsTrainingDarts": {
+    "placeholders": {
+      "rounds": {
+        "type": "String"
+      },
+      "darts": {
+        "type": "String"
+      }
+    }
+  },
+  "statsUnfinished": "not finished",
+  "statsAgainst": "against {names}",
+  "@statsAgainst": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "renameProfile": "Rename",
+  "renameProfileTitle": "Rename {name}",
+  "@renameProfileTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteGame": "Delete game",
+  "deleteGameText": "The game is removed from the statistics of everyone who played in it. This cannot be undone.",
+  "gameDeleted": "Game deleted",
+  "statsDataMenu": "Back up and export",
+  "backupImport": "Restore a backup",
+  "backupImportTitle": "Read the backup?",
+  "backupGames": "{count, plural, =0{no new game} =1{1 new game} other{{count} new games}}",
+  "@backupGames": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "backupProfiles": "{count, plural, =0{no new profile} =1{1 new profile} other{{count} new profiles}}",
+  "@backupProfiles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "backupImportText": "To be added: {games} and {profiles}. Nothing on this device is changed or removed.",
+  "@backupImportText": {
+    "placeholders": {
+      "games": {
+        "type": "String"
+      },
+      "profiles": {
+        "type": "String"
+      }
+    }
+  },
+  "backupUnreadable": "{count, plural, =1{One game in the file is from a newer version and is left out.} other{{count} games in the file are from a newer version and are left out.}}",
+  "@backupUnreadable": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "backupAdd": "Add",
+  "backupNothingNew": "Everything in this backup is already here.",
+  "backupImported": "Added: {games} and {profiles}",
+  "@backupImported": {
+    "placeholders": {
+      "games": {
+        "type": "String"
+      },
+      "profiles": {
+        "type": "String"
+      }
+    }
+  },
+  "backupInvalid": "This file is not a DartPilot backup. Nothing was changed."
 }

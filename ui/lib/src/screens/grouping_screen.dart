@@ -51,18 +51,17 @@ class GroupingScreen extends StatefulWidget {
   State<GroupingScreen> createState() => _GroupingScreenState();
 }
 
-class _GroupingScreenState extends State<GroupingScreen> with RecordsGame {
+class _GroupingScreenState extends State<GroupingScreen> with RecordsGame, ComparesTraining {
+  @override
+  String get trainingPlayer => widget.player;
+
   @override
   bool get watching => widget.watching;
 
   late final GroupingGame _game = replayed(GroupingGame(widget.target, dartCount: widget.dartCount), widget.replay);
   final TakeoutGate _takeout = TakeoutGate();
 
-  /// The player's earlier rounds at this target as kept now: the round played just before is kept only after this
-  /// screen opened, when its screen is gone
-  TrainingComparison? get _earlier => watching
-      ? null
-      : compareWithEarlier(StatisticsScope.read(context)?.games ?? const [], currentRecord, widget.player);
+  TrainingComparison? get _earlier => earlierRounds(StatisticsScope.read(context)?.games ?? const []);
 
   @override
   GameRecord buildRecord(String id, DateTime started, DateTime ended) => GameRecord(

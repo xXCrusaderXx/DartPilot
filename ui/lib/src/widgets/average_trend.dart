@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 /// The 3-dart average of each game, oldest left, as a line with a dot per game (#117); also the weekly spread in mm
 /// (#125)
 class AverageTrend extends StatelessWidget {
-  const AverageTrend({super.key, required this.averages, this.unit, this.from, this.to});
+  const AverageTrend({super.key, required this.averages, this.unit, this.from, this.to, this.height = 160});
 
   /// One average per game, oldest first
   final List<double> averages;
@@ -17,6 +17,9 @@ class AverageTrend extends StatelessWidget {
   final String? from;
   final String? to;
 
+  /// The line's height; small for a trend beside other figures
+  final double height;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -25,7 +28,7 @@ class AverageTrend extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SizedBox(
-          height: 160,
+          height: height,
           child: CustomPaint(
             painter: _TrendPainter(
               averages: averages,

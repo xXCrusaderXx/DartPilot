@@ -1,18 +1,52 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../board/dart_throw.dart';
 import '../games/checkout_trainer.dart';
 import '../games/x01.dart';
 import '../stats/game_record.dart';
+import '../stats/statistics.dart';
+import '../theme.dart';
 import 'throw_views_screen.dart';
 import '../board/score_text.dart';
 
-/// Every dart of a played game, visit by visit (#129); a detected dart opens its camera views.
+/// Every dart of a played game, visit by visit (#129); a detected dart opens its camera views. A kept game can be
+/// deleted here.
 class GameThrowsScreen extends StatelessWidget {
-  const GameThrowsScreen({super.key, required this.record});
+  const GameThrowsScreen({super.key, required this.record, this.title});
 
   final GameRecord record;
+
+  /// The game and its figure, as the history names it
+  final String? title;
+
+  Future<void> _delete(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
+    final statistics = StatisticsScope.read(context);
+    if (statistics == null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.deleteGame),
+        content: Text(l10n.deleteGameText),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.cancel)),
+          FilledButton(
+            key: const ValueKey('delete-game-confirm'),
+            style: destructiveButtonStyle(context),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    Navigator.of(context).pop();
+    await statistics.removeGame(record.id);
+    messenger.showSnackBar(SnackBar(content: Text(l10n.gameDeleted)));
+  }
 
   /// The visits of the game: who threw, the indexes of their darts, and in X01 and the checkout trainer the visit's
   /// score and what was left after it. These games end a visit early on a bust or a checkout, so their visits come from
@@ -54,13 +88,35 @@ class GameThrowsScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.gameThrowsTitle)),
+      appBar: AppBar(
+        title: Text(l10n.gameThrowsTitle),
+        actions: [
+          if (StatisticsScope.read(context)?.games.any((g) => g.id == record.id) ?? false)
+            IconButton(
+              key: const ValueKey('delete-game'),
+              tooltip: l10n.deleteGame,
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () => _delete(context),
+            ),
+        ],
+      ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 720),
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              if (title != null) ...[
+                Text(title!, style: theme.textTheme.titleMedium),
+                Text(
+                  [
+                    DateFormat.yMMMd(l10n.localeName).add_Hm().format(record.ended),
+                    record.players.join(', '),
+                  ].join('  ·  '),
+                  style: theme.textTheme.bodySmall,
+                ),
+                const SizedBox(height: 8),
+              ],
               for (final (n, visit) in visits.indexed)
                 ListTile(
                   key: ValueKey('game-visit-$n'),

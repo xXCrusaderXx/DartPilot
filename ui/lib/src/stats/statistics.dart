@@ -8,15 +8,21 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../engine/engine_connection.dart';
+import 'backup.dart';
 import 'game_record.dart';
 import 'player_stats.dart';
 import 'precision.dart';
+import 'training_best.dart';
 import '../theme.dart';
 
 /// Where played games are kept
 abstract interface class GameStore {
   Future<List<GameRecord>> load();
   Future<void> add(GameRecord record);
+
+  /// Keeps [records] in place of all games kept, for a game deleted or a profile renamed; what this version cannot
+  /// read stays kept.
+  Future<void> replaceAll(List<GameRecord> records);
 
   /// The game being played, kept after every dart so that it survives the app being killed; null when none is
   Future<GameRecord?> loadRunning();
@@ -56,6 +62,30 @@ class FileGameStore implements GameStore {
     final f = await file;
     await f.parent.create(recursive: true);
     await f.writeAsString('${jsonEncode(record.toJson())}\n', mode: FileMode.append, flush: true);
+  }
+
+  @override
+  Future<void> replaceAll(List<GameRecord> records) async {
+    final f = await file;
+    final unread = <String>[];
+    if (await f.exists()) {
+      for (final line in await f.readAsLines()) {
+        if (line.trim().isEmpty) continue;
+        try {
+          if (GameRecord.fromJson(jsonDecode(line) as Map<String, dynamic>) == null) unread.add(line);
+        } catch (_) {
+          unread.add(line);
+        }
+      }
+    }
+    await f.parent.create(recursive: true);
+    // Written aside and renamed, so a kill while writing leaves the games as they were, not half a file.
+    final temp = File('${f.path}.tmp');
+    await temp.writeAsString(
+      [...unread, for (final r in records) jsonEncode(r.toJson())].map((line) => '$line\n').join(),
+      flush: true,
+    );
+    await temp.rename(f.path);
   }
 
   Future<File> get _running async => File('${(await file).parent.path}${Platform.pathSeparator}running_game.json');
@@ -102,6 +132,11 @@ class MemoryGameStore implements GameStore {
 
   @override
   Future<void> add(GameRecord record) async => records.add(record);
+
+  @override
+  Future<void> replaceAll(List<GameRecord> records) async => this.records
+    ..clear()
+    ..addAll(records);
 
   GameRecord? running;
 
@@ -184,17 +219,32 @@ class Statistics extends ChangeNotifier {
   /// Figures per player and period, computed once until the games change
   final Map<(String, DateTime?), PlayerStats> _stats = {};
   final Map<(String, DateTime?), List<TargetPrecision>> _precision = {};
+  final Map<(String, DateTime?), List<TrainingProgress>> _training = {};
+
+  /// More players and periods than a screen shows at once; past it the oldest entries are dropped.
+  static const _cached = 16;
+
+  static V _cache<V>(Map<(String, DateTime?), V> cache, (String, DateTime?) key, V Function() compute) {
+    final hit = cache.remove(key);
+    if (cache.length >= _cached) cache.remove(cache.keys.first);
+    return cache[key] = hit ?? compute();
+  }
 
   PlayerStats statsOf(String player, {DateTime? since}) =>
-      _stats.putIfAbsent((player, since), () => computePlayerStats(games, player, since: since));
+      _cache(_stats, (player, since), () => computePlayerStats(games, player, since: since));
 
   List<TargetPrecision> precisionOf(String player, {DateTime? since}) =>
-      _precision.putIfAbsent((player, since), () => computePlayerPrecision(games, player, since: since));
+      _cache(_precision, (player, since), () => computePlayerPrecision(games, player, since: since));
+
+  /// The player's finished training rounds per track
+  List<TrainingProgress> trainingOf(String player, {DateTime? since}) =>
+      _cache(_training, (player, since), () => computeTrainingProgress(games, player, since: since));
 
   @override
   void notifyListeners() {
     _stats.clear();
     _precision.clear();
+    _training.clear();
     super.notifyListeners();
   }
 
@@ -214,6 +264,9 @@ class Statistics extends ChangeNotifier {
     return _colours[key] ?? playerColours[index % playerColours.length];
   }
 
+  /// The colours players chose, as ARGB by the name in lower case, for the backup
+  Map<String, int> get chosenColours => {for (final MapEntry(:key, :value) in _colours.entries) key: value.toARGB32()};
+
   /// Whether the player chose the colour, rather than having one by their place
   bool hasOwnColour(String player) => _colours.containsKey(player.toLowerCase());
 
@@ -223,7 +276,7 @@ class Statistics extends ChangeNotifier {
     _colours = {..._colours}..remove(key);
     if (colour != null) _colours[key] = colour;
     notifyListeners();
-    await profileStore.saveColours({for (final MapEntry(:key, :value) in _colours.entries) key: value.toARGB32()});
+    await _saveColours();
   }
 
   /// A game the app was killed in, to resume or end; null when there is none
@@ -322,6 +375,86 @@ class Statistics extends ChangeNotifier {
     notifyListeners();
     await _saveProfiles();
     if (hasOwnColour(name)) await setColour(name, null);
+  }
+
+  /// Gives a profile a new name, also in its kept games and its colour, so its statistics follow it; null when it was
+  /// renamed. Only the case of a name may change into a name that exists, as names are compared without case.
+  Future<ProfileError?> renameProfile(String from, String to) async {
+    await _loaded();
+    final trimmed = to.trim();
+    if (trimmed.isEmpty) return ProfileError.empty;
+    if (trimmed == from) return null;
+    if (trimmed.toLowerCase() != from.toLowerCase() && profiles.any((p) => p.toLowerCase() == trimmed.toLowerCase())) {
+      return ProfileError.exists;
+    }
+    GameRecord renamed(GameRecord g) => g.withPlayers([
+      for (var i = 0; i < g.players.length; ++i)
+        g.players[i] == from && !g.bots.containsKey(i) ? trimmed : g.players[i],
+    ]);
+    final touched = games.any((g) => g.players.contains(from));
+    games = [for (final g in games) g.players.contains(from) ? renamed(g) : g];
+    profiles = [for (final p in profiles) p == from ? trimmed : p];
+    final colour = _colours.remove(from.toLowerCase());
+    if (colour != null) _colours[trimmed.toLowerCase()] = colour;
+    final waiting = interrupted;
+    if (waiting != null && waiting.players.contains(from)) interrupted = renamed(waiting);
+    notifyListeners();
+    await _saveProfiles();
+    if (touched) await store.replaceAll(games);
+    if (colour != null) await _saveColours();
+    if (waiting != null && interrupted != waiting) await store.saveRunning(interrupted);
+    return null;
+  }
+
+  Future<void> _saveColours() => profileStore.saveColours(chosenColours);
+
+  /// Deletes one kept game for everyone who played in it.
+  Future<void> removeGame(String id) async {
+    await _loaded();
+    if (!games.any((g) => g.id == id)) return;
+    games = [
+      for (final g in games)
+        if (g.id != id) g,
+    ];
+    notifyListeners();
+    await store.replaceAll(games);
+  }
+
+  /// Adds what a backup holds and this device does not: games by their id, profiles by their name, colours of players
+  /// who have not chosen one here. Nothing kept is replaced or removed.
+  Future<BackupImport> importBackup(Backup backup) async {
+    await _loaded();
+    final known = {for (final g in games) g.id};
+    final newGames = [
+      for (final g in backup.games)
+        if (known.add(g.id)) g,
+    ]..sort((a, b) => a.ended.compareTo(b.ended));
+    final names = {for (final p in profiles) p.toLowerCase()};
+    final newProfiles = [
+      for (final p in backup.profiles)
+        if (p.trim().isNotEmpty && !isGuestName(p) && names.add(p.toLowerCase())) p.trim(),
+    ];
+    var colours = false;
+    for (final MapEntry(:key, :value) in backup.colours.entries) {
+      if (_colours.containsKey(key.toLowerCase())) continue;
+      _colours[key.toLowerCase()] = Color(value);
+      colours = true;
+    }
+    games = [...games, ...newGames];
+    profiles = [...profiles, ...newProfiles];
+    // Players of imported games without a profile in the backup get one, as at the start.
+    final missing = [
+      for (final p in _playedNames())
+        if (names.add(p.toLowerCase())) p,
+    ];
+    profiles = [...profiles, ...missing];
+    notifyListeners();
+    for (final g in newGames) {
+      await store.add(g);
+    }
+    if (newProfiles.isNotEmpty || missing.isNotEmpty) await _saveProfiles();
+    if (colours) await _saveColours();
+    return (games: newGames.length, profiles: newProfiles.length + missing.length);
   }
 
   /// Keeps the game being played after every dart; null when it ended normally.
@@ -443,5 +576,25 @@ mixin RecordsGame<T extends StatefulWidget> on State<T> {
       scheduleMicrotask(() => statistics.record(record));
     }
     super.dispose();
+  }
+}
+
+/// A training screen's round against the player's earlier rounds of the same training, computed again only when the
+/// kept games change: the round played just before is kept only after the screen opened, when its screen is gone.
+mixin ComparesTraining<T extends StatefulWidget> on RecordsGame<T> {
+  /// The player whose earlier rounds count
+  String get trainingPlayer;
+
+  List<GameRecord>? _comparedGames;
+  TrainingComparison? _comparison;
+
+  /// Null while watching another app's game, and when the player has no earlier round of this training
+  TrainingComparison? earlierRounds(List<GameRecord> games) {
+    if (watching) return null;
+    if (!identical(games, _comparedGames)) {
+      _comparedGames = games;
+      _comparison = compareWithEarlier(games, currentRecord, trainingPlayer);
+    }
+    return _comparison;
   }
 }
