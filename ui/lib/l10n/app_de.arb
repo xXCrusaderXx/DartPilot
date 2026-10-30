@@ -638,6 +638,7 @@
   "cutThroat": "Cut-Throat: Punkte gehen an die Gegner, die wenigsten Punkte gewinnen",
   "ladderBest": "Höchster Checkout: {score}",
   "statsMatches": "Matches",
+  "statsMatchLegs": "Match-Legs",
   "statsTrainings": "Trainings",
   "statsHighestVisit": "Höchste Aufnahme",
   "statsBestLegOf": "Bestes Leg {start}",

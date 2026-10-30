@@ -1462,6 +1462,7 @@
     }
   },
   "statsMatches": "Matches",
+  "statsMatchLegs": "Match legs",
   "statsTrainings": "Training rounds",
   "statsHighestVisit": "Highest visit",
   "statsBestLegOf": "Best leg {start}",

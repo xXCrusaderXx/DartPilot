@@ -311,7 +311,8 @@ class _PlayerStatsScreenState extends State<PlayerStatsScreen> {
         ('180', '${stats.visits180}'),
         ('140+', '${stats.visits140}'),
         ('100+', '${stats.visits100}'),
-        (l10n.statsLegs, stats.matchLegs > 0 ? '${stats.legs} (${l10n.statsWon(stats.legsWon)})' : '${stats.legs}'),
+        (l10n.statsLegs, '${stats.legs}'),
+        if (stats.matchLegs > 0) (l10n.statsMatchLegs, '${stats.matchLegs} (${l10n.statsWon(stats.legsWon)})'),
         for (final start in stats.bestLegByStart.keys.toList()..sort((a, b) => b.compareTo(a)))
           (l10n.statsBestLegOf(start), l10n.statsDartsCount(stats.bestLegByStart[start]!)),
       ],

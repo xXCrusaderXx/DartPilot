@@ -56,6 +56,7 @@ String gamesJson(List<GameRecord> games, List<String> players, {DateTime? now}) 
     'three_dart_average': s.threeDartAverage,
     'first_9_average': s.first9Average,
     'legs': s.legs,
+    'match_legs': s.matchLegs,
     'legs_won': s.legsWon,
     'best_leg_darts': {for (final e in s.bestLegByStart.entries) '${e.key}': e.value},
     'checkout_rate': s.checkoutRate,

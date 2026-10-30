@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:dartpilot/l10n/app_localizations_de.dart';
 import 'package:dartpilot/src/app.dart';
 import 'package:dartpilot/src/board/dart_throw.dart';
 import 'package:dartpilot/src/board/scoring.dart';
@@ -11,6 +12,7 @@ import 'package:dartpilot/src/stats/player_stats.dart';
 import 'package:dartpilot/src/stats/precision.dart';
 import 'package:dartpilot/src/stats/statistics.dart';
 import 'package:dartpilot/src/stats/training_best.dart';
+import 'package:dartpilot/src/widgets/precision_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -142,6 +144,41 @@ void main() {
     expect(stats.highestVisit, 121);
   });
 
+  testWidgets('legs won are counted against the match legs, not the solo legs', (tester) async {
+    tester.view.physicalSize = const Size(412, 915);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final solo = [
+      for (var day = 1; day <= 2; ++day)
+        record(GameMode.x01, [field('T20'), field('S1'), field('D20')], {'start_score': 101}, id: 's$day', day: day),
+    ];
+    final match = GameRecord(
+      id: 'm',
+      mode: GameMode.x01,
+      started: DateTime(2026, 10, 3),
+      ended: DateTime(2026, 10, 3),
+      players: ['Anna', 'Ben'],
+      settings: {'start_score': 101},
+      throws: [field('T20'), field('S1'), field('D20')],
+    );
+    final stats = computePlayerStats([...solo, match], 'Anna');
+    expect(stats.legs, 3);
+    expect(stats.matchLegs, 1);
+    expect(stats.legsWon, 1);
+    final statistics = Statistics(MemoryGameStore([...solo, match]), MemoryProfileStore(['Anna', 'Ben']));
+    await statistics.load();
+    await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), statistics: statistics));
+    await playOffline(tester);
+    await tester.tap(find.byIcon(Icons.insights_outlined));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('stats-player-Anna')));
+    await tester.pumpAndSettle();
+    await tester.dragUntilVisible(find.text('Match-Legs'), find.byType(ListView).first, const Offset(0, -200));
+    expect(find.text('Match-Legs'), findsOneWidget);
+    expect(find.text('1 (1 gewonnen)'), findsWidgets);
+    expect(find.text('3 (1 gewonnen)'), findsNothing);
+  });
+
   test('a training round is compared with the earlier rounds of the same kind', () {
     grouping(int day, double dxMm) => record(
       GameMode.grouping,
@@ -206,6 +243,52 @@ void main() {
     expect(
       tester.widget<Text>(find.byKey(const ValueKey('checkout-progress'))).data,
       'Stufe 121  ·  Versuch 1 von 10  ·  Rekord 121',
+    );
+  });
+
+  testWidgets('a round played again is compared with the round just before it', (tester) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final statistics = Statistics(MemoryGameStore(), MemoryProfileStore(['Anna']));
+    await statistics.load();
+    await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), statistics: statistics));
+    await playOffline(tester);
+    await tester.dragUntilVisible(find.text('Präzisionstraining'), find.byType(ListView).first, const Offset(0, -200));
+    await tester.tap(find.text('Präzisionstraining'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Gruppieren'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('target-T20')));
+    await tester.tap(find.byKey(const ValueKey('start-game')));
+    await tester.pumpAndSettle();
+
+    final c = PrecisionTarget.parse('T20')!.centre();
+    Future<void> playRound(double stepMm) async {
+      for (var i = 0; i < 9; ++i) {
+        final board = tester.getRect(find.byKey(const ValueKey('dartboard')));
+        final scale = board.shortestSide / (2 * (const BoardGeometry().doubleOuterRadiusMm + 30));
+        final dx = (i % 3 - 1) * stepMm, dy = (i ~/ 3 - 1) * stepMm;
+        await tester.tapAt(board.center + Offset((c.xMm + dx) * scale, -(c.yMm + dy) * scale));
+        await tester.pumpAndSettle();
+      }
+    }
+
+    // A tight first round, nothing to compare it with yet
+    await playRound(1);
+    expect(find.byKey(const ValueKey('grouping-result-spread')), findsOneWidget);
+    expect(find.byKey(const ValueKey('training-last-best')), findsNothing);
+    expect(find.byKey(const ValueKey('training-new-best')), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('round-again')));
+    await tester.pumpAndSettle();
+    final first = statistics.games.single;
+
+    // A wider second round: the first one is the last and the best so far.
+    await playRound(3);
+    final firstSpread = mmText(AppLocalizationsDe(), trainingScore(first)!.value);
+    expect(
+      tester.widget<Text>(find.byKey(const ValueKey('training-last-best'))).data,
+      'Letztes Mal: $firstSpread  ·  Bestwert: $firstSpread',
     );
   });
 

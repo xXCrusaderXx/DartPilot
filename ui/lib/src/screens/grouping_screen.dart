@@ -55,18 +55,11 @@ class _GroupingScreenState extends State<GroupingScreen> with RecordsGame {
   late final GroupingGame _game = replayed(GroupingGame(widget.target, dartCount: widget.dartCount), widget.replay);
   final TakeoutGate _takeout = TakeoutGate();
 
-  /// The player's earlier rounds at this target, read once: the games do not change while this one is played
-  TrainingComparison? _earlier;
-  bool _comparedEarlier = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_comparedEarlier || watching) return;
-    _comparedEarlier = true;
-    final games = StatisticsScope.read(context)?.games ?? const <GameRecord>[];
-    _earlier = compareWithEarlier(games, currentRecord, widget.player);
-  }
+  /// The player's earlier rounds at this target as kept now: the round played just before is kept only after this
+  /// screen opened, when its screen is gone
+  TrainingComparison? get _earlier => watching
+      ? null
+      : compareWithEarlier(StatisticsScope.read(context)?.games ?? const [], currentRecord, widget.player);
 
   @override
   GameRecord buildRecord(String id, DateTime started, DateTime ended) => GameRecord(
@@ -87,6 +80,7 @@ class _GroupingScreenState extends State<GroupingScreen> with RecordsGame {
   Future<void> _showResult() {
     final l10n = AppLocalizations.of(context);
     final spread = _game.spread;
+    final earlier = _earlier;
     return showRoundResult(
       context,
       content: Column(
@@ -98,9 +92,9 @@ class _GroupingScreenState extends State<GroupingScreen> with RecordsGame {
             key: const ValueKey('grouping-result-spread'),
           ),
           if (spread != null) Text(l10n.resultOffset(offsetText(l10n, spread.offsetXMm, spread.offsetYMm))),
-          if (spread != null && _earlier != null) ...[
+          if (spread != null && earlier != null) ...[
             const SizedBox(height: 8),
-            PersonalBestLine(comparison: _earlier!, value: spread.spreadMm, format: (v) => mmText(l10n, v)),
+            PersonalBestLine(comparison: earlier, value: spread.spreadMm, format: (v) => mmText(l10n, v)),
           ],
         ],
       ),

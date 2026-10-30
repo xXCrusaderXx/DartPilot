@@ -2212,6 +2212,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get statsMatches => 'Matches';
 
   @override
+  String get statsMatchLegs => 'Match-Legs';
+
+  @override
   String get statsTrainings => 'Trainings';
 
   @override

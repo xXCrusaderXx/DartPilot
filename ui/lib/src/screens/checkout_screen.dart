@@ -67,17 +67,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
   );
   final TakeoutGate _takeout = TakeoutGate();
 
-  /// The player's earlier rounds of this training, read once: the games do not change while this one is played
-  TrainingComparison? _earlier;
-  bool _comparedEarlier = false;
+  List<GameRecord>? _comparedGames;
+  TrainingComparison? _comparison;
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_comparedEarlier || watching) return;
-    _comparedEarlier = true;
-    final games = StatisticsScope.read(context)?.games ?? const <GameRecord>[];
-    _earlier = compareWithEarlier(games, currentRecord, widget.player);
+  /// The player's earlier rounds of this training as kept now: the round played just before is kept only after this
+  /// screen opened, when its screen is gone
+  TrainingComparison? _earlier(List<GameRecord> games) {
+    if (watching) return null;
+    if (!identical(games, _comparedGames)) {
+      _comparedGames = games;
+      _comparison = compareWithEarlier(games, currentRecord, widget.player);
+    }
+    return _comparison;
   }
 
   @override
@@ -98,7 +99,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
 
   Future<void> _showResult() {
     final l10n = AppLocalizations.of(context);
-    final earlier = _earlier;
+    final earlier = _earlier(StatisticsScope.read(context)?.games ?? const []);
     final score = trainingScore(currentRecord);
     return showRoundResult(
       context,
@@ -144,7 +145,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
       return '${l10n.checkoutProgress(_game.attempts.length, widget.starts.length)}  ·  '
           '${l10n.labelValue(l10n.statsCheckoutRate, l10n.countOf(_game.checkouts, _game.attemptsDone))}';
     }
-    final earlier = _earlier?.best.round();
+    // Read so the panel follows the statistics: the round played just before is kept while this one is played.
+    final earlier = _earlier(StatisticsScope.maybeOf(context)?.games ?? const [])?.best.round();
     final now = _game.bestCheckout;
     final record = earlier == null ? now : (now == null ? earlier : math.max(earlier, now));
     return [

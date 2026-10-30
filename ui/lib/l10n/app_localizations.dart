@@ -3920,6 +3920,12 @@ abstract class AppLocalizations {
   /// **'Matches'**
   String get statsMatches;
 
+  /// No description provided for @statsMatchLegs.
+  ///
+  /// In en, this message translates to:
+  /// **'Match legs'**
+  String get statsMatchLegs;
+
   /// No description provided for @statsTrainings.
   ///
   /// In en, this message translates to:
