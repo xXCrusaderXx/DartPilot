@@ -11,6 +11,7 @@ import '../engine/engine_connection.dart';
 import 'game_record.dart';
 import 'player_stats.dart';
 import 'precision.dart';
+import '../theme.dart';
 
 /// Where played games are kept
 abstract interface class GameStore {
@@ -113,10 +114,15 @@ class MemoryGameStore implements GameStore {
 abstract interface class ProfileStore {
   Future<List<String>> load();
   Future<void> save(List<String> profiles);
+
+  /// The colours the players chose, as ARGB by the name in lower case
+  Future<Map<String, int>> loadColours();
+  Future<void> saveColours(Map<String, int> colours);
 }
 
 class PrefsProfileStore implements ProfileStore {
   static const _key = 'players.profiles';
+  static const _coloursKey = 'players.colours';
 
   @override
   Future<List<String>> load() async => (await SharedPreferences.getInstance()).getStringList(_key) ?? [];
@@ -124,6 +130,22 @@ class PrefsProfileStore implements ProfileStore {
   @override
   Future<void> save(List<String> profiles) async =>
       (await SharedPreferences.getInstance()).setStringList(_key, profiles);
+
+  /// Kept as "name=argb" entries, which survive any name
+  @override
+  Future<Map<String, int>> loadColours() async {
+    final entries = (await SharedPreferences.getInstance()).getStringList(_coloursKey) ?? [];
+    return {
+      for (final e in entries)
+        if (e.lastIndexOf('=') case final i when i > 0) e.substring(0, i): ?int.tryParse(e.substring(i + 1)),
+    };
+  }
+
+  @override
+  Future<void> saveColours(Map<String, int> colours) async => (await SharedPreferences.getInstance()).setStringList(
+    _coloursKey,
+    [for (final MapEntry(:key, :value) in colours.entries) '$key=$value'],
+  );
 }
 
 class MemoryProfileStore implements ProfileStore {
@@ -136,6 +158,14 @@ class MemoryProfileStore implements ProfileStore {
 
   @override
   Future<void> save(List<String> profiles) async => this.profiles = List.of(profiles);
+
+  Map<String, int> colours = {};
+
+  @override
+  Future<Map<String, int>> loadColours() async => Map.of(colours);
+
+  @override
+  Future<void> saveColours(Map<String, int> colours) async => this.colours = Map.of(colours);
 }
 
 /// Why a name cannot become a profile
@@ -170,6 +200,30 @@ class Statistics extends ChangeNotifier {
   List<String> profiles = [];
   bool loaded = false;
 
+  /// The colours players chose, by the name in lower case
+  Map<String, Color> _colours = {};
+
+  /// A profile's colour: the one the player chose, or one of [playerColours] by the profile's place. Guests and bots
+  /// have none.
+  Color? colourOf(String player) {
+    final key = player.toLowerCase();
+    final index = profiles.indexWhere((p) => p.toLowerCase() == key);
+    if (index < 0) return null;
+    return _colours[key] ?? playerColours[index % playerColours.length];
+  }
+
+  /// Whether the player chose the colour, rather than having one by their place
+  bool hasOwnColour(String player) => _colours.containsKey(player.toLowerCase());
+
+  /// The player's colour, or back to the one by their place when null
+  Future<void> setColour(String player, Color? colour) async {
+    final key = player.toLowerCase();
+    _colours = {..._colours}..remove(key);
+    if (colour != null) _colours[key] = colour;
+    notifyListeners();
+    await profileStore.saveColours({for (final MapEntry(:key, :value) in _colours.entries) key: value.toARGB32()});
+  }
+
   /// A game the app was killed in, to resume or end; null when there is none
   GameRecord? interrupted;
 
@@ -177,6 +231,7 @@ class Statistics extends ChangeNotifier {
     games = await store.load();
     interrupted = await store.loadRunning();
     profiles = await profileStore.load();
+    _colours = {for (final MapEntry(:key, :value) in (await profileStore.loadColours()).entries) key: Color(value)};
     // Players of games kept before profiles existed become profiles, so their statistics stay reachable.
     final known = {for (final p in profiles) p.toLowerCase()};
     final missing = [
@@ -218,6 +273,7 @@ class Statistics extends ChangeNotifier {
     ];
     notifyListeners();
     await profileStore.save(profiles);
+    if (hasOwnColour(name)) await setColour(name, null);
   }
 
   /// Keeps the game being played after every dart; null when it ended normally.

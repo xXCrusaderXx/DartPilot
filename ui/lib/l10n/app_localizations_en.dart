@@ -2388,4 +2388,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dartMagenta => 'Magenta';
+
+  @override
+  String get playerColour => 'Colour';
+
+  @override
+  String playerColourOf(String player) {
+    return 'Colour of $player';
+  }
+
+  @override
+  String get playerColourReset => 'By order';
 }

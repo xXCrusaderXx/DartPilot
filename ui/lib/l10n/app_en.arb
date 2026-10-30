@@ -1570,5 +1570,15 @@
   "dartWhite": "White",
   "dartYellow": "Yellow",
   "dartCyan": "Cyan",
-  "dartMagenta": "Magenta"
+  "dartMagenta": "Magenta",
+  "playerColour": "Colour",
+  "playerColourOf": "Colour of {player}",
+  "playerColourReset": "By order",
+  "@playerColourOf": {
+    "placeholders": {
+      "player": {
+        "type": "String"
+      }
+    }
+  }
 }

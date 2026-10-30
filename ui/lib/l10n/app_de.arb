@@ -691,5 +691,8 @@
   "dartWhite": "Weiß",
   "dartYellow": "Gelb",
   "dartCyan": "Cyan",
-  "dartMagenta": "Magenta"
+  "dartMagenta": "Magenta",
+  "playerColour": "Farbe",
+  "playerColourOf": "Farbe von {player}",
+  "playerColourReset": "Nach Reihenfolge"
 }

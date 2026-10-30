@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../bots/bot.dart';
 import '../stats/statistics.dart';
+import '../theme.dart';
 
 /// The players of a game in throwing order: profiles, and bots with their level
 class PlayerSelection extends ChangeNotifier {
@@ -174,7 +175,9 @@ class PlayerPicker extends StatelessWidget {
                 for (final name in profiles)
                   FilterChip(
                     key: ValueKey('pick-$name'),
-                    avatar: chosen.contains(name) ? CircleAvatar(child: Text('${chosen.indexOf(name) + 1}')) : null,
+                    avatar: chosen.contains(name)
+                        ? CircleAvatar(child: Text('${chosen.indexOf(name) + 1}'))
+                        : _dot(context, name),
                     showCheckmark: false,
                     label: Text(name),
                     selected: chosen.contains(name),
@@ -245,6 +248,7 @@ class ProfileChoice extends StatelessWidget {
             for (final name in profiles)
               ChoiceChip(
                 key: ValueKey('pick-$name'),
+                avatar: _dot(context, name),
                 label: Text(name),
                 selected: name == selected,
                 onSelected: (_) => onSelected(name),
@@ -264,3 +268,9 @@ class ProfileChoice extends StatelessWidget {
     );
   }
 }
+
+/// The profile's colour as a chip's avatar, or none
+Widget? _dot(BuildContext context, String name) => switch (StatisticsScope.maybeOf(context)?.colourOf(name)) {
+  final colour? => PlayerDot(colour),
+  null => null,
+};

@@ -4243,6 +4243,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Magenta'**
   String get dartMagenta;
+
+  /// No description provided for @playerColour.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour'**
+  String get playerColour;
+
+  /// No description provided for @playerColourOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour of {player}'**
+  String playerColourOf(String player);
+
+  /// No description provided for @playerColourReset.
+  ///
+  /// In en, this message translates to:
+  /// **'By order'**
+  String get playerColourReset;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

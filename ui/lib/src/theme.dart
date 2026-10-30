@@ -456,3 +456,43 @@ ThemeData dartPilotTheme([AppPalette p = AppPalette.dark]) {
     ],
   );
 }
+
+/// The colours players are told apart by, in the order profiles get them; each keeps 3:1 on the surfaces of every
+/// palette, as graphics need.
+const playerColours = [
+  Color(0xFF2F7FE0),
+  Color(0xFFD9480F),
+  Color(0xFF15924F),
+  Color(0xFF9B51E0),
+  Color(0xFFD6336C),
+  Color(0xFF0E8C93),
+  Color(0xFFB7791F),
+  Color(0xFFE03131),
+];
+
+/// A player's colour as a small dot before the name, ringed so that it also stands out on a coloured block; nothing
+/// for a player without one
+class PlayerDot extends StatelessWidget {
+  const PlayerDot(this.colour, {super.key, this.size = 12, this.ring});
+
+  final Color? colour;
+  final double size;
+
+  /// The ring's colour, the text colour by default
+  final Color? ring;
+
+  @override
+  Widget build(BuildContext context) {
+    final colour = this.colour;
+    if (colour == null) return const SizedBox.shrink();
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: colour,
+        shape: BoxShape.circle,
+        border: Border.all(color: ring ?? AppPalette.of(context).text, width: 1.5),
+      ),
+    );
+  }
+}
