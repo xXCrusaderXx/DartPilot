@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "io.github.xxcrusaderxx" "\0"
-            VALUE "FileDescription", "dartpilot" "\0"
+            VALUE "CompanyName", "DartPilot" "\0"
+            VALUE "FileDescription", "DartPilot" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "dartpilot" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 io.github.xxcrusaderxx. All rights reserved." "\0"
+            VALUE "InternalName", "dartpilot-app" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 DartPilot contributors. GPL-3.0-or-later." "\0"
             VALUE "OriginalFilename", "dartpilot-app.exe" "\0"
-            VALUE "ProductName", "dartpilot" "\0"
+            VALUE "ProductName", "DartPilot" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
