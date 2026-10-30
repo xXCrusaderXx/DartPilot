@@ -30,3 +30,6 @@ for size in 16 24 32 48 64 128 256; do
 done
 magick "$tmp"/{16,24,32,48,64,128,256}.png windows/runner/resources/app_icon.ico
 rm -r "$tmp"
+
+# Linux: the window icon and the icon of the desktop entry
+rsvg-convert -w 256 "$full" -o linux/packaging/io.github.xxcrusaderxx.dartpilot.png

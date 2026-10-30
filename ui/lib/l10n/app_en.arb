@@ -1592,5 +1592,36 @@
   "appearanceScanHint": "Point the camera at the QR code under Share the appearance on the other device",
   "appearanceScanUnavailable": "The camera cannot be used to scan. Allow the camera for DartPilot, or paste the code shown under the QR code.",
   "appearancePreview": "Adjust with preview",
-  "appearancePreviewHint": "A game screen shows every change at once"
+  "appearancePreviewHint": "A game screen shows every change at once",
+  "aboutTitle": "About DartPilot",
+  "aboutHint": "Version, licence and source code",
+  "aboutVersion": "Version {version}",
+  "@aboutVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "aboutDevelopmentBuild": "Development build",
+  "aboutDescription": "Scores steel darts with cameras on the board, or by hand without any. Free and open source, made for playing at home.",
+  "aboutLicence": "Licence",
+  "aboutLicenceText": "Free software under the GNU General Public License, version 3 or later (GPL-3.0-or-later). It comes without any warranty. You may share and change it under that licence.",
+  "aboutLegalese": "Copyright (C) DartPilot contributors. GPL-3.0-or-later, without any warranty.",
+  "aboutSource": "Source code",
+  "aboutGuide": "Player guide",
+  "aboutCopyLink": "Copy link",
+  "aboutLinkCopied": "Link copied",
+  "aboutThirdParty": "Licences of included software",
+  "aboutThirdPartyHint": "Flutter and the packages this app is built with",
+  "aboutCredits": "Credits",
+  "aboutCreditsText": "The DartPilot icon is part of DartPilot and under its licence. The icons in the app are Material Icons by Google (Apache License 2.0) and Cupertino Icons by the Flutter authors (MIT License). The app is built with Flutter. Thanks to everyone who reports bugs, tests and contributes.",
+  "exportDownloaded": "Downloaded: {name}",
+  "@exportDownloaded": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

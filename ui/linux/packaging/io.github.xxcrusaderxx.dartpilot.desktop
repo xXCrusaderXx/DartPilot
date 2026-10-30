@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=DartPilot
+GenericName=Darts scoreboard
+GenericName[de]=Darts-Zähler
+Comment=Score steel darts by hand or with cameras on the board
+Comment[de]=Steeldarts von Hand oder mit Kameras am Board zählen
+Exec=dartpilot-app
+Icon=io.github.xxcrusaderxx.dartpilot
+Terminal=false
+Categories=Game;SportsGame;
+Keywords=darts;dart;scoreboard;501;cricket;
+StartupWMClass=io.github.xxcrusaderxx.dartpilot

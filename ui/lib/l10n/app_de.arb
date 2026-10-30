@@ -706,5 +706,22 @@
   "appearanceScanHint": "Richte die Kamera auf den QR-Code unter „Darstellung teilen“ auf dem anderen Gerät",
   "appearanceScanUnavailable": "Die Kamera lässt sich zum Scannen nicht nutzen. Erlaube DartPilot die Kamera, oder füge den Code unter dem QR-Code ein.",
   "appearancePreview": "Mit Vorschau anpassen",
-  "appearancePreviewHint": "Ein Spielbildschirm zeigt jede Änderung sofort"
+  "appearancePreviewHint": "Ein Spielbildschirm zeigt jede Änderung sofort",
+  "aboutTitle": "Über DartPilot",
+  "aboutHint": "Version, Lizenz und Quellcode",
+  "aboutVersion": "Version {version}",
+  "aboutDevelopmentBuild": "Entwicklungsversion",
+  "aboutDescription": "Zählt Steeldarts mit Kameras am Board, oder von Hand ganz ohne. Freie, quelloffene Software für das Spiel zu Hause.",
+  "aboutLicence": "Lizenz",
+  "aboutLicenceText": "Freie Software unter der GNU General Public License, Version 3 oder später (GPL-3.0-or-later). Sie kommt ohne jede Gewährleistung. Du darfst sie unter dieser Lizenz weitergeben und ändern.",
+  "aboutLegalese": "Copyright (C) DartPilot-Mitwirkende. GPL-3.0-or-later, ohne jede Gewährleistung.",
+  "aboutSource": "Quellcode",
+  "aboutGuide": "Anleitung",
+  "aboutCopyLink": "Link kopieren",
+  "aboutLinkCopied": "Link kopiert",
+  "aboutThirdParty": "Lizenzen enthaltener Software",
+  "aboutThirdPartyHint": "Flutter und die Pakete, mit denen die App gebaut ist",
+  "aboutCredits": "Danksagung",
+  "aboutCreditsText": "Das DartPilot-Symbol gehört zu DartPilot und steht unter dessen Lizenz. Die Symbole in der App sind die Material Icons von Google (Apache License 2.0) und die Cupertino Icons der Flutter-Autoren (MIT-Lizenz). Die App ist mit Flutter gebaut. Danke an alle, die Fehler melden, testen und mitarbeiten.",
+  "exportDownloaded": "Heruntergeladen: {name}"
 }

@@ -1,7 +1,17 @@
 name: Release
 
-# Builds and tests the engine and publishes a GitHub Release with the source
-# archive and SHA256SUMS. Binary packages follow once there is something to run.
+# Builds and tests the engine, builds the player app for every platform, and
+# publishes a GitHub Release with:
+# - DartPilot-<version>-x86_64.AppImage: the Linux app with the engine inside
+#   (OpenCV linked statically, built on Ubuntu 22.04 so older systems run it)
+# - DartPilot-<version>.apk: the Android app, signed with the release key from the
+#   ANDROID_KEYSTORE_* secrets, or with the debug key and a warning without them
+# - DartPilot-<version>-windows-x64.zip: the Windows app, without an engine
+# - DartPilot-<version>-web.zip: the app for a web server (hand entry, remote display)
+# - the source archive and SHA256SUMS over all of these
+#
+# A dry run builds and checks everything and uploads the files to the run, but
+# publishes nothing.
 #
 # Releases are built from main, which only receives merges from dev.
 #
@@ -111,6 +121,299 @@ jobs:
           VERSION: ${{ needs.version.outputs.version }}
         run: ./build/engine/apps/dartpilot_cli/dartpilot --version | grep -Fx "dartpilot $VERSION"
 
+  linux:
+    name: linux appimage
+    needs: version
+    runs-on: ubuntu-24.04
+    # The oldest supported base: an AppImage runs on systems with this glibc or newer.
+    container: ubuntu:22.04
+    timeout-minutes: 75
+    env:
+      OPENCV_VERSION: 4.12.0
+      OPENCV_SHA256: 44c106d5bb47efec04e531fd93008b3fcd1d27138985c5baf4eafac0e1ec9e9d
+      APPIMAGETOOL_URL: https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage
+      APPIMAGETOOL_SHA256: ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0
+      RUNTIME_URL: https://github.com/AppImage/type2-runtime/releases/download/20251108/runtime-x86_64
+      RUNTIME_SHA256: 2fca8b443c92510f1483a883f60061ad09b46b978b2631c807cd873a47ec260d
+      # appimagetool is itself an AppImage; containers have no FUSE to mount it.
+      APPIMAGE_EXTRACT_AND_RUN: "1"
+      CC: gcc-12
+      CXX: g++-12
+    steps:
+      # git before checkout, so the checkout is a repository (the engine records its commit);
+      # g++-12 for C++20; clang, GTK and pkg-config for the Flutter app; jq, curl, unzip, xz for flutter-action.
+      - name: Install dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          set -eu
+          apt-get update
+          apt-get install -y --no-install-recommends ca-certificates git curl unzip xz-utils zip jq file patchelf \
+            build-essential g++-12 cmake ninja-build pkg-config clang libgtk-3-dev liblzma-dev libstdc++-12-dev \
+            libavahi-client-dev
+
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Restore OpenCV
+        id: opencv
+        uses: actions/cache@v4
+        with:
+          path: /opt/opencv
+          key: opencv-${{ env.OPENCV_VERSION }}-ubuntu22.04-${{ hashFiles('packaging/linux/build-opencv.sh') }}
+
+      - name: Build OpenCV
+        if: steps.opencv.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          src="$RUNNER_TEMP/opencv"
+          mkdir -p "$src"
+          curl -fsSL -o "$src.tar.gz" "https://github.com/opencv/opencv/archive/refs/tags/$OPENCV_VERSION.tar.gz"
+          echo "$OPENCV_SHA256  $src.tar.gz" | sha256sum -c -
+          tar -xzf "$src.tar.gz" -C "$src" --strip-components=1
+          packaging/linux/build-opencv.sh "$src" /opt/opencv
+
+      - name: Build and test the engine
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -eu
+          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DDARTPILOT_BUILD_TESTS=ON "-DDARTPILOT_VERSION=$VERSION" \
+            -DOpenCV_DIR=/opt/opencv/lib/cmake/opencv4
+          cmake --build build
+          ctest --test-dir build --output-on-failure
+          ./build/engine/apps/dartpilot_cli/dartpilot --version | grep -Fx "dartpilot $VERSION"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.5
+          channel: stable
+          cache: true
+
+      # The engine goes into bundle/engine, where the app looks for it.
+      - name: Build the app
+        working-directory: ui
+        shell: bash
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          BUILD_NUMBER: ${{ github.run_number }}
+          DARTPILOT_REQUIRE_ENGINE: "1"
+        run: |
+          set -euo pipefail
+          export DARTPILOT_ENGINE_BINARY="$GITHUB_WORKSPACE/build/engine/apps/dartpilot_cli/dartpilot"
+          flutter pub get
+          flutter build linux --release --build-name="${VERSION%%-*}" --build-number="$BUILD_NUMBER" \
+            --dart-define=DARTPILOT_VERSION="$VERSION"
+
+      - name: Pack the AppImage
+        shell: bash
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          tools="$RUNNER_TEMP/appimage-tools"
+          mkdir -p "$tools" dist
+          curl -fsSL -o "$tools/appimagetool" "$APPIMAGETOOL_URL"
+          curl -fsSL -o "$tools/runtime" "$RUNTIME_URL"
+          echo "$APPIMAGETOOL_SHA256  $tools/appimagetool" | sha256sum -c -
+          echo "$RUNTIME_SHA256  $tools/runtime" | sha256sum -c -
+          chmod +x "$tools/appimagetool"
+          packaging/linux/collect-licenses.sh ui/build/linux/x64/release/bundle/licenses /opt/opencv build
+          packaging/linux/make-appimage.sh ui/build/linux/x64/release/bundle "dist/DartPilot-$VERSION-x86_64.AppImage" \
+            "$tools/appimagetool" "$tools/runtime"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-linux
+          path: dist/*
+
+  # On clean systems with only a desktop's GTK 3: every library the AppImage needs is in it or on the system.
+  linux-check:
+    name: check appimage (${{ matrix.image }})
+    needs: [version, linux]
+    runs-on: ubuntu-24.04
+    container: ${{ matrix.image }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: ubuntu:22.04
+            install: apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends libgtk-3-0 file
+          - image: debian:13
+            install: apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends libgtk-3-0t64 file
+          - image: fedora:42
+            install: dnf install -y gtk3 file findutils
+    steps:
+      - name: Install a desktop's base
+        run: ${{ matrix.install }}
+
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-linux
+          path: dist
+
+      - name: Check libraries and engine version
+        shell: bash
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          chmod +x "dist/DartPilot-$VERSION-x86_64.AppImage"
+          packaging/linux/check-appimage.sh "dist/DartPilot-$VERSION-x86_64.AppImage" "$VERSION"
+
+  android:
+    name: android apk
+    needs: version
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.5
+          channel: stable
+          cache: true
+
+      # The keystore is a base64 secret; the build reads it and its passwords from the environment.
+      # A published APK must carry the release key: one signed with the debug key can never be updated by a release-signed one.
+      # Only a dry run may fall back to the debug key.
+      - name: Release key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          PUBLISH: ${{ needs.version.outputs.publish }}
+        run: |
+          set -euo pipefail
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            if [ "$PUBLISH" = "true" ]; then
+              echo "::error::No ANDROID_KEYSTORE_BASE64 secret: a published APK must be signed with the release key (see ROADMAP.md, Releases)."
+              exit 1
+            fi
+            echo "::warning::No ANDROID_KEYSTORE_BASE64 secret: this dry-run APK is signed with the debug key."
+            exit 0
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          echo "DARTPILOT_KEYSTORE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+
+      - name: Build the APK
+        working-directory: ui
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          BUILD_NUMBER: ${{ github.run_number }}
+          DARTPILOT_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          DARTPILOT_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          DARTPILOT_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter build apk --release --build-name="${VERSION%%-*}" --build-number="$BUILD_NUMBER" \
+            --dart-define=DARTPILOT_VERSION="$VERSION"
+          mkdir -p ../dist
+          cp build/app/outputs/flutter-apk/app-release.apk "../dist/DartPilot-$VERSION.apk"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-android
+          path: dist/*
+
+  windows:
+    name: windows app
+    needs: version
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.5
+          channel: stable
+          cache: true
+
+      # The Visual C++ runtime goes next to the app, so it starts on systems without the redistributable;
+      # its notice goes into licenses/, which the app's licence page shows.
+      - name: Build the app
+        working-directory: ui
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter build windows --release --build-name="${VERSION%%-*}" --build-number="$BUILD_NUMBER" \
+            --dart-define=DARTPILOT_VERSION="$VERSION"
+          release=build/windows/x64/runner/Release
+          for dll in msvcp140.dll vcruntime140.dll vcruntime140_1.dll; do
+            cp "/c/Windows/System32/$dll" "$release/"
+          done
+          mkdir -p "$release/licenses/Microsoft Visual C++ Runtime"
+          cp ../packaging/windows/vc-runtime-notice.txt "$release/licenses/Microsoft Visual C++ Runtime/NOTICE.txt"
+
+      - name: Zip
+        shell: pwsh
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Compress-Archive -Path ui/build/windows/x64/runner/Release/* -DestinationPath "dist/DartPilot-$env:VERSION-windows-x64.zip"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-windows
+          path: dist/*
+
+  web:
+    name: web app
+    needs: version
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.5
+          channel: stable
+          cache: true
+
+      - name: Build and zip
+        working-directory: ui
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter build web --release --build-name="${VERSION%%-*}" --build-number="$BUILD_NUMBER" \
+            --dart-define=DARTPILOT_VERSION="$VERSION"
+          mkdir -p ../dist
+          (cd build/web && zip -qr "../../../dist/DartPilot-$VERSION-web.zip" .)
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-web
+          path: dist/*
+
   source:
     name: source archive
     needs: [version, build]
@@ -120,13 +423,34 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7.0.1
 
-      - name: Archive and checksums
+      - name: Archive
         env:
           VERSION: ${{ needs.version.outputs.version }}
         run: |
           set -euo pipefail
           mkdir dist
           git archive --prefix="DartPilot-$VERSION/" -o "dist/DartPilot-$VERSION.tar.gz" HEAD
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-source
+          path: dist/*
+
+  checksums:
+    name: checksums
+    needs: [version, source, linux, linux-check, android, windows, web]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: release-*
+          merge-multiple: true
+          path: dist
+
+      - name: SHA256SUMS
+        run: |
+          set -euo pipefail
           (cd dist && sha256sum -- * > SHA256SUMS)
           cat dist/SHA256SUMS
 
@@ -137,7 +461,7 @@ jobs:
 
   publish:
     name: publish release
-    needs: [version, source]
+    needs: [version, checksums]
     if: needs.version.outputs.publish == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10

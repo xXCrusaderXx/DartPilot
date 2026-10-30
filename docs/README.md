@@ -2,6 +2,10 @@
 
 Where to find what. New readers start with the [technical plan](technical_plan.md); the [roadmap](../ROADMAP.md) shows where the project stands.
 
+## Playing
+
+- [Player guide](user-guide.md) ([Deutsch](user-guide.de.md)): installing the app, the first start, entering darts, the games and training, statistics, the score caller, a phone as a second display, and troubleshooting.
+
 ## Plan and decisions
 
 - [Technical plan](technical_plan.md): why DartPilot is built the way it is, its metrics and targets.

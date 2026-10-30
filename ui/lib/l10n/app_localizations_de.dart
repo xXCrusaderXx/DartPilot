@@ -2441,4 +2441,62 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get appearancePreviewHint => 'Ein Spielbildschirm zeigt jede Änderung sofort';
+
+  @override
+  String get aboutTitle => 'Über DartPilot';
+
+  @override
+  String get aboutHint => 'Version, Lizenz und Quellcode';
+
+  @override
+  String aboutVersion(String version) {
+    return 'Version $version';
+  }
+
+  @override
+  String get aboutDevelopmentBuild => 'Entwicklungsversion';
+
+  @override
+  String get aboutDescription =>
+      'Zählt Steeldarts mit Kameras am Board, oder von Hand ganz ohne. Freie, quelloffene Software für das Spiel zu Hause.';
+
+  @override
+  String get aboutLicence => 'Lizenz';
+
+  @override
+  String get aboutLicenceText =>
+      'Freie Software unter der GNU General Public License, Version 3 oder später (GPL-3.0-or-later). Sie kommt ohne jede Gewährleistung. Du darfst sie unter dieser Lizenz weitergeben und ändern.';
+
+  @override
+  String get aboutLegalese => 'Copyright (C) DartPilot-Mitwirkende. GPL-3.0-or-later, ohne jede Gewährleistung.';
+
+  @override
+  String get aboutSource => 'Quellcode';
+
+  @override
+  String get aboutGuide => 'Anleitung';
+
+  @override
+  String get aboutCopyLink => 'Link kopieren';
+
+  @override
+  String get aboutLinkCopied => 'Link kopiert';
+
+  @override
+  String get aboutThirdParty => 'Lizenzen enthaltener Software';
+
+  @override
+  String get aboutThirdPartyHint => 'Flutter und die Pakete, mit denen die App gebaut ist';
+
+  @override
+  String get aboutCredits => 'Danksagung';
+
+  @override
+  String get aboutCreditsText =>
+      'Das DartPilot-Symbol gehört zu DartPilot und steht unter dessen Lizenz. Die Symbole in der App sind die Material Icons von Google (Apache License 2.0) und die Cupertino Icons der Flutter-Autoren (MIT-Lizenz). Die App ist mit Flutter gebaut. Danke an alle, die Fehler melden, testen und mitarbeiten.';
+
+  @override
+  String exportDownloaded(String name) {
+    return 'Heruntergeladen: $name';
+  }
 }

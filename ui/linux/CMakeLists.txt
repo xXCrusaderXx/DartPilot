@@ -118,10 +118,17 @@ if(DEFINED ENV{DARTPILOT_ENGINE_BINARY})
 endif()
 if(EXISTS "${DARTPILOT_ENGINE_BINARY}")
   install(PROGRAMS "${DARTPILOT_ENGINE_BINARY}" DESTINATION "${CMAKE_INSTALL_PREFIX}/engine" COMPONENT Runtime)
+elseif("$ENV{DARTPILOT_REQUIRE_ENGINE}")
+  # Release packages must not quietly ship without the engine.
+  message(FATAL_ERROR "No engine at ${DARTPILOT_ENGINE_BINARY}, but DARTPILOT_REQUIRE_ENGINE is set.")
 else()
   message(WARNING "No engine at ${DARTPILOT_ENGINE_BINARY}: the app is built without it. Build the engine first "
                   "(cmake -B build && cmake --build build in the repository root) or set DARTPILOT_ENGINE_BINARY.")
 endif()
+
+# The window icon; the desktop entry beside it is installed by packages (AppImage), not into the bundle.
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/packaging/${APPLICATION_ID}.png" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
+  COMPONENT Runtime)
 
 # Copy the native assets provided by the build.dart from all packages.
 set(NATIVE_ASSETS_DIR "${PROJECT_BUILD_DIR}native_assets/linux/")
