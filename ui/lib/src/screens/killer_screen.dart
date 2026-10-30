@@ -221,10 +221,14 @@ class _KillerScreenState extends State<KillerScreen> with RecordsGame, BotTurns,
     final visit = waiting || _game.isFinished || _game.dartsInVisit > 0 ? _game.currentVisit : const <DartThrow>[];
     final far = readFromAfar(context);
     final palette = AppPalette.of(context);
+    // From afar the double to throw at is the panel's headline. Nearer by, where every player's lives must stay in
+    // view to pick a victim, it is the value of the player at the oche instead.
+    final tile = atOche != null && far;
+    // A phone on its side has room for every row only at their least height.
+    final dense = !far && MediaQuery.sizeOf(context).height < 500;
     final panel = PlayersPanel(
-      // What matters at the oche is the double to throw at: the panel's largest figure, the lives beside the names
       header: [
-        if (atOche != null) ...[
+        if (tile) ...[
           TargetTile(
             key: const ValueKey('killer-target'),
             label: _game.players[atOche].isKiller ? l10n.killerIsKiller : l10n.roundTarget,
@@ -243,7 +247,12 @@ class _KillerScreenState extends State<KillerScreen> with RecordsGame, BotTurns,
           Builder(
             builder: (context) {
               final p = _game.players[i];
-              final size = far ? 52.0 : 40.0;
+              final size = far ? 52.0 : (dense ? 32.0 : 40.0);
+              final aims = !tile && i == atOche;
+              final lives = KeyedSubtree(
+                key: ValueKey('lives-${p.name}'),
+                child: Lives(p.lives.clamp(0, _game.lives), of: _game.lives),
+              );
               return PlayerRow(
                 name: p.name,
                 active: i == atOche,
@@ -261,23 +270,40 @@ class _KillerScreenState extends State<KillerScreen> with RecordsGame, BotTurns,
                   ),
                   child: Text(
                     '${p.number}',
-                    style: scoreStyle(far ? theme.textTheme.headlineMedium : theme.textTheme.titleLarge)?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: p.isKiller ? theme.colorScheme.onError : theme.colorScheme.onSurface,
-                    ),
+                    style:
+                        scoreStyle(
+                          far
+                              ? theme.textTheme.headlineMedium
+                              : (dense ? theme.textTheme.titleMedium : theme.textTheme.titleLarge),
+                        )?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: p.isKiller ? theme.colorScheme.onError : theme.colorScheme.onSurface,
+                        ),
                   ),
                 ),
                 details: p.out
                     ? l10n.playerOut
                     : p.isKiller
                     ? l10n.killerIsKiller
+                    // Dense, the badge beside it already says which double
+                    : dense
+                    ? l10n.countOf(p.marks, KillerGame.marksToKill)
                     : l10n.killerMarks(p.marks, KillerGame.marksToKill, 'D${p.number}'),
                 detailsKey: ValueKey('killer-state-${p.name}'),
                 detailsFromAfar: true,
-                value: l10n.killerLives(p.lives),
-                valueKey: ValueKey('lives-${p.name}'),
-                valueIcons: Lives(p.lives.clamp(0, _game.lives), of: _game.lives),
-                heroValue: false,
+                // Dense there is no room for both beside the name: the progress on the own double comes first
+                detailsIcons: aims && !dense
+                    ? Semantics(
+                        label: l10n.killerLives(p.lives),
+                        child: ExcludeSemantics(child: lives),
+                      )
+                    : null,
+                value: aims ? _targets(i) : l10n.killerLives(p.lives),
+                valueKey: aims ? ValueKey('killer-target-${p.name}') : ValueKey('lives-row-${p.name}'),
+                valueLabel: aims ? l10n.roundTarget : null,
+                valueIcons: aims ? null : lives,
+                heroValue: aims,
+                dense: dense,
               );
             },
           ),

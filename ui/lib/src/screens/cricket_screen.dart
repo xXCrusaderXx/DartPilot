@@ -292,9 +292,9 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
                               8 -
                               (bot ? iconSize : (!narrow && colour != null ? 18 : 0)) -
                               (tight ? 8 + _textWidth(context, '${players[i].points}', pointsStyle(short)) : 0);
-                          // Shrunk to the column down to two thirds of its size before it is cut short, so two
-                          // players hardly ever read the same; a bot too long even for that goes by its level number.
-                          final Widget name = room >= _textWidth(context, label, style) * 2 / 3
+                          // Shrunk a little to the column before it is cut short, never to a size the oche cannot
+                          // read; a bot too long for that goes by its level number, which always fits.
+                          final Widget name = room >= _textWidth(context, label, style) * 0.85
                               ? FittedBox(
                                   fit: BoxFit.scaleDown,
                                   child: Text(label, maxLines: 1, softWrap: false, style: style),
@@ -304,7 +304,7 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
                                   maxLines: 1,
                                   softWrap: false,
                                   overflow: TextOverflow.ellipsis,
-                                  style: style?.copyWith(fontSize: (style.fontSize ?? 16) * 2 / 3),
+                                  style: style,
                                 );
                           final botIcon = Icon(Icons.smart_toy_outlined, size: iconSize, color: onCell(i));
                           if (narrow) {

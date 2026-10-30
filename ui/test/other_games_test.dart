@@ -268,7 +268,7 @@ void main() {
       );
       expect(tester.takeException(), isNull);
       final key = switch (mode) {
-        GameMode.killer => 'lives-Gina',
+        GameMode.killer => 'killer-target-Gina',
         GameMode.aroundTheClock => 'target-Gina',
         _ => 'score-Gina',
       };
@@ -279,6 +279,75 @@ void main() {
       expect(undo.bottom, lessThanOrEqualTo(412));
       expect(tester.getRect(find.byKey(const ValueKey('visit-dart-0'))).bottom, lessThanOrEqualTo(412));
       await tester.pumpWidget(const SizedBox());
+    }
+  });
+  testWidgets('Killer on a phone on its side keeps all four rows in view, the double to throw at in the row', (
+    tester,
+  ) async {
+    await resume(
+      tester,
+      recordOf(
+        GameMode.killer,
+        ['Anna', 'Ben', 'Cleo', 'Dora'],
+        const [],
+        settings: {
+          'numbers': [1, 5, 9, 12],
+        },
+      ),
+      size: const Size(915, 412),
+    );
+    expect(tester.takeException(), isNull);
+    expect(find.byKey(const ValueKey('killer-target')), findsNothing);
+    expect(tester.widget<Text>(find.byKey(const ValueKey('killer-target-Anna'))).data, 'D1');
+    final undo = tester.getRect(find.widgetWithText(OutlinedButton, 'Rückgängig'));
+    for (final key in ['killer-target-Anna', 'lives-Ben', 'lives-Cleo', 'lives-Dora']) {
+      final rect = tester.getRect(find.byKey(ValueKey(key)));
+      expect(rect.top, greaterThanOrEqualTo(0), reason: key);
+      expect(rect.bottom, lessThan(undo.top), reason: key);
+    }
+    // Nothing of the list is scrolled out of view: the last row is whole above the darts of the visit.
+    final last = tester.getRect(find.byKey(const ValueKey('killer-number-Dora')));
+    expect(last.bottom, lessThanOrEqualTo(tester.getRect(find.byKey(const ValueKey('visit-dart-0'))).top));
+  });
+
+  testWidgets('Cricket with six players on a phone keeps the names at the header size', (tester) async {
+    const players = ['Maximilian', 'Dieter', 'Bot · Vereinsspieler', 'Ben', 'Bot · Sehr stark', 'Anna'];
+    tester.view.physicalSize = const Size(412, 915);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final store = MemoryGameStore()
+      ..running = GameRecord(
+        id: 'cricket-6',
+        mode: GameMode.cricket,
+        started: DateTime(2026, 10, 30),
+        ended: DateTime(2026, 10, 30),
+        players: players,
+        bots: const {2: 5, 4: 8},
+        settings: const {},
+        throws: const [],
+      );
+    final statistics = Statistics(store, MemoryProfileStore(players));
+    await statistics.load();
+    await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), statistics: statistics));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('play-offline')));
+    await tester.pumpAndSettle();
+    // The resume card's buttons sit beside six names, past the edge of a phone with the test font
+    tester.widget<FilledButton>(find.byKey(const ValueKey('resume-interrupted'))).onPressed!();
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    final context = tester.element(find.text('Dieter'));
+    final full = Theme.of(context).textTheme.titleMedium!.fontSize;
+    expect(tester.widget<Text>(find.text('Dieter')).style?.fontSize, full);
+    // A name too long for its column is cut short at full size; a bot goes by its icon and level number.
+    final long = tester.widget<Text>(find.text('Maximilian'));
+    expect(long.style?.fontSize, full);
+    expect(long.overflow, TextOverflow.ellipsis);
+    final bots = find.byIcon(Icons.smart_toy_outlined);
+    expect(bots, findsNWidgets(2));
+    for (final (i, level) in [(0, '5'), (1, '8')]) {
+      final header = find.ancestor(of: bots.at(i), matching: find.byType(Row)).first;
+      expect(tester.widget<Text>(find.descendant(of: header, matching: find.text(level))).style?.fontSize, full);
     }
   });
 }

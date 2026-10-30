@@ -22,6 +22,8 @@ class PlayerRow extends StatelessWidget {
     this.valueIcons,
     this.heroValue = true,
     this.valueLabel,
+    this.detailsIcons,
+    this.dense = false,
   });
 
   final String name;
@@ -51,6 +53,13 @@ class PlayerRow extends StatelessWidget {
   /// What the value is, small before it, where the bare figure could be read as points: "Target"
   final String? valueLabel;
 
+  /// Icons before the details, as Killer's lives when the row's value is the double to throw at
+  final Widget? detailsIcons;
+
+  /// For a panel too low for every player's row at full height: less room around the row, the details on the name's
+  /// line and the active value at the size of the others'
+  final bool dense;
+
   /// The active player's value from afar: like the X01 score, by the panel's width within bounds
   static double _farSize(double width) => (width * 0.18).clamp(57, 140).toDouble();
 
@@ -65,7 +74,7 @@ class PlayerRow extends StatelessWidget {
     final onBlock = active && scoreboard ? palette.onHighlight : null;
     final colour = StatisticsScope.maybeOf(context)?.colourOf(name);
     final valueStyle = scoreStyle(
-      active && heroValue
+      active && heroValue && !dense
           ? (far ? theme.textTheme.displayLarge : theme.textTheme.displayMedium)
           : (far ? theme.textTheme.displaySmall : theme.textTheme.headlineMedium),
     )?.copyWith(fontWeight: FontWeight.w700, color: valueColour ?? onBlock);
@@ -83,8 +92,22 @@ class PlayerRow extends StatelessWidget {
       );
     }
 
+    // Progress, hit rate or record: read from the oche as well, where they are part of the game
+    final detailsStyle = GameText.of(context).detail?.copyWith(color: onBlock ?? theme.colorScheme.onSurfaceVariant);
+    final label = [
+      if (valueLabel != null) ...[
+        Text(
+          valueLabel!.toUpperCase(),
+          style: theme.textTheme.labelMedium?.copyWith(
+            letterSpacing: 1.2,
+            color: onBlock ?? theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(width: 8),
+      ],
+    ];
     Widget row(double width) => Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: dense ? 4 : 10),
       child: Row(
         children: [
           if (leading != null) ...[leading!, const SizedBox(width: 12)],
@@ -98,43 +121,70 @@ class PlayerRow extends StatelessWidget {
           ],
           if (colour != null) ...[PlayerDot(colour, ring: onBlock), const SizedBox(width: 8)],
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            // Dense, the details follow the name on its line instead of taking one of their own
+            child: Flex(
+              direction: dense ? Axis.horizontal : Axis.vertical,
+              crossAxisAlignment: dense ? CrossAxisAlignment.center : CrossAxisAlignment.start,
               children: [
-                Text(
-                  scoreboard && active ? name.toUpperCase() : name,
-                  overflow: TextOverflow.ellipsis,
-                  // From afar a size above the details below it, as in the X01 panel
-                  style:
-                      (far
-                              ? theme.textTheme.headlineMedium
-                              : active
-                              ? theme.textTheme.titleLarge
-                              : theme.textTheme.titleMedium)
-                          ?.copyWith(fontWeight: active ? FontWeight.w800 : null, color: onBlock),
-                ),
-                if (details != null && (!far || detailsFromAfar))
-                  Text(
-                    details!,
-                    key: detailsKey,
-                    // Progress, hit rate or record: read from the oche as well, where they are part of the game
-                    style: GameText.of(context).detail?.copyWith(color: onBlock ?? theme.colorScheme.onSurfaceVariant),
+                Flexible(
+                  flex: dense ? 2 : 0,
+                  fit: FlexFit.loose,
+                  child: Text(
+                    scoreboard && active ? name.toUpperCase() : name,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: dense ? 1 : null,
+                    // From afar a size above the details below it, as in the X01 panel
+                    style:
+                        (far
+                                ? theme.textTheme.headlineMedium
+                                : active
+                                ? theme.textTheme.titleLarge
+                                : theme.textTheme.titleMedium)
+                            ?.copyWith(fontWeight: active ? FontWeight.w800 : null, color: onBlock),
                   ),
+                ),
+                if (details != null && (!far || detailsFromAfar)) ...[
+                  if (dense) const SizedBox(width: 8),
+                  Flexible(
+                    flex: dense ? 1 : 0,
+                    fit: FlexFit.loose,
+                    child: Row(
+                      mainAxisSize: dense ? MainAxisSize.min : MainAxisSize.max,
+                      children: [
+                        if (detailsIcons != null) ...[
+                          Flexible(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: IconTheme.merge(
+                                data: IconThemeData(
+                                  size: (detailsStyle?.fontSize ?? 12) * 1.4,
+                                  color: onBlock ?? theme.colorScheme.onSurface,
+                                ),
+                                child: detailsIcons!,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        Flexible(
+                          child: Text(
+                            details!,
+                            key: detailsKey,
+                            maxLines: dense ? 1 : null,
+                            overflow: dense ? TextOverflow.ellipsis : null,
+                            style: detailsStyle,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
           const SizedBox(width: 12),
-          if (valueLabel != null) ...[
-            Text(
-              valueLabel!.toUpperCase(),
-              style: theme.textTheme.labelMedium?.copyWith(
-                letterSpacing: 1.2,
-                color: onBlock ?? theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(width: 8),
-          ],
-          if (active && far && heroValue)
+          if (active && far && heroValue) ...[
+            ...label,
             // From the oche the value at stake grows with the panel, as the X01 score does; long values shrink to fit
             ConstrainedBox(
               constraints: BoxConstraints(maxWidth: width * 0.6),
@@ -142,14 +192,29 @@ class PlayerRow extends StatelessWidget {
                 fit: BoxFit.scaleDown,
                 child: valueText(valueStyle?.copyWith(fontSize: _farSize(width), height: 1.0)),
               ),
-            )
-          else if (valueIcons != null)
+            ),
+          ] else if (valueIcons != null) ...[
+            ...label,
             ConstrainedBox(
               constraints: BoxConstraints(maxWidth: width * 0.5),
               child: FittedBox(fit: BoxFit.scaleDown, child: valueText(valueStyle)),
-            )
-          else
-            Text(value, key: valueKey, style: valueStyle),
+            ),
+          ] else
+            // A long value, such as the doubles a Killer throws at, shrinks with its label before it pushes the name
+            // out
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: width * 0.4),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ...label,
+                    Text(value, key: valueKey, style: valueStyle),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -170,7 +235,7 @@ class PlayerRow extends StatelessWidget {
       body = Card(margin: EdgeInsets.zero, child: content);
     }
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(bottom: dense ? 4 : 8),
       child: Opacity(opacity: enabled ? 1 : 0.5, child: body),
     );
   }
