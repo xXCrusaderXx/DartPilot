@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../board/dart_throw.dart';
+import '../board/dartboard.dart';
 import '../display.dart';
 import '../theme.dart';
 
@@ -311,6 +313,7 @@ class GameScreenTiles extends StatelessWidget {
             ),
           ),
         ),
+        const BoardColourTiles(),
         ListTile(title: Text(l10n.celebration), subtitle: Text(l10n.celebrationHint)),
         segmented(
           'celebration',
@@ -321,6 +324,81 @@ class GameScreenTiles extends StatelessWidget {
           ],
           display.celebration,
           (v) => display.set(celebration: v),
+        ),
+      ],
+    );
+  }
+}
+
+/// The drawn board's colours and the darts' colour, with a small board to see them on
+class BoardColourTiles extends StatelessWidget {
+  const BoardColourTiles({super.key});
+
+  /// Three darts around the treble 20, the last one the brightest
+  static final _sample = [
+    DartThrow(BoardPoint.polar(103, 92), ThrowInput.board),
+    DartThrow(BoardPoint.polar(60, 80), ThrowInput.board),
+    DartThrow(BoardPoint.polar(103, 89), ThrowInput.board),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final display = DisplayScope.of(context);
+    final palette = AppPalette.of(context);
+    final dartNames = [l10n.dartWhite, l10n.dartYellow, l10n.dartCyan, l10n.dartMagenta];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ListTile(title: Text(l10n.boardColours), subtitle: Text(l10n.boardColoursHint)),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: SegmentedButton<BoardColours>(
+            key: const ValueKey('board-colours'),
+            segments: [
+              ButtonSegment(value: BoardColours.classic, label: Text(l10n.boardClassic)),
+              ButtonSegment(value: BoardColours.colourSafe, label: Text(l10n.boardColourSafe)),
+              ButtonSegment(value: BoardColours.contrast, label: Text(l10n.boardContrast)),
+            ],
+            selected: {display.boardColours},
+            onSelectionChanged: (s) => display.set(boardColours: s.first),
+          ),
+        ),
+        ListTile(title: Text(l10n.dartColour)),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _Swatch(
+                key: const ValueKey('dart-colour-accent'),
+                colour: palette.accent,
+                label: l10n.dartAccent,
+                selected: display.dartColour == null,
+                onTap: () => display.setDartColour(null),
+              ),
+              for (var i = 0; i < dartSwatches.length; ++i)
+                _Swatch(
+                  key: ValueKey('dart-colour-$i'),
+                  colour: dartSwatches[i],
+                  label: dartNames[i],
+                  selected: display.dartColour == dartSwatches[i],
+                  onTap: () => display.setDartColour(dartSwatches[i]),
+                ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Center(
+            child: SizedBox.square(
+              dimension: 180,
+              child: ExcludeSemantics(
+                child: Dartboard(key: const ValueKey('board-preview'), throws: _sample),
+              ),
+            ),
+          ),
         ),
       ],
     );

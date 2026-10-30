@@ -1559,5 +1559,16 @@
         "type": "int"
       }
     }
-  }
+  },
+  "boardColours": "Board colours",
+  "boardColoursHint": "For the drawn board; a photographed board keeps its own",
+  "boardClassic": "Classic",
+  "boardColourSafe": "Colour-safe",
+  "boardContrast": "Contrast",
+  "dartColour": "Darts on the board",
+  "dartAccent": "Accent",
+  "dartWhite": "White",
+  "dartYellow": "Yellow",
+  "dartCyan": "Cyan",
+  "dartMagenta": "Magenta"
 }

@@ -2355,4 +2355,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String celebrateCheckout(int points) {
     return 'Checkout $points';
   }
+
+  @override
+  String get boardColours => 'Board colours';
+
+  @override
+  String get boardColoursHint => 'For the drawn board; a photographed board keeps its own';
+
+  @override
+  String get boardClassic => 'Classic';
+
+  @override
+  String get boardColourSafe => 'Colour-safe';
+
+  @override
+  String get boardContrast => 'Contrast';
+
+  @override
+  String get dartColour => 'Darts on the board';
+
+  @override
+  String get dartAccent => 'Accent';
+
+  @override
+  String get dartWhite => 'White';
+
+  @override
+  String get dartYellow => 'Yellow';
+
+  @override
+  String get dartCyan => 'Cyan';
+
+  @override
+  String get dartMagenta => 'Magenta';
 }

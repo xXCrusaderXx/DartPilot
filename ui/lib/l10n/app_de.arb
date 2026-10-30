@@ -680,5 +680,16 @@
   "celebrationFull": "Voll",
   "celebrationSubtle": "Dezent",
   "celebrationOff": "Aus",
-  "celebrateCheckout": "Checkout {points}"
+  "celebrateCheckout": "Checkout {points}",
+  "boardColours": "Board-Farben",
+  "boardColoursHint": "Für das gezeichnete Board; ein fotografiertes Board behält seine eigenen",
+  "boardClassic": "Klassisch",
+  "boardColourSafe": "Farbsicher",
+  "boardContrast": "Kontrast",
+  "dartColour": "Darts auf dem Board",
+  "dartAccent": "Akzent",
+  "dartWhite": "Weiß",
+  "dartYellow": "Gelb",
+  "dartCyan": "Cyan",
+  "dartMagenta": "Magenta"
 }
