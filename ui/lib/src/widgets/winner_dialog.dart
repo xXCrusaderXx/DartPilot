@@ -20,7 +20,8 @@ class ResultLine {
 
 /// End of a match, readable from the oche: the winner large in their colour, the [result] (such as the legs and the
 /// winning checkout), a line per player, and the figures of this game behind Details. A rematch with the same players
-/// is the first way on when the game offers one; a new game, the menu and undo follow.
+/// is the first way on when the game offers one; a new game, the menu and undo follow. The result stays open until
+/// [readyForRematch] agrees, so a player who cancels that check is back at the result, not at a finished game.
 Future<void> showWinnerDialog(
   BuildContext context, {
   required String winner,
@@ -29,7 +30,8 @@ Future<void> showWinnerDialog(
   required WidgetBuilder newGame,
   String? result,
   List<ResultLine> lines = const [],
-  VoidCallback? onRematch,
+  WidgetBuilder? rematch,
+  Future<bool> Function()? readyForRematch,
 }) {
   final l10n = AppLocalizations.of(context);
   return showDialog<void>(
@@ -50,6 +52,13 @@ Future<void> showWinnerDialog(
         Navigator.of(context).pushReplacement(MaterialPageRoute<void>(builder: newGame));
       }
 
+      Future<void> again(WidgetBuilder rematch) async {
+        if (readyForRematch != null && !await readyForRematch()) return;
+        if (!dialogContext.mounted || !context.mounted) return;
+        close();
+        Navigator.of(context).pushReplacement(MaterialPageRoute<void>(builder: rematch));
+      }
+
       final undo = TextButton(
         key: const ValueKey('result-undo'),
         onPressed: () {
@@ -64,7 +73,7 @@ Future<void> showWinnerDialog(
         child: Text(l10n.newGame),
       );
       // A rematch is the one way on that stands out: across the dialog, with the others small beside undo above it.
-      final Widget buttons = onRematch == null
+      final Widget buttons = rematch == null
           ? OverflowBar(
               alignment: MainAxisAlignment.end,
               overflowAlignment: OverflowBarAlignment.end,
@@ -94,10 +103,7 @@ Future<void> showWinnerDialog(
                     minimumSize: Size.fromHeight(far ? 72 : 52),
                     textStyle: far ? theme.textTheme.headlineSmall : theme.textTheme.titleMedium,
                   ),
-                  onPressed: () {
-                    close();
-                    onRematch();
-                  },
+                  onPressed: () => again(rematch),
                   icon: const Icon(Icons.replay),
                   label: Text(l10n.rematch),
                 ),

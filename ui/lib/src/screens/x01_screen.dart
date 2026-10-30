@@ -189,12 +189,8 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
       lines: [for (final p in players) ResultLine(p.name, value: legs ? '${p.legsWon}' : null, figures: average(p))],
       onUndo: () => setState(_game.undo),
       newGame: (_) => const X01SetupScreen(),
-      onRematch: widget.watching
-          ? null
-          : () async {
-              if (!await confirmBoardEmpty(context) || !mounted) return;
-              Navigator.of(context).pushReplacement(MaterialPageRoute<void>(builder: (_) => _rematch()));
-            },
+      rematch: widget.watching ? null : (_) => _rematch(),
+      readyForRematch: () => confirmBoardEmpty(context),
     );
   }
 
