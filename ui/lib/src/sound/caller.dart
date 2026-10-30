@@ -30,8 +30,9 @@ class SystemVoice implements Voice {
   @override
   Future<void> speak(String text, {required String language, required double volume}) async {
     if (_linux) {
-      // spd-say takes the volume from -100 to 100.
-      await Process.run('spd-say', ['-l', language, '-i', '${(volume * 200 - 100).round()}', text]);
+      // spd-say takes the volume from -100 to 100. British English, as the callers at darts speak it.
+      final code = language == 'en' ? 'en-GB' : language;
+      await Process.run('spd-say', ['-l', code, '-i', '${(volume * 200 - 100).round()}', text]);
       return;
     }
     final tts = _tts ??= FlutterTts();
@@ -70,7 +71,8 @@ class Caller extends ChangeNotifier {
   Future<void> load() async {
     if (!store) return;
     final prefs = await SharedPreferences.getInstance();
-    enabled = prefs.getBool(_enabledKey) ?? false;
+    // On by default where the device can speak, so a game sounds like one from the start
+    enabled = prefs.getBool(_enabledKey) ?? await voice.available;
     volume = prefs.getDouble(_volumeKey) ?? 0.8;
     notifyListeners();
   }

@@ -6,8 +6,10 @@ import 'package:dartpilot/src/games/cricket.dart';
 import 'package:dartpilot/src/games/killer.dart';
 import 'package:dartpilot/src/games/round_games.dart';
 import 'package:dartpilot/src/games/x01.dart';
+import 'package:dartpilot/src/screens/settings_screen.dart';
 import 'package:dartpilot/src/sound/caller.dart';
 import 'package:dartpilot/src/sound/game_calls.dart';
+import 'package:dartpilot/src/sound/sfx.dart';
 import 'package:dartpilot/src/sound/x01_calls.dart';
 import 'package:dartpilot/src/stats/statistics.dart';
 import 'package:flutter/material.dart';
@@ -44,8 +46,9 @@ void main() {
 
   test('bust, game shot and the match', () {
     final game = X01Game(const X01Settings(players: ['Anna'], startScore: 40, legsToWin: 2));
-    expect(callsAfter(game, at(Ring.triple)), ['Bust', 'Anna, you require 40']);
-    expect(callsAfter(game, at(Ring.double)), ['Game shot!']);
+    // A caller calls a bust "No score": it scores nothing.
+    expect(callsAfter(game, at(Ring.triple)), ['No score', 'Anna, you require 40']);
+    expect(callsAfter(game, at(Ring.double)), ['Game shot, and the first leg!']);
     expect(callsAfter(game, at(Ring.double)), ['Game shot, and the match!']);
   });
 
@@ -66,9 +69,11 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('caller-enabled')));
     await tester.pumpAndSettle();
     expect(caller.enabled, isTrue);
-    await tester.ensureVisible(find.byKey(const ValueKey('caller-test')));
+    await tester.ensureVisible(find.byKey(const ValueKey('sound-sample')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('caller-test')));
+    await tester.tap(find.byKey(const ValueKey('sound-sample')));
+    // Three darts, then the caller after the last one's sound
+    await tester.pump(SoundSettingsScreen.sampleDartTime * 2 + callerDelay);
     expect(voice.spoken.last, 'One hundred and eighty!');
 
     await tester.binding.handlePopRoute();
@@ -87,7 +92,15 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('keypad-20')));
       await tester.pumpAndSettle();
     }
+    // The caller waits for the dart's sound
+    await tester.pump(callerDelay);
     expect(voice.spoken.last, '60');
+  });
+
+  test('a leg is called by its number, as a caller counts them', () {
+    expect(callLegShot(2), 'Game shot, and the second leg!');
+    expect(callLegShot(10), 'Game shot, and the tenth leg!');
+    expect(callLegShot(11), 'Game shot, and leg 11!');
   });
 
   test('Cricket calls the marks of each visit, and the match', () {

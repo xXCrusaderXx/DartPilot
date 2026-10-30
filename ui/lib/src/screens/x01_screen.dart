@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../board/dart_throw.dart';
 import '../games/x01.dart';
+import '../sound/effects.dart';
 import '../sound/caller.dart';
+import '../sound/sfx.dart';
 import '../sound/game_calls.dart';
 import '../sound/x01_calls.dart';
 import '../bots/bot_turns.dart';
@@ -123,14 +125,21 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
     final legBefore = _game.legNumber;
     final visitsBefore = _game.visits.length;
     // With an engine, the player's darts wait for their takeout instead; a bot's darts never go to the board.
-    final holds = isBotTurn || !EngineScope.read(context).isConnected;
+    final bot = isBotTurn;
+    final holds = bot || !EngineScope.read(context).isConnected;
     setState(() {
       _game.add(dart);
       // The visit that ended stays on show for a moment, so its total or bust is seen before the next player's.
       if (holds && _game.visits.length > visitsBefore && !_game.isFinished) _hold();
     });
     if (!widget.watching) {
-      CallerScope.read(context).call(x01Calls(_game, visitsBefore: visitsBefore, legBefore: legBefore), callLanguage);
+      dartFeedback(
+        context,
+        dart,
+        effect: x01Effect(_game, dart, visitsBefore: visitsBefore, legBefore: legBefore),
+        calls: x01Calls(_game, visitsBefore: visitsBefore, legBefore: legBefore),
+        bot: bot,
+      );
     }
     if (_outcome != before) {
       _outcomeChanged(before);

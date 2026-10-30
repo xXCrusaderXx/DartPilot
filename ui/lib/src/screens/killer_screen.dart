@@ -8,9 +8,9 @@ import '../bots/bot_turns.dart';
 import '../games/dart_game.dart';
 import '../games/killer.dart';
 import '../input/takeout_gate.dart';
-import '../sound/caller.dart';
+import '../sound/effects.dart';
+import '../sound/sfx.dart';
 import '../sound/game_calls.dart';
-import '../sound/x01_calls.dart';
 import '../stats/game_record.dart';
 import '../stats/statistics.dart';
 import '../widgets/winner_dialog.dart';
@@ -113,10 +113,12 @@ class _KillerScreenState extends State<KillerScreen> with RecordsGame, BotTurns 
   void _add(DartThrow dart) {
     final livesBefore = [for (final p in _game.players) p.lives];
     final killersBefore = [for (final p in _game.players) p.isKiller];
+    final bot = isBotTurn;
     setState(() => _game.add(dart));
     if (!widget.watching) {
-      CallerScope.read(context)
-          .call(killerCalls(_game, livesBefore: livesBefore, killersBefore: killersBefore), callLanguage);
+      final effect = gameEffect(dart, finished: _game.isFinished, visitEnded: _game.dartsInVisit == 0);
+      final calls = killerCalls(_game, livesBefore: livesBefore, killersBefore: killersBefore);
+      dartFeedback(context, dart, effect: effect, calls: calls, bot: bot);
     }
     final l10n = AppLocalizations.of(context);
     for (var i = 0; i < _game.players.length; ++i) {

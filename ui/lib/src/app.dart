@@ -13,6 +13,7 @@ import 'engine/engine_events.dart';
 import 'engine/engine_manager.dart';
 import 'engine/pairing_tokens.dart';
 import 'sound/caller.dart';
+import 'sound/sfx.dart';
 import 'stats/dart_links.dart';
 import 'stats/statistics.dart';
 import 'theme.dart';
@@ -29,6 +30,7 @@ class DartPilotApp extends StatefulWidget {
     this.cameraOrder,
     this.dartLinks,
     this.caller,
+    this.sfx,
     this.display,
   });
 
@@ -55,6 +57,9 @@ class DartPilotApp extends StatefulWidget {
   /// The score caller; a silent one when none is given (tests)
   final Caller? caller;
 
+  /// The sound effects and vibration; on but only recorded when none is given (tests)
+  final Sfx? sfx;
+
   /// Display style and viewing distance; kept in memory only when none is given (tests)
   final DisplaySettings? display;
 
@@ -72,6 +77,7 @@ class _DartPilotAppState extends State<DartPilotApp> {
   late final CameraOrder _cameraOrder = (widget.cameraOrder ?? CameraOrder())..attach(_engine);
   late final DartLinks _dartLinks = widget.dartLinks ?? DartLinks();
   late final Caller _caller = widget.caller ?? Caller(RecordingVoice(), store: false);
+  late final Sfx _sfx = widget.sfx ?? Sfx(RecordingEffects(), store: false);
   late final DisplaySettings _display = widget.display ?? DisplaySettings(store: false);
   final GlobalKey<ScaffoldMessengerState> _messenger = GlobalKey();
   StreamSubscription<EngineEvent>? _events;
@@ -198,11 +204,14 @@ class _DartPilotAppState extends State<DartPilotApp> {
             links: _dartLinks,
             child: CallerScope(
               caller: _caller,
-              child: DisplayScope(
-                settings: _display,
-                child: EngineSettingsScope(
-                  settings: _settings,
-                  child: manager == null ? app : LocalEngineScope(manager: manager, settings: _settings, child: app),
+              child: SfxScope(
+                sfx: _sfx,
+                child: DisplayScope(
+                  settings: _display,
+                  child: EngineSettingsScope(
+                    settings: _settings,
+                    child: manager == null ? app : LocalEngineScope(manager: manager, settings: _settings, child: app),
+                  ),
                 ),
               ),
             ),

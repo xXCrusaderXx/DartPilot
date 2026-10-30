@@ -7,9 +7,9 @@ import '../games/around_the_clock.dart';
 import '../bots/bot_turns.dart';
 import '../games/dart_game.dart';
 import '../input/takeout_gate.dart';
-import '../sound/caller.dart';
+import '../sound/effects.dart';
+import '../sound/sfx.dart';
 import '../sound/game_calls.dart';
-import '../sound/x01_calls.dart';
 import '../stats/game_record.dart';
 import '../stats/statistics.dart';
 import '../widgets/winner_dialog.dart';
@@ -102,8 +102,12 @@ class _AroundTheClockScreenState extends State<AroundTheClockScreen> with Record
   void addBotDart(DartThrow dart) => _add(dart);
 
   void _add(DartThrow dart) {
+    final bot = isBotTurn;
     setState(() => _game.add(dart));
-    if (!widget.watching) CallerScope.read(context).call(aroundTheClockCalls(_game), callLanguage);
+    if (!widget.watching) {
+      final effect = gameEffect(dart, finished: _game.isFinished, visitEnded: _game.dartsInVisit == 0);
+      dartFeedback(context, dart, effect: effect, calls: aroundTheClockCalls(_game), bot: bot);
+    }
     final l10n = AppLocalizations.of(context);
     if (_game.currentVisit.length == 3 && _game.currentVisit.every((d) => d.$2)) {
       _celebrations.show(l10n.celebrateThreeHits);

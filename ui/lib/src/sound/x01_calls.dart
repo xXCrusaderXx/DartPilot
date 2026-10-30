@@ -2,11 +2,18 @@ import '../games/x01.dart';
 
 /// The caller speaks English whatever the app's language, as callers at darts do; these are speech, not screen text.
 const callMatchShot = 'Game shot, and the match!';
-const callGameShot = 'Game shot!';
-const callBust = 'Bust';
 const callNoScore = 'No score';
+
+/// A bust scores nothing, and a caller says so in those words
+const callBust = callNoScore;
 const callOneEighty = 'One hundred and eighty!';
 const callLanguage = 'en';
+
+const _ordinals = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth'];
+
+/// "Game shot, and the first leg!" for the leg `leg` (from 1) just won
+String callLegShot(int leg) =>
+    leg <= _ordinals.length ? 'Game shot, and the ${_ordinals[leg - 1]} leg!' : 'Game shot, and leg $leg!';
 
 String callYouRequire(String name, int remaining) => '$name, you require $remaining';
 
@@ -15,7 +22,7 @@ String callYouRequire(String name, int remaining) => '$name, you require $remain
 /// `visits.length` and `legNumber` before the dart.
 List<String> x01Calls(X01Game game, {required int visitsBefore, required int legBefore}) {
   if (game.isFinished) return [callMatchShot];
-  if (game.legNumber != legBefore) return [callGameShot];
+  if (game.legNumber != legBefore) return [callLegShot(legBefore)];
   if (game.visits.length <= visitsBefore) return const [];
   final ended = game.visits[game.visits.length - 2];
   final calls = [

@@ -10,7 +10,7 @@ Deutsch: [Anleitung für Spieler](user-guide.de.md).
 - [Games](#games)
 - [Training](#training)
 - [Players and statistics](#players-and-statistics)
-- [Score caller](#score-caller)
+- [Sound and score caller](#sound-and-score-caller)
 - [A phone or tablet as a second display](#a-phone-or-tablet-as-a-second-display)
 - [Troubleshooting](#troubleshooting)
 
@@ -30,7 +30,7 @@ Download the file for your device from the [latest release](https://github.com/x
 1. Make the file executable and start it: right-click it, allow it to run as a program in its properties, and double-click. In a terminal: `chmod +x DartPilot-*.AppImage` and `./DartPilot-*.AppImage`.
 2. To get DartPilot into your application menu, use a tool such as Gear Lever or AppImageLauncher, or move the file to `~/Applications`.
 
-The AppImage runs on Ubuntu 22.04, Debian 12, Fedora 38 and newer, and on other distributions of that age. It needs a desktop with GTK 3, which every common desktop has. For the score caller, install speech-dispatcher (see [Score caller](#score-caller)).
+The AppImage runs on Ubuntu 22.04, Debian 12, Fedora 38 and newer, and on other distributions of that age. It needs a desktop with GTK 3, which every common desktop has. For the score caller, install speech-dispatcher (see [Sound and score caller](#sound-and-score-caller)).
 
 ### Android
 
@@ -100,9 +100,13 @@ Create a profile for every player; each game a profile plays counts for its stat
 
 **Export** saves all darts as CSV, or all games with the figures as JSON, for a spreadsheet or your own analysis. The file goes to the Downloads folder on a PC, to the app's folder on Android, or is downloaded by the browser.
 
-## Score caller
+## Sound and score caller
 
-The score caller announces the score of each visit, like a caller at a tournament. Switch it on and set its volume under **Settings → Score caller**; **Test** plays a sample.
+The score caller announces the score of each visit, like a caller at a tournament: "One hundred and eighty!", "No score" for a bust, "Game shot, and the first leg!". It is on where the device can speak.
+
+A few short effects go with it: a soft thud for each dart, two falling notes for a bust, a short chord for a game shot, and a double tick when the cameras ask you to confirm a dart. With the caller on, it speaks the end of a visit and the 180 without an extra sound. On a phone, each dart you enter vibrates.
+
+Under **Settings → Sound & caller** you switch effects, caller and vibration on or off and set their volume; **Play a sample** plays a sample visit.
 
 On Linux the caller uses speech-dispatcher, which some distributions do not install by default:
 
@@ -135,6 +139,6 @@ The phone then shows the running game as it goes on. Darts are entered and corre
 | No engine found in the network | Both devices must be in the same home network, not a guest network. Type the address shown on the engine's PC. |
 | The browser version cannot connect | Load it over `http://`, not `https://`, and type the engine's address; browsers cannot search the network. |
 | Darts are detected in the wrong field | **Settings → Setup diagnosis** checks the setup step by step; [setup diagnosis](setup-diagnosis.md) explains each finding. Correct wrong darts in the game; it helps the measurements. |
-| No voice | Install speech-dispatcher on Linux (see [Score caller](#score-caller)) and check the caller volume. |
+| No voice | Install speech-dispatcher on Linux (see [Sound and score caller](#sound-and-score-caller)) and check the caller volume. |
 
 Still stuck? Open an [issue](https://github.com/xXCrusaderXx/DartPilot/issues) and give the version from **Settings → About DartPilot**, your device, and what you did.

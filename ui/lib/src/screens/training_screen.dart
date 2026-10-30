@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../sound/effects.dart';
+import '../sound/sfx.dart';
 import '../../l10n/app_localizations.dart';
 import '../games/training.dart';
 import '../input/game_input.dart';
@@ -61,7 +63,10 @@ class _TrainingScreenState extends State<TrainingScreen> {
       takeout: _takeout,
       game: _training,
       shownThrows: visit,
-      onDart: (dart) => setState(() => _training.add(dart)),
+      onDart: (dart) {
+        setState(() => _training.add(dart));
+        dartFeedback(context, dart, effect: dartEffect(dart));
+      },
       onChanged: () => setState(() {}),
     );
 

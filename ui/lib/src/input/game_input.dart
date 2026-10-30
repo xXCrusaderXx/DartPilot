@@ -11,6 +11,8 @@ import '../engine/engine_connection.dart';
 import '../engine/engine_events.dart';
 import '../games/dart_game.dart';
 import '../screens/throw_views_screen.dart';
+import '../sound/effects.dart';
+import '../sound/sfx.dart';
 import 'takeout_gate.dart';
 import 'throw_input_panel.dart';
 import '../board/score_text.dart';
@@ -204,6 +206,8 @@ class _GameInputState extends State<GameInput> {
           // An accepted dart without a point bounced out or landed off the board.
           _add(_engineDart(point ?? fieldCentre(Ring.miss, geometry: _geometry), throwId, confidence));
         } else {
+          // The player is looking at the board, not the screen: a tick says that a dart waits for them.
+          SfxScope.read(context).play(Effect.attention);
           setState(() => _pending = event);
         }
       case EngineThrowCorrected(:final client, :final throwId, :final action, :final point):
@@ -245,6 +249,7 @@ class _GameInputState extends State<GameInput> {
     if (inVisit == 0) return;
     final missing = 3 - inVisit;
     final l10n = AppLocalizations.of(context);
+    SfxScope.read(context).play(Effect.attention);
     final countAsMiss = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(

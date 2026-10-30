@@ -7,9 +7,9 @@ import '../bots/bot_turns.dart';
 import '../games/dart_game.dart';
 import '../games/round_games.dart';
 import '../input/takeout_gate.dart';
-import '../sound/caller.dart';
+import '../sound/effects.dart';
+import '../sound/sfx.dart';
 import '../sound/game_calls.dart';
-import '../sound/x01_calls.dart';
 import '../stats/game_record.dart';
 import '../stats/statistics.dart';
 import '../widgets/winner_dialog.dart';
@@ -137,9 +137,12 @@ class _RoundGameScreenState extends State<RoundGameScreen> with RecordsGame, Bot
   void _add(DartThrow dart) {
     final player = _game.current;
     final scoreBefore = _game.players[player].score;
+    final bot = isBotTurn;
     setState(() => _game.add(dart));
     if (!widget.watching) {
-      CallerScope.read(context).call(roundCalls(_game, player: player, scoreBefore: scoreBefore), callLanguage);
+      final effect = gameEffect(dart, finished: _game.isFinished, visitEnded: _game.dartsInVisit == 0);
+      final calls = roundCalls(_game, player: player, scoreBefore: scoreBefore);
+      dartFeedback(context, dart, effect: effect, calls: calls, bot: bot);
     }
     final l10n = AppLocalizations.of(context);
     if (_game.wonAtOnce) {
