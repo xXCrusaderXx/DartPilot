@@ -220,7 +220,7 @@ void main() {
     expect(afterKill.running, isNull);
 
     // Undo from the result plays on: the kept game is running again.
-    await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text('Rückgängig')));
+    await tester.tap(find.byKey(const ValueKey('result-undo')));
     await tester.pumpAndSettle();
     expect(store.running?.isFinished, isFalse);
   });
