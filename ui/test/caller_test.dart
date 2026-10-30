@@ -14,6 +14,7 @@ import 'package:dartpilot/src/sound/x01_calls.dart';
 import 'package:dartpilot/src/stats/statistics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'navigation.dart';
 
@@ -216,5 +217,22 @@ void main() {
     }
     expect(dart(at(Ring.double, 3)), ['Ben, 1 life left']);
     expect(dart(at(Ring.double, 3)), ['Ben is out', 'Anna wins']);
+  });
+
+  test('the caller starts on only where the device has an English voice, and keeps a saved choice', () async {
+    SharedPreferences.setMockInitialValues({});
+    final english = Caller(RecordingVoice());
+    await english.load();
+    expect(english.enabled, isTrue);
+
+    SharedPreferences.setMockInitialValues({});
+    final none = Caller(RecordingVoice(english: false));
+    await none.load();
+    expect(none.enabled, isFalse);
+
+    SharedPreferences.setMockInitialValues({'caller.enabled': true});
+    final chosen = Caller(RecordingVoice(english: false));
+    await chosen.load();
+    expect(chosen.enabled, isTrue);
   });
 }
