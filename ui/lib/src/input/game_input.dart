@@ -91,6 +91,9 @@ class _GameInputState extends State<GameInput> {
   /// wait until they are in.
   bool _enteringMissing = false;
 
+  /// Where the visit whose missing darts are typed in starts among the game's darts
+  int _missingFrom = 0;
+
   /// How long a notice about something that already happened stays
   static const Duration noticeTime = Duration(seconds: 6);
 
@@ -129,7 +132,10 @@ class _GameInputState extends State<GameInput> {
       engine?.rejectThrow(id, 'undone in the app');
     }
     _engineIds = ids;
-    if (_enteringMissing && widget.game.dartsInVisit == 0) _missingEntered();
+    // An undo inside that visit leaves its darts still owed; only one back past its start ends the typing in, and the
+    // darts held for the visit after it are rejected below with the others. Nothing is replayed here: this runs while
+    // the screen builds.
+    if (_enteringMissing && widget.game.throws.length < _missingFrom) _enteringMissing = false;
     if (_held.isNotEmpty && !_waiting && !_enteringMissing) {
       for (final event in _held) {
         if (event is EngineThrow) engine?.rejectThrow(event.throwId, 'undone in the app');
@@ -439,7 +445,12 @@ class _GameInputState extends State<GameInput> {
     );
     if (!mounted) return;
     if (countAsMiss != true) {
-      if (widget.game.dartsInVisit > 0) setState(() => _enteringMissing = true);
+      if (widget.game.dartsInVisit > 0) {
+        setState(() {
+          _enteringMissing = true;
+          _missingFrom = widget.game.throws.length - widget.game.dartsInVisit;
+        });
+      }
       return;
     }
     _takenOut = true;
@@ -545,6 +556,8 @@ class _GameInputState extends State<GameInput> {
   Widget? _healthNotice(AppLocalizations l10n, ThemeData theme) {
     final colours = StatusColors.of(context);
     final warning = Color.alphaBlend(colours.warning.withValues(alpha: 0.22), theme.colorScheme.surface);
+    // While missing darts are typed in, their notice offers the keypad
+    final offerKeypad = _keypad != true && !_enteringMissing;
     final keypad = TextButton(
       key: const ValueKey('health-keypad'),
       onPressed: () => _setKeypad(true, remember: false),
@@ -559,7 +572,7 @@ class _GameInputState extends State<GameInput> {
           icon: Icons.link_off,
           title: l10n.gameConnectionLost,
           subtitle: l10n.gameConnectionLostHint,
-          actions: [if (_keypad != true) keypad],
+          actions: [if (offerKeypad) keypad],
         );
       case _EngineHealth.notCounting:
         final lost = engine?.cameraStatus.values.any((c) => c.state == 'lost') ?? false;
@@ -573,7 +586,7 @@ class _GameInputState extends State<GameInput> {
               : engine?.detection == 'paused'
               ? l10n.detectionPaused
               : l10n.detectionUnavailable,
-          actions: [if (_keypad != true) keypad],
+          actions: [if (offerKeypad) keypad],
         );
       case _EngineHealth.ok:
         if (!_back) return null;
@@ -705,21 +718,18 @@ class _GameInputState extends State<GameInput> {
       );
     }
     // What happened elsewhere is said beside whatever the player is asked now
-    final notices = [
-      ?_healthNotice(l10n, theme),
-      if (_elsewhere case final elsewhere?)
-        _Notice(
-          key: const ValueKey('corrected-elsewhere'),
-          color: theme.colorScheme.secondaryContainer,
-          icon: Icons.devices_other,
-          title: elsewhere.text,
-          actions: const [],
-        ),
-      ?prompt,
-    ];
-    final banner = notices.length <= 1
-        ? notices.firstOrNull
-        : Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: notices);
+    final health = _healthNotice(l10n, theme);
+    final elsewhere = _elsewhere == null
+        ? null
+        : _Notice(
+            key: const ValueKey('corrected-elsewhere'),
+            color: theme.colorScheme.secondaryContainer,
+            icon: Icons.devices_other,
+            title: _elsewhere!.text,
+            actions: const [],
+          );
+    final notices = [?health, ?elsewhere, ?prompt];
+    final banner = notices.length <= 1 ? notices.firstOrNull : _NoticeStack(notices, byPriority: [?prompt, ?health]);
     // The dart the player is asked about, framed in the panel's visit as well as here
     final marked = correcting != null && correcting < throws.length ? throws[correcting] : _elsewhere?.dart;
 
@@ -739,73 +749,88 @@ class _GameInputState extends State<GameInput> {
     );
     final labelStyle = text.far ? theme.textTheme.titleLarge : theme.textTheme.labelLarge;
     // The strip of last darts keeps one line of one height from the first dart on, so the keypad above never moves
-    // during a visit; what does not fit scrolls, the newest darts in view.
+    // during a visit; what does not fit scrolls, the newest darts in view. Whose visit ended stays at the left.
     final media = MediaQuery.of(context);
     final stripScaler = media.textScaler.clamp(maxScaleFactor: 1.3);
     final stripHeight = math.max(48.0, stripScaler.scale(chipStyle?.fontSize ?? 14) * 1.5 + 24);
+    final Widget? stripLabel = throws.isEmpty
+        ? null
+        : lastVisit == null || endedStart == visitStart
+        ? Text(l10n.recentDarts, style: labelStyle)
+        : Text(
+            [lastVisit.player, if (lastVisit.bust) l10n.bust else ?lastVisit.points?.toString()].join(' · '),
+            key: const ValueKey('recent-visit'),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: labelStyle?.copyWith(
+              color: lastVisit.bust ? theme.colorScheme.error : null,
+              fontWeight: lastVisit.bust ? FontWeight.w700 : null,
+            ),
+          );
     final strip = MediaQuery(
       data: media.copyWith(textScaler: stripScaler),
       child: SizedBox(
         key: const ValueKey('recent-strip'),
         height: stripHeight,
         child: LayoutBuilder(
-          builder: (context, constraints) => SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            reverse: true,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minWidth: constraints.maxWidth),
-              child: Row(
-                children: [
-                  if (throws.isNotEmpty)
-                    if (lastVisit == null || endedStart == visitStart)
-                      Text(l10n.recentDarts, style: labelStyle)
-                    else
-                      Text(
-                        [
-                          lastVisit.player,
-                          if (lastVisit.bust) l10n.bust else ?lastVisit.points?.toString(),
-                        ].join(' · '),
-                        key: const ValueKey('recent-visit'),
-                        style: labelStyle?.copyWith(
-                          color: lastVisit.bust ? theme.colorScheme.error : null,
-                          fontWeight: lastVisit.bust ? FontWeight.w700 : null,
-                        ),
-                      ),
-                  for (var i = endedStart; i < throws.length; ++i) ...[
-                    if (i == visitStart && i > endedStart)
-                      SizedBox(
-                        key: const ValueKey('recent-divider'),
-                        height: 24,
-                        child: VerticalDivider(width: 9, thickness: 1, color: theme.colorScheme.outline),
-                      ),
-                    const SizedBox(width: 8),
-                    Opacity(
-                      opacity: i < visitStart && inVisit > 0 && correcting != i ? 0.55 : 1,
-                      child: ChoiceChip(
-                        key: ValueKey('recent-$i'),
-                        labelPadding: EdgeInsets.symmetric(horizontal: mixed ? 4 : 8),
-                        avatar: mixed
-                            ? Icon(throws[i].input == ThrowInput.engine ? Icons.videocam : Icons.touch_app, size: 16)
-                            : null,
-                        showCheckmark: false,
-                        label: Text(throws[i].score.text(l10n), style: chipStyle),
-                        tooltip: l10n.correctDartTooltip,
-                        selected: correcting == i,
-                        onSelected: (_) => setState(() => _correcting = correcting == i ? null : i),
+          builder: (context, constraints) => Row(
+            children: [
+              if (stripLabel != null)
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: constraints.maxWidth * 0.4),
+                  child: stripLabel,
+                ),
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, chips) => SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    reverse: true,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minWidth: chips.maxWidth),
+                      child: Row(
+                        children: [
+                          for (var i = endedStart; i < throws.length; ++i) ...[
+                            if (i == visitStart && i > endedStart)
+                              SizedBox(
+                                key: const ValueKey('recent-divider'),
+                                height: 24,
+                                child: VerticalDivider(width: 9, thickness: 1, color: theme.colorScheme.outline),
+                              ),
+                            const SizedBox(width: 8),
+                            Opacity(
+                              opacity: i < visitStart && inVisit > 0 && correcting != i ? 0.55 : 1,
+                              child: ChoiceChip(
+                                key: ValueKey('recent-$i'),
+                                labelPadding: EdgeInsets.symmetric(horizontal: mixed ? 4 : 8),
+                                avatar: mixed
+                                    ? Icon(
+                                        throws[i].input == ThrowInput.engine ? Icons.videocam : Icons.touch_app,
+                                        size: 16,
+                                      )
+                                    : null,
+                                showCheckmark: false,
+                                label: Text(throws[i].score.text(l10n), style: chipStyle),
+                                tooltip: l10n.correctDartTooltip,
+                                selected: correcting == i,
+                                onSelected: (_) => setState(() => _correcting = correcting == i ? null : i),
+                              ),
+                            ),
+                          ],
+                          if (_keys.pending.isNotEmpty) ...[
+                            const SizedBox(width: 12),
+                            Text(
+                              '${_keys.pending}…',
+                              key: const ValueKey('key-entry'),
+                              style: scoreStyle(chipStyle)?.copyWith(color: theme.colorScheme.primary),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
-                  ],
-                  if (_keys.pending.isNotEmpty) ...[
-                    const SizedBox(width: 12),
-                    Text(
-                      '${_keys.pending}…',
-                      key: const ValueKey('key-entry'),
-                      style: scoreStyle(chipStyle)?.copyWith(color: theme.colorScheme.primary),
-                    ),
-                  ],
-                ],
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),
@@ -864,6 +889,7 @@ class _Notice extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final text = GameText.of(context);
+    final compact = CompactNotices.of(context);
     final titleStyle = scoreTitle
         ? scoreStyle(text.far ? theme.textTheme.headlineMedium : theme.textTheme.titleLarge)
         : text.promptTitle;
@@ -871,8 +897,14 @@ class _Notice extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(title, style: titleStyle?.copyWith(fontWeight: FontWeight.w600)),
-        if (subtitle != null)
+        Text(
+          title,
+          maxLines: compact ? 2 : null,
+          overflow: compact ? TextOverflow.ellipsis : null,
+          style: titleStyle?.copyWith(fontWeight: FontWeight.w600),
+        ),
+        // Short of room the title says enough; the hint would take the panel's rows.
+        if (subtitle != null && !compact)
           Text(subtitle!, maxLines: text.far ? 3 : 2, overflow: TextOverflow.ellipsis, style: text.promptBody),
       ],
     );
@@ -888,13 +920,16 @@ class _Notice extends StatelessWidget {
             ),
       child: Wrap(spacing: 8, runSpacing: 4, alignment: WrapAlignment.end, children: actions),
     );
+    final vertical = compact ? 2.0 : (text.far ? 12.0 : 8.0);
     return Card(
       color: color,
+      margin: compact ? const EdgeInsets.symmetric(horizontal: 4, vertical: 2) : null,
       child: Padding(
-        padding: EdgeInsets.fromLTRB(16, text.far ? 12 : 8, 8, text.far ? 12 : 8),
+        padding: EdgeInsets.fromLTRB(16, vertical, 8, vertical),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final narrow = constraints.maxWidth < 480;
+            // A single button fits beside a short notice; several wrap under it where the width is short.
+            final narrow = constraints.maxWidth < 480 && !(compact && actions.length == 1);
             final top = Row(
               children: [
                 Icon(icon, size: text.far ? 36 : null),
@@ -918,6 +953,61 @@ class _Notice extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Several notices, one under the other; where compact notices have room for fewer, the first of [byPriority] stay,
+/// then the others in their order.
+class _NoticeStack extends StatelessWidget {
+  const _NoticeStack(this.notices, {required this.byPriority});
+
+  final List<Widget> notices;
+  final List<Widget> byPriority;
+
+  /// About the height of a compact notice with a button
+  static const double compactHeight = 56;
+
+  @override
+  Widget build(BuildContext context) {
+    final room = CompactNotices.roomOf(context);
+    var shown = notices;
+    if (room != null) {
+      final fit = math.max(1, (room / compactHeight).floor());
+      if (fit < notices.length) {
+        final kept = [...byPriority, ...notices.where((n) => !byPriority.contains(n))].take(fit).toSet();
+        shown = [
+          for (final n in notices)
+            if (kept.contains(n)) n,
+        ];
+      }
+    }
+    return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: shown);
+  }
+}
+
+/// Tells the input's notices that the panel is short of room: they keep to their title, so the panel's rows and Undo
+/// stay in view.
+class CompactNotices extends InheritedWidget {
+  const CompactNotices({super.key, required this.compact, required this.room, required super.child});
+
+  final bool compact;
+
+  /// The height the notices may take together
+  final double room;
+
+  /// Below this height of the panel with its notices, notices are compact
+  static const double below = 560;
+
+  static bool of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<CompactNotices>()?.compact ?? false;
+
+  /// The height compact notices may take together; null where notices are not compact
+  static double? roomOf(BuildContext context) {
+    final notices = context.dependOnInheritedWidgetOfExactType<CompactNotices>();
+    return notices != null && notices.compact ? notices.room : null;
+  }
+
+  @override
+  bool updateShouldNotify(CompactNotices old) => old.compact != compact || old.room != room;
 }
 
 /// Where a game screen shows the input's notices (an uncertain dart, darts to pull) and which dart they are about:

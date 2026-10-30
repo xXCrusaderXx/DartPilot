@@ -93,6 +93,12 @@ void main() {
       await keypad(tester, 'keypad-20', modifier: 'triple');
       await tester.pumpAndSettle();
       expect(key20(), before);
+      // Whose visit ended stays readable beside the darts, however many of them the strip holds
+      final strip = tester.getRect(find.byKey(const ValueKey('recent-strip')));
+      final owner = tester.getRect(find.byKey(const ValueKey('recent-visit')));
+      expect(owner.left, greaterThanOrEqualTo(strip.left));
+      expect(owner.right, lessThanOrEqualTo(strip.right));
+      expect(tester.widget<Text>(find.byKey(const ValueKey('recent-visit'))).data, 'Ben · 0');
       expect(tester.takeException(), isNull);
       expectAboveUndo(tester, find.byKey(const ValueKey('checkout')));
       expectAboveUndo(tester, find.byKey(const ValueKey('visit-total')));
@@ -252,9 +258,14 @@ void main() {
   });
 
   group('with cameras', () {
-    /// X01 301 for Anna and Ben with a connected engine at TV size; what the app sends lands in `sent`
-    Future<EngineConnection> startEngineGame(WidgetTester tester, List<Map<String, dynamic>> sent) async {
-      tester.view.physicalSize = const Size(1920, 1080);
+    /// X01 301 for Anna and Ben with a connected engine, at TV size unless [size] says otherwise; what the app sends
+    /// lands in `sent`
+    Future<EngineConnection> startEngineGame(
+      WidgetTester tester,
+      List<Map<String, dynamic>> sent, {
+      Size size = const Size(1920, 1080),
+    }) async {
+      tester.view.physicalSize = size;
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
       final engine = EngineConnection.forTest(sent.add);
@@ -265,10 +276,15 @@ void main() {
       engine.receiveForTest(jsonEncode(hello));
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(find.byKey(const ValueKey('mode-X01')), 200);
+      await tester.ensureVisible(find.byKey(const ValueKey('mode-X01')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('mode-X01')));
       await tester.pumpAndSettle();
       await pickPlayers(tester, ['Anna', 'Ben']);
+      await tester.scrollUntilVisible(find.text('301'), 100, scrollable: find.byType(Scrollable).last);
       await tester.tap(find.text('301'));
+      await tester.pump();
+      await tester.ensureVisible(find.byKey(const ValueKey('start-game')));
       await tester.tap(find.byKey(const ValueKey('start-game')));
       await tester.pumpAndSettle();
       return engine;
@@ -421,6 +437,63 @@ void main() {
       // Ben's visit counts, and its takeout already passed the turn on to Anna
       expect(remaining(tester, 'Ben'), '121');
       expect(find.byKey(const ValueKey('remove-darts')), findsNothing);
+    });
+
+    for (final (device, size) in [('a phone upright', Size(412, 915)), ('a phone on its side', Size(915, 412))]) {
+      testWidgets('on $device the camera warning and the missing darts leave Undo and the visit in view', (
+        tester,
+      ) async {
+        final engine = await startEngineGame(tester, [], size: size);
+        await receive(tester, engine, throwJson('s/1', 0, 103));
+        await receive(tester, engine, {'type': 'engine_status', 'detection': 'paused', 'message': ''});
+        expect(find.byKey(const ValueKey('engine-not-counting')), findsOneWidget);
+        void expectUndoWhole() {
+          final undo = tester.getRect(find.widgetWithText(OutlinedButton, 'Rückgängig'));
+          expect(undo.bottom, lessThanOrEqualTo(size.height), reason: 'Undo at $undo');
+          expect(undo.height, greaterThanOrEqualTo(40));
+        }
+
+        expectUndoWhole();
+        expectAboveUndo(tester, find.byKey(const ValueKey('visit-total')));
+        await receive(tester, engine, {'type': 'takeout', 'event_ns': 1, 'darts_removed': 1});
+        await tester.tap(find.byKey(const ValueKey('missing-enter')));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('enter-missing')), findsOneWidget);
+        expectUndoWhole();
+        expectAboveUndo(tester, find.byKey(const ValueKey('visit-total')));
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    testWidgets('an undo while missing darts are typed in keeps the next player\'s dart waiting for him', (
+      tester,
+    ) async {
+      final sent = <Map<String, dynamic>>[];
+      final engine = await startEngineGame(tester, sent);
+      await receive(tester, engine, throwJson('s/1', 0, 103));
+      await receive(tester, engine, {'type': 'takeout', 'event_ns': 1, 'darts_removed': 1});
+      await tester.tap(find.byKey(const ValueKey('missing-enter')));
+      await tester.pumpAndSettle();
+      await receive(tester, engine, throwJson('s/2', 0, 103));
+
+      // Anna takes her T20 back: her visit is still owed, and Ben's dart is not counted for her.
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Rückgängig'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(remaining(tester, 'Anna'), '301');
+      expect(remaining(tester, 'Ben'), '301');
+      expect(find.text('Noch 3 Darts von Hand eingeben'), findsOneWidget);
+      expect(sent.where((m) => m['type'] == 'reject_throw').map((m) => m['throw_id']), ['s/1']);
+
+      await tester.tap(find.byKey(const ValueKey('missing-keypad')));
+      await tester.pumpAndSettle();
+      for (var i = 0; i < 3; ++i) {
+        await tester.tap(find.byKey(const ValueKey('keypad-miss')));
+        await tester.pumpAndSettle();
+      }
+      expect(find.byKey(const ValueKey('enter-missing')), findsNothing);
+      expect(remaining(tester, 'Anna'), '301');
+      expect(remaining(tester, 'Ben'), '241');
     });
   });
 
