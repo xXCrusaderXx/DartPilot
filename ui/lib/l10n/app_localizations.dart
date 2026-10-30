@@ -3278,6 +3278,30 @@ abstract class AppLocalizations {
   /// **'Larger'**
   String get textLarger;
 
+  /// No description provided for @textFont.
+  ///
+  /// In en, this message translates to:
+  /// **'Font'**
+  String get textFont;
+
+  /// No description provided for @textFontHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Scores in a game always keep their own typeface'**
+  String get textFontHint;
+
+  /// No description provided for @textFontBundled.
+  ///
+  /// In en, this message translates to:
+  /// **'Inter'**
+  String get textFontBundled;
+
+  /// No description provided for @textFontSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get textFontSystem;
+
   /// No description provided for @brightnessHint.
   ///
   /// In en, this message translates to:

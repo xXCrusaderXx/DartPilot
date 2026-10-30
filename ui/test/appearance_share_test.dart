@@ -16,6 +16,7 @@ DisplaySettings _changed() => DisplaySettings(store: false)
   ..brightness = AppBrightness.light
   ..accent = accentSwatches[3]
   ..textSize = TextSize.large
+  ..font = TextFont.system
   ..highContrast = true
   ..boardSide = BoardSide.right
   ..boardSize = BoardSize.small
@@ -37,6 +38,7 @@ void main() {
     expect(other.distance, ViewingDistance.near);
     expect(other.accent, accentSwatches[3]);
     expect(other.panelDetails, {PanelDetail.checkout, PanelDetail.dartsThrown});
+    expect(other.font, TextFont.system);
   });
 
   test('anything but a code changes nothing', () async {
@@ -60,6 +62,7 @@ void main() {
     final code = DisplaySettings.codePrefix + base64Url.encode(utf8.encode(json));
     expect(await display.applyCode(code), isTrue);
     expect(display.textSize, TextSize.normal);
+    expect(display.font, TextFont.bundled);
     expect(display.boardSide, BoardSide.left);
     expect(display.dartColour, isNull);
     expect(display.panelDetails, {PanelDetail.visitDarts});

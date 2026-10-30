@@ -153,12 +153,13 @@ class _DartPilotAppState extends State<DartPilotApp> {
     super.dispose();
   }
 
-  // Built again only when the palette changes, so other display settings do not animate the theme
-  final _themes = <AppPalette, ThemeData>{};
+  // Built again only when the palette or the font changes, so other display settings do not animate the theme
+  final _themes = <(AppPalette, TextFont), ThemeData>{};
   ThemeData _theme(Brightness brightness) {
     final palette = _display.paletteFor(brightness);
+    final font = _display.font;
     if (_themes.length > 8) _themes.clear();
-    return _themes.putIfAbsent(palette, () => dartPilotTheme(palette));
+    return _themes.putIfAbsent((palette, font), () => dartPilotTheme(palette, font.family));
   }
 
   @override

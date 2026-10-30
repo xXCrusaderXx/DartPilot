@@ -1847,6 +1847,18 @@ class AppLocalizationsDe extends AppLocalizations {
   String get textLarger => 'Sehr groß';
 
   @override
+  String get textFont => 'Schrift';
+
+  @override
+  String get textFontHint => 'Die Punktzahlen im Spiel behalten immer ihre eigene Schrift';
+
+  @override
+  String get textFontBundled => 'Inter';
+
+  @override
+  String get textFontSystem => 'System';
+
+  @override
   String get brightnessHint => 'Dunkel, hell oder wie im System eingestellt. Jeder Text bleibt in beiden gut lesbar.';
 
   @override

@@ -67,7 +67,7 @@ const accentSwatches = [
   Color(0xFFFACC15),
 ];
 
-/// Contrast, accent colour and text size
+/// Contrast, accent colour, text size and font
 class AppearanceColourTiles extends StatelessWidget {
   const AppearanceColourTiles({super.key});
 
@@ -150,6 +150,23 @@ class AppearanceColourTiles extends StatelessWidget {
             ],
             selected: {display.textSize},
             onSelectionChanged: (s) => display.set(textSize: s.first),
+          ),
+        ),
+        ListTile(title: Text(l10n.textFont), subtitle: Text(l10n.textFontHint)),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: SegmentedButton<TextFont>(
+            key: const ValueKey('text-font'),
+            showSelectedIcon: false,
+            segments: [
+              ButtonSegment(
+                value: TextFont.bundled,
+                label: Text(l10n.textFontBundled, style: const TextStyle(fontFamily: textFontFamily)),
+              ),
+              ButtonSegment(value: TextFont.system, label: Text(l10n.textFontSystem)),
+            ],
+            selected: {display.font},
+            onSelectionChanged: (s) => display.set(font: s.first),
           ),
         ),
       ],
