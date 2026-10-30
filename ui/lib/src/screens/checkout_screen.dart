@@ -138,8 +138,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame, Compa
   String _progress(AppLocalizations l10n) {
     final attempt = l10n.attemptOf(_game.attempts.length, widget.starts.length);
     if (!widget.ladder) {
-      return '${l10n.checkoutProgress(_game.attempts.length, widget.starts.length)}  ·  '
-          '${l10n.labelValue(l10n.statsCheckoutRate, l10n.countOf(_game.checkouts, _game.attemptsDone))}';
+      // The rate only once there is a first checkout to judge
+      return [
+        l10n.checkoutProgress(_game.attempts.length, widget.starts.length),
+        if (_game.attemptsDone > 0)
+          l10n.labelValue(l10n.statsCheckoutRate, l10n.countOf(_game.checkouts, _game.attemptsDone)),
+      ].join('  ·  ');
     }
     // Read so the panel follows the statistics: the round played just before is kept while this one is played.
     final earlier = _earlier(StatisticsScope.maybeOf(context)?.games ?? const [])?.best.round();
