@@ -79,7 +79,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('play-offline')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.insights_outlined));
+    await tester.tap(find.byIcon(Icons.bar_chart_outlined));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('stats-export')), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('stats-player-Anna')));

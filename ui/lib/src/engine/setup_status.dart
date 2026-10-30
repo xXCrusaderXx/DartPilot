@@ -5,6 +5,9 @@ import 'engine_connection.dart';
 /// finish (an optional step such as the diagnosis)
 enum SetupState { done, missing, stale, problem, none }
 
+/// A setup step that can be missing, in the order the player takes them
+enum SetupStep { assignment, calibration, check, emptyBoard }
+
 /// The setup steps' states from what the engine reports, in the order the player takes them
 class SetupStatus {
   const SetupStatus({
@@ -77,10 +80,18 @@ class SetupStatus {
   int get hashCode => Object.hash(assignment, calibration, check, emptyBoard);
 
   /// A step the player has to take before detection works well; the settings tab shows a mark for it
-  bool get needsAttention => [
-    assignment,
-    calibration,
-    check,
-    emptyBoard,
-  ].any((s) => s == SetupState.missing || s == SetupState.stale || s == SetupState.problem);
+  bool get needsAttention => firstOpen != null;
+
+  /// The first step, in the setup's order, that is missing, out of date or found a problem; null when none is
+  SetupStep? get firstOpen {
+    for (final (step, state) in [
+      (SetupStep.assignment, assignment),
+      (SetupStep.calibration, calibration),
+      (SetupStep.check, check),
+      (SetupStep.emptyBoard, emptyBoard),
+    ]) {
+      if (state == SetupState.missing || state == SetupState.stale || state == SetupState.problem) return step;
+    }
+    return null;
+  }
 }

@@ -61,7 +61,7 @@ void main() {
     await playOffline(tester);
 
     // Switched on in the settings
-    await openSettings(tester);
+    await openSettingsPage(tester, 'sound');
     await tester.scrollUntilVisible(find.byKey(const ValueKey('caller-enabled')), 200);
     await tester.tap(find.byKey(const ValueKey('caller-enabled')));
     await tester.pumpAndSettle();
@@ -71,6 +71,8 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('caller-test')));
     expect(voice.spoken.last, 'One hundred and eighty!');
 
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.home_outlined));
     await tester.pumpAndSettle();
     await tester.tap(find.text('X01'));

@@ -1,9 +1,9 @@
 {
   "@@locale": "en",
   "appTitle": "DartPilot",
-  "chooseGame": "Play locally or solo",
+  "chooseGame": "Play",
   "modeX01": "X01",
-  "modeX01Description": "501 or 301, double out",
+  "modeX01Description": "301 · 501 · 701, double in/out",
   "modeCricket": "Cricket",
   "modeCricketDescription": "Close 15 to 20 and bull",
   "modeAroundTheClock": "Around the Clock",
@@ -150,7 +150,7 @@
   "engineRetry": "Try again",
   "engineErrorDisconnected": "The connection to the engine was lost.",
   "engineErrorTimeout": "The engine did not answer.",
-  "engineReconnecting": "Connection to the engine lost – connecting again…",
+  "engineReconnecting": "Connection to the camera detection lost – connecting again…",
   "engineSimulated": "simulated",
   "engineConnectedSimulated": "Connected (simulated)",
   "labelValue": "{label}: {value}",
@@ -303,7 +303,7 @@
   "localEngineStopped": "The engine on this device is stopped.",
   "localEngineStarting": "Starting the engine…",
   "localEngineRunning": "The engine runs on this device ({url}).",
-  "localEngineNotFound": "The engine program was not found. Enter its path under Log.",
+  "localEngineNotFound": "The engine program was not found.",
   "localEngineNoCameras": "No camera could be started: are they plugged in, or used by another program?",
   "localEnginePortInUse": "The engine's port is in use; another engine may be running.",
   "localEngineCrashed": "The engine stopped unexpectedly; the log shows why.",
@@ -582,19 +582,17 @@
     }
   },
   "hintPlanesAgree": "Refine all cameras again; if one camera stands out, calibrate it first.",
-  "connectTitle": "Connect an engine",
-  "connectIntro": "The engine runs the cameras and detects the darts. It runs on this device or on another one in your network.",
-  "playWithoutEngine": "Play without an engine (enter darts by hand)",
+  "connectTitle": "How are the darts counted?",
+  "connectIntro": "You can change this any time in the settings.",
   "navHome": "Home",
   "navSettings": "Settings",
   "settingsConnection": "Connection",
   "connectedThisDevice": "Connected to the engine on this device",
   "connectedNetwork": "Connected to an engine in the network",
-  "playingWithoutEngine": "Without an engine – darts are entered by hand",
-  "playingWithoutEngineHint": "Connect an engine to detect darts and use the cameras.",
+  "playingWithoutEngine": "Darts by hand – no cameras connected",
   "settingsCamerasBoard": "Cameras and darts",
   "settingsSetup": "Setup",
-  "setupAssignHint": "Which camera is camera 1, 2 and 3",
+  "setupAssignHint": "Which camera is no. 1, 2 and 3",
   "setupDone": "Done",
   "setupMissing": "To do",
   "setupStale": "Out of date",
@@ -605,9 +603,6 @@
   "settingsCalibration": "Calibration",
   "calibration": "Calibrate the cameras",
   "calibrationInSetupTool": "For now in the setup program dartpilot_setup on Linux",
-  "playTogether": "Play together",
-  "lobby": "Lobby",
-  "lobbyComingSoon": "Play with friends on other devices – coming with #124",
   "diagnosisProgress": "Darts: {done} of {target}",
   "@diagnosisProgress": {
     "placeholders": {
@@ -654,7 +649,7 @@
       }
     }
   },
-  "navStatistics": "Players",
+  "navStatistics": "Statistics",
   "statisticsEmpty": "No players yet. Create a profile; every game counts for its statistics.",
   "statsGamesCount": "{count, plural, =1{1 game} other{{count} games}}",
   "@statsGamesCount": {
@@ -1218,7 +1213,7 @@
   "brightnessLight": "Light",
   "displayStyle": "Game display",
   "displayStyleHint": "Clear shows the remaining score large in the app's colours; the scoreboard fits more on less room. Automatic: scoreboard on phones, clear elsewhere.",
-  "displayAuto": "Automatic",
+  "displayAuto": "Auto",
   "displayStyleClear": "Clear",
   "displayStyleScoreboard": "Scoreboard",
   "viewingDistance": "Viewing distance",
@@ -1591,8 +1586,6 @@
   "appearanceCodeInvalid": "This is not an appearance code from DartPilot",
   "appearanceScanHint": "Point the camera at the QR code under Share the appearance on the other device",
   "appearanceScanUnavailable": "The camera cannot be used to scan. Allow the camera for DartPilot, or paste the code shown under the QR code.",
-  "appearancePreview": "Adjust with preview",
-  "appearancePreviewHint": "A game screen shows every change at once",
   "aboutTitle": "About DartPilot",
   "aboutHint": "Version, licence and source code",
   "aboutVersion": "Version {version}",
@@ -1623,5 +1616,48 @@
         "type": "String"
       }
     }
-  }
+  },
+  "countByHandTitle": "By hand",
+  "countByHandText": "Play right away: tap the hits on the board or the keypad.",
+  "countThisDeviceTitle": "With cameras on this computer",
+  "countThisDeviceText": "The cameras are connected to this computer, and it detects the darts.",
+  "countNetworkTitle": "With cameras via the network",
+  "countNetworkText": "Another computer with the cameras detects the darts; this device shows the game. Scan its QR code or look for it in the network.",
+  "homeConnected": "Camera detection connected",
+  "homeConnectedSimulated": "Camera detection connected (simulated darts)",
+  "homeConnecting": "Connecting to the camera detection…",
+  "homeUnreachable": "Camera detection not reachable – enter the darts by hand",
+  "homeConnectCameras": "Connect cameras",
+  "homeChange": "Change",
+  "engineReconnectingLong": "Camera detection not reachable – enter the darts by hand until it is back.",
+  "reconnectStop": "Continue by hand",
+  "engineChooseProgram": "Choose program…",
+  "setupHintTitle": "The cameras are not fully set up yet",
+  "setupHintNext": "Next step: {step}",
+  "@setupHintNext": {
+    "placeholders": {
+      "step": {
+        "type": "String"
+      }
+    }
+  },
+  "setupHintHide": "Hide",
+  "profileCreated": "{name} is ready – choose a game",
+  "@profileCreated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsDisplayHint": "Colours, text size and the game screen",
+  "settingsSound": "Sound & caller",
+  "settingsCallerOn": "Score caller on",
+  "settingsCallerOff": "Score caller off",
+  "settingsCamerasPage": "Cameras & detection",
+  "settingsCamerasByHand": "Darts by hand – cameras are optional",
+  "settingsSetupIncomplete": "Setup not finished",
+  "settingsAdvanced": "Advanced",
+  "settingsCamerasOptional": "Cameras are optional. With them, DartPilot detects the darts by itself; their setup appears here once they are connected.",
+  "homeReconnecting": "Until the connection is back, enter the darts by hand"
 }

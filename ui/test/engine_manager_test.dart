@@ -219,6 +219,7 @@ void main() {
     await tester.pumpWidget(
       DartPilotApp(locale: const Locale('de'), engine: engine, manager: manager, settings: settings),
     );
+    // On the first page, this device is the way that is open already.
     expect(find.text('Die Engine auf diesem Gerät ist gestoppt.'), findsOneWidget);
     expect(find.text('Engine-Adresse'), findsNothing);
 
@@ -232,7 +233,9 @@ void main() {
     expect(connected, [Uri.parse('ws://127.0.0.1:8500/')]);
 
     // Switching to the network stops the engine this app started and offers the address again.
-    await tester.tap(find.text('Im Netzwerk'));
+    await tester.ensureVisible(find.byKey(const ValueKey('count-network')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('count-network')));
     await tester.pumpAndSettle();
     expect(process.signals, [ProcessSignal.sigterm]);
     expect(find.text('Engine-Adresse'), findsOneWidget);

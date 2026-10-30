@@ -20,7 +20,7 @@ Future<void> showSettingsEntry(WidgetTester tester, String key) async {
   await tester.scrollUntilVisible(
     find.byKey(ValueKey(key)),
     200,
-    scrollable: find.descendant(of: find.byType(ListView), matching: find.byType(Scrollable)).last,
+    scrollable: find.byWidgetPredicate((w) => w is Scrollable && w.axisDirection == AxisDirection.down).last,
   );
   await tester.pumpAndSettle();
 }
@@ -39,4 +39,18 @@ Future<void> pickPlayers(WidgetTester tester, List<String> names) async {
     }
     await tester.pumpAndSettle();
   }
+}
+
+/// A page of the settings: 'display', 'sound' or 'cameras'
+Future<void> openSettingsPage(WidgetTester tester, String page) async {
+  await openSettings(tester);
+  await tester.tap(find.byKey(ValueKey('settings-page-$page')));
+  await tester.pumpAndSettle();
+}
+
+/// Opens the way with cameras in the network on the first page, where the search and the address field are
+Future<void> openNetworkChoice(WidgetTester tester) async {
+  await tester.pump();
+  await tester.tap(find.byKey(const ValueKey('count-network')));
+  await tester.pump();
 }

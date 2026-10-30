@@ -13,13 +13,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get appTitle => 'DartPilot';
 
   @override
-  String get chooseGame => 'Lokal oder solo spielen';
+  String get chooseGame => 'Spielen';
 
   @override
   String get modeX01 => 'X01';
 
   @override
-  String get modeX01Description => '501 oder 301, Double-Out';
+  String get modeX01Description => '301 · 501 · 701, Double-In/-Out';
 
   @override
   String get modeCricket => 'Cricket';
@@ -279,7 +279,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get engineErrorTimeout => 'Die Engine hat nicht geantwortet.';
 
   @override
-  String get engineReconnecting => 'Verbindung zur Engine verloren – verbinde neu…';
+  String get engineReconnecting => 'Verbindung zur Kamera-Erkennung verloren – verbinde neu…';
 
   @override
   String get engineSimulated => 'simuliert';
@@ -499,7 +499,7 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get localEngineNotFound => 'Das Engine-Programm wurde nicht gefunden. Trag seinen Pfad unter Log ein.';
+  String get localEngineNotFound => 'Das Engine-Programm wurde nicht gefunden.';
 
   @override
   String get localEngineNoCameras =>
@@ -796,14 +796,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get hintPlanesAgree => 'Verfeinere alle Kameras erneut; fällt eine Kamera heraus, kalibriere sie zuerst.';
 
   @override
-  String get connectTitle => 'Engine verbinden';
+  String get connectTitle => 'Wie werden die Darts gezählt?';
 
   @override
-  String get connectIntro =>
-      'Die Engine steuert die Kameras und erkennt die Darts. Sie läuft auf diesem Gerät oder auf einem anderen in deinem Netzwerk.';
-
-  @override
-  String get playWithoutEngine => 'Ohne Engine spielen (Darts von Hand eingeben)';
+  String get connectIntro => 'Du kannst das jederzeit in den Einstellungen ändern.';
 
   @override
   String get navHome => 'Home';
@@ -821,10 +817,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get connectedNetwork => 'Verbunden mit einer Engine im Netzwerk';
 
   @override
-  String get playingWithoutEngine => 'Ohne Engine – Darts werden von Hand eingegeben';
-
-  @override
-  String get playingWithoutEngineHint => 'Verbinde eine Engine, um Darts zu erkennen und die Kameras zu nutzen.';
+  String get playingWithoutEngine => 'Darts von Hand – keine Kameras verbunden';
 
   @override
   String get settingsCamerasBoard => 'Kameras und Darts';
@@ -833,7 +826,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsSetup => 'Einrichtung';
 
   @override
-  String get setupAssignHint => 'Welche Kamera Kamera 1, 2 und 3 ist';
+  String get setupAssignHint => 'Welche Kamera Nr. 1, 2 und 3 ist';
 
   @override
   String get setupDone => 'Erledigt';
@@ -864,15 +857,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get calibrationInSetupTool => 'Vorerst im Einrichtungsprogramm dartpilot_setup unter Linux';
-
-  @override
-  String get playTogether => 'Zusammen spielen';
-
-  @override
-  String get lobby => 'Lobby';
-
-  @override
-  String get lobbyComingSoon => 'Mit Freunden auf anderen Geräten spielen – kommt mit #124';
 
   @override
   String diagnosisProgress(int done, int target) {
@@ -926,7 +910,7 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get navStatistics => 'Spieler';
+  String get navStatistics => 'Statistik';
 
   @override
   String get statisticsEmpty => 'Noch keine Spieler. Leg ein Profil an; jedes Spiel zählt für seine Statistik.';
@@ -1857,7 +1841,7 @@ class AppLocalizationsDe extends AppLocalizations {
       'Klar zeigt den Rest groß in den Farben der App; das Scoreboard zeigt mehr auf wenig Platz. Automatisch: Scoreboard auf dem Handy, sonst klar.';
 
   @override
-  String get displayAuto => 'Automatisch';
+  String get displayAuto => 'Auto';
 
   @override
   String get displayStyleClear => 'Klar';
@@ -2437,66 +2421,96 @@ class AppLocalizationsDe extends AppLocalizations {
       'Die Kamera lässt sich zum Scannen nicht nutzen. Erlaube DartPilot die Kamera, oder füge den Code unter dem QR-Code ein.';
 
   @override
-  String get appearancePreview => 'Mit Vorschau anpassen';
+  String get countByHandTitle => 'Von Hand';
 
   @override
-  String get appearancePreviewHint => 'Ein Spielbildschirm zeigt jede Änderung sofort';
+  String get countByHandText => 'Sofort spielen: Tippe die Treffer auf der Scheibe oder dem Tastenfeld ein.';
 
   @override
-  String get aboutTitle => 'Über DartPilot';
+  String get countThisDeviceTitle => 'Mit Kameras an diesem Rechner';
 
   @override
-  String get aboutHint => 'Version, Lizenz und Quellcode';
+  String get countThisDeviceText => 'Die Kameras hängen an diesem Rechner, und er erkennt die Darts.';
 
   @override
-  String aboutVersion(String version) {
-    return 'Version $version';
+  String get countNetworkTitle => 'Mit Kameras über das Netzwerk';
+
+  @override
+  String get countNetworkText =>
+      'Ein anderer Rechner mit den Kameras erkennt die Darts, dieses Gerät zeigt das Spiel. Scanne seinen QR-Code oder such ihn im Netzwerk.';
+
+  @override
+  String get homeConnected => 'Kamera-Erkennung verbunden';
+
+  @override
+  String get homeConnectedSimulated => 'Kamera-Erkennung verbunden (simulierte Darts)';
+
+  @override
+  String get homeConnecting => 'Verbinde mit der Kamera-Erkennung…';
+
+  @override
+  String get homeUnreachable => 'Kamera-Erkennung nicht erreichbar – trag die Darts von Hand ein';
+
+  @override
+  String get homeConnectCameras => 'Kameras verbinden';
+
+  @override
+  String get homeChange => 'Ändern';
+
+  @override
+  String get engineReconnectingLong =>
+      'Kamera-Erkennung nicht erreichbar – trag die Darts von Hand ein, bis sie wieder da ist.';
+
+  @override
+  String get reconnectStop => 'Von Hand weiter';
+
+  @override
+  String get engineChooseProgram => 'Programm wählen…';
+
+  @override
+  String get setupHintTitle => 'Die Kameras sind noch nicht fertig eingerichtet';
+
+  @override
+  String setupHintNext(String step) {
+    return 'Nächster Schritt: $step';
   }
 
   @override
-  String get aboutDevelopmentBuild => 'Entwicklungsversion';
+  String get setupHintHide => 'Ausblenden';
 
   @override
-  String get aboutDescription =>
-      'Zählt Steeldarts mit Kameras am Board, oder von Hand ganz ohne. Freie, quelloffene Software für das Spiel zu Hause.';
-
-  @override
-  String get aboutLicence => 'Lizenz';
-
-  @override
-  String get aboutLicenceText =>
-      'Freie Software unter der GNU General Public License, Version 3 oder später (GPL-3.0-or-later). Sie kommt ohne jede Gewährleistung. Du darfst sie unter dieser Lizenz weitergeben und ändern.';
-
-  @override
-  String get aboutLegalese => 'Copyright (C) DartPilot-Mitwirkende. GPL-3.0-or-later, ohne jede Gewährleistung.';
-
-  @override
-  String get aboutSource => 'Quellcode';
-
-  @override
-  String get aboutGuide => 'Anleitung';
-
-  @override
-  String get aboutCopyLink => 'Link kopieren';
-
-  @override
-  String get aboutLinkCopied => 'Link kopiert';
-
-  @override
-  String get aboutThirdParty => 'Lizenzen enthaltener Software';
-
-  @override
-  String get aboutThirdPartyHint => 'Flutter und die Pakete, mit denen die App gebaut ist';
-
-  @override
-  String get aboutCredits => 'Danksagung';
-
-  @override
-  String get aboutCreditsText =>
-      'Das DartPilot-Symbol gehört zu DartPilot und steht unter dessen Lizenz. Die Symbole in der App sind die Material Icons von Google (Apache License 2.0) und die Cupertino Icons der Flutter-Autoren (MIT-Lizenz). Die App ist mit Flutter gebaut. Danke an alle, die Fehler melden, testen und mitarbeiten.';
-
-  @override
-  String exportDownloaded(String name) {
-    return 'Heruntergeladen: $name';
+  String profileCreated(String name) {
+    return '$name ist angelegt – wähl ein Spiel';
   }
+
+  @override
+  String get settingsDisplayHint => 'Farben, Textgröße und Spielbildschirm';
+
+  @override
+  String get settingsSound => 'Ton & Ansager';
+
+  @override
+  String get settingsCallerOn => 'Score-Ansage an';
+
+  @override
+  String get settingsCallerOff => 'Score-Ansage aus';
+
+  @override
+  String get settingsCamerasPage => 'Kameras & Erkennung';
+
+  @override
+  String get settingsCamerasByHand => 'Darts von Hand – Kameras sind optional';
+
+  @override
+  String get settingsSetupIncomplete => 'Einrichtung nicht abgeschlossen';
+
+  @override
+  String get settingsAdvanced => 'Erweitert';
+
+  @override
+  String get settingsCamerasOptional =>
+      'Kameras sind optional. Mit ihnen erkennt DartPilot die Darts von selbst; ihre Einrichtung erscheint hier, sobald sie verbunden sind.';
+
+  @override
+  String get homeReconnecting => 'Bis die Verbindung wieder steht, trägst du die Darts von Hand ein';
 }

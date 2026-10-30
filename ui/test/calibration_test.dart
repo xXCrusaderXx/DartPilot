@@ -51,7 +51,7 @@ void main() {
     receive('hello');
 
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
-    await openSettings(tester);
+    await openSettingsPage(tester, 'cameras');
     await tester.tap(find.byKey(const ValueKey('settings-calibration')));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('calib-overview-sim-2')), findsOneWidget);
@@ -137,7 +137,7 @@ void main() {
     addTearDown(engine.dispose);
     engine.receiveForTest(jsonEncode(fixtures['hello']));
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
-    await openSettings(tester);
+    await openSettingsPage(tester, 'cameras');
     await tester.tap(find.byKey(const ValueKey('settings-calibration')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('calib-start')));

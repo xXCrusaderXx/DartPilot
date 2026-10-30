@@ -193,7 +193,7 @@ void main() {
     final display = DisplaySettings(store: false);
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), display: display));
     await playOffline(tester);
-    await openSettings(tester);
+    await openSettingsPage(tester, 'display');
 
     Future<void> tapIn(String key, String text) async {
       await showSettingsEntry(tester, key);
@@ -215,7 +215,11 @@ void main() {
     expect(display.shows(PanelDetail.dartsThrown), isTrue);
 
     // A preset leaves the layout alone.
-    await tester.scrollUntilVisible(find.byKey(const ValueKey('preset-light')), -200);
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('preset-light')),
+      -200,
+      scrollable: find.byWidgetPredicate((w) => w is Scrollable && w.axisDirection == AxisDirection.down).last,
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('preset-light')));
     await tester.pumpAndSettle();

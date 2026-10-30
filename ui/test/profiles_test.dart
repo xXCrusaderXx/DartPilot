@@ -87,7 +87,20 @@ void main() {
     await playOffline(tester);
     expect(find.byKey(const ValueKey('first-profile')), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.insights_outlined));
+    // Created from home, the profile is confirmed and the card makes way for the games.
+    await tester.tap(
+      find.descendant(of: find.byKey(const ValueKey('first-profile')), matching: find.byType(FilledButton)),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('new-profile-name')), 'Marko');
+    await tester.tap(find.byKey(const ValueKey('new-profile-save')));
+    await tester.pumpAndSettle();
+    expect(find.text('Marko ist angelegt – wähl ein Spiel'), findsOneWidget);
+    expect(find.byKey(const ValueKey('first-profile')), findsNothing);
+    await statistics.removeProfile('Marko');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.bar_chart_outlined));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('create-profile')));
     await tester.pumpAndSettle();

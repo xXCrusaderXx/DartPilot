@@ -162,7 +162,7 @@ void main() {
     await tester.pumpWidget(DartPilotApp(locale: const Locale('en'), engine: engine));
     await tester.pumpAndSettle();
     expect(find.text('No image of the empty board stored'), findsNothing);
-    await openSettings(tester);
+    await openSettingsPage(tester, 'cameras');
     expect(
       find.descendant(of: find.byKey(const ValueKey('settings-empty-board')), matching: find.text('To do')),
       findsOneWidget,

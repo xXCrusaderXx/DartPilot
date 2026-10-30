@@ -62,7 +62,7 @@ GameRecord recordWith(List<DartThrow> throws) => GameRecord(
 );
 
 Future<void> openGameDarts(WidgetTester tester) async {
-  await tester.tap(find.byIcon(Icons.insights_outlined));
+  await tester.tap(find.byIcon(Icons.bar_chart_outlined));
   await tester.pumpAndSettle();
   await tester.tap(find.byKey(const ValueKey('stats-player-Anna')));
   await tester.pumpAndSettle();

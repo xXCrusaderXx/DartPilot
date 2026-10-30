@@ -3,7 +3,9 @@ import 'dart:io';
 
 import 'package:dartpilot/src/app.dart';
 import 'package:dartpilot/src/engine/engine_connection.dart';
+import 'package:dartpilot/src/engine/camera_order.dart';
 import 'package:dartpilot/src/engine/engine_events.dart';
+import 'package:dartpilot/src/engine/setup_status.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -27,7 +29,9 @@ void main() {
     expect(detail.shiftPx, const Offset(6, -3));
   });
 
-  testWidgets('a moved camera marks the settings tab and the check entry, and home stays free of it', (tester) async {
+  testWidgets('a moved camera marks the settings tab and the check entry, and home has one line that leads there', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1000, 1800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -37,9 +41,11 @@ void main() {
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
     await tester.pumpAndSettle();
     expect(find.textContaining('hat sich bewegt'), findsNothing);
+    expect(find.byKey(const ValueKey('setup-hint')), findsOneWidget);
+    expect(find.text('Die Kameras sind noch nicht fertig eingerichtet'), findsOneWidget);
     expect(tester.widgetList<Badge>(find.byKey(const ValueKey('settings-attention'))).first.isLabelVisible, isTrue);
 
-    await openSettings(tester);
+    await openSettingsPage(tester, 'cameras');
     expect(
       find.descendant(of: find.byKey(const ValueKey('settings-calibration-check')), matching: find.text('Prüfen')),
       findsOneWidget,
@@ -59,7 +65,7 @@ void main() {
     addTearDown(engine.dispose);
     engine.receiveForTest(jsonEncode(fixtures['hello']));
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
-    await openSettings(tester);
+    await openSettingsPage(tester, 'cameras');
     await tester.tap(find.byKey(const ValueKey('settings-calibration-check')));
     await tester.pumpAndSettle();
     expect(sent.where((r) => r['type'] == 'subscribe_calibration_check'), hasLength(1));
@@ -137,5 +143,33 @@ void main() {
     await tester.pump();
     expect(find.byKey(const ValueKey('camera-moved')), findsNothing);
     await tester.pump(const Duration(seconds: 15));
+  });
+
+  testWidgets('the setup line on home opens the first open step and can be hidden', (tester) async {
+    tester.view.physicalSize = const Size(412, 915);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final engine = EngineConnection.forTest((_) {});
+    addTearDown(engine.dispose);
+    engine.receiveForTest(jsonEncode(fixtures['hello']));
+    await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
+    await tester.pumpAndSettle();
+    final status = SetupStatus.of(engine, CameraOrder());
+    expect(status.firstOpen, isNotNull);
+    await tester.tap(find.byKey(const ValueKey('setup-hint-hide')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('setup-hint')), findsNothing);
+  });
+
+  test('the first open setup step follows the order the player takes them', () {
+    const status = SetupStatus(
+      assignment: SetupState.done,
+      calibration: SetupState.stale,
+      check: SetupState.none,
+      emptyBoard: SetupState.missing,
+    );
+    expect(status.firstOpen, SetupStep.calibration);
+    expect(SetupStatus.offline.firstOpen, isNull);
+    expect(SetupStatus.offline.needsAttention, isFalse);
   });
 }

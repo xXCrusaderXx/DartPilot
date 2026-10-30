@@ -9,6 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import 'navigation.dart';
+
 const living = FoundEngine(
   id: 'ABC',
   name: 'Dartboard living room',
@@ -102,6 +104,7 @@ void main() {
 
     // The search starts by itself; the address field is offered only on request while it finds something.
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
+    await openNetworkChoice(tester);
     await tester.pump();
     expect(find.text('Suche im Netzwerk…'), findsOneWidget);
     expect(find.byKey(const ValueKey('engine-address')), findsNothing);
@@ -135,12 +138,16 @@ void main() {
     );
     addTearDown(engine.dispose);
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
+    await openNetworkChoice(tester);
     await tester.pumpAndSettle();
     expect(find.textContaining('Keine Engine gefunden'), findsOneWidget);
     expect(find.byKey(const ValueKey('engine-address')), findsOneWidget);
   });
 
   testWidgets('the address field can be asked for while engines are found', (tester) async {
+    tester.view.physicalSize = const Size(800, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
     final engine = EngineConnection(
       connector: (uri) => throw const SocketException('no engine in tests'),
       discovery: EngineDiscovery([
@@ -149,6 +156,7 @@ void main() {
     );
     addTearDown(engine.dispose);
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
+    await openNetworkChoice(tester);
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('engine-address')), findsNothing);
     await tester.tap(find.byKey(const ValueKey('engine-manual')));
@@ -163,6 +171,7 @@ void main() {
     );
     addTearDown(engine.dispose);
     await tester.pumpWidget(DartPilotApp(locale: const Locale('en'), engine: engine));
+    await openNetworkChoice(tester);
     await tester.pumpAndSettle();
     expect(find.textContaining('No engine found'), findsOneWidget);
     // Searching again

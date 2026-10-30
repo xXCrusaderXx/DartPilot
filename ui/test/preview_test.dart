@@ -63,7 +63,7 @@ void main() {
 
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
     await tester.pumpAndSettle();
-    await openSettings(tester);
+    await openSettingsPage(tester, 'cameras');
     await showSettingsEntry(tester, 'settings-cameras');
     await tester.tap(find.byKey(const ValueKey('settings-cameras')));
     await tester.pumpAndSettle();
@@ -125,7 +125,7 @@ void main() {
 
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), engine: engine));
     await tester.pumpAndSettle();
-    await openSettings(tester);
+    await openSettingsPage(tester, 'cameras');
     await showSettingsEntry(tester, 'settings-cameras');
     await tester.tap(find.byKey(const ValueKey('settings-cameras')));
     await tester.pumpAndSettle();
@@ -153,7 +153,7 @@ void main() {
     addTearDown(engine.dispose);
     engine.receiveForTest(jsonEncode(hello));
     await tester.pumpWidget(DartPilotApp(locale: const Locale('en'), engine: engine));
-    await openSettings(tester);
+    await openSettingsPage(tester, 'cameras');
     await showSettingsEntry(tester, 'settings-cameras');
     await tester.tap(find.byKey(const ValueKey('settings-cameras')));
     await tester.pumpAndSettle();

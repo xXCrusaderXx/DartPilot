@@ -25,7 +25,7 @@ void main() {
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
     await tester.pumpWidget(const DartPilotApp());
     await tester.pumpAndSettle();
-    expect(find.text('Connect an engine'), findsOneWidget);
+    expect(find.text('How are the darts counted?'), findsOneWidget);
   });
 
   test('counts read in the singular and the plural', () async {
