@@ -208,9 +208,9 @@ class _SoundSettingsScreenState extends State<SoundSettingsScreen> {
                   subtitle: Slider(
                     key: const ValueKey('sfx-volume'),
                     value: sfx.volume,
-                    onChanged: (v) => sfx.set(volume: v),
-                    // The thud of a dart at the new volume
-                    onChangeEnd: (_) => sfx.play(Effect.dart),
+                    onChanged: (v) => sfx.set(volume: v, save: false),
+                    // Kept once the slider is let go, then the thud of a dart at the new volume
+                    onChangeEnd: (v) => sfx.set(volume: v).then((_) => sfx.play(Effect.dart)),
                   ),
                 ),
               if (sfx.canVibrate)
@@ -457,13 +457,14 @@ class CallerSettings extends StatefulWidget {
 }
 
 class _CallerSettingsState extends State<CallerSettings> {
+  /// The calls are English in every language: a device without an English voice would read them wrongly or not at all.
   bool? _available;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_available != null) return;
-    CallerScope.of(context).voice.available.then((a) {
+    CallerScope.of(context).voice.speaksEnglish.then((a) {
       if (mounted) setState(() => _available = a);
     });
   }
@@ -490,7 +491,8 @@ class _CallerSettingsState extends State<CallerSettings> {
             subtitle: Slider(
               key: const ValueKey('caller-volume'),
               value: caller.volume,
-              onChanged: (v) => caller.set(volume: v),
+              onChanged: (v) => caller.set(volume: v, save: false),
+              onChangeEnd: (v) => caller.set(volume: v),
             ),
           ),
       ],

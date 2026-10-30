@@ -1250,7 +1250,7 @@
   "viewingFar": "Far",
   "scoreCallerHint": "Announces each visit's score, like a caller",
   "callerVolume": "Caller volume",
-  "callerNoVoice": "This device has no speech output. On Linux: install speech-dispatcher (spd-say).",
+  "callerNoVoice": "This device has no English voice for the calls. Add one in the system's speech settings; on Linux install speech-dispatcher (spd-say).",
   "cameraAssignFailed": "Assignment not stored: {error}",
   "@cameraAssignFailed": {
     "placeholders": {

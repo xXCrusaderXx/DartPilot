@@ -3395,7 +3395,7 @@ abstract class AppLocalizations {
   /// No description provided for @callerNoVoice.
   ///
   /// In en, this message translates to:
-  /// **'This device has no speech output. On Linux: install speech-dispatcher (spd-say).'**
+  /// **'This device has no English voice for the calls. Add one in the system\'s speech settings; on Linux install speech-dispatcher (spd-say).'**
   String get callerNoVoice;
 
   /// No description provided for @cameraAssignFailed.

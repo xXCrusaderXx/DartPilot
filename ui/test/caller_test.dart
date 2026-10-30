@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dartpilot/src/app.dart';
 import 'package:dartpilot/src/board/dart_throw.dart';
 import 'package:dartpilot/src/board/scoring.dart';
@@ -235,4 +237,39 @@ void main() {
     await chosen.load();
     expect(chosen.enabled, isTrue);
   });
+
+  testWidgets('without an English voice the caller cannot be switched on, and a failing voice costs only the call', (
+    tester,
+  ) async {
+    final caller = Caller(RecordingVoice(english: false), store: false);
+    await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), caller: caller));
+    await playOffline(tester);
+    await openSettingsPage(tester, 'sound');
+    await tester.scrollUntilVisible(find.byKey(const ValueKey('caller-enabled')), 200);
+    await tester.tap(find.byKey(const ValueKey('caller-enabled')));
+    await tester.pumpAndSettle();
+    expect(caller.enabled, isFalse);
+    expect(find.textContaining('keine englische Stimme'), findsOneWidget);
+
+    final failing = Caller(_FailingVoice(), store: false)..enabled = true;
+    failing.call(const ['Sixty'], 'en');
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+  });
+
+  test('a volume dragged is kept only when the slider is let go', () async {
+    SharedPreferences.setMockInitialValues({});
+    final caller = Caller(RecordingVoice());
+    await caller.set(volume: 0.3, save: false);
+    expect(caller.volume, 0.3);
+    expect((await SharedPreferences.getInstance()).getDouble('caller.volume'), isNull);
+    await caller.set(volume: 0.3);
+    expect((await SharedPreferences.getInstance()).getDouble('caller.volume'), 0.3);
+  });
+}
+
+class _FailingVoice extends RecordingVoice {
+  @override
+  Future<void> speak(String text, {required String language, required double volume}) =>
+      Future.error(const ProcessException('spd-say', [], 'not installed'));
 }

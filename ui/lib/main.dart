@@ -27,7 +27,9 @@ Future<void> main() async {
   final caller = Caller(SystemVoice())..load();
   final effects = SystemEffects()..warmUp();
   final sfx = Sfx(effects)..load();
-  final display = DisplaySettings()..load();
+  // Read before the first frame as well, so a light theme or a larger text size does not start with a dark frame.
+  final display = DisplaySettings();
+  await display.load().catchError((Object e) => debugPrint('The display settings cannot be read: $e'));
   runApp(
     DartPilotApp(
       statistics: statistics,

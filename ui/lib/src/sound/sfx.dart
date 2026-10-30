@@ -130,12 +130,13 @@ class Sfx extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> set({bool? enabled, double? volume, bool? vibration}) async {
+  /// Changes the settings; [save] false only shows a value while a slider is dragged, and keeps it at its end.
+  Future<void> set({bool? enabled, double? volume, bool? vibration, bool save = true}) async {
     this.enabled = enabled ?? this.enabled;
     this.volume = volume ?? this.volume;
     this.vibration = vibration ?? this.vibration;
     notifyListeners();
-    if (!store) return;
+    if (!store || !save) return;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_enabledKey, this.enabled);
     await prefs.setDouble(_volumeKey, this.volume);
@@ -165,8 +166,18 @@ class SfxScope extends InheritedNotifier<Sfx> {
   static Sfx read(BuildContext context) => context.getInheritedWidgetOfExactType<SfxScope>()?.notifier ?? _silent;
 }
 
-/// How long the caller waits after an effect, so the effect is heard first and the words stay clear of it
+/// How long the caller waits after a dart's thud, so the thud is heard first and the words stay clear of it
 const Duration callerDelay = Duration(milliseconds: 150);
+
+/// How long the caller waits after `effect`: past the thud of a dart, and past most of the longer sounds, so the
+/// voice does not talk over the chord of a leg or the match (0.9 s and 1.3 s long) or the falling notes of a bust.
+/// Their last notes fade out under the first word.
+Duration callerDelayAfter(Effect effect) => switch (effect) {
+  Effect.match => const Duration(milliseconds: 1100),
+  Effect.leg => const Duration(milliseconds: 750),
+  Effect.bust => const Duration(milliseconds: 400),
+  _ => callerDelay,
+};
 
 /// What follows a dart of a game: its one sound, a vibration for a dart entered by hand on a phone, and the caller's
 /// `calls`. The caller has priority: what it says in words (the end of a visit, a 180) is not also played as an effect;
@@ -186,7 +197,7 @@ void dartFeedback(
   if (!bot && dart.input != ThrowInput.engine) sfx.vibrate(sound.strong ? Haptic.medium : Haptic.light);
   if (!speaks) return;
   if (played) {
-    Timer(callerDelay, () => caller.call(calls, callLanguage));
+    Timer(callerDelayAfter(sound), () => caller.call(calls, callLanguage));
   } else {
     caller.call(calls, callLanguage);
   }

@@ -1905,7 +1905,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get callerVolume => 'Caller volume';
 
   @override
-  String get callerNoVoice => 'This device has no speech output. On Linux: install speech-dispatcher (spd-say).';
+  String get callerNoVoice =>
+      'This device has no English voice for the calls. Add one in the system\'s speech settings; on Linux install speech-dispatcher (spd-say).';
 
   @override
   String cameraAssignFailed(String error) {

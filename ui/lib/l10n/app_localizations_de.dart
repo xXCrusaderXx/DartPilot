@@ -1907,7 +1907,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get callerNoVoice =>
-      'Auf diesem Gerät gibt es keine Sprachausgabe. Unter Linux: speech-dispatcher installieren (spd-say).';
+      'Auf diesem Gerät gibt es keine englische Stimme für die Ansagen. Füg eine in den Sprachausgabe-Einstellungen des Systems hinzu; unter Linux speech-dispatcher installieren (spd-say).';
 
   @override
   String cameraAssignFailed(String error) {

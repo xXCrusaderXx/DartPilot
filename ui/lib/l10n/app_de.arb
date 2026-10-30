@@ -550,7 +550,7 @@
   "viewingFar": "Fern",
   "scoreCallerHint": "Sagt die Punkte jeder Aufnahme an, wie ein Caller",
   "callerVolume": "Lautstärke der Ansage",
-  "callerNoVoice": "Auf diesem Gerät gibt es keine Sprachausgabe. Unter Linux: speech-dispatcher installieren (spd-say).",
+  "callerNoVoice": "Auf diesem Gerät gibt es keine englische Stimme für die Ansagen. Füg eine in den Sprachausgabe-Einstellungen des Systems hinzu; unter Linux speech-dispatcher installieren (spd-say).",
   "cameraAssignFailed": "Zuordnung nicht gespeichert: {error}",
   "addSetMeasure": "Im Board vermessen",
   "addSetMeasureHint": "Einen Dart an vier Stellen stecken – die Kameras messen ihn",
