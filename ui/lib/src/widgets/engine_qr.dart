@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -101,8 +102,8 @@ class _EngineQrDialogState extends State<EngineQrDialog> {
   }
 }
 
-/// Scanning works with a camera on phones and tablets.
-bool get canScanQr => Platform.isAndroid || Platform.isIOS;
+/// Scanning works with a camera on phones and tablets; not in the browser, where Platform is unavailable.
+bool get canScanQr => !kIsWeb && (Platform.isAndroid || Platform.isIOS);
 
 /// The engine address from a QR code (ws://… or wss://…); null when cancelled
 Future<String?> scanEngineQr(BuildContext context) {

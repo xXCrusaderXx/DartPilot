@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -9,6 +10,7 @@ import '../../l10n/app_localizations.dart';
 import '../board/scoring.dart';
 import '../engine/engine_connection.dart';
 import '../stats/export.dart';
+import '../stats/export_save.dart';
 import '../stats/game_record.dart';
 import '../stats/player_stats.dart';
 import '../stats/precision.dart';
@@ -85,18 +87,20 @@ class StatisticsScreen extends StatelessWidget {
     final messenger = ScaffoldMessenger.of(context);
     final stamp = DateFormat('yyyyMMdd-HHmm').format(DateTime.now());
     try {
-      final file = kind == 'csv'
-          ? await writeExport('dartpilot-darts-$stamp.csv', dartsCsv(statistics.games))
-          : await writeExport('dartpilot-games-$stamp.json', gamesJson(statistics.games, statistics.players));
+      final where = kind == 'csv'
+          ? await saveExport('dartpilot-darts-$stamp.csv', dartsCsv(statistics.games))
+          : await saveExport('dartpilot-games-$stamp.json', gamesJson(statistics.games, statistics.players));
       messenger.showSnackBar(
         SnackBar(
           key: const ValueKey('export-done'),
-          content: Text(l10n.exportSaved(file.path)),
+          content: Text(kIsWeb ? l10n.exportDownloaded(where) : l10n.exportSaved(where)),
           duration: const Duration(seconds: 8),
-          action: SnackBarAction(
-            label: l10n.copyPath,
-            onPressed: () => Clipboard.setData(ClipboardData(text: file.path)),
-          ),
+          action: kIsWeb
+              ? null
+              : SnackBarAction(
+                  label: l10n.copyPath,
+                  onPressed: () => Clipboard.setData(ClipboardData(text: where)),
+                ),
         ),
       );
     } on FileSystemException catch (e) {

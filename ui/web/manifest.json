@@ -1,12 +1,12 @@
 {
-    "name": "dartpilot",
-    "short_name": "dartpilot",
+    "name": "DartPilot",
+    "short_name": "DartPilot",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "DartPilot player app",
-    "orientation": "portrait-primary",
+    "background_color": "#161c26",
+    "theme_color": "#161c26",
+    "description": "Steel darts scoreboard: enter darts by hand or follow a DartPilot engine as a remote display",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {
