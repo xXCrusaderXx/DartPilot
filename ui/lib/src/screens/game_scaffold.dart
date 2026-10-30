@@ -4,6 +4,7 @@ import '../board/dart_throw.dart';
 import '../games/dart_game.dart';
 import '../input/game_input.dart';
 import '../input/takeout_gate.dart';
+import '../widgets/celebration.dart';
 import '../widgets/leave_game_guard.dart';
 import 'game_layout.dart';
 import 'watched_board.dart';
@@ -23,6 +24,7 @@ class GameScaffold extends StatefulWidget {
     this.takeout,
     this.watching = false,
     this.panelWidth = 340,
+    this.celebrations,
   });
 
   final String title;
@@ -36,6 +38,9 @@ class GameScaffold extends StatefulWidget {
   final TakeoutGate? takeout;
   final bool watching;
   final double panelWidth;
+
+  /// The 180s and checkouts to show over the screen, in games that have them
+  final Celebrations? celebrations;
 
   @override
   State<GameScaffold> createState() => _GameScaffoldState();
@@ -53,37 +58,39 @@ class _GameScaffoldState extends State<GameScaffold> {
 
   @override
   Widget build(BuildContext context) {
+    final layout = GameNoticeSlot(
+      notice: _notice,
+      child: GameLayout(
+        input: widget.watching
+            ? WatchedBoard(throws: widget.shownThrows)
+            : GameInput(
+                game: widget.game,
+                takeout: widget.takeout,
+                shownThrows: widget.shownThrows,
+                onDart: widget.onDart,
+                onChanged: widget.onChanged,
+              ),
+        panel: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ValueListenableBuilder(
+              valueListenable: _notice,
+              builder: (context, notice, _) => notice ?? const SizedBox.shrink(),
+            ),
+            Expanded(child: widget.panel),
+          ],
+        ),
+        panelWidth: widget.panelWidth,
+      ),
+    );
+    final celebrations = widget.celebrations;
     return LeaveGameGuard(
       canLeave: widget.watching || widget.game.isFinished || widget.game.throws.isEmpty,
       child: Scaffold(
         appBar: AppBar(title: Text(widget.title)),
         // Clear of a notch in landscape and of the home indicator under Undo
         body: SafeArea(
-          child: GameNoticeSlot(
-            notice: _notice,
-            child: GameLayout(
-              input: widget.watching
-                  ? WatchedBoard(throws: widget.shownThrows)
-                  : GameInput(
-                      game: widget.game,
-                      takeout: widget.takeout,
-                      shownThrows: widget.shownThrows,
-                      onDart: widget.onDart,
-                      onChanged: widget.onChanged,
-                    ),
-              panel: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  ValueListenableBuilder(
-                    valueListenable: _notice,
-                    builder: (context, notice, _) => notice ?? const SizedBox.shrink(),
-                  ),
-                  Expanded(child: widget.panel),
-                ],
-              ),
-              panelWidth: widget.panelWidth,
-            ),
-          ),
+          child: celebrations == null ? layout : CelebrationOverlay(celebrations: celebrations, child: layout),
         ),
       ),
     );

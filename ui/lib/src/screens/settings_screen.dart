@@ -294,7 +294,8 @@ class _SetupTile extends StatelessWidget {
   }
 }
 
-/// How the app looks on this device: preset, brightness, colours, text size, game display and viewing distance
+/// How the app looks on this device: preset, brightness, colours, text size, game display, viewing distance and the
+/// game screen's layout
 class DisplaySettingsTiles extends StatelessWidget {
   const DisplaySettingsTiles({super.key});
 
@@ -348,6 +349,7 @@ class DisplaySettingsTiles extends StatelessWidget {
             onSelectionChanged: (s) => display.set(distance: s.first),
           ),
         ),
+        const GameScreenTiles(),
       ],
     );
   }

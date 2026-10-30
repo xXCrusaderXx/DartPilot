@@ -11,6 +11,7 @@ import '../games/dart_game.dart';
 import '../input/takeout_gate.dart';
 import '../stats/game_record.dart';
 import '../stats/statistics.dart';
+import '../widgets/celebration.dart';
 import '../widgets/winner_dialog.dart';
 import 'my_darts_screen.dart';
 import 'game_layout.dart';
@@ -50,6 +51,13 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
 
   late final X01Game _game = replayed(X01Game(widget.settings), widget.replay);
   final TakeoutGate _takeout = TakeoutGate();
+  final Celebrations _celebrations = Celebrations();
+
+  @override
+  void dispose() {
+    _celebrations.dispose();
+    super.dispose();
+  }
 
   @override
   bool get waitsForTakeout => _takeout.isClosed(_game);
@@ -83,6 +91,11 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
     final l10n = AppLocalizations.of(context);
     if (!widget.watching) {
       CallerScope.read(context).call(x01Calls(_game, visitsBefore: visitsBefore, legBefore: legBefore), callLanguage);
+    }
+    if (_game.legNumber != legBefore || _game.isFinished) {
+      _celebrations.show(l10n.celebrateCheckout(_game.players[playerBefore].checkouts.last));
+    } else if (_game.visits.length > visitsBefore && _game.visits[_game.visits.length - 2].points == 180) {
+      _celebrations.show('180');
     }
     if (_game.isFinished) {
       _showWinner();
@@ -128,6 +141,7 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
           onCallCheckout: () => CallerScope.read(context).say([callRoute(checkout!)], callLanguage),
           style: display.styleFor(window),
           far: display.farFor(window),
+          details: display.panelDetails,
         ),
       ],
       bottom: [
@@ -150,6 +164,7 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
       },
       onChanged: () => setState(() {}),
       panel: scoreboard,
+      celebrations: _celebrations,
     );
   }
 

@@ -6,7 +6,8 @@ import '../display.dart';
 import '../../l10n/app_localizations.dart';
 import '../theme.dart';
 
-/// Input on the left and the score panel on the right in landscape; stacked in portrait.
+/// Input and score panel side by side in landscape, the board on the side the player chose; stacked in portrait. The
+/// player's board size moves the line between them, while the panel keeps at least [panelWidth].
 class GameLayout extends StatelessWidget {
   const GameLayout({super.key, required this.input, required this.panel, this.panelWidth = 340});
 
@@ -14,33 +15,44 @@ class GameLayout extends StatelessWidget {
   final Widget panel;
   final double panelWidth;
 
+  /// The panel's width in a row of [width]: on a monitor or TV the score takes about half the room by default, and the
+  /// board keeps the rest.
+  double _panelWidthIn(double width, BoardSize size) => switch (size) {
+    BoardSize.large => panelWidth,
+    BoardSize.medium => width >= WindowClass.largeFrom ? math.max(panelWidth, width * 0.42) : panelWidth,
+    BoardSize.small => math.max(panelWidth, width * (width >= WindowClass.largeFrom ? 0.55 : 0.5)),
+  };
+
   @override
   Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
+    final (inputFlex, panelFlex) = switch (display.boardSize) {
+      BoardSize.large => (4, 3),
+      BoardSize.medium => (3, 3),
+      BoardSize.small => (2, 3),
+    };
     return Padding(
       padding: const EdgeInsets.all(16),
       child: LayoutBuilder(
-        builder: (context, constraints) => constraints.maxWidth > constraints.maxHeight
-            ? Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(flex: 3, child: input),
-                  const SizedBox(width: 24),
-                  // On a monitor or TV the score takes about half the room, and the board keeps the rest.
-                  SizedBox(
-                    width: constraints.maxWidth >= WindowClass.largeFrom
-                        ? math.max(panelWidth, constraints.maxWidth * 0.42)
-                        : panelWidth,
-                    child: panel,
-                  ),
-                ],
-              )
-            : Column(
-                children: [
-                  Expanded(flex: 3, child: input),
-                  const SizedBox(height: 16),
-                  Expanded(flex: 3, child: panel),
-                ],
-              ),
+        builder: (context, constraints) {
+          if (constraints.maxWidth <= constraints.maxHeight) {
+            return Column(
+              children: [
+                Expanded(flex: inputFlex, child: input),
+                const SizedBox(height: 16),
+                Expanded(flex: panelFlex, child: panel),
+              ],
+            );
+          }
+          final board = Expanded(child: input);
+          final side = SizedBox(width: _panelWidthIn(constraints.maxWidth, display.boardSize), child: panel);
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: display.boardSide == BoardSide.left
+                ? [board, const SizedBox(width: 24), side]
+                : [side, const SizedBox(width: 24), board],
+          );
+        },
       ),
     );
   }
@@ -92,6 +104,7 @@ class VisitDarts extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final colours = StatusColors.of(context);
     final hits = this.hits;
+    if (!DisplayScope.of(context).shows(PanelDetail.visitDarts)) return const SizedBox.shrink();
     return Row(
       children: [
         for (var i = 0; i < 3; ++i)

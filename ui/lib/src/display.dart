@@ -42,6 +42,18 @@ enum TextSize {
   final double factor;
 }
 
+/// Which side of the score panel the board takes when they stand side by side
+enum BoardSide { left, right }
+
+/// The board's share of the game screen, within what the window leaves beside the score panel
+enum BoardSize { small, medium, large }
+
+/// What the score panel shows besides the score
+enum PanelDetail { visitDarts, checkout, average, dartsThrown }
+
+/// How strongly a 180 or a checkout is celebrated on the game screen
+enum Celebration { full, subtle, off }
+
 /// A starting point for the appearance; the player changes single values from there, and Reset returns to it.
 enum AppearancePreset {
   standard(AppBrightness.dark, TextSize.normal, false, DisplayStyle.auto),
@@ -74,6 +86,12 @@ class DisplaySettings extends ChangeNotifier {
   TextSize textSize = TextSize.normal;
   bool highContrast = false;
   AppearancePreset preset = AppearancePreset.standard;
+  BoardSide boardSide = BoardSide.left;
+  BoardSize boardSize = BoardSize.medium;
+  Set<PanelDetail> panelDetails = defaultPanelDetails;
+  Celebration celebration = Celebration.full;
+
+  static const defaultPanelDetails = {PanelDetail.visitDarts, PanelDetail.checkout, PanelDetail.average};
 
   static const _styleKey = 'display.style';
   static const _distanceKey = 'display.distance';
@@ -82,6 +100,10 @@ class DisplaySettings extends ChangeNotifier {
   static const _textSizeKey = 'display.textSize';
   static const _highContrastKey = 'display.highContrast';
   static const _presetKey = 'display.preset';
+  static const _boardSideKey = 'display.boardSide';
+  static const _boardSizeKey = 'display.boardSize';
+  static const _panelDetailsKey = 'display.panelDetails';
+  static const _celebrationKey = 'display.celebration';
 
   Future<void> load() async {
     if (!store) return;
@@ -94,6 +116,13 @@ class DisplaySettings extends ChangeNotifier {
     textSize = TextSize.values.asNameMap()[prefs.getString(_textSizeKey)] ?? TextSize.normal;
     highContrast = prefs.getBool(_highContrastKey) ?? false;
     preset = AppearancePreset.values.asNameMap()[prefs.getString(_presetKey)] ?? AppearancePreset.standard;
+    boardSide = BoardSide.values.asNameMap()[prefs.getString(_boardSideKey)] ?? BoardSide.left;
+    boardSize = BoardSize.values.asNameMap()[prefs.getString(_boardSizeKey)] ?? BoardSize.medium;
+    final details = prefs.getStringList(_panelDetailsKey);
+    panelDetails = details == null
+        ? defaultPanelDetails
+        : {for (final name in details) ?PanelDetail.values.asNameMap()[name]};
+    celebration = Celebration.values.asNameMap()[prefs.getString(_celebrationKey)] ?? Celebration.full;
     notifyListeners();
   }
 
@@ -103,14 +132,28 @@ class DisplaySettings extends ChangeNotifier {
     AppBrightness? brightness,
     TextSize? textSize,
     bool? highContrast,
+    BoardSide? boardSide,
+    BoardSize? boardSize,
+    Celebration? celebration,
   }) async {
     this.style = style ?? this.style;
     this.distance = distance ?? this.distance;
     this.brightness = brightness ?? this.brightness;
     this.textSize = textSize ?? this.textSize;
     this.highContrast = highContrast ?? this.highContrast;
+    this.boardSide = boardSide ?? this.boardSide;
+    this.boardSize = boardSize ?? this.boardSize;
+    this.celebration = celebration ?? this.celebration;
     await _changed();
   }
+
+  /// Shows or hides one detail of the score panel
+  Future<void> showDetail(PanelDetail detail, bool shown) async {
+    panelDetails = shown ? {...panelDetails, detail} : ({...panelDetails}..remove(detail));
+    await _changed();
+  }
+
+  bool shows(PanelDetail detail) => panelDetails.contains(detail);
 
   /// The accent from [colour], or the flight's blue when null
   Future<void> setAccent(Color? colour) async {
@@ -119,7 +162,7 @@ class DisplaySettings extends ChangeNotifier {
   }
 
   /// Starts from [preset]: its brightness, text size, contrast and game display, with the default accent. The viewing
-  /// distance belongs to where the device stands and is kept.
+  /// distance and the game screen's layout belong to where the device stands and are kept, as is the celebration.
   Future<void> applyPreset(AppearancePreset preset) async {
     this.preset = preset;
     brightness = preset.brightness;
@@ -149,6 +192,10 @@ class DisplaySettings extends ChangeNotifier {
     await prefs.setString(_textSizeKey, textSize.name);
     await prefs.setBool(_highContrastKey, highContrast);
     await prefs.setString(_presetKey, preset.name);
+    await prefs.setString(_boardSideKey, boardSide.name);
+    await prefs.setString(_boardSizeKey, boardSize.name);
+    await prefs.setStringList(_panelDetailsKey, [for (final d in panelDetails) d.name]);
+    await prefs.setString(_celebrationKey, celebration.name);
   }
 
   ThemeMode get themeMode => switch (brightness) {
