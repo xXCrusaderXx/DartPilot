@@ -6,6 +6,7 @@ import '../engine/engine_events.dart';
 import 'dart_throw.dart';
 import 'scoring.dart';
 import '../display.dart';
+import '../theme.dart';
 import '../widgets/live_jpeg.dart';
 import '../../l10n/app_localizations.dart';
 import 'score_text.dart';
@@ -298,6 +299,8 @@ class _DartboardPainter extends CustomPainter {
         text: '$sector',
         style: TextStyle(
           color: Colors.white,
+          // The bundled score face, the same on every device
+          fontFamily: scoreFontFamily,
           fontSize: sizeMm * scale,
           fontWeight: FontWeight.w600,
           shadows: const [Shadow(blurRadius: 3)],

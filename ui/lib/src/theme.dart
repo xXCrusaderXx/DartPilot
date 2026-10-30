@@ -417,19 +417,14 @@ ThemeData dartPilotTheme([AppPalette p = AppPalette.dark, String? fontFamily = t
     outlineVariant: p.border,
   );
   final base = ThemeData(colorScheme: scheme, useMaterial3: true, fontFamily: fontFamily);
-  TextStyle? figures(TextStyle? style) => style?.copyWith(fontFeatures: tabularFigures);
   final text = base.textTheme;
   return base.copyWith(
+    // The display sizes are the big numbers: the score face. Titles and headlines keep the text face's own figures:
+    // tabular ones would widen its hyphens and digits in words such as "X01-Spiel"; changing figures use scoreStyle.
     textTheme: text.copyWith(
-      // The display sizes are the big numbers: the score face
       displayLarge: scoreStyle(text.displayLarge),
       displayMedium: scoreStyle(text.displayMedium),
       displaySmall: scoreStyle(text.displaySmall),
-      headlineLarge: figures(text.headlineLarge),
-      headlineMedium: figures(text.headlineMedium),
-      headlineSmall: figures(text.headlineSmall),
-      titleLarge: figures(text.titleLarge),
-      titleMedium: figures(text.titleMedium),
     ),
     scaffoldBackgroundColor: p.background,
     appBarTheme: AppBarTheme(backgroundColor: p.background, surfaceTintColor: Colors.transparent),
@@ -459,7 +454,7 @@ ThemeData dartPilotTheme([AppPalette p = AppPalette.dark, String? fontFamily = t
     dividerTheme: DividerThemeData(color: p.border),
     snackBarTheme: SnackBarThemeData(
       backgroundColor: p.surfaceRaised,
-      contentTextStyle: TextStyle(color: p.text),
+      contentTextStyle: base.textTheme.bodyMedium?.copyWith(color: p.text),
     ),
     extensions: [
       p,
