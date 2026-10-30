@@ -96,7 +96,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noThrowsYet => 'Tap the board or use the keypad';
 
   @override
-  String get x01Setup => 'New X01 game';
+  String get x01Setup => 'X01';
 
   @override
   String get players => 'Players';
@@ -224,10 +224,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get cricketSetup => 'New Cricket game';
+  String get cricketSetup => 'Cricket';
 
   @override
-  String get aroundTheClockSetup => 'New Around the Clock game';
+  String get aroundTheClockSetup => 'Around the Clock';
 
   @override
   String get endWithBull => 'Finish with the bull';
@@ -1713,7 +1713,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearancePreset => 'Starting point';
 
   @override
-  String get appearancePresetHint => 'Pick one and change single values below. Reset returns to it.';
+  String get appearancePresetHint => 'Pick one, then change single values';
 
   @override
   String get presetStandard => 'Standard';
@@ -1806,7 +1806,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get textFontSystem => 'System';
 
   @override
-  String get brightnessHint => 'Dark, light, or as the system is set. Every text keeps enough contrast in both.';
+  String get brightnessHint => 'Dark, light, or as the system is set';
 
   @override
   String get brightnessSystem => 'System';
@@ -1821,8 +1821,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get displayStyle => 'Game display';
 
   @override
-  String get displayStyleHint =>
-      'Clear shows the remaining score large in the app\'s colours; the scoreboard fits more on less room. Automatic: scoreboard on phones, clear elsewhere.';
+  String get displayStyleHint => 'Clear: the score large. Scoreboard: more on less room, automatic on phones.';
 
   @override
   String get displayAuto => 'Auto';
@@ -1837,8 +1836,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get viewingDistance => 'Viewing distance';
 
   @override
-  String get viewingDistanceHint =>
-      'Far shows only what matters, very large, for a screen beside the board or a TV. Automatic: far on large screens.';
+  String get viewingDistanceHint => 'Far: only what matters, very large, for a TV by the board';
 
   @override
   String get viewingNear => 'Near';
@@ -2342,9 +2340,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameScreenLayout => 'Game screen';
 
   @override
-  String get gameScreenLayoutHint => 'Kept for this device, whatever the preset';
-
-  @override
   String get boardSide => 'Board side';
 
   @override
@@ -2360,7 +2355,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get boardSize => 'Board size';
 
   @override
-  String get boardSizeHint => 'How much of the game screen the board takes; the score always keeps room to be read';
+  String get boardSizeHint => 'The score always stays readable';
 
   @override
   String get boardSmall => 'Small';
@@ -2390,8 +2385,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get celebration => '180 and checkout';
 
   @override
-  String get celebrationHint =>
-      'How a 180 or a checkout shows on the game screen; where the system asks for less motion, it shows without moving';
+  String get celebrationHint => 'How a 180 or a checkout shows';
 
   @override
   String get celebrationFull => 'Full';
@@ -2508,7 +2502,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Free software under the GNU General Public License, version 3 or later (GPL-3.0-or-later). It comes without any warranty. You may share and change it under that licence.';
 
   @override
-  String get aboutLegalese => 'Copyright (C) DartPilot contributors. GPL-3.0-or-later, without any warranty.';
+  String get aboutLegalese =>
+      'Copyright (C) DartPilot contributors. GPL-3.0-or-later, without any warranty. The DartPilot icon is part of DartPilot and under its licence; the icons in the app are Material Icons by Google (Apache License 2.0) and Cupertino Icons by the Flutter authors (MIT License).';
 
   @override
   String get aboutSource => 'Source code';
@@ -2529,11 +2524,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aboutThirdPartyHint => 'Flutter and the packages this app is built with';
 
   @override
-  String get aboutCredits => 'Credits';
-
-  @override
-  String get aboutCreditsText =>
-      'The DartPilot icon is part of DartPilot and under its licence. The icons in the app are Material Icons by Google (Apache License 2.0) and Cupertino Icons by the Flutter authors (MIT License). The app is built with Flutter. Thanks to everyone who reports bugs, tests and contributes.';
+  String get aboutCreditsText => 'Thanks to everyone who reports bugs, tests and contributes.';
 
   @override
   String exportDownloaded(String name) {
@@ -2603,7 +2594,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get settingsDisplayHint => 'Colours, text size and the game screen';
+  String get settingsDisplayHint => 'Preset, colours and text size';
+
+  @override
+  String get settingsGameScreenHint => 'Style, distance and board';
 
   @override
   String get settingsSound => 'Sound & caller';

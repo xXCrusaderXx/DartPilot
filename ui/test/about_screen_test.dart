@@ -28,16 +28,18 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Version 1.2.3'), findsOneWidget);
     expect(find.textContaining('GPL-3.0-or-later'), findsWidgets);
-    expect(find.text(sourceUrl), findsOneWidget);
-    expect(find.text(userGuideUrl('en')), findsOneWidget);
-    expect(find.textContaining('Material Icons'), findsOneWidget);
+    expect(find.byKey(const ValueKey('about-mark')), findsOneWidget);
+    expect(find.text(sourceUrl.replaceFirst('https://', '')), findsOneWidget);
+    expect(find.text(userGuideUrl('en').replaceFirst('https://', '')), findsOneWidget);
+    // The attributions of icons and fonts belong to the licence page, not to the page itself.
+    expect(find.textContaining('Material Icons'), findsNothing);
   });
 
   testWidgets('a build from source says so instead of a version', (tester) async {
     await tester.pumpWidget(_app(const AboutScreen(version: ''), locale: const Locale('de')));
     await tester.pumpAndSettle();
     expect(find.text('Entwicklungsversion'), findsOneWidget);
-    expect(find.text(userGuideUrl('de')), findsOneWidget);
+    expect(find.text(userGuideUrl('de').replaceFirst('https://', '')), findsOneWidget);
   });
 
   test('the guide follows the language', () {
@@ -54,9 +56,7 @@ void main() {
     });
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
     await tester.pumpWidget(_app(const AboutScreen(version: '1.2.3')));
-    await tester.tap(
-      find.descendant(of: find.byKey(const ValueKey('about-source')), matching: find.byIcon(Icons.copy)),
-    );
+    await tester.tap(find.byKey(const ValueKey('about-source')));
     await tester.pumpAndSettle();
     expect(copied, sourceUrl);
     expect(find.text('Link copied'), findsOneWidget);

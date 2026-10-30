@@ -58,7 +58,16 @@ class SettingsScreen extends StatelessWidget {
                 title: Text(l10n.settingsDisplay),
                 subtitle: Text(l10n.settingsDisplayHint),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () => open(const AppearanceScreen()),
+                onTap: () => open(AppearanceScreen(title: l10n.settingsDisplay, tiles: const DisplaySettingsTiles())),
+              ),
+              ListTile(
+                key: const ValueKey('settings-page-game-screen'),
+                leading: const Icon(Icons.scoreboard_outlined),
+                title: Text(l10n.gameScreenLayout),
+                subtitle: Text(l10n.settingsGameScreenHint),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () =>
+                    open(AppearanceScreen(title: l10n.gameScreenLayout, tiles: const GameScreenSettingsTiles())),
               ),
               ListTile(
                 key: const ValueKey('settings-page-sound'),
@@ -554,8 +563,7 @@ class _SetupTile extends StatelessWidget {
   }
 }
 
-/// How the app looks on this device: preset, brightness, colours, text size, game display, viewing distance and the
-/// game screen's layout
+/// How the app looks on this device: preset, brightness, colours and text
 class DisplaySettingsTiles extends StatelessWidget {
   const DisplaySettingsTiles({super.key});
 
@@ -583,6 +591,23 @@ class DisplaySettingsTiles extends StatelessWidget {
           ),
         ),
         const AppearanceColourTiles(),
+        const AppearanceShareTiles(),
+      ],
+    );
+  }
+}
+
+/// How a game is shown on this device: display style, viewing distance, the layout and how it celebrates
+class GameScreenSettingsTiles extends StatelessWidget {
+  const GameScreenSettingsTiles({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final display = DisplayScope.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
         ListTile(title: Text(l10n.displayStyle), subtitle: Text(l10n.displayStyleHint)),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -614,32 +639,33 @@ class DisplaySettingsTiles extends StatelessWidget {
           ),
         ),
         const GameScreenTiles(),
-        const AppearanceShareTiles(),
       ],
     );
   }
 }
 
-/// The display settings beside a preview of a game screen, which follows every change: side by side where the window
-/// is wide, the preview above them where it is not
+/// Settings of how the app looks beside a preview of a game screen, which follows every change: side by side where
+/// the window is wide, the preview above them where it is not
 class AppearanceScreen extends StatelessWidget {
-  const AppearanceScreen({super.key});
+  const AppearanceScreen({super.key, required this.title, required this.tiles});
+
+  final String title;
+  final Widget tiles;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    const settings = SingleChildScrollView(child: DisplaySettingsTiles());
+    final settings = SingleChildScrollView(child: tiles);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.settingsDisplay)),
+      appBar: AppBar(title: Text(title)),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
             const preview = Padding(padding: EdgeInsets.all(16), child: AppearancePreview());
             if (constraints.maxWidth >= WindowClass.mediumFrom && constraints.maxWidth > constraints.maxHeight) {
-              return const Row(
+              return Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(child: preview),
+                  const Expanded(child: preview),
                   SizedBox(width: 420, child: settings),
                 ],
               );
@@ -649,7 +675,7 @@ class AppearanceScreen extends StatelessWidget {
               children: [
                 SizedBox(height: constraints.maxHeight * 0.4, child: preview),
                 const Divider(height: 1),
-                const Expanded(child: settings),
+                Expanded(child: settings),
               ],
             );
           },

@@ -263,7 +263,7 @@ class _HueDialogState extends State<_HueDialog> {
   }
 }
 
-/// The game screen's layout and how it celebrates; kept for the device whatever the preset
+/// The game screen's layout and how it celebrates; a preset leaves them alone
 class GameScreenTiles extends StatelessWidget {
   const GameScreenTiles({super.key});
 
@@ -290,10 +290,6 @@ class GameScreenTiles extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ListTile(
-          title: Text(l10n.gameScreenLayout, style: Theme.of(context).textTheme.titleMedium),
-          subtitle: Text(l10n.gameScreenLayoutHint),
-        ),
         ListTile(title: Text(l10n.boardSide), subtitle: Text(l10n.boardSideHint)),
         segmented(
           'board-side',

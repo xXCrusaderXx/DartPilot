@@ -263,7 +263,7 @@ abstract class AppLocalizations {
   /// No description provided for @x01Setup.
   ///
   /// In en, this message translates to:
-  /// **'New X01 game'**
+  /// **'X01'**
   String get x01Setup;
 
   /// No description provided for @players.
@@ -467,13 +467,13 @@ abstract class AppLocalizations {
   /// No description provided for @cricketSetup.
   ///
   /// In en, this message translates to:
-  /// **'New Cricket game'**
+  /// **'Cricket'**
   String get cricketSetup;
 
   /// No description provided for @aroundTheClockSetup.
   ///
   /// In en, this message translates to:
-  /// **'New Around the Clock game'**
+  /// **'Around the Clock'**
   String get aroundTheClockSetup;
 
   /// No description provided for @endWithBull.
@@ -3035,7 +3035,7 @@ abstract class AppLocalizations {
   /// No description provided for @appearancePresetHint.
   ///
   /// In en, this message translates to:
-  /// **'Pick one and change single values below. Reset returns to it.'**
+  /// **'Pick one, then change single values'**
   String get appearancePresetHint;
 
   /// No description provided for @presetStandard.
@@ -3221,7 +3221,7 @@ abstract class AppLocalizations {
   /// No description provided for @brightnessHint.
   ///
   /// In en, this message translates to:
-  /// **'Dark, light, or as the system is set. Every text keeps enough contrast in both.'**
+  /// **'Dark, light, or as the system is set'**
   String get brightnessHint;
 
   /// No description provided for @brightnessSystem.
@@ -3251,7 +3251,7 @@ abstract class AppLocalizations {
   /// No description provided for @displayStyleHint.
   ///
   /// In en, this message translates to:
-  /// **'Clear shows the remaining score large in the app\'s colours; the scoreboard fits more on less room. Automatic: scoreboard on phones, clear elsewhere.'**
+  /// **'Clear: the score large. Scoreboard: more on less room, automatic on phones.'**
   String get displayStyleHint;
 
   /// No description provided for @displayAuto.
@@ -3281,7 +3281,7 @@ abstract class AppLocalizations {
   /// No description provided for @viewingDistanceHint.
   ///
   /// In en, this message translates to:
-  /// **'Far shows only what matters, very large, for a screen beside the board or a TV. Automatic: far on large screens.'**
+  /// **'Far: only what matters, very large, for a TV by the board'**
   String get viewingDistanceHint;
 
   /// No description provided for @viewingNear.
@@ -4112,12 +4112,6 @@ abstract class AppLocalizations {
   /// **'Game screen'**
   String get gameScreenLayout;
 
-  /// No description provided for @gameScreenLayoutHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Kept for this device, whatever the preset'**
-  String get gameScreenLayoutHint;
-
   /// No description provided for @boardSide.
   ///
   /// In en, this message translates to:
@@ -4151,7 +4145,7 @@ abstract class AppLocalizations {
   /// No description provided for @boardSizeHint.
   ///
   /// In en, this message translates to:
-  /// **'How much of the game screen the board takes; the score always keeps room to be read'**
+  /// **'The score always stays readable'**
   String get boardSizeHint;
 
   /// No description provided for @boardSmall.
@@ -4211,7 +4205,7 @@ abstract class AppLocalizations {
   /// No description provided for @celebrationHint.
   ///
   /// In en, this message translates to:
-  /// **'How a 180 or a checkout shows on the game screen; where the system asks for less motion, it shows without moving'**
+  /// **'How a 180 or a checkout shows'**
   String get celebrationHint;
 
   /// No description provided for @celebrationFull.
@@ -4427,7 +4421,7 @@ abstract class AppLocalizations {
   /// No description provided for @aboutLegalese.
   ///
   /// In en, this message translates to:
-  /// **'Copyright (C) DartPilot contributors. GPL-3.0-or-later, without any warranty.'**
+  /// **'Copyright (C) DartPilot contributors. GPL-3.0-or-later, without any warranty. The DartPilot icon is part of DartPilot and under its licence; the icons in the app are Material Icons by Google (Apache License 2.0) and Cupertino Icons by the Flutter authors (MIT License).'**
   String get aboutLegalese;
 
   /// No description provided for @aboutSource.
@@ -4466,16 +4460,10 @@ abstract class AppLocalizations {
   /// **'Flutter and the packages this app is built with'**
   String get aboutThirdPartyHint;
 
-  /// No description provided for @aboutCredits.
-  ///
-  /// In en, this message translates to:
-  /// **'Credits'**
-  String get aboutCredits;
-
   /// No description provided for @aboutCreditsText.
   ///
   /// In en, this message translates to:
-  /// **'The DartPilot icon is part of DartPilot and under its licence. The icons in the app are Material Icons by Google (Apache License 2.0) and Cupertino Icons by the Flutter authors (MIT License). The app is built with Flutter. Thanks to everyone who reports bugs, tests and contributes.'**
+  /// **'Thanks to everyone who reports bugs, tests and contributes.'**
   String get aboutCreditsText;
 
   /// No description provided for @exportDownloaded.
@@ -4601,8 +4589,14 @@ abstract class AppLocalizations {
   /// No description provided for @settingsDisplayHint.
   ///
   /// In en, this message translates to:
-  /// **'Colours, text size and the game screen'**
+  /// **'Preset, colours and text size'**
   String get settingsDisplayHint;
+
+  /// No description provided for @settingsGameScreenHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Style, distance and board'**
+  String get settingsGameScreenHint;
 
   /// No description provided for @settingsSound.
   ///

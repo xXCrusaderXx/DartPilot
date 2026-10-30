@@ -96,7 +96,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get noThrowsYet => 'Tippe auf die Scheibe oder nutze das Tastenfeld';
 
   @override
-  String get x01Setup => 'Neues X01-Spiel';
+  String get x01Setup => 'X01';
 
   @override
   String get players => 'Spieler';
@@ -224,10 +224,10 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get cricketSetup => 'Neues Cricket-Spiel';
+  String get cricketSetup => 'Cricket';
 
   @override
-  String get aroundTheClockSetup => 'Neues Around-the-Clock-Spiel';
+  String get aroundTheClockSetup => 'Around the Clock';
 
   @override
   String get endWithBull => 'Mit Bull beenden';
@@ -1713,8 +1713,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get appearancePreset => 'Vorlage';
 
   @override
-  String get appearancePresetHint =>
-      'Eine wählen und darunter einzelne Werte ändern. Zurücksetzen kehrt zu ihr zurück.';
+  String get appearancePresetHint => 'Eine wählen und dann einzelne Werte ändern';
 
   @override
   String get presetStandard => 'Standard';
@@ -1807,7 +1806,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get textFontSystem => 'System';
 
   @override
-  String get brightnessHint => 'Dunkel, hell oder wie im System eingestellt. Jeder Text bleibt in beiden gut lesbar.';
+  String get brightnessHint => 'Dunkel, hell oder wie im System';
 
   @override
   String get brightnessSystem => 'System';
@@ -1822,8 +1821,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get displayStyle => 'Spielanzeige';
 
   @override
-  String get displayStyleHint =>
-      'Klar zeigt den Rest groß in den Farben der App; das Scoreboard zeigt mehr auf wenig Platz. Automatisch: Scoreboard auf dem Handy, sonst klar.';
+  String get displayStyleHint => 'Klar: der Rest groß. Scoreboard: mehr auf wenig Platz, automatisch auf dem Handy.';
 
   @override
   String get displayAuto => 'Auto';
@@ -1838,8 +1836,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get viewingDistance => 'Leseabstand';
 
   @override
-  String get viewingDistanceHint =>
-      'Fern zeigt nur das Wichtigste, sehr groß, für einen Bildschirm neben der Scheibe oder einen Fernseher. Automatisch: fern auf großen Bildschirmen.';
+  String get viewingDistanceHint => 'Fern: nur das Wichtigste, sehr groß, für einen Fernseher an der Scheibe';
 
   @override
   String get viewingNear => 'Nah';
@@ -2345,9 +2342,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get gameScreenLayout => 'Spielbildschirm';
 
   @override
-  String get gameScreenLayoutHint => 'Gilt für dieses Gerät, unabhängig von der Vorlage';
-
-  @override
   String get boardSide => 'Seite der Scheibe';
 
   @override
@@ -2363,7 +2357,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get boardSize => 'Größe der Scheibe';
 
   @override
-  String get boardSizeHint => 'Wie viel vom Spielbildschirm die Scheibe einnimmt; die Punkte bleiben immer lesbar';
+  String get boardSizeHint => 'Die Punkte bleiben immer lesbar';
 
   @override
   String get boardSmall => 'Klein';
@@ -2393,8 +2387,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get celebration => '180 und Checkout';
 
   @override
-  String get celebrationHint =>
-      'Wie eine 180 oder ein Checkout auf dem Spielbildschirm erscheint; wünscht das System weniger Bewegung, erscheint es ohne Bewegung';
+  String get celebrationHint => 'Wie eine 180 oder ein Checkout erscheint';
 
   @override
   String get celebrationFull => 'Voll';
@@ -2512,7 +2505,8 @@ class AppLocalizationsDe extends AppLocalizations {
       'Freie Software unter der GNU General Public License, Version 3 oder später (GPL-3.0-or-later). Sie kommt ohne jede Gewährleistung. Du darfst sie unter dieser Lizenz weitergeben und ändern.';
 
   @override
-  String get aboutLegalese => 'Copyright (C) DartPilot-Mitwirkende. GPL-3.0-or-later, ohne jede Gewährleistung.';
+  String get aboutLegalese =>
+      'Copyright (C) DartPilot-Mitwirkende. GPL-3.0-or-later, ohne jede Gewährleistung. Das DartPilot-Symbol gehört zu DartPilot und steht unter dessen Lizenz; die Symbole in der App sind die Material Icons von Google (Apache License 2.0) und die Cupertino Icons der Flutter-Autoren (MIT-Lizenz).';
 
   @override
   String get aboutSource => 'Quellcode';
@@ -2533,11 +2527,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get aboutThirdPartyHint => 'Flutter und die Pakete, mit denen die App gebaut ist';
 
   @override
-  String get aboutCredits => 'Danksagung';
-
-  @override
-  String get aboutCreditsText =>
-      'Das DartPilot-Symbol gehört zu DartPilot und steht unter dessen Lizenz. Die Symbole in der App sind die Material Icons von Google (Apache License 2.0) und die Cupertino Icons der Flutter-Autoren (MIT-Lizenz). Die App ist mit Flutter gebaut. Danke an alle, die Fehler melden, testen und mitarbeiten.';
+  String get aboutCreditsText => 'Danke an alle, die Fehler melden, testen und mitarbeiten.';
 
   @override
   String exportDownloaded(String name) {
@@ -2608,7 +2598,10 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get settingsDisplayHint => 'Farben, Textgröße und Spielbildschirm';
+  String get settingsDisplayHint => 'Vorlage, Farben und Textgröße';
+
+  @override
+  String get settingsGameScreenHint => 'Darstellung, Abstand und Scheibe';
 
   @override
   String get settingsSound => 'Ton & Ansager';
