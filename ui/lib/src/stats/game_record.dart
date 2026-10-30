@@ -1,5 +1,7 @@
 // A played game as it is kept for the statistics (#117): the settings and every dart as a board point, so every
 // figure is computed by replaying the game with the same rules as at the oche, also figures added later.
+import 'package:flutter/foundation.dart';
+
 import '../board/dart_throw.dart';
 import '../games/around_the_clock.dart';
 import '../games/checkout_trainer.dart';
@@ -89,6 +91,9 @@ class GameRecord {
     }
   }
 
+  /// Whether the game was played to its end, as its last dart decided it
+  bool get isFinished => (replay().game as DartGame).isFinished;
+
   /// The empty Killer game of this record's numbers and lives
   KillerGame get killerGame {
     final numbers = [for (final n in settings['numbers'] as List? ?? const []) (n as num).toInt()];
@@ -168,7 +173,19 @@ class GameRecord {
     ],
   };
 
-  /// Null for a record this version cannot read, e.g. a mode added later
+  /// Null for a record this version cannot read: a mode added later, or a field of an unexpected type, as a shared
+  /// game from another app version or a damaged file may hold
+  static GameRecord? tryParse(Object? json) {
+    if (json is! Map<String, dynamic>) return null;
+    try {
+      return fromJson(json);
+    } on Object catch (e) {
+      debugPrint('Skipping a game record that cannot be read: $e');
+      return null;
+    }
+  }
+
+  /// Null for a record this version cannot read, e.g. a mode added later; throws on fields of an unexpected type
   static GameRecord? fromJson(Map<String, dynamic> json) {
     final mode = GameMode.values.where((m) => m.name == json['mode']).firstOrNull;
     if (mode == null) return null;

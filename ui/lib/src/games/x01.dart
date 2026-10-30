@@ -205,12 +205,14 @@ class X01Game implements DartGame {
     visits.add(X01Visit(current, settings.startScore, legNumber));
   }
 
-  /// Checkout route for the player at the oche with the darts left in this visit, or null if there is none.
+  /// Checkout route for the player at the oche with the darts left in this visit, as players read it ("T20 20 Bull"),
+  /// or null if there is none.
   List<String>? get checkoutSuggestion {
     if (isFinished) return null;
     final player = players[current];
     if (settings.doubleIn && !player.isIn) return null;
-    return suggestCheckout(player.remaining, 3 - currentVisit.darts.length, doubleOut: settings.doubleOut);
+    final route = suggestCheckout(player.remaining, 3 - currentVisit.darts.length, doubleOut: settings.doubleOut);
+    return route == null ? null : [for (final field in route) routeText(field)];
   }
 }
 
@@ -242,10 +244,117 @@ final List<_Field> _finishFields = [
   const _Field('50', 50, true, 20),
 ];
 
+// The routes of the usual checkout charts for double-out, where they differ from what the penalties above would pick:
+// players learn these by heart, so the app suggests the same. Every route is the fewest darts for its score.
+const Map<int, List<String>> _chartRoutes = {
+  170: ['T20', 'T20', '50'],
+  167: ['T20', 'T19', '50'],
+  164: ['T20', 'T18', '50'],
+  161: ['T20', 'T17', '50'],
+  160: ['T20', 'T20', 'D20'],
+  158: ['T20', 'T20', 'D19'],
+  157: ['T20', 'T19', 'D20'],
+  156: ['T20', 'T20', 'D18'],
+  155: ['T20', 'T19', 'D19'],
+  154: ['T20', 'T18', 'D20'],
+  153: ['T20', 'T19', 'D18'],
+  152: ['T20', 'T20', 'D16'],
+  151: ['T20', 'T17', 'D20'],
+  150: ['T20', 'T18', 'D18'],
+  149: ['T20', 'T19', 'D16'],
+  148: ['T20', 'T16', 'D20'],
+  147: ['T20', 'T17', 'D18'],
+  146: ['T20', 'T18', 'D16'],
+  145: ['T20', 'T15', 'D20'],
+  144: ['T20', 'T20', 'D12'],
+  143: ['T20', 'T17', 'D16'],
+  142: ['T20', 'T14', 'D20'],
+  141: ['T20', 'T19', 'D12'],
+  140: ['T20', 'T20', 'D10'],
+  139: ['T19', 'T14', 'D20'],
+  138: ['T20', 'T18', 'D12'],
+  137: ['T20', 'T19', 'D10'],
+  136: ['T20', 'T20', 'D8'],
+  135: ['T20', 'T17', 'D12'],
+  134: ['T20', 'T14', 'D16'],
+  133: ['T20', 'T19', 'D8'],
+  132: ['T20', 'T16', 'D12'],
+  131: ['T20', 'T13', 'D16'],
+  130: ['T20', 'T20', 'D5'],
+  129: ['T19', 'T16', 'D12'],
+  128: ['T18', 'T14', 'D16'],
+  127: ['T20', 'T17', 'D8'],
+  126: ['T19', 'T19', 'D6'],
+  125: ['25', 'T20', 'D20'],
+  124: ['T20', 'T16', 'D8'],
+  123: ['T19', 'T16', 'D9'],
+  122: ['T18', 'T20', 'D4'],
+  120: ['T20', 'S20', 'D20'],
+  119: ['T19', 'T12', 'D13'],
+  118: ['T20', 'S18', 'D20'],
+  117: ['T20', 'S17', 'D20'],
+  116: ['T20', 'S16', 'D20'],
+  115: ['T20', 'S15', 'D20'],
+  114: ['T20', 'S14', 'D20'],
+  113: ['T20', 'S13', 'D20'],
+  112: ['T20', 'S12', 'D20'],
+  111: ['T20', 'S11', 'D20'],
+  109: ['T20', 'S9', 'D20'],
+  108: ['T20', 'S16', 'D16'],
+  106: ['T20', 'S10', 'D18'],
+  105: ['T20', 'S13', 'D16'],
+  103: ['T19', 'S6', 'D20'],
+  102: ['T20', 'S10', 'D16'],
+  99: ['T19', 'S10', 'D16'],
+  98: ['T20', 'D19'],
+  97: ['T19', 'D20'],
+  96: ['T20', 'D18'],
+  95: ['T19', 'D19'],
+  94: ['T18', 'D20'],
+  93: ['T19', 'D18'],
+  92: ['T20', 'D16'],
+  91: ['T17', 'D20'],
+  90: ['T20', 'D15'],
+  89: ['T19', 'D16'],
+  88: ['T16', 'D20'],
+  87: ['T17', 'D18'],
+  86: ['T18', 'D16'],
+  85: ['T15', 'D20'],
+  84: ['T20', 'D12'],
+  83: ['T17', 'D16'],
+  82: ['50', 'D16'],
+  81: ['T19', 'D12'],
+  80: ['T20', 'D10'],
+  79: ['T19', 'D11'],
+  78: ['T18', 'D12'],
+  77: ['T19', 'D10'],
+  76: ['T20', 'D8'],
+  75: ['T17', 'D12'],
+  74: ['T14', 'D16'],
+  73: ['T19', 'D8'],
+  72: ['T16', 'D12'],
+  71: ['T13', 'D16'],
+  70: ['T18', 'D8'],
+  69: ['T19', 'D6'],
+  68: ['T20', 'D4'],
+  67: ['T17', 'D8'],
+  66: ['T10', 'D18'],
+  65: ['T19', 'D4'],
+  64: ['T16', 'D8'],
+  63: ['T13', 'D12'],
+  62: ['T10', 'D16'],
+  61: ['T15', 'D8'],
+};
+
 /// Fewest-dart route to finish `remaining` with at most `dartsLeft` darts, ending on a double if `doubleOut`.
-/// Among routes with the same number of darts, the one with the most usual fields wins; the result is deterministic.
+/// Among routes with the same number of darts, the chart route or else the one with the most usual fields wins; the
+/// result is deterministic.
 List<String>? suggestCheckout(int remaining, int dartsLeft, {bool doubleOut = true}) {
   if (remaining <= 0 || dartsLeft <= 0) return null;
+  if (doubleOut) {
+    final chart = _chartRoutes[remaining];
+    if (chart != null && chart.length <= dartsLeft) return chart;
+  }
   final finishes = doubleOut ? _finishFields : [..._setupFields, ..._finishFields];
   for (var darts = 1; darts <= dartsLeft; ++darts) {
     List<_Field>? best;
@@ -261,10 +370,25 @@ List<String>? suggestCheckout(int remaining, int dartsLeft, {bool doubleOut = tr
         }
       }
     }
-    if (best != null) return [for (final f in best) f.label];
+    if (best == null) continue;
+    // Without a double to finish on, any dart may come last: the big ones first, as players throw them.
+    if (!doubleOut) best.sort((a, b) => _order(a).compareTo(_order(b)));
+    return [for (final f in best) f.label];
   }
   return null;
 }
+
+int _order(_Field field) {
+  final i = _setupFields.indexWhere((f) => f.label == field.label);
+  return i < 0 ? _setupFields.length : i;
+}
+
+/// A field of a checkout route as players read it: "Bull" for the bull, the bare number for a single
+String routeText(String field) => switch (field) {
+  '50' => 'Bull',
+  _ when field.startsWith('S') => field.substring(1),
+  _ => field,
+};
 
 // Setup combinations for `points` with exactly `darts` darts, each listed once in the order of _setupFields.
 Iterable<List<_Field>> _setups(int points, int darts, int from) sync* {

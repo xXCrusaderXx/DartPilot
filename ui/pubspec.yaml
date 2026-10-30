@@ -46,6 +46,7 @@ dependencies:
   mobile_scanner: ^7.4.2
   flutter_tts: ^4.2.5
   image_picker: ^1.2.4
+  wakelock_plus: ^1.8.2
 
 dev_dependencies:
   flutter_test:

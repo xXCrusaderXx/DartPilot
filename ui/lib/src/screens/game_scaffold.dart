@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../board/dart_throw.dart';
 import '../games/dart_game.dart';
@@ -79,7 +80,14 @@ class _GameScaffoldState extends State<GameScaffold> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    ScreenAwake.hold();
+  }
+
+  @override
   void dispose() {
+    ScreenAwake.release();
     _notice.dispose();
     super.dispose();
   }
@@ -123,5 +131,27 @@ class _GameScaffoldState extends State<GameScaffold> {
         ),
       ),
     );
+  }
+}
+
+/// Keeps the screen on while a game screen is open: with darts scored by the engine nobody touches the device for a
+/// whole leg. Counted, so a new game opened from the result of the last one keeps it on.
+abstract final class ScreenAwake {
+  static int _holders = 0;
+
+  /// Whether a game screen keeps the screen on now
+  static bool get held => _holders > 0;
+
+  static void hold() {
+    if (_holders++ == 0) _keepOn(true);
+  }
+
+  static void release() {
+    if (_holders > 0 && --_holders == 0) _keepOn(false);
+  }
+
+  static void _keepOn(bool on) {
+    // Where the platform cannot keep the screen on, the game goes on as before.
+    WakelockPlus.toggle(enable: on).catchError((Object e) => debugPrint('The screen cannot be kept on: $e'));
   }
 }

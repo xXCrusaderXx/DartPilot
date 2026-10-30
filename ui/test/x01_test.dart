@@ -142,6 +142,29 @@ void main() {
       }
     });
 
+    test('three-dart routes follow the usual charts: T20 or T19 first, a plain single to set up', () {
+      expect(suggestCheckout(99, 3), ['T19', 'S10', 'D16']);
+      expect(suggestCheckout(102, 3), ['T20', 'S10', 'D16']);
+      expect(suggestCheckout(103, 3), ['T19', 'S6', 'D20']);
+      expect(suggestCheckout(106, 3), ['T20', 'S10', 'D18']);
+      expect(suggestCheckout(113, 3), ['T20', 'S13', 'D20']);
+      expect(suggestCheckout(114, 3), ['T20', 'S14', 'D20']);
+      // With fewer darts left the chart's three-dart route does not apply.
+      expect(suggestCheckout(113, 2), isNull);
+      expect(suggestCheckout(82, 2), ['50', 'D16']);
+    });
+
+    test('in single-out the big darts come first', () {
+      expect(suggestCheckout(170, 3, doubleOut: false), ['T20', 'T20', '50']);
+      expect(suggestCheckout(110, 3, doubleOut: false), ['T20', '50']);
+    });
+
+    test('the game names the route as players read it: Bull and plain singles', () {
+      expect(game(start: 170, players: 1).checkoutSuggestion, ['T20', 'T20', 'Bull']);
+      expect(game(start: 60, players: 1).checkoutSuggestion, ['20', 'D20']);
+      expect(game(start: 116, players: 1).checkoutSuggestion, ['T20', '16', 'D20']);
+    });
+
     test('the game suggests with the darts left in the visit', () {
       final g = game(start: 141, players: 1);
       expect(g.checkoutSuggestion, ['T20', 'T19', 'D12']);

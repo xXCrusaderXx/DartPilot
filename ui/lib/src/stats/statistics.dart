@@ -256,7 +256,15 @@ class Statistics extends ChangeNotifier {
       debugPrint('The played games cannot be read: $e');
     }
     try {
-      interrupted = await store.loadRunning();
+      final running = await store.loadRunning();
+      if (running != null && running.isFinished) {
+        // The app was closed on the result of a finished game: it counts, there is nothing left to play.
+        await store.saveRunning(null);
+        games = [...games, running];
+        await store.add(running);
+      } else {
+        interrupted = running;
+      }
     } catch (e) {
       debugPrint('The running game cannot be read: $e');
     }
@@ -390,6 +398,7 @@ mixin RecordsGame<T extends StatefulWidget> on State<T> {
   final String _shareId = Statistics.newId();
   int? _sharedSignature;
   bool _shared = false;
+  bool _keptRunning = false;
 
   @override
   void didChangeDependencies() {
@@ -407,7 +416,15 @@ mixin RecordsGame<T extends StatefulWidget> on State<T> {
     final signature = Object.hashAll([record.throws.length, for (final t in record.throws) t.point]);
     if (signature == _sharedSignature) return;
     _sharedSignature = signature;
-    if (record.throws.isNotEmpty) _statistics?.keepRunning(record);
+    // Kept also once finished, until the screen is left: an undo from the result plays on. Undone to no darts, there
+    // is nothing to resume; a game not started yet leaves an interrupted one in place.
+    if (record.throws.isNotEmpty) {
+      _keptRunning = true;
+      _statistics?.keepRunning(record);
+    } else if (_keptRunning) {
+      _keptRunning = false;
+      _statistics?.keepRunning(null);
+    }
     final engine = _engine;
     if (engine != null && engine.isConnected) {
       engine.shareGame(record.toJson());
