@@ -131,6 +131,49 @@ void main() {
     expect(contrastRatio(Colors.white, Colors.white), 1);
   });
 
+  test('scores are set in the bundled score face, text in the chosen face', () {
+    final bundled = dartPilotTheme();
+    expect(bundled.textTheme.bodyMedium?.fontFamily, textFontFamily);
+    expect(bundled.textTheme.displayLarge?.fontFamily, scoreFontFamily);
+    expect(bundled.textTheme.displayLarge?.fontFeatures, tabularFigures);
+    final system = dartPilotTheme(AppPalette.dark, TextFont.system.family);
+    expect(system.textTheme.bodyMedium?.fontFamily, isNot(textFontFamily));
+    expect(system.textTheme.displayLarge?.fontFamily, scoreFontFamily);
+    expect(scoreStyle(system.textTheme.headlineSmall)?.fontFamily, scoreFontFamily);
+  });
+
+  test('the font is kept for this device and survives a preset', () async {
+    SharedPreferences.setMockInitialValues({});
+    final display = DisplaySettings();
+    await display.load();
+    expect(display.font, TextFont.bundled);
+    await display.set(font: TextFont.system);
+    await display.applyPreset(AppearancePreset.light);
+    final reloaded = DisplaySettings();
+    await reloaded.load();
+    expect(reloaded.font, TextFont.system);
+  });
+
+  testWidgets('the font setting switches the running app between the bundled face and the system', (tester) async {
+    tester.view.physicalSize = const Size(1200, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final display = DisplaySettings(store: false);
+    await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), display: display));
+    await playOffline(tester);
+    await openSettingsPage(tester, 'display');
+    String? family() =>
+        Theme.of(tester.element(find.byKey(const ValueKey('brightness')))).textTheme.bodyMedium?.fontFamily;
+    expect(family(), textFontFamily);
+
+    await tester.ensureVisible(find.byKey(const ValueKey('text-font')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.descendant(of: find.byKey(const ValueKey('text-font')), matching: find.text('System')));
+    await tester.pumpAndSettle();
+    expect(display.font, TextFont.system);
+    expect(family(), isNot(textFontFamily));
+  });
+
   test('the brightness is kept for this device', () async {
     SharedPreferences.setMockInitialValues({});
     final display = DisplaySettings();

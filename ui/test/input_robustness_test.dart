@@ -253,6 +253,10 @@ void main() {
     tester.view.physicalSize = const Size(1400, 1000);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
+    final keeper = ScreenAwake.keepOn;
+    final calls = <bool>[];
+    ScreenAwake.keepOn = calls.add;
+    addTearDown(() => ScreenAwake.keepOn = keeper);
     await tester.pumpWidget(const DartPilotApp(locale: Locale('de')));
     await playOffline(tester);
     expect(ScreenAwake.held, isFalse);
@@ -265,6 +269,7 @@ void main() {
     Navigator.of(tester.element(find.text('Tastenfeld'))).pop();
     await tester.pumpAndSettle();
     expect(ScreenAwake.held, isFalse);
+    expect(calls, [true, false]);
   });
 
   testWidgets('a shared game of an unexpected shape shows as ended instead of failing', (tester) async {

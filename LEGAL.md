@@ -21,6 +21,7 @@ DartPilot is its own implementation. Other open-source projects, such as [OpenDa
 - Code from commercial products, decompiled or reverse-engineered binaries, or code whose license is unclear is never accepted.
 - Libraries the engine links against (OpenCV, GoogleTest, …) must have a GPL-compatible license.
 - Release packages carry the licence texts of the native code they include: the AppImage those of OpenCV and its codecs, IXWebSocket, nlohmann/json and every library copied next to the engine, the Windows zip the notice for the Visual C++ runtime. They sit in `licenses/` next to the app's program, and the app lists them on its licence page beside the Dart packages. A new bundled library brings its licence the same way.
+- Fonts are bundled only under the SIL Open Font License 1.1 or another GPL-compatible font licence, with the licence file next to the font files. The player app bundles Barlow Condensed (Jeremy Tribby) and Inter (Rasmus Andersson), both OFL 1.1, in `ui/assets/fonts/`; that folder's README names their source and version, and the app lists their licences on its licence page.
 
 ## Recordings and datasets
 

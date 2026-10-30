@@ -55,11 +55,11 @@ class PlayerRow extends StatelessWidget {
     final palette = AppPalette.of(context);
     final onBlock = active && scoreboard ? palette.onHighlight : null;
     final colour = StatisticsScope.maybeOf(context)?.colourOf(name);
-    final valueStyle =
-        (active
-                ? (far ? theme.textTheme.displayLarge : theme.textTheme.displayMedium)
-                : (far ? theme.textTheme.displaySmall : theme.textTheme.headlineMedium))
-            ?.copyWith(fontWeight: FontWeight.w700, color: valueColour ?? onBlock);
+    final valueStyle = scoreStyle(
+      active
+          ? (far ? theme.textTheme.displayLarge : theme.textTheme.displayMedium)
+          : (far ? theme.textTheme.displaySmall : theme.textTheme.headlineMedium),
+    )?.copyWith(fontWeight: FontWeight.w700, color: valueColour ?? onBlock);
     Widget valueText(TextStyle? style) {
       final icons = valueIcons;
       if (icons == null) return Text(value, key: valueKey, style: style);

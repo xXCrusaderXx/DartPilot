@@ -251,13 +251,13 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
                       child: Text(
                         '${players[i].points}',
                         key: ValueKey('points-${players[i].name}'),
-                        style:
-                            (far
-                                    ? theme.textTheme.displayMedium
-                                    : short
-                                    ? theme.textTheme.titleLarge
-                                    : theme.textTheme.headlineMedium)
-                                ?.copyWith(fontWeight: FontWeight.w800, color: onCell(i), height: 1.1),
+                        style: scoreStyle(
+                          far
+                              ? theme.textTheme.displayMedium
+                              : short
+                              ? theme.textTheme.titleLarge
+                              : theme.textTheme.headlineMedium,
+                        )?.copyWith(fontWeight: FontWeight.w800, color: onCell(i), height: 1.1),
                       ),
                     ),
                     if (!short && !tight)
@@ -298,7 +298,7 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
                   fit: BoxFit.scaleDown,
                   child: Text(
                     label,
-                    style: (far ? theme.textTheme.headlineMedium : theme.textTheme.titleLarge)?.copyWith(
+                    style: scoreStyle(far ? theme.textTheme.headlineMedium : theme.textTheme.titleLarge)?.copyWith(
                       fontWeight: FontWeight.w700,
                       decoration: dead ? TextDecoration.lineThrough : null,
                       color: dead ? theme.colorScheme.onSurface.withValues(alpha: 0.4) : null,

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dartpilot/src/bundled_licenses.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -33,5 +34,15 @@ void main() {
     File('${dir.path}/Binary/blob').writeAsBytesSync([0xff, 0xfe, 0x00, 0xc3]);
 
     expect(await bundledLicenses(dir).toList(), isEmpty);
+  });
+
+  test('each bundled font brings its OFL licence from the assets', () async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    final entries = await fontLicenses(rootBundle).toList();
+
+    expect(entries.map((e) => e.packages.single), ['Barlow Condensed', 'Inter']);
+    for (final entry in entries) {
+      expect(entry.paragraphs.map((p) => p.text).join('\n'), contains('SIL OPEN FONT LICENSE Version 1.1'));
+    }
   });
 }

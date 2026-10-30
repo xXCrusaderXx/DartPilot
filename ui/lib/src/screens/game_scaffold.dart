@@ -95,6 +95,7 @@ class _GameScaffoldState extends State<GameScaffold> {
   @override
   Widget build(BuildContext context) {
     _outcome = _currentOutcome();
+    final celebrations = widget.celebrations;
     final layout = GameNoticeSlot(
       notice: _notice,
       child: GameLayout(
@@ -114,21 +115,23 @@ class _GameScaffoldState extends State<GameScaffold> {
               valueListenable: _notice,
               builder: (context, notice, _) => notice ?? const SizedBox.shrink(),
             ),
-            Expanded(child: widget.panel),
+            // Over the score, where the moment belongs, and never over the board or keypad the next dart goes in
+            Expanded(
+              child: celebrations == null
+                  ? widget.panel
+                  : CelebrationOverlay(celebrations: celebrations, child: widget.panel),
+            ),
           ],
         ),
         panelWidth: widget.panelWidth,
       ),
     );
-    final celebrations = widget.celebrations;
     return LeaveGameGuard(
       canLeave: widget.watching || widget.game.isFinished || widget.game.throws.isEmpty,
       child: Scaffold(
         appBar: AppBar(title: Text(widget.title)),
         // Clear of a notch in landscape and of the home indicator under Undo
-        body: SafeArea(
-          child: celebrations == null ? layout : CelebrationOverlay(celebrations: celebrations, child: layout),
-        ),
+        body: SafeArea(child: layout),
       ),
     );
   }
@@ -142,15 +145,18 @@ abstract final class ScreenAwake {
   /// Whether a game screen keeps the screen on now
   static bool get held => _holders > 0;
 
+  /// What turns keeping the screen on on and off: the platform's wake lock, or another for tests, which have none
+  static ValueChanged<bool> keepOn = _wakeLock;
+
   static void hold() {
-    if (_holders++ == 0) _keepOn(true);
+    if (_holders++ == 0) keepOn(true);
   }
 
   static void release() {
-    if (_holders > 0 && --_holders == 0) _keepOn(false);
+    if (_holders > 0 && --_holders == 0) keepOn(false);
   }
 
-  static void _keepOn(bool on) {
+  static void _wakeLock(bool on) {
     // Where the platform cannot keep the screen on, the game goes on as before.
     WakelockPlus.toggle(enable: on).catchError((Object e) => debugPrint('The screen cannot be kept on: $e'));
   }

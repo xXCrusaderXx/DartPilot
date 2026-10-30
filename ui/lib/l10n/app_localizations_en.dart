@@ -1846,6 +1846,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get textLarger => 'Larger';
 
   @override
+  String get textFont => 'Font';
+
+  @override
+  String get textFontHint => 'Scores in a game always keep their own typeface';
+
+  @override
+  String get textFontBundled => 'Inter';
+
+  @override
+  String get textFontSystem => 'System';
+
+  @override
   String get brightnessHint => 'Dark, light, or as the system is set. Every text keeps enough contrast in both.';
 
   @override

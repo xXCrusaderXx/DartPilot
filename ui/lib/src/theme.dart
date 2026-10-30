@@ -375,8 +375,20 @@ class StatusColors extends ThemeExtension<StatusColors> {
         );
 }
 
-/// The app's theme for one palette, dark by default
-ThemeData dartPilotTheme([AppPalette p = AppPalette.dark]) {
+/// The bundled condensed face scores and big figures are set in, on every device (assets/fonts)
+const scoreFontFamily = 'BarlowCondensed';
+
+/// The bundled text face, unless the player chose the system's
+const textFontFamily = 'Inter';
+
+/// Scores and figures keep their width while they change, so 141 → 111 does not jitter.
+const tabularFigures = [FontFeature.tabularFigures()];
+
+/// [style] in the score face with figures of one width: remaining scores, visit totals, legs, points
+TextStyle? scoreStyle(TextStyle? style) => style?.copyWith(fontFamily: scoreFontFamily, fontFeatures: tabularFigures);
+
+/// The app's theme for one palette, dark by default, with text in [fontFamily] or the system's font when null
+ThemeData dartPilotTheme([AppPalette p = AppPalette.dark, String? fontFamily = textFontFamily]) {
   final scheme = ColorScheme(
     brightness: p.brightness,
     primary: p.accent,
@@ -404,16 +416,15 @@ ThemeData dartPilotTheme([AppPalette p = AppPalette.dark]) {
     outline: p.border,
     outlineVariant: p.border,
   );
-  final base = ThemeData(colorScheme: scheme, useMaterial3: true);
-  // Scores and figures keep their width while they change, so 141 → 111 does not jitter.
-  const tabular = [FontFeature.tabularFigures()];
-  TextStyle? figures(TextStyle? style) => style?.copyWith(fontFeatures: tabular);
+  final base = ThemeData(colorScheme: scheme, useMaterial3: true, fontFamily: fontFamily);
+  TextStyle? figures(TextStyle? style) => style?.copyWith(fontFeatures: tabularFigures);
   final text = base.textTheme;
   return base.copyWith(
     textTheme: text.copyWith(
-      displayLarge: figures(text.displayLarge),
-      displayMedium: figures(text.displayMedium),
-      displaySmall: figures(text.displaySmall),
+      // The display sizes are the big numbers: the score face
+      displayLarge: scoreStyle(text.displayLarge),
+      displayMedium: scoreStyle(text.displayMedium),
+      displaySmall: scoreStyle(text.displaySmall),
       headlineLarge: figures(text.headlineLarge),
       headlineMedium: figures(text.headlineMedium),
       headlineSmall: figures(text.headlineSmall),

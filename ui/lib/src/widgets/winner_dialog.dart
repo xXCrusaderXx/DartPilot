@@ -125,7 +125,7 @@ Future<void> showWinnerDialog(
                   Text(
                     l10n.matchWonBy(winner),
                     key: const ValueKey('winner-title'),
-                    style: (far ? theme.textTheme.displayMedium : theme.textTheme.headlineLarge)?.copyWith(
+                    style: scoreStyle(far ? theme.textTheme.displayMedium : theme.textTheme.headlineLarge)?.copyWith(
                       color: statistics?.colourOf(winner) ?? theme.colorScheme.primary,
                       fontWeight: FontWeight.w800,
                     ),
@@ -210,9 +210,8 @@ class _ResultRow extends StatelessWidget {
               child: Text(
                 line.value!,
                 textAlign: TextAlign.end,
-                style: (big ? theme.textTheme.displaySmall : theme.textTheme.headlineMedium)?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
+                style: scoreStyle(big ? theme.textTheme.displaySmall : theme.textTheme.headlineMedium)
+                    ?.copyWith(fontWeight: FontWeight.w800),
               ),
             ),
           ],

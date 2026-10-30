@@ -25,3 +25,23 @@ G replayed<G extends DartGame>(G game, List<DartThrow> throws) {
   }
   return game;
 }
+
+/// A visit that ended, as the input's strip of last darts names it: whose darts they were and what they came to
+class VisitResult {
+  const VisitResult({required this.player, required this.darts, this.points, this.bust = false});
+
+  final String player;
+
+  /// How many darts it had: the last ones in [DartGame.throws] while the next visit has none yet
+  final int darts;
+
+  /// What it scored, in games that count points per visit
+  final int? points;
+  final bool bust;
+}
+
+/// A game whose visits do not always have three darts, or that names their result
+abstract interface class TellsVisits {
+  /// The visit that ended last, or null before the first one ended
+  VisitResult? get lastVisit;
+}

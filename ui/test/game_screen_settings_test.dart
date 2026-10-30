@@ -21,8 +21,12 @@ Future<void> _startX01(WidgetTester tester, DisplaySettings display, Size size) 
   await tester.tap(find.text('X01'));
   await tester.pumpAndSettle();
   await pickPlayers(tester, ['Anna', 'Ben']);
+  // A phone on its side scrolls the setup.
+  await tester.scrollUntilVisible(find.text('301'), 100, scrollable: find.byType(Scrollable).last);
+  await tester.pumpAndSettle();
   await tester.tap(find.text('301'));
-  await tester.tap(find.text('Spiel starten'));
+  await tester.pump();
+  await tester.tap(find.byKey(const ValueKey('start-game')));
   await tester.pumpAndSettle();
   await tester.tap(find.text('Tastenfeld'));
   await tester.pumpAndSettle();
@@ -225,5 +229,117 @@ void main() {
     await tester.pumpAndSettle();
     expect(display.boardSide, BoardSide.right);
     expect(display.boardSize, BoardSize.large);
+  });
+
+  testWidgets('a 180 shows on a dark plate, not in the yellow of the player at the oche, and over the score panel', (
+    tester,
+  ) async {
+    final display = DisplaySettings(store: false)..style = DisplayStyle.scoreboard;
+    await _startX01(tester, display, const Size(412, 915));
+    for (var i = 0; i < 3; ++i) {
+      await _dart(tester, 'Triple', 'keypad-20');
+    }
+    await tester.pump(const Duration(milliseconds: 600));
+    final banner = find.byKey(const ValueKey('celebration'));
+    final plate = tester.widget<Container>(banner).decoration! as BoxDecoration;
+    final block = tester.widget<Container>(find.byKey(const ValueKey('active-player'))).color;
+    expect(plate.color, isNot(block));
+    // Never over the keypad the next dart goes in
+    final keypad = tester.getRect(find.byKey(const ValueKey('keypad-20')));
+    expect(tester.getRect(banner).top, greaterThan(keypad.bottom));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('a checkout under 100 gets the small banner even where celebrations are full', (tester) async {
+    final display = DisplaySettings(store: false);
+    await _startX01(tester, display, const Size(1100, 800));
+    // 301 - 180 - 81 leaves 40 for Anna, Ben misses each time.
+    for (final (modifier, key) in [('Triple', '20'), ('Triple', '20'), ('Triple', '20')]) {
+      await _dart(tester, modifier, 'keypad-$key');
+    }
+    await tester.pumpAndSettle();
+    for (var i = 0; i < 3; ++i) {
+      await _dart(tester, '', 'keypad-miss');
+    }
+    for (final (modifier, key) in [('Triple', '20'), ('Triple', '7'), ('', 'miss')]) {
+      await _dart(tester, modifier, 'keypad-$key');
+    }
+    for (var i = 0; i < 3; ++i) {
+      await _dart(tester, '', 'keypad-miss');
+    }
+    await _dart(tester, 'Double', 'keypad-20');
+    await tester.pump(const Duration(milliseconds: 600));
+    final banner = find.byKey(const ValueKey('celebration'));
+    expect(find.descendant(of: banner, matching: find.text('Checkout 40')), findsOneWidget);
+    final pill = tester.widget<Container>(banner).decoration! as BoxDecoration;
+    expect(pill.borderRadius, BorderRadius.circular(999));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('on a phone on its side the other player and Undo are in view without scrolling', (tester) async {
+    for (final style in [DisplayStyle.clear, DisplayStyle.scoreboard]) {
+      final display = DisplaySettings(store: false)..style = style;
+      await _startX01(tester, display, const Size(915, 412));
+      await _dart(tester, 'Triple', 'keypad-20');
+      await tester.pumpAndSettle();
+      final screen = Offset.zero & const Size(915, 412);
+      for (final finder in [
+        find.byKey(const ValueKey('remaining-Ben')),
+        find.byKey(const ValueKey('remaining-Anna')),
+        find.byIcon(Icons.undo),
+        find.byKey(const ValueKey('keypad-miss')),
+      ]) {
+        final rect = tester.getRect(finder);
+        expect(screen.contains(rect.topLeft) && screen.contains(rect.bottomRight - const Offset(1, 1)), isTrue);
+      }
+      expect(tester.takeException(), isNull, reason: style.name);
+      await tester.pumpWidget(const SizedBox());
+    }
+  });
+
+  testWidgets('from afar on a TV the leg line and Undo grow', (tester) async {
+    final display = DisplaySettings(store: false);
+    await _startX01(tester, display, const Size(1920, 1080));
+    expect(find.text('301 · Leg 1'), findsOneWidget);
+    expect(
+      tester.getSize(find.ancestor(of: find.byIcon(Icons.undo), matching: find.byType(OutlinedButton))).height,
+      greaterThanOrEqualTo(64),
+    );
+  });
+
+  testWidgets('the last darts show the visit that ended, whose it was and that it was bust, and keep it while the next '
+      'one starts', (tester) async {
+    await _startX01(tester, DisplaySettings(store: false), const Size(1100, 800));
+    for (var i = 0; i < 3; ++i) {
+      await _dart(tester, 'Triple', 'keypad-20');
+    }
+    for (var i = 0; i < 3; ++i) {
+      await _dart(tester, '', 'keypad-miss');
+    }
+    // Anna on 121: T20 and S20 leave 41, then T20 is bust
+    await _dart(tester, 'Triple', 'keypad-20');
+    await _dart(tester, '', 'keypad-20');
+    await tester.pumpAndSettle();
+    expect(find.text('Ben · 0'), findsOneWidget);
+    expect([for (var i = 2; i < 8; ++i) find.byKey(ValueKey('recent-$i')).evaluate().length], [0, 1, 1, 1, 1, 1]);
+    expect(find.byKey(const ValueKey('recent-divider')), findsOneWidget);
+
+    await _dart(tester, 'Triple', 'keypad-20');
+    await tester.pumpAndSettle();
+    expect(find.text('Anna · Überworfen'), findsOneWidget);
+    expect([for (var i = 5; i < 9; ++i) find.byKey(ValueKey('recent-$i')).evaluate().length], [0, 1, 1, 1]);
+    expect(find.byKey(const ValueKey('recent-divider')), findsNothing);
+
+    // Ben's first dart is in, and Anna's last dart can still be corrected: it was a single 1, not a bust
+    await _dart(tester, '', 'keypad-miss');
+    await tester.pumpAndSettle();
+    expect(find.text('Anna · Überworfen'), findsOneWidget);
+    expect([for (var i = 5; i < 10; ++i) find.byKey(ValueKey('recent-$i')).evaluate().length], [0, 1, 1, 1, 1]);
+    await tester.tap(find.byKey(const ValueKey('recent-8')));
+    await tester.pumpAndSettle();
+    await _dart(tester, '', 'keypad-1');
+    await tester.pumpAndSettle();
+    expect(find.text('Anna · 81'), findsOneWidget);
+    expect(tester.widget<Text>(find.byKey(const ValueKey('remaining-Anna'))).data, '40');
   });
 }

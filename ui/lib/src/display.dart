@@ -44,6 +44,16 @@ enum TextSize {
   final double factor;
 }
 
+/// The face the app's text is set in: the bundled one, the same on every device, or the system's. Scores keep the
+/// bundled score face either way.
+enum TextFont {
+  bundled(textFontFamily),
+  system(null);
+
+  const TextFont(this.family);
+  final String? family;
+}
+
 /// Which side of the score panel the board takes when they stand side by side
 enum BoardSide { left, right }
 
@@ -107,6 +117,7 @@ class DisplaySettings extends ChangeNotifier {
   /// The colour the accent is made from, or the flight's blue
   Color? accent;
   TextSize textSize = TextSize.normal;
+  TextFont font = TextFont.bundled;
   bool highContrast = false;
   AppearancePreset preset = AppearancePreset.standard;
   BoardSide boardSide = BoardSide.left;
@@ -125,6 +136,7 @@ class DisplaySettings extends ChangeNotifier {
   static const _brightnessKey = 'display.brightness';
   static const _accentKey = 'display.accent';
   static const _textSizeKey = 'display.textSize';
+  static const _fontKey = 'display.font';
   static const _highContrastKey = 'display.highContrast';
   static const _presetKey = 'display.preset';
   static const _boardSideKey = 'display.boardSide';
@@ -143,6 +155,7 @@ class DisplaySettings extends ChangeNotifier {
     final argb = prefs.getInt(_accentKey);
     accent = argb == null ? null : Color(argb);
     textSize = TextSize.values.asNameMap()[prefs.getString(_textSizeKey)] ?? TextSize.normal;
+    font = TextFont.values.asNameMap()[prefs.getString(_fontKey)] ?? TextFont.bundled;
     highContrast = prefs.getBool(_highContrastKey) ?? false;
     preset = AppearancePreset.values.asNameMap()[prefs.getString(_presetKey)] ?? AppearancePreset.standard;
     boardSide = BoardSide.values.asNameMap()[prefs.getString(_boardSideKey)] ?? BoardSide.left;
@@ -163,6 +176,7 @@ class DisplaySettings extends ChangeNotifier {
     ViewingDistance? distance,
     AppBrightness? brightness,
     TextSize? textSize,
+    TextFont? font,
     bool? highContrast,
     BoardSide? boardSide,
     BoardSize? boardSize,
@@ -173,6 +187,7 @@ class DisplaySettings extends ChangeNotifier {
     this.distance = distance ?? this.distance;
     this.brightness = brightness ?? this.brightness;
     this.textSize = textSize ?? this.textSize;
+    this.font = font ?? this.font;
     this.highContrast = highContrast ?? this.highContrast;
     this.boardSide = boardSide ?? this.boardSide;
     this.boardSize = boardSize ?? this.boardSize;
@@ -202,8 +217,8 @@ class DisplaySettings extends ChangeNotifier {
   }
 
   /// Starts from [preset]: its brightness, text size, contrast and game display, with the default accent. The viewing
-  /// distance and the game screen's layout belong to where the device stands and are kept, as are the celebration and
-  /// the board's colours.
+  /// distance and the game screen's layout belong to where the device stands and are kept, as are the celebration, the
+  /// board's colours and the font.
   Future<void> applyPreset(AppearancePreset preset) async {
     this.preset = preset;
     brightness = preset.brightness;
@@ -231,6 +246,7 @@ class DisplaySettings extends ChangeNotifier {
       await prefs.setInt(_accentKey, accent.toARGB32());
     }
     await prefs.setString(_textSizeKey, textSize.name);
+    await prefs.setString(_fontKey, font.name);
     await prefs.setBool(_highContrastKey, highContrast);
     await prefs.setString(_presetKey, preset.name);
     await prefs.setString(_boardSideKey, boardSide.name);
@@ -258,6 +274,7 @@ class DisplaySettings extends ChangeNotifier {
       'brightness': brightness.name,
       'accent': ?accent?.toARGB32(),
       'textSize': textSize.name,
+      'font': font.name,
       'highContrast': highContrast,
       'boardSide': boardSide.name,
       'boardSize': boardSize.name,
@@ -293,6 +310,7 @@ class DisplaySettings extends ChangeNotifier {
     brightness = pick(AppBrightness.values, 'brightness', AppBrightness.dark);
     accent = colour('accent');
     textSize = pick(TextSize.values, 'textSize', TextSize.normal);
+    font = pick(TextFont.values, 'font', TextFont.bundled);
     highContrast = values['highContrast'] == true;
     boardSide = pick(BoardSide.values, 'boardSide', BoardSide.left);
     boardSize = pick(BoardSize.values, 'boardSize', BoardSize.medium);

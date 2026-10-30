@@ -235,7 +235,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('result-rematch')));
     await tester.pumpAndSettle();
     // Same match, Ben throws first now.
-    expect(find.text('Leg 1 · 2 zum Sieg'), findsOneWidget);
+    expect(find.textContaining('Leg 1 · 2 zum Sieg'), findsOneWidget);
     expect(
       find.descendant(of: find.byKey(const ValueKey('active-player')), matching: find.text('Ben')),
       findsOneWidget,
@@ -279,7 +279,7 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('quick-start')));
     await tester.pumpAndSettle();
-    expect(find.text('Leg 1 · 2 zum Sieg'), findsOneWidget);
+    expect(find.textContaining('Leg 1 · 2 zum Sieg'), findsOneWidget);
   });
 
   testWidgets('the only profile is picked already', (tester) async {

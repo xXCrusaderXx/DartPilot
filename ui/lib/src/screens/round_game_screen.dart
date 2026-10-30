@@ -24,6 +24,7 @@ import '../widgets/game_result.dart';
 import '../widgets/players_panel.dart';
 import '../stats/personal_best.dart';
 import '../display.dart';
+import '../theme.dart';
 
 /// Shanghai, Bob's 27 and Halve-It (#118): a round's target, every player's score, and the darts of the visit.
 class RoundGameScreen extends StatefulWidget {
@@ -312,13 +313,13 @@ class RoundTargetTile extends StatelessWidget {
     final far = display.farFor(window);
     // A phone on its side has no height to spare.
     final short = MediaQuery.sizeOf(context).height < 500;
-    final targetStyle =
-        (far
-                ? theme.textTheme.displayLarge
-                : short
-                ? theme.textTheme.headlineMedium
-                : theme.textTheme.displayMedium)
-            ?.copyWith(fontWeight: FontWeight.w800, color: theme.colorScheme.primary, height: 1.0);
+    final targetStyle = scoreStyle(
+      far
+          ? theme.textTheme.displayLarge
+          : short
+          ? theme.textTheme.headlineMedium
+          : theme.textTheme.displayMedium,
+    )?.copyWith(fontWeight: FontWeight.w800, color: theme.colorScheme.primary, height: 1.0);
     // From afar the target grows with the panel, as the score of the player at the oche does.
     return LayoutBuilder(
       builder: (context, constraints) => _tile(

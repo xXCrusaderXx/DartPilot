@@ -94,10 +94,8 @@ class AimLine extends StatelessWidget {
           Text(
             l10n.checkoutAim(field),
             key: fieldKey,
-            style: (far ? theme.textTheme.displaySmall : theme.textTheme.headlineMedium)?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.primary,
-            ),
+            style: scoreStyle(far ? theme.textTheme.displaySmall : theme.textTheme.headlineMedium)
+                ?.copyWith(fontWeight: FontWeight.w700, color: theme.colorScheme.primary),
           ),
           if (rest.isNotEmpty)
             Text(

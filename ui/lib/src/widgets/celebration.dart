@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../display.dart';
@@ -6,10 +8,15 @@ import '../theme.dart';
 /// The moments a game screen celebrates, such as a 180 or a checkout; each [show] plays once.
 class Celebrations extends ChangeNotifier {
   String? text;
+
+  /// Whether the moment earns the large plate where the player chose full celebrations; a smaller one, such as a
+  /// checkout under 100, gets the small one
+  bool big = true;
   int _count = 0;
 
-  void show(String text) {
+  void show(String text, {bool big = true}) {
     this.text = text;
+    this.big = big;
     ++_count;
     notifyListeners();
   }
@@ -25,13 +32,13 @@ class Celebrations extends ChangeNotifier {
     };
   }
 
-  static const Duration _full = Duration(milliseconds: 1800);
+  static const Duration _full = Duration(milliseconds: 1500);
   static const Duration _subtle = Duration(milliseconds: 1400);
 }
 
-/// Plays each of [celebrations] over [child] as strongly as the player chose: a large banner that springs in, a small
-/// one that fades in at the top, or nothing. Where the system asks for less motion, the banner shows without moving.
-/// Taps pass through to the board below.
+/// Plays each of [celebrations] over [child], the score panel, as strongly as the player chose: a large plate that
+/// fades in and settles, a small one that fades in at the top, or nothing. Where the system asks for less motion, the
+/// plate shows without moving. Taps pass through.
 class CelebrationOverlay extends StatefulWidget {
   const CelebrationOverlay({super.key, required this.celebrations, required this.child});
 
@@ -74,7 +81,9 @@ class _CelebrationOverlayState extends State<CelebrationOverlay> with SingleTick
     _shown = widget.celebrations._count;
     final celebration = DisplayScope.of(context).celebration;
     if (celebration == Celebration.off) return;
-    _controller.duration = celebration == Celebration.full ? Celebrations._full : Celebrations._subtle;
+    _controller.duration = celebration == Celebration.full && widget.celebrations.big
+        ? Celebrations._full
+        : Celebrations._subtle;
     _controller.forward(from: 0);
   }
 
@@ -92,9 +101,9 @@ class _CelebrationOverlayState extends State<CelebrationOverlay> with SingleTick
               builder: (context, _) {
                 final text = widget.celebrations.text;
                 if (text == null || !_controller.isAnimating) return const SizedBox.shrink();
-                return display.celebration == Celebration.subtle
-                    ? _subtle(context, text, _controller.value)
-                    : _full(context, text, _controller.value);
+                return display.celebration == Celebration.full && widget.celebrations.big
+                    ? _full(context, text, _controller.value)
+                    : _subtle(context, text, _controller.value);
               },
             ),
           ),
@@ -112,32 +121,46 @@ class _CelebrationOverlayState extends State<CelebrationOverlay> with SingleTick
 
   Widget _full(BuildContext context, String text, double t) {
     final still = MediaQuery.disableAnimationsOf(context);
-    final palette = AppPalette.of(context);
-    final size = MediaQuery.sizeOf(context);
-    final scale = still ? 1.0 : 0.6 + 0.4 * Curves.elasticOut.transform((t / 0.4).clamp(0, 1));
-    return Center(
-      child: Opacity(
-        opacity: still ? 1 : _opacity(t, fadeIn: 0.1, fadeOut: 0.25),
-        child: Transform.scale(
-          scale: scale,
-          child: Container(
-            key: const ValueKey('celebration'),
-            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-            decoration: BoxDecoration(color: palette.highlight, borderRadius: BorderRadius.circular(24)),
-            child: Semantics(
-              liveRegion: true,
-              child: Text(
-                text,
-                style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                  color: palette.onHighlight,
-                  fontWeight: FontWeight.w900,
-                  fontSize: (size.shortestSide * 0.18).clamp(48, 160).toDouble(),
+    // A dark plate with yellow figures, as a TV graphic: it stands apart from the yellow block of the player at the
+    // oche and from light and dark surfaces alike.
+    const plate = AppColors.background;
+    const figures = AppColors.warning;
+    final scale = still ? 1.0 : 0.92 + 0.08 * Curves.easeOutCubic.transform((t / 0.2).clamp(0, 1));
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = math.min(constraints.maxWidth * 0.22, constraints.maxHeight * 0.3).clamp(40, 150).toDouble();
+        return Align(
+          alignment: const Alignment(0, -0.35),
+          child: Opacity(
+            opacity: still ? 1 : _opacity(t, fadeIn: 0.1, fadeOut: 0.25),
+            // A long text such as a checkout shrinks to the panel rather than breaking into lines
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Transform.scale(
+                scale: scale,
+                child: Container(
+                  key: const ValueKey('celebration'),
+                  padding: EdgeInsets.symmetric(horizontal: size * 0.4, vertical: size * 0.08),
+                  decoration: BoxDecoration(
+                    color: plate,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: figures, width: 3),
+                    boxShadow: const [BoxShadow(color: Color(0x66000000), blurRadius: 24, offset: Offset(0, 8))],
+                  ),
+                  child: Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      text,
+                      style: scoreStyle(Theme.of(context).textTheme.displayLarge)
+                          ?.copyWith(color: figures, fontWeight: FontWeight.w700, fontSize: size, height: 1.1),
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -147,7 +170,8 @@ class _CelebrationOverlayState extends State<CelebrationOverlay> with SingleTick
     return Align(
       alignment: Alignment.topCenter,
       child: Padding(
-        padding: const EdgeInsets.only(top: 24),
+        // Over the panel's top line, clear of the name and score below it
+        padding: const EdgeInsets.only(top: 2),
         child: Opacity(
           opacity: still ? 1 : _opacity(t, fadeIn: 0.15, fadeOut: 0.3),
           child: Container(
