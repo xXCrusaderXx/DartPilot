@@ -43,8 +43,8 @@ class RoundPlayerState {
 }
 
 /// A game of rounds (#118): every player has one visit of three darts at the round's target, and the visit changes the
-/// score by the mode's rule. After the last round the highest score wins. Derived by replaying all darts, so undo and
-/// corrections are exact. Pure logic, no UI.
+/// score by the mode's rule. After the last round the highest score wins; players level on it draw. A solo game has no
+/// winner, only its score. Derived by replaying all darts, so undo and corrections are exact. Pure logic, no UI.
 abstract class RoundGame implements DartGame {
   RoundGame(List<String> names, this.targets) : names = List.unmodifiable(names) {
     if (names.isEmpty) throw ArgumentError('at least one player');
@@ -61,7 +61,17 @@ abstract class RoundGame implements DartGame {
   /// Index into [targets]; [targets.length] once the game is over
   late int round;
   late List<(DartThrow, bool)> currentVisit;
+
+  /// The player and round of [currentVisit], which stays with them after it ends until the next dart
+  late int visitPlayer;
+  late int visitRound;
+
+  /// The player who won against the others; null while the game runs, in a draw and in a solo game
   int? winner;
+
+  /// Whether the game ended at once on a visit such as a Shanghai, rather than after the last round
+  bool wonAtOnce = false;
+  bool _over = false;
 
   int get startScore => 0;
 
@@ -77,7 +87,21 @@ abstract class RoundGame implements DartGame {
   RoundTarget get target => targets[round.clamp(0, targets.length - 1)];
 
   @override
-  bool get isFinished => winner != null;
+  bool get isFinished => _over;
+
+  /// Two or more players level on the best score at the end
+  bool get isDraw => _over && players.length > 1 && winner == null;
+
+  /// The players with the best score at the end, or the one who won at once
+  List<int> get leaders {
+    if (wonAtOnce) return [visitPlayer];
+    final best = players.map((p) => p.score).reduce((a, b) => a > b ? a : b);
+    return [
+      for (var i = 0; i < players.length; ++i)
+        if (players[i].score == best) i,
+    ];
+  }
+
   bool get canUndo => _throws.isNotEmpty;
 
   @override
@@ -111,7 +135,11 @@ abstract class RoundGame implements DartGame {
     current = 0;
     round = 0;
     currentVisit = [];
+    visitPlayer = 0;
+    visitRound = 0;
     winner = null;
+    wonAtOnce = false;
+    _over = false;
     for (final dart in _throws) {
       _apply(dart);
     }
@@ -119,6 +147,10 @@ abstract class RoundGame implements DartGame {
 
   void _apply(DartThrow dart) {
     if (currentVisit.length == 3) currentVisit = [];
+    if (currentVisit.isEmpty) {
+      visitPlayer = current;
+      visitRound = round;
+    }
     final player = players[current];
     final hit = target.hits(dart.score);
     player.dartsThrown++;
@@ -129,7 +161,9 @@ abstract class RoundGame implements DartGame {
     final visit = [for (final (d, _) in currentVisit) d.score];
     if (winsAtOnce(visit, target)) {
       player.score = scoreAfter(player.score, visit, target);
-      winner = current;
+      wonAtOnce = true;
+      _over = true;
+      if (players.length > 1) winner = current;
       return;
     }
     player.score = scoreAfter(player.score, visit, target);
@@ -160,11 +194,9 @@ abstract class RoundGame implements DartGame {
 
   void _end() {
     round = targets.length;
-    var best = 0;
-    for (var i = 1; i < players.length; ++i) {
-      if (players[i].score > players[best].score) best = i;
-    }
-    winner = best;
+    _over = true;
+    final top = leaders;
+    if (players.length > 1 && top.length == 1) winner = top.single;
   }
 }
 

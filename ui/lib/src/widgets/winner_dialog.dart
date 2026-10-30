@@ -140,7 +140,7 @@ class GameSummary extends StatelessWidget {
                   ],
                   GameMode.doubles => [(l10n.hitRate, percent(s.history.firstOrNull?.hitRate))],
                   GameMode.checkout => [(l10n.statsCheckoutRate, percent(s.history.firstOrNull?.checkoutRate))],
-                  GameMode.killer => <(String, String)>[],
+                  GameMode.killer => [(l10n.statsLivesLeft, '${s.history.firstOrNull?.lives ?? '–'}')],
                   GameMode.shanghai ||
                   GameMode.bobs27 ||
                   GameMode.halveIt => [(l10n.points, '${s.history.firstOrNull?.points ?? '–'}')],

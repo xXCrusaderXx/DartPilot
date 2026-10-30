@@ -19,7 +19,9 @@ import 'game_scaffold.dart';
 import 'my_darts_screen.dart';
 import 'players_setup_screen.dart';
 import '../board/score_text.dart';
+import '../widgets/celebration.dart';
 import '../widgets/player_row.dart';
+import '../widgets/players_panel.dart';
 
 /// Killer (#118): every player's number, marks on the way to killer, and lives.
 class KillerScreen extends StatefulWidget {
@@ -27,6 +29,7 @@ class KillerScreen extends StatefulWidget {
     super.key,
     required this.names,
     required this.numbers,
+    this.lives = 3,
     this.bots = const {},
     this.replay = const [],
     this.watching = false,
@@ -36,6 +39,9 @@ class KillerScreen extends StatefulWidget {
 
   /// Each player's number, in the order of [names]
   final List<int> numbers;
+
+  /// Lives each player starts with
+  final int lives;
 
   /// Bot level per player index; the others are people
   final Map<int, int> bots;
@@ -50,9 +56,15 @@ class KillerScreen extends StatefulWidget {
     final l10n = AppLocalizations.of(context);
     return PlayersSetupScreen(
       title: l10n.modeKiller,
+      rules: l10n.killerRules,
       minPlayers: 2,
-      start: (names, bots, _) =>
-          KillerScreen(names: names, numbers: killerNumbers(math.Random().nextInt(1 << 31), names.length), bots: bots),
+      options: [(l10n.killerFiveLives, false)],
+      start: (names, bots, options) => KillerScreen(
+        names: names,
+        numbers: killerNumbers(math.Random().nextInt(1 << 31), names.length),
+        lives: options.first ? 5 : 3,
+        bots: bots,
+      ),
     );
   }
 
@@ -64,8 +76,15 @@ class _KillerScreenState extends State<KillerScreen> with RecordsGame, BotTurns 
   @override
   bool get watching => widget.watching;
 
-  late final KillerGame _game = replayed(KillerGame(widget.names, widget.numbers), widget.replay);
+  late final KillerGame _game = replayed(KillerGame(widget.names, widget.numbers, lives: widget.lives), widget.replay);
   final TakeoutGate _takeout = TakeoutGate();
+  final Celebrations _celebrations = Celebrations();
+
+  @override
+  void dispose() {
+    _celebrations.dispose();
+    super.dispose();
+  }
 
   @override
   bool get waitsForTakeout => _takeout.isClosed(_game);
@@ -99,6 +118,15 @@ class _KillerScreenState extends State<KillerScreen> with RecordsGame, BotTurns 
       CallerScope.read(context)
           .call(killerCalls(_game, livesBefore: livesBefore, killersBefore: killersBefore), callLanguage);
     }
+    final l10n = AppLocalizations.of(context);
+    for (var i = 0; i < _game.players.length; ++i) {
+      final p = _game.players[i];
+      if (p.out && livesBefore[i] > 0 && !_game.isFinished) {
+        _celebrations.show(l10n.celebrateOut(p.name));
+      } else if (p.isKiller && !killersBefore[i]) {
+        _celebrations.show(l10n.celebrateKiller(p.name));
+      }
+    }
     if (!_game.isFinished) return;
     showWinnerDialog(
       context,
@@ -119,41 +147,44 @@ class _KillerScreenState extends State<KillerScreen> with RecordsGame, BotTurns 
     });
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final atOche = !_game.isFinished;
-    final panel = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Expanded(
-          child: ListView(
-            children: [
-              for (var i = 0; i < _game.players.length; ++i)
-                Builder(
-                  builder: (context) {
-                    final p = _game.players[i];
-                    final current = atOche && i == _game.current;
-                    return PlayerRow(
-                      name: p.name,
-                      active: current,
-                      enabled: !p.out,
-                      leading: CircleAvatar(child: Text('${p.number}')),
-                      details: p.out
-                          ? l10n.playerOut
-                          : p.isKiller
-                          ? l10n.killerIsKiller
-                          : l10n.killerMarks(p.marks, KillerGame.marksToKill, 'D${p.number}'),
-                      detailsKey: ValueKey('killer-state-${p.name}'),
-                      detailsFromAfar: true,
-                      value: '♥' * p.lives.clamp(0, _game.lives),
-                      valueKey: ValueKey('lives-${p.name}'),
-                      valueColour: theme.colorScheme.error,
-                    );
-                  },
-                ),
-            ],
+    // While its darts are in the board, the visit that ended stays on the scoreboard with its player; a new visit
+    // starts with no darts.
+    final waiting = _takeout.isClosed(_game);
+    final atOche = _game.isFinished
+        ? null
+        : waiting
+        ? _game.visitPlayer
+        : _game.current;
+    final visit = waiting || _game.isFinished || _game.dartsInVisit > 0 ? _game.currentVisit : const <DartThrow>[];
+    final panel = PlayersPanel(
+      active: atOche,
+      players: [
+        for (var i = 0; i < _game.players.length; ++i)
+          Builder(
+            builder: (context) {
+              final p = _game.players[i];
+              return PlayerRow(
+                name: p.name,
+                active: i == atOche,
+                enabled: !p.out,
+                leading: CircleAvatar(child: Text('${p.number}')),
+                details: p.out
+                    ? l10n.playerOut
+                    : p.isKiller
+                    ? l10n.killerIsKiller
+                    : l10n.killerMarks(p.marks, KillerGame.marksToKill, 'D${p.number}'),
+                detailsKey: ValueKey('killer-state-${p.name}'),
+                detailsFromAfar: true,
+                value: l10n.killerLives(p.lives),
+                valueKey: ValueKey('lives-${p.name}'),
+                valueColour: theme.colorScheme.error,
+                valueIcons: Lives(p.lives.clamp(0, _game.lives), of: _game.lives),
+              );
+            },
           ),
-        ),
-        const SizedBox(height: 12),
-        VisitDarts([for (final dart in _game.currentVisit) dart.score.text(l10n)]),
+      ],
+      footer: [
+        VisitDarts([for (final dart in visit) dart.score.text(l10n)]),
         const SizedBox(height: 8),
         OutlinedButton.icon(
           onPressed: _game.canUndo && !widget.watching ? () => setState(_game.undo) : null,
@@ -166,7 +197,7 @@ class _KillerScreenState extends State<KillerScreen> with RecordsGame, BotTurns 
       title: l10n.modeKiller,
       game: _game,
       takeout: _takeout,
-      shownThrows: _game.currentVisit,
+      shownThrows: visit,
       watching: widget.watching,
       onDart: (dart) {
         // While a bot is at the oche, its darts are its own.
@@ -174,6 +205,26 @@ class _KillerScreenState extends State<KillerScreen> with RecordsGame, BotTurns 
       },
       onChanged: () => setState(() {}),
       panel: panel,
+      celebrations: _celebrations,
+    );
+  }
+}
+
+/// A player's lives as hearts, the lost ones as outlines
+class Lives extends StatelessWidget {
+  const Lives(this.lives, {super.key, required this.of});
+
+  final int lives;
+  final int of;
+
+  @override
+  Widget build(BuildContext context) {
+    final lost = IconTheme.of(context).color?.withValues(alpha: 0.35);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < of; ++i) i < lives ? const Icon(Icons.favorite) : Icon(Icons.favorite_border, color: lost),
+      ],
     );
   }
 }

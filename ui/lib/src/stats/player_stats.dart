@@ -23,6 +23,7 @@ class PlayedGame {
     this.spreadMm,
     this.checkoutRate,
     this.points,
+    this.lives,
   });
 
   final GameRecord record;
@@ -45,6 +46,9 @@ class PlayedGame {
 
   /// Shanghai, Bob's 27, Halve-It: the final score
   final int? points;
+
+  /// Killer: the lives left at the end
+  final int? lives;
 }
 
 /// The precision trainings: their darts go at targets the training sets, so they count apart from the games.
@@ -179,7 +183,7 @@ PlayerStats computePlayerStats(List<GameRecord> games, String player, {DateTime?
       case DoublesGame():
         played = PlayedGame(record, won: false, darts: mine.length, hitRate: game.hitRate);
       case KillerGame():
-        played = PlayedGame(record, won: won(game.winner), darts: mine.length);
+        played = PlayedGame(record, won: won(game.winner), darts: mine.length, lives: game.players[index].lives);
       case RoundGame():
         played = PlayedGame(record, won: won(game.winner), darts: mine.length, points: game.players[index].score);
       case CheckoutTrainer():

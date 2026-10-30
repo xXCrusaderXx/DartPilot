@@ -19,6 +19,11 @@ import 'my_darts_screen.dart';
 import 'players_setup_screen.dart';
 import '../widgets/precision_text.dart';
 import '../widgets/player_row.dart';
+import '../widgets/celebration.dart';
+import '../widgets/game_result.dart';
+import '../widgets/players_panel.dart';
+import '../stats/personal_best.dart';
+import '../display.dart';
 
 /// Shanghai, Bob's 27 and Halve-It (#118): a round's target, every player's score, and the darts of the visit.
 class RoundGameScreen extends StatefulWidget {
@@ -54,10 +59,17 @@ class RoundGameScreen extends StatefulWidget {
   };
 
   /// The setup of [mode]: the players, and for Shanghai whether all 20 numbers are played
+  static String rules(AppLocalizations l10n, GameMode mode) => switch (mode) {
+    GameMode.bobs27 => l10n.bobs27Rules,
+    GameMode.halveIt => l10n.halveItRules,
+    _ => l10n.shanghaiRules,
+  };
+
   static WidgetBuilder setup(GameMode mode) => (context) {
     final l10n = AppLocalizations.of(context);
     return PlayersSetupScreen(
       title: title(l10n, mode),
+      rules: rules(l10n, mode),
       options: [if (mode == GameMode.shanghai) (l10n.shanghaiAllNumbers, false)],
       start: (names, bots, options) => RoundGameScreen(
         mode: mode,
@@ -89,6 +101,13 @@ class _RoundGameScreenState extends State<RoundGameScreen> with RecordsGame, Bot
     widget.replay,
   );
   final TakeoutGate _takeout = TakeoutGate();
+  final Celebrations _celebrations = Celebrations();
+
+  @override
+  void dispose() {
+    _celebrations.dispose();
+    super.dispose();
+  }
 
   @override
   bool get waitsForTakeout => _takeout.isClosed(_game);
@@ -121,11 +140,71 @@ class _RoundGameScreenState extends State<RoundGameScreen> with RecordsGame, Bot
     if (!widget.watching) {
       CallerScope.read(context).call(roundCalls(_game, player: player, scoreBefore: scoreBefore), callLanguage);
     }
+    final l10n = AppLocalizations.of(context);
+    if (_game.wonAtOnce) {
+      _celebrations.show(l10n.celebrateShanghai);
+    } else if (_game.currentVisit.length == 3 && _game.currentVisit.every((d) => d.$2)) {
+      _celebrations.show(l10n.celebrateThreeHits);
+    }
     if (!_game.isFinished) return;
-    showWinnerDialog(
+    if (_game.players.length == 1) {
+      _showSoloResult(l10n);
+    } else if (_game.winner == null) {
+      final leaders = _game.leaders;
+      showGameResult(
+        context,
+        title: l10n.gameDraw,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l10n.drawBetween(
+                [for (final i in leaders) _game.players[i].name].join(', '),
+                _game.players[leaders.first].score,
+              ),
+              key: const ValueKey('draw'),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 16),
+            GameSummary(record: currentRecord),
+          ],
+        ),
+        onUndo: () => setState(_game.undo),
+        newGame: RoundGameScreen.setup(widget.mode),
+      );
+    } else {
+      showWinnerDialog(
+        context,
+        winner: _game.players[_game.winner!].name,
+        record: currentRecord,
+        onUndo: () => setState(_game.undo),
+        newGame: RoundGameScreen.setup(widget.mode),
+      );
+    }
+  }
+
+  /// A game played alone ends on its score and how that stands against the player's best, not on a win
+  void _showSoloResult(AppLocalizations l10n) {
+    final player = _game.players.single;
+    final record = currentRecord;
+    final history = StatisticsScope.read(context)?.statsOf(player.name).history ?? const [];
+    final best = personalBest(history, record);
+    showGameResult(
       context,
-      winner: _game.players[_game.winner!].name,
-      record: currentRecord,
+      title: l10n.gameOver,
+      content: SoloResult(
+        headline: player.out
+            ? l10n.resultBelowZero(_targetText(l10n, _game.targets[_game.visitRound]))
+            : l10n.resultPoints(player.score),
+        details: [
+          l10n.statsDartsCount(player.dartsThrown),
+          l10n.labelValue(l10n.hitRate, percentText(l10n, player.hitRate)),
+        ].join(' · '),
+        value: player.score.toDouble(),
+        best: best,
+        bestText: best == null ? null : l10n.resultPoints(best.round()),
+      ),
       onUndo: () => setState(_game.undo),
       newGame: RoundGameScreen.setup(widget.mode),
     );
@@ -146,31 +225,33 @@ class _RoundGameScreenState extends State<RoundGameScreen> with RecordsGame, Bot
       if (mounted && !_game.isFinished) useDartsOf(context, _game.players[_game.current].name);
     });
     final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
-    final visit = [for (final (dart, _) in _game.currentVisit) dart];
-    final panel = ScrollingPanel(
-      top: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                l10n.roundOf((_game.round + 1).clamp(1, _game.targets.length), _game.targets.length),
-                key: const ValueKey('round'),
-                style: theme.textTheme.titleMedium,
-              ),
-            ),
-            Text(
-              _targetText(l10n, _game.target),
-              key: const ValueKey('round-target'),
-              style: theme.textTheme.displaySmall,
-            ),
-          ],
+    // While its darts are in the board, the visit that ended stays on the scoreboard with its player, round and target;
+    // a new visit starts with no darts.
+    final waiting = _takeout.isClosed(_game);
+    final atOche = _game.isFinished
+        ? null
+        : waiting
+        ? _game.visitPlayer
+        : _game.current;
+    final round = waiting || _game.isFinished ? _game.visitRound : _game.round;
+    final shown = waiting || _game.isFinished || _game.dartsInVisit > 0
+        ? _game.currentVisit
+        : const <(DartThrow, bool)>[];
+    final visit = [for (final (dart, _) in shown) dart];
+    final panel = PlayersPanel(
+      header: [
+        RoundTargetTile(
+          target: _targetText(l10n, _game.targets[round.clamp(0, _game.targets.length - 1)]),
+          round: l10n.roundOf((round + 1).clamp(1, _game.targets.length), _game.targets.length),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
+      ],
+      active: atOche,
+      players: [
         for (var i = 0; i < _game.players.length; ++i)
           PlayerRow(
             name: _game.players[i].name,
-            active: i == _game.current && !_game.isFinished,
+            active: i == atOche,
             enabled: !_game.players[i].out,
             details: [
               l10n.statsDartsCount(_game.players[i].dartsThrown),
@@ -180,13 +261,10 @@ class _RoundGameScreenState extends State<RoundGameScreen> with RecordsGame, Bot
             value: '${_game.players[i].score}',
             valueKey: ValueKey('score-${_game.players[i].name}'),
           ),
-        const SizedBox(height: 12),
-        VisitDarts(
-          [for (final (dart, _) in _game.currentVisit) dart.score.text(l10n)],
-          hits: [for (final (_, hit) in _game.currentVisit) hit],
-        ),
       ],
-      bottom: [
+      footer: [
+        VisitDarts([for (final (dart, _) in shown) dart.score.text(l10n)], hits: [for (final (_, hit) in shown) hit]),
+        const SizedBox(height: 8),
         OutlinedButton.icon(
           onPressed: _game.canUndo && !widget.watching ? () => setState(_game.undo) : null,
           icon: const Icon(Icons.undo),
@@ -206,6 +284,78 @@ class _RoundGameScreenState extends State<RoundGameScreen> with RecordsGame, Bot
       },
       onChanged: () => setState(() {}),
       panel: panel,
+      celebrations: _celebrations,
+    );
+  }
+}
+
+/// The round's target as the panel's headline, with the round below it: what every player in the round aims at
+class RoundTargetTile extends StatelessWidget {
+  const RoundTargetTile({super.key, required this.target, required this.round});
+
+  final String target;
+  final String round;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final display = DisplayScope.of(context);
+    final window = WindowClass.of(context);
+    final far = display.farFor(window);
+    // A phone on its side has no height to spare.
+    final short = MediaQuery.sizeOf(context).height < 500;
+    final targetStyle =
+        (far
+                ? theme.textTheme.displayLarge
+                : short
+                ? theme.textTheme.headlineMedium
+                : theme.textTheme.displayMedium)
+            ?.copyWith(fontWeight: FontWeight.w800, color: theme.colorScheme.primary, height: 1.0);
+    // From afar the target grows with the panel, as the score of the player at the oche does.
+    return LayoutBuilder(
+      builder: (context, constraints) => _tile(
+        context,
+        far ? targetStyle?.copyWith(fontSize: (constraints.maxWidth * 0.14).clamp(57, 120).toDouble()) : targetStyle,
+        far: far,
+        short: short,
+      ),
+    );
+  }
+
+  Widget _tile(BuildContext context, TextStyle? targetStyle, {required bool far, required bool short}) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: short ? 8 : 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.colorScheme.primary, width: 2),
+      ),
+      child: Row(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l10n.roundTarget.toUpperCase(), style: theme.textTheme.labelLarge?.copyWith(letterSpacing: 1.2)),
+              Text(
+                round,
+                key: const ValueKey('round'),
+                style: far ? theme.textTheme.titleLarge : theme.textTheme.titleSmall,
+              ),
+            ],
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(target, key: const ValueKey('round-target'), style: targetStyle),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

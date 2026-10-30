@@ -181,7 +181,7 @@ void main() {
     expect(visit(shanghai, [at(Ring.miss), at(Ring.miss), at(Ring.miss)]), ['No score']);
     expect(visit(shanghai, [at(Ring.outerSingle, 1), at(Ring.double, 1), at(Ring.triple, 1)]), [
       'Shanghai!',
-      'Game shot, and the match!',
+      'Ben wins',
     ]);
   });
 
@@ -201,6 +201,6 @@ void main() {
       dart(at(Ring.miss));
     }
     expect(dart(at(Ring.double, 3)), ['Ben, 1 life left']);
-    expect(dart(at(Ring.double, 3)), ['Game shot, and the match!']);
+    expect(dart(at(Ring.double, 3)), ['Ben is out', 'Anna wins']);
   });
 }

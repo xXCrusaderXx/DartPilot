@@ -2658,4 +2658,109 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get homeReconnecting => 'Bis die Verbindung wieder steht, trägst du die Darts von Hand ein';
+
+  @override
+  String get gameDraw => 'Unentschieden';
+
+  @override
+  String drawBetween(String names, int points) {
+    return '$names: je $points Punkte';
+  }
+
+  @override
+  String get gameOver => 'Spiel beendet';
+
+  @override
+  String resultPoints(int points) {
+    return '$points Punkte';
+  }
+
+  @override
+  String resultBelowZero(String target) {
+    return 'Unter null bei $target';
+  }
+
+  @override
+  String resultAllClosed(int darts) {
+    return 'Alles zu in $darts Darts';
+  }
+
+  @override
+  String resultRoundTheClock(int darts) {
+    return 'Einmal rum in $darts Darts';
+  }
+
+  @override
+  String personalBest(String value) {
+    return 'Deine bisherige Bestleistung: $value';
+  }
+
+  @override
+  String get newPersonalBest => 'Neue Bestleistung';
+
+  @override
+  String get roundTarget => 'Ziel';
+
+  @override
+  String get gameRules => 'Regeln';
+
+  @override
+  String get cricketRules =>
+      'Schließe 15 bis 20 und das Bull mit je drei Marks: Single zählt eins, Double zwei, Triple drei. Treffer auf eine Zahl, die du geschlossen hast und die Gegner noch nicht, bringen ihre Punkte. Wer alles geschlossen hat und vorne liegt, gewinnt.';
+
+  @override
+  String get aroundTheClockRules =>
+      'Triff 1 bis 20 der Reihe nach, jeder Ring zählt; am Ende das Bull, wenn es dabei ist. Wer zuerst rum ist, gewinnt.';
+
+  @override
+  String get shanghaiRules =>
+      'Runde 1 geht auf die 1, Runde 2 auf die 2 und so weiter. Jeder Treffer zählt seine Punkte; Single, Double und Triple der Zahl in einer Aufnahme gewinnen sofort.';
+
+  @override
+  String get bobs27Rules =>
+      'Du startest mit 27 und spielst D1 bis D20, dann das Bull. Jeder Treffer bringt den Wert des Doppels, eine Aufnahme ohne Treffer kostet ihn einmal. Unter null bist du raus.';
+
+  @override
+  String get halveItRules =>
+      'Du startest mit 40. Ziele: 15, 16, beliebiges Doppel, 17, 18, beliebiges Triple, 19, 20, Bull. Treffer aufs Ziel zählen ihre Punkte; eine Aufnahme ohne Treffer halbiert deine Punkte.';
+
+  @override
+  String get killerRules =>
+      'Jeder bekommt eine Zahl. Triff dreimal dein eigenes Doppel, dann bist du Killer: Jeder Treffer auf das Doppel eines anderen kostet ihn ein Leben. Triffst du als Killer dein eigenes, verlierst du eins. Wer zuletzt noch Leben hat, gewinnt.';
+
+  @override
+  String get killerFiveLives => '5 Leben statt 3';
+
+  @override
+  String killerLives(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Leben', one: '1 Leben');
+    return '$_temp0';
+  }
+
+  @override
+  String get statsLivesLeft => 'Leben übrig';
+
+  @override
+  String celebrateMarks(int marks) {
+    return '$marks Marks';
+  }
+
+  @override
+  String get celebrateShanghai => 'Shanghai!';
+
+  @override
+  String get celebrateThreeHits => 'Drei von drei';
+
+  @override
+  String celebrateKiller(String name) {
+    return '$name ist Killer';
+  }
+
+  @override
+  String celebrateOut(String name) {
+    return '$name ist raus';
+  }
+
+  @override
+  String get marksPerRoundShort => 'MPR';
 }

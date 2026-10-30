@@ -12,9 +12,13 @@ class PlayersSetupScreen extends StatefulWidget {
     required this.start,
     this.options = const [],
     this.minPlayers = 1,
+    this.rules,
   });
 
   final String title;
+
+  /// The game's rules in a few lines, shown above the players
+  final String? rules;
 
   /// Players the game needs at least, bots included
   final int minPlayers;
@@ -51,6 +55,29 @@ class _PlayersSetupScreenState extends State<PlayersSetupScreen> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              if (widget.rules != null) ...[
+                Card(
+                  key: const ValueKey('game-rules'),
+                  margin: EdgeInsets.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.info_outline, color: Theme.of(context).colorScheme.primary),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Semantics(
+                            label: l10n.gameRules,
+                            child: Text(widget.rules!, style: Theme.of(context).textTheme.bodyMedium),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
               PlayerPicker(selection: _players),
               for (var i = 0; i < widget.options.length; ++i)
                 SwitchListTile(
