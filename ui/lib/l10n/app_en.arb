@@ -1580,5 +1580,17 @@
         "type": "String"
       }
     }
-  }
+  },
+  "appearanceShare": "Share the appearance",
+  "appearanceShareHint": "As a QR code or a code to copy, for another device",
+  "appearanceApply": "Take over an appearance",
+  "appearanceApplyHint": "From another device's code or QR code; the viewing distance stays as it is here",
+  "appearanceCopy": "Copy",
+  "appearanceCopied": "Code copied",
+  "appearanceCodeLabel": "Appearance code",
+  "appearanceCodeInvalid": "This is not an appearance code from DartPilot",
+  "appearanceScanHint": "Point the camera at the QR code under Share the appearance on the other device",
+  "appearanceScanUnavailable": "The camera cannot be used to scan. Allow the camera for DartPilot, or paste the code shown under the QR code.",
+  "appearancePreview": "Adjust with preview",
+  "appearancePreviewHint": "A game screen shows every change at once"
 }

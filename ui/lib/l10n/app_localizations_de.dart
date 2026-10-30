@@ -2403,4 +2403,42 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get playerColourReset => 'Nach Reihenfolge';
+
+  @override
+  String get appearanceShare => 'Darstellung teilen';
+
+  @override
+  String get appearanceShareHint => 'Als QR-Code oder Code zum Kopieren, für ein anderes Gerät';
+
+  @override
+  String get appearanceApply => 'Darstellung übernehmen';
+
+  @override
+  String get appearanceApplyHint =>
+      'Vom Code oder QR-Code eines anderen Geräts; der Leseabstand bleibt, wie er hier ist';
+
+  @override
+  String get appearanceCopy => 'Kopieren';
+
+  @override
+  String get appearanceCopied => 'Code kopiert';
+
+  @override
+  String get appearanceCodeLabel => 'Darstellungs-Code';
+
+  @override
+  String get appearanceCodeInvalid => 'Das ist kein Darstellungs-Code von DartPilot';
+
+  @override
+  String get appearanceScanHint => 'Richte die Kamera auf den QR-Code unter „Darstellung teilen“ auf dem anderen Gerät';
+
+  @override
+  String get appearanceScanUnavailable =>
+      'Die Kamera lässt sich zum Scannen nicht nutzen. Erlaube DartPilot die Kamera, oder füge den Code unter dem QR-Code ein.';
+
+  @override
+  String get appearancePreview => 'Mit Vorschau anpassen';
+
+  @override
+  String get appearancePreviewHint => 'Ein Spielbildschirm zeigt jede Änderung sofort';
 }

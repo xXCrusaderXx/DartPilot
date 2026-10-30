@@ -694,5 +694,17 @@
   "dartMagenta": "Magenta",
   "playerColour": "Farbe",
   "playerColourOf": "Farbe von {player}",
-  "playerColourReset": "Nach Reihenfolge"
+  "playerColourReset": "Nach Reihenfolge",
+  "appearanceShare": "Darstellung teilen",
+  "appearanceShareHint": "Als QR-Code oder Code zum Kopieren, für ein anderes Gerät",
+  "appearanceApply": "Darstellung übernehmen",
+  "appearanceApplyHint": "Vom Code oder QR-Code eines anderen Geräts; der Leseabstand bleibt, wie er hier ist",
+  "appearanceCopy": "Kopieren",
+  "appearanceCopied": "Code kopiert",
+  "appearanceCodeLabel": "Darstellungs-Code",
+  "appearanceCodeInvalid": "Das ist kein Darstellungs-Code von DartPilot",
+  "appearanceScanHint": "Richte die Kamera auf den QR-Code unter „Darstellung teilen“ auf dem anderen Gerät",
+  "appearanceScanUnavailable": "Die Kamera lässt sich zum Scannen nicht nutzen. Erlaube DartPilot die Kamera, oder füge den Code unter dem QR-Code ein.",
+  "appearancePreview": "Mit Vorschau anpassen",
+  "appearancePreviewHint": "Ein Spielbildschirm zeigt jede Änderung sofort"
 }

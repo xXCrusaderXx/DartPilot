@@ -105,11 +105,39 @@ class _EngineQrDialogState extends State<EngineQrDialog> {
 bool get canScanQr => Platform.isAndroid || Platform.isIOS;
 
 /// The engine address from a QR code (ws://… or wss://…); null when cancelled
-Future<String?> scanEngineQr(BuildContext context) =>
-    Navigator.of(context).push<String>(MaterialPageRoute(builder: (_) => const _ScanPage()));
+Future<String?> scanEngineQr(BuildContext context) {
+  final l10n = AppLocalizations.of(context);
+  return scanQr(
+    context,
+    title: l10n.scanEngineQr,
+    hint: l10n.scanEngineQrHint,
+    unavailable: l10n.scanEngineQrUnavailable,
+    accept: (value) => value.startsWith('ws://') || value.startsWith('wss://'),
+  );
+}
+
+/// The first QR code that [accept] takes; null when cancelled
+Future<String?> scanQr(
+  BuildContext context, {
+  required String title,
+  required String hint,
+  required String unavailable,
+  required bool Function(String) accept,
+}) => Navigator.of(context).push<String>(
+  MaterialPageRoute(
+    builder: (_) => _ScanPage(title: title, hint: hint, unavailable: unavailable, accept: accept),
+  ),
+);
 
 class _ScanPage extends StatefulWidget {
-  const _ScanPage();
+  const _ScanPage({required this.title, required this.hint, required this.unavailable, required this.accept});
+
+  final String title;
+  final String hint;
+
+  /// Shown when the camera cannot be used
+  final String unavailable;
+  final bool Function(String) accept;
 
   @override
   State<_ScanPage> createState() => _ScanPageState();
@@ -120,29 +148,24 @@ class _ScanPageState extends State<_ScanPage> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.scanEngineQr)),
+      appBar: AppBar(title: Text(widget.title)),
       body: Stack(
         fit: StackFit.expand,
         children: [
           MobileScanner(
-            // Without the camera, for instance when its permission is denied, the address field remains.
+            // Without the camera, for instance when its permission is denied, the text field remains.
             errorBuilder: (context, error) => Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text(
-                  AppLocalizations.of(context).scanEngineQrUnavailable,
-                  key: const ValueKey('qr-scanner-error'),
-                  textAlign: TextAlign.center,
-                ),
+                child: Text(widget.unavailable, key: const ValueKey('qr-scanner-error'), textAlign: TextAlign.center),
               ),
             ),
             onDetect: (capture) {
               if (_done) return;
               for (final code in capture.barcodes) {
                 final value = code.rawValue;
-                if (value != null && (value.startsWith('ws://') || value.startsWith('wss://'))) {
+                if (value != null && widget.accept(value)) {
                   _done = true;
                   Navigator.of(context).pop(value);
                   return;
@@ -156,7 +179,7 @@ class _ScanPageState extends State<_ScanPage> {
               margin: const EdgeInsets.all(24),
               padding: const EdgeInsets.all(12),
               color: Colors.black54,
-              child: Text(l10n.scanEngineQrHint, textAlign: TextAlign.center),
+              child: Text(widget.hint, textAlign: TextAlign.center),
             ),
           ),
         ],
