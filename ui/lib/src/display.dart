@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -242,6 +244,68 @@ class DisplaySettings extends ChangeNotifier {
     } else {
       await prefs.setInt(_dartColourKey, dart.toARGB32());
     }
+  }
+
+  /// What a shared appearance starts with, so that a code is told apart from other text and QR codes
+  static const codePrefix = 'dartpilot-look:1:';
+
+  /// The appearance as a short code for another device, as text or QR code. The viewing distance stays out: it
+  /// belongs to where each device stands.
+  String toCode() {
+    final values = {
+      'preset': preset.name,
+      'style': style.name,
+      'brightness': brightness.name,
+      'accent': ?accent?.toARGB32(),
+      'textSize': textSize.name,
+      'highContrast': highContrast,
+      'boardSide': boardSide.name,
+      'boardSize': boardSize.name,
+      'details': [for (final d in panelDetails) d.name],
+      'celebration': celebration.name,
+      'boardColours': boardColours.name,
+      'dartColour': ?dartColour?.toARGB32(),
+    };
+    return codePrefix + base64Url.encode(utf8.encode(jsonEncode(values))).replaceAll('=', '');
+  }
+
+  /// Takes over the appearance of [code]; false, changing nothing, when it is not one. Values this version does not
+  /// know keep their defaults, so a code from a newer app still works.
+  Future<bool> applyCode(String code) async {
+    final trimmed = code.trim();
+    if (!trimmed.startsWith(codePrefix)) return false;
+    final Map<String, Object?> values;
+    try {
+      final data = trimmed.substring(codePrefix.length);
+      final decoded = jsonDecode(utf8.decode(base64Url.decode(base64Url.normalize(data))));
+      if (decoded is! Map<String, Object?>) return false;
+      values = decoded;
+    } on FormatException {
+      return false;
+    }
+    T pick<T extends Enum>(List<T> all, String key, T fallback) => all.asNameMap()[values[key]] ?? fallback;
+    Color? colour(String key) => switch (values[key]) {
+      final int argb => Color(argb),
+      _ => null,
+    };
+    preset = pick(AppearancePreset.values, 'preset', AppearancePreset.standard);
+    style = pick(DisplayStyle.values, 'style', DisplayStyle.auto);
+    brightness = pick(AppBrightness.values, 'brightness', AppBrightness.dark);
+    accent = colour('accent');
+    textSize = pick(TextSize.values, 'textSize', TextSize.normal);
+    highContrast = values['highContrast'] == true;
+    boardSide = pick(BoardSide.values, 'boardSide', BoardSide.left);
+    boardSize = pick(BoardSize.values, 'boardSize', BoardSize.medium);
+    panelDetails = switch (values['details']) {
+      final List<Object?> names => {for (final name in names) ?PanelDetail.values.asNameMap()[name]},
+      _ => defaultPanelDetails,
+    };
+    celebration = pick(Celebration.values, 'celebration', Celebration.full);
+    boardColours = pick(BoardColours.values, 'boardColours', BoardColours.classic);
+    // Only the colours the settings offer, which are known to stand out on every board
+    dartColour = dartSwatches.contains(colour('dartColour')) ? colour('dartColour') : null;
+    await _changed();
+    return true;
   }
 
   ThemeMode get themeMode => switch (brightness) {

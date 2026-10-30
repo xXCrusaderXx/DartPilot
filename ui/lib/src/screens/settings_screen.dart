@@ -5,6 +5,8 @@ import '../engine/engine_choice.dart';
 import '../engine/engine_connection.dart';
 import '../sound/caller.dart';
 import '../sound/x01_calls.dart';
+import '../widgets/appearance_preview.dart';
+import '../widgets/appearance_share.dart';
 import '../widgets/appearance_tiles.dart';
 import '../widgets/board_check.dart';
 import '../widgets/engine_card.dart';
@@ -297,7 +299,10 @@ class _SetupTile extends StatelessWidget {
 /// How the app looks on this device: preset, brightness, colours, text size, game display, viewing distance and the
 /// game screen's layout
 class DisplaySettingsTiles extends StatelessWidget {
-  const DisplaySettingsTiles({super.key});
+  const DisplaySettingsTiles({super.key, this.previewEntry = true});
+
+  /// Whether the tiles lead to the page that shows them beside a preview
+  final bool previewEntry;
 
   @override
   Widget build(BuildContext context) {
@@ -305,6 +310,15 @@ class DisplaySettingsTiles extends StatelessWidget {
     final display = DisplayScope.of(context);
     return Column(
       children: [
+        if (previewEntry)
+          ListTile(
+            key: const ValueKey('appearance-preview-open'),
+            leading: const Icon(Icons.preview_outlined),
+            title: Text(l10n.appearancePreview),
+            subtitle: Text(l10n.appearancePreviewHint),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const AppearanceScreen())),
+          ),
         const AppearancePresetTiles(),
         ListTile(title: Text(l10n.brightness), subtitle: Text(l10n.brightnessHint)),
         Padding(
@@ -350,7 +364,47 @@ class DisplaySettingsTiles extends StatelessWidget {
           ),
         ),
         const GameScreenTiles(),
+        const AppearanceShareTiles(),
       ],
+    );
+  }
+}
+
+/// The display settings beside a preview of a game screen, which follows every change: side by side where the window
+/// is wide, the preview above them where it is not
+class AppearanceScreen extends StatelessWidget {
+  const AppearanceScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    const settings = SingleChildScrollView(child: DisplaySettingsTiles(previewEntry: false));
+    return Scaffold(
+      appBar: AppBar(title: Text(l10n.settingsDisplay)),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            const preview = Padding(padding: EdgeInsets.all(16), child: AppearancePreview());
+            if (constraints.maxWidth >= WindowClass.mediumFrom && constraints.maxWidth > constraints.maxHeight) {
+              return const Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(child: preview),
+                  SizedBox(width: 420, child: settings),
+                ],
+              );
+            }
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SizedBox(height: constraints.maxHeight * 0.4, child: preview),
+                const Divider(height: 1),
+                const Expanded(child: settings),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 }

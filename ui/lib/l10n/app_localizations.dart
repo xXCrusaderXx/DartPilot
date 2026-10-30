@@ -4261,6 +4261,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'By order'**
   String get playerColourReset;
+
+  /// No description provided for @appearanceShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Share the appearance'**
+  String get appearanceShare;
+
+  /// No description provided for @appearanceShareHint.
+  ///
+  /// In en, this message translates to:
+  /// **'As a QR code or a code to copy, for another device'**
+  String get appearanceShareHint;
+
+  /// No description provided for @appearanceApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Take over an appearance'**
+  String get appearanceApply;
+
+  /// No description provided for @appearanceApplyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'From another device\'s code or QR code; the viewing distance stays as it is here'**
+  String get appearanceApplyHint;
+
+  /// No description provided for @appearanceCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get appearanceCopy;
+
+  /// No description provided for @appearanceCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Code copied'**
+  String get appearanceCopied;
+
+  /// No description provided for @appearanceCodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance code'**
+  String get appearanceCodeLabel;
+
+  /// No description provided for @appearanceCodeInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'This is not an appearance code from DartPilot'**
+  String get appearanceCodeInvalid;
+
+  /// No description provided for @appearanceScanHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Point the camera at the QR code under Share the appearance on the other device'**
+  String get appearanceScanHint;
+
+  /// No description provided for @appearanceScanUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The camera cannot be used to scan. Allow the camera for DartPilot, or paste the code shown under the QR code.'**
+  String get appearanceScanUnavailable;
+
+  /// No description provided for @appearancePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust with preview'**
+  String get appearancePreview;
+
+  /// No description provided for @appearancePreviewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A game screen shows every change at once'**
+  String get appearancePreviewHint;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
