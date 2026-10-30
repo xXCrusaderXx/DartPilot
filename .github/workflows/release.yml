@@ -288,13 +288,20 @@ jobs:
           cache: true
 
       # The keystore is a base64 secret; the build reads it and its passwords from the environment.
+      # A published APK must carry the release key: one signed with the debug key can never be updated by a release-signed one.
+      # Only a dry run may fall back to the debug key.
       - name: Release key
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          PUBLISH: ${{ needs.version.outputs.publish }}
         run: |
           set -euo pipefail
           if [ -z "$KEYSTORE_BASE64" ]; then
-            echo "::warning::No ANDROID_KEYSTORE_BASE64 secret: the APK is signed with the debug key and cannot update an APK signed with the release key."
+            if [ "$PUBLISH" = "true" ]; then
+              echo "::error::No ANDROID_KEYSTORE_BASE64 secret: a published APK must be signed with the release key (see ROADMAP.md, Releases)."
+              exit 1
+            fi
+            echo "::warning::No ANDROID_KEYSTORE_BASE64 secret: this dry-run APK is signed with the debug key."
             exit 0
           fi
           echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
