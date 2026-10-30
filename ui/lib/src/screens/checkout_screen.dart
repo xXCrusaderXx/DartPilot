@@ -236,6 +236,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
       watching: widget.watching,
       onDart: _add,
       onChanged: () => setState(() {}),
+      onOutcomeChanged: (_) {
+        if (_game.isFinished) _showResult();
+      },
       panel: panel,
     );
   }

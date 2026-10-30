@@ -210,6 +210,31 @@ class AppLocalizationsDe extends AppLocalizations {
   String get backToMenu => 'Menü';
 
   @override
+  String get rematch => 'Revanche';
+
+  @override
+  String get resultDetails => 'Details';
+
+  @override
+  String x01LastVisit(int points) {
+    return 'Zuletzt $points';
+  }
+
+  @override
+  String get x01LastVisitBust => 'Zuletzt überworfen';
+
+  @override
+  String get x01ThrowsFirst => 'Wer beginnt';
+
+  @override
+  String get pickPlayerToStart => 'Wähl mindestens einen Spieler, um zu starten.';
+
+  @override
+  String quickStartX01(int score, String players) {
+    return 'Nochmal: $score · $players';
+  }
+
+  @override
   String get removePlayer => 'Spieler entfernen';
 
   @override

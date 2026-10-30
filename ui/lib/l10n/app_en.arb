@@ -127,6 +127,30 @@
   },
   "newGame": "New game",
   "backToMenu": "Menu",
+  "rematch": "Rematch",
+  "resultDetails": "Details",
+  "x01LastVisit": "Last {points}",
+  "@x01LastVisit": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "x01LastVisitBust": "Last visit bust",
+  "x01ThrowsFirst": "Throws first",
+  "pickPlayerToStart": "Pick at least one player to start.",
+  "quickStartX01": "Again: {score} · {players}",
+  "@quickStartX01": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      },
+      "players": {
+        "type": "String"
+      }
+    }
+  },
   "removePlayer": "Remove player",
   "cricketSetup": "New Cricket game",
   "aroundTheClockSetup": "New Around the Clock game",

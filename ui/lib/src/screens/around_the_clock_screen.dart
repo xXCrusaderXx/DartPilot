@@ -108,7 +108,12 @@ class _AroundTheClockScreenState extends State<AroundTheClockScreen> with Record
     if (_game.currentVisit.length == 3 && _game.currentVisit.every((d) => d.$2)) {
       _celebrations.show(l10n.celebrateThreeHits);
     }
-    if (!_game.isFinished) return;
+    if (_game.isFinished) _showEnd();
+  }
+
+  /// The end of the game, after its last dart or a correction that ended it
+  void _showEnd() {
+    final l10n = AppLocalizations.of(context);
     if (_game.players.length > 1) {
       showWinnerDialog(
         context,
@@ -193,6 +198,9 @@ class _AroundTheClockScreenState extends State<AroundTheClockScreen> with Record
         if (!isBotTurn) _add(dart);
       },
       onChanged: () => setState(() {}),
+      onOutcomeChanged: (_) {
+        if (_game.isFinished) _showEnd();
+      },
       panel: panel,
       celebrations: _celebrations,
     );

@@ -60,12 +60,12 @@ void main() {
     await display.set(style: DisplayStyle.clear);
     await tester.pumpAndSettle();
     expect(activeColour(tester), isNull);
-    expect(find.text('Ø 0,0'), findsWidgets);
+    expect(find.text('Ø –'), findsWidgets);
 
     await display.set(distance: ViewingDistance.far);
     await tester.pumpAndSettle();
     // From afar only what is read from the oche: no averages
-    expect(find.text('Ø 0,0'), findsNothing);
+    expect(find.text('Ø –'), findsNothing);
   });
 
   testWidgets('the display section in the settings changes the style', (tester) async {

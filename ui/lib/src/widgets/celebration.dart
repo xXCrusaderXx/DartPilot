@@ -13,6 +13,20 @@ class Celebrations extends ChangeNotifier {
     ++_count;
     notifyListeners();
   }
+
+  /// How long a celebration plays, so what follows it can wait: nothing when it is off or the system asks for less
+  /// motion
+  static Duration playTime(BuildContext context) {
+    if (MediaQuery.disableAnimationsOf(context)) return Duration.zero;
+    return switch (DisplayScope.of(context).celebration) {
+      Celebration.full => _full,
+      Celebration.subtle => _subtle,
+      Celebration.off => Duration.zero,
+    };
+  }
+
+  static const Duration _full = Duration(milliseconds: 1800);
+  static const Duration _subtle = Duration(milliseconds: 1400);
 }
 
 /// Plays each of [celebrations] over [child] as strongly as the player chose: a large banner that springs in, a small
@@ -60,9 +74,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay> with SingleTick
     _shown = widget.celebrations._count;
     final celebration = DisplayScope.of(context).celebration;
     if (celebration == Celebration.off) return;
-    _controller.duration = celebration == Celebration.full
-        ? const Duration(milliseconds: 1800)
-        : const Duration(milliseconds: 1400);
+    _controller.duration = celebration == Celebration.full ? Celebrations._full : Celebrations._subtle;
     _controller.forward(from: 0);
   }
 

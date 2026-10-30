@@ -127,7 +127,11 @@ class _KillerScreenState extends State<KillerScreen> with RecordsGame, BotTurns 
         _celebrations.show(l10n.celebrateKiller(p.name));
       }
     }
-    if (!_game.isFinished) return;
+    if (_game.isFinished) _showEnd();
+  }
+
+  /// The end of the game, after its last dart or a correction that ended it
+  void _showEnd() {
     showWinnerDialog(
       context,
       winner: _game.players[_game.winner!].name,
@@ -204,6 +208,9 @@ class _KillerScreenState extends State<KillerScreen> with RecordsGame, BotTurns 
         if (!isBotTurn) _add(dart);
       },
       onChanged: () => setState(() {}),
+      onOutcomeChanged: (_) {
+        if (_game.isFinished) _showEnd();
+      },
       panel: panel,
       celebrations: _celebrations,
     );

@@ -17,6 +17,7 @@ import 'precision_training_screen.dart';
 import 'settings_screen.dart';
 import 'training_screen.dart';
 import 'watch_game_screen.dart';
+import 'x01_screen.dart';
 import 'x01_setup_screen.dart';
 
 /// The hub once the app is set up: how darts are counted right now, and the games.
@@ -84,6 +85,7 @@ class HomeScreen extends StatelessWidget {
               const _SetupHint(),
               const SharedGameCard(),
               const _InterruptedGameCard(),
+              const _QuickStartCard(),
               if (StatisticsScope.maybeOf(context)?.profiles.isEmpty ?? false) ...[
                 const SizedBox(height: 16),
                 Card(
@@ -399,6 +401,68 @@ class _InterruptedGameCard extends StatelessWidget {
               child: Text(l10n.resumeGame),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One quiet line to play the last X01 line-up again, with its options, straight away
+class _QuickStartCard extends StatefulWidget {
+  const _QuickStartCard();
+
+  @override
+  State<_QuickStartCard> createState() => _QuickStartCardState();
+}
+
+class _QuickStartCardState extends State<_QuickStartCard> {
+  LastX01? _last;
+
+  @override
+  void initState() {
+    super.initState();
+    LastX01.saved.addListener(_load);
+    _load();
+  }
+
+  @override
+  void dispose() {
+    LastX01.saved.removeListener(_load);
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    final last = await LastX01.load();
+    if (mounted) setState(() => _last = last);
+  }
+
+  Future<void> _start(LastX01 last) async {
+    if (!await confirmBoardEmpty(context) || !mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => X01Screen(settings: last.settings, bots: last.bots),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final last = _last;
+    final statistics = StatisticsScope.maybeOf(context);
+    // Only while everyone in it still has a profile, and never beside a game to play on
+    if (last == null || statistics == null || statistics.interrupted != null) return const SizedBox.shrink();
+    if (!last.playableWith(statistics.profiles)) return const SizedBox.shrink();
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Card(
+        key: const ValueKey('quick-start'),
+        child: ListTile(
+          leading: Icon(Icons.replay, color: theme.colorScheme.primary),
+          title: Text(l10n.quickStartX01(last.settings.startScore, last.settings.players.join(' vs '))),
+          trailing: const Icon(Icons.play_arrow),
+          onTap: () => _start(last),
         ),
       ),
     );

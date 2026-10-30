@@ -149,4 +149,23 @@ void main() {
       expect(g.checkoutSuggestion, ['T19', 'D12']);
     });
   });
+
+  test('a correction that wins the match earlier ends it there, as a replay of the record would', () {
+    final g = game(start: 101, players: 1);
+    play(g, ['T20', 'S1', 'S20', 'S20']);
+    expect(g.isFinished, isFalse);
+    // The third dart was a D20: 101 is out in three darts, and the dart after it was never part of the game.
+    g.replace(2, d('D20'));
+    expect(g.isFinished, isTrue);
+    expect(g.throws, hasLength(3));
+    expect(g.players[0].dartsThrown, 3);
+  });
+
+  test('every visit knows its leg', () {
+    final g = game(start: 101, legs: 2, players: 1);
+    play(g, ['T20', 'S1', 'D20']);
+    expect(g.visits.first.leg, 1);
+    expect(g.legNumber, 2);
+    expect(g.currentVisit.leg, 2);
+  });
 }
