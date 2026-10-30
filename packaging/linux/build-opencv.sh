@@ -3,6 +3,8 @@
 # player's system. Video comes from the engine's own V4L2 capture and images from OpenCV's bundled codecs, so FFmpeg,
 # GStreamer, TBB, IPP (a binary download) and OpenCL are left out. highgui uses the GTK 3 the app needs anyway.
 #
+# The licences of OpenCV and its bundled codecs land in <prefix>/share/licenses/opencv4.
+#
 # Usage: build-opencv.sh <opencv source dir> <install prefix>
 set -euo pipefail
 src=$1
@@ -28,3 +30,20 @@ cmake -S "$src" -B "$build" -G Ninja \
     -DWITH_IMGCODEC_PFM=OFF -DOPENCV_GENERATE_PKGCONFIG=OFF
 cmake --build "$build"
 cmake --install "$build"
+
+# The static libraries carry OpenCV and the codecs it builds in, so their licences go with them into the package.
+licences="$prefix/share/licenses/opencv4"
+mkdir -p "$licences"
+cp "$src/LICENSE" "$licences/LICENSE"
+for lib in libjpeg-turbo libpng zlib; do
+    found="$(find "$src/3rdparty/$lib" -maxdepth 1 -type f \( -iname 'LICENSE*' -o -iname 'COPYING*' -o -name 'README.ijg' \))"
+    # zlib states its licence in its README.
+    [ -n "$found" ] || found="$(find "$src/3rdparty/$lib" -maxdepth 1 -type f -name 'README')"
+    if [ -z "$found" ]; then
+        echo "error: no licence file in $src/3rdparty/$lib" >&2
+        exit 1
+    fi
+    while IFS= read -r file; do
+        cp "$file" "$licences/$lib-$(basename "$file")"
+    done <<< "$found"
+done

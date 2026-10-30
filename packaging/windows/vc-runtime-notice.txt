@@ -1,0 +1,9 @@
+Microsoft Visual C++ Runtime
+
+msvcp140.dll, vcruntime140.dll and vcruntime140_1.dll next to dartpilot-app.exe are part of the
+Microsoft Visual C++ Redistributable. Copyright (c) Microsoft Corporation.
+
+They are not covered by DartPilot's licence (GPL-3.0-or-later). Microsoft provides them as
+"Distributable Code" under the Microsoft Visual Studio license terms, which allow passing them on
+unmodified together with a program built with Visual Studio:
+https://visualstudio.microsoft.com/license-terms/

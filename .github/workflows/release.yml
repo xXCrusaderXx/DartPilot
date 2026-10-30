@@ -220,6 +220,7 @@ jobs:
           echo "$APPIMAGETOOL_SHA256  $tools/appimagetool" | sha256sum -c -
           echo "$RUNTIME_SHA256  $tools/runtime" | sha256sum -c -
           chmod +x "$tools/appimagetool"
+          packaging/linux/collect-licenses.sh ui/build/linux/x64/release/bundle/licenses /opt/opencv build
           packaging/linux/make-appimage.sh ui/build/linux/x64/release/bundle "dist/DartPilot-$VERSION-x86_64.AppImage" \
             "$tools/appimagetool" "$tools/runtime"
 
@@ -347,7 +348,8 @@ jobs:
           channel: stable
           cache: true
 
-      # The Visual C++ runtime goes next to the app, so it starts on systems without the redistributable.
+      # The Visual C++ runtime goes next to the app, so it starts on systems without the redistributable;
+      # its notice goes into licenses/, which the app's licence page shows.
       - name: Build the app
         working-directory: ui
         env:
@@ -362,6 +364,8 @@ jobs:
           for dll in msvcp140.dll vcruntime140.dll vcruntime140_1.dll; do
             cp "/c/Windows/System32/$dll" "$release/"
           done
+          mkdir -p "$release/licenses/Microsoft Visual C++ Runtime"
+          cp ../packaging/windows/vc-runtime-notice.txt "$release/licenses/Microsoft Visual C++ Runtime/NOTICE.txt"
 
       - name: Zip
         shell: pwsh

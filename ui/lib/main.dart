@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import 'src/app.dart';
+import 'src/bundled_licenses.dart';
 import 'src/display.dart';
 import 'src/engine/camera_order.dart';
 import 'src/sound/caller.dart';
@@ -11,6 +12,7 @@ import 'src/stats/statistics.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  registerBundledLicenses();
   final statistics = Statistics(kIsWeb ? PrefsGameStore() : FileGameStore(), PrefsProfileStore())..load();
   final cameraOrder = CameraOrder(PrefsCameraOrderStore())..load();
   final dartLinks = DartLinks(PrefsDartLinksStore())..load();

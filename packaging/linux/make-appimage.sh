@@ -6,6 +6,9 @@
 # what GTK itself needs) are copied to engine/lib; OpenCV is linked statically (build-opencv.sh). The app needs only
 # GTK 3 and Flutter's own libraries, which the bundle already carries.
 #
+# Licences of third-party code sit in the bundle's licenses/<component>/ (collect-licenses.sh), where the app shows them
+# on its licence page; this script adds those of the copied libraries.
+#
 # Usage: make-appimage.sh <bundle dir> <output .AppImage> <appimagetool> <runtime file>
 set -euo pipefail
 bundle=$1
@@ -38,6 +41,21 @@ host+='|libthai|libdatrie|libgraphite2|libpng16|libjpeg|libexpat|libffi|libpcre.
 host+='|libbrotli.*|libmount|libblkid|libselinux|libuuid|libdbus-1|libsystemd|libudev|libcap|libgcrypt|libgpg-error'
 host+='|liblz4|libasound)$'
 
+# The licence of a copied library is the copyright file of the Debian package that installed it.
+add_licence() {
+    local path=$1 name=$2 package="" candidate
+    for candidate in "$path" "$(readlink -f "$path")" "/usr$path"; do
+        package="$(dpkg-query -S "$candidate" 2> /dev/null | head -n 1 | cut -d: -f1)" || true
+        [ -n "$package" ] && break
+    done
+    if [ -z "$package" ] || [ ! -f "/usr/share/doc/$package/copyright" ]; then
+        echo "error: no licence found for $name (dpkg-query -S $path)" >&2
+        exit 1
+    fi
+    mkdir -p "$prefix/licenses/$package"
+    cp "/usr/share/doc/$package/copyright" "$prefix/licenses/$package/copyright"
+}
+
 # Copies what the engine links beyond the host's libraries, and what those link in turn.
 mkdir -p "$prefix/engine/lib"
 queue=("$prefix/engine/dartpilot")
@@ -54,12 +72,20 @@ while [ ${#queue[@]} -gt 0 ]; do
             exit 1
         fi
         cp -L "$path" "$prefix/engine/lib/$name"
+        add_licence "$path" "$name"
         patchelf --set-rpath '$ORIGIN' "$prefix/engine/lib/$name"
         queue+=("$prefix/engine/lib/$name")
     done < <(ldd "$file" | awk '/=>/ { print $1, $3 }')
 done
 patchelf --set-rpath '$ORIGIN/lib' "$prefix/engine/dartpilot"
 echo "Bundled with the engine: $(ls "$prefix/engine/lib" | tr '\n' ' ')"
+
+# The app's own licence, and those of the included third-party code where a packaged program's are expected.
+mkdir -p "$appdir/usr/share/doc/dartpilot"
+cp "$here/../../LICENSE" "$appdir/usr/share/doc/dartpilot/LICENSE"
+if [ -d "$prefix/licenses" ]; then
+    ln -s ../../../lib/dartpilot/licenses "$appdir/usr/share/doc/dartpilot/third-party"
+fi
 
 cp "$packaging/$app_id.desktop" "$appdir/$app_id.desktop"
 cp "$packaging/$app_id.desktop" "$appdir/usr/share/applications/"
