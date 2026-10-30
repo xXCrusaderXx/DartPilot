@@ -33,6 +33,9 @@ void main() {
       await tester.tap(find.text('X01'));
       await tester.pumpAndSettle();
       await pickPlayers(tester, ['Anna', 'Ben']);
+      // On a phone on its side the options scroll above the pinned Start bar.
+      await tester.scrollUntilVisible(find.text('301'), 100, scrollable: find.byType(Scrollable).last);
+      await tester.pumpAndSettle();
       await tester.tap(find.text('301'));
       await tester.scrollUntilVisible(
         find.byKey(const ValueKey('start-game')),
