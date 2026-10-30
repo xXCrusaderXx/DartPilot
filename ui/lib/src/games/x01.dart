@@ -38,10 +38,13 @@ class X01Dart {
 }
 
 class X01Visit {
-  X01Visit(this.player, this.startRemaining);
+  X01Visit(this.player, this.startRemaining, this.leg);
 
   final int player;
   final int startRemaining;
+
+  /// Number of the leg the visit belongs to, from 1
+  final int leg;
   final List<X01Dart> darts = [];
 
   bool get isBust => darts.any((d) => d.result == DartResult.bust);
@@ -124,10 +127,15 @@ class X01Game implements DartGame {
     legStarter = 0;
     current = 0;
     winner = null;
-    visits = [X01Visit(0, settings.startScore)];
+    visits = [X01Visit(0, settings.startScore, 1)];
+    var applied = 0;
     for (final dart in _throws) {
+      if (isFinished) break;
       _apply(dart);
+      ++applied;
     }
+    // A correction that wins the match earlier ends it there: the darts after the winning one were never part of it.
+    _throws.removeRange(applied, _throws.length);
   }
 
   void _apply(DartThrow dart) {
@@ -181,7 +189,7 @@ class X01Game implements DartGame {
     }
     if (visit.isComplete) {
       current = (current + 1) % players.length;
-      visits.add(X01Visit(current, players[current].remaining));
+      visits.add(X01Visit(current, players[current].remaining, legNumber));
     }
   }
 
@@ -194,7 +202,7 @@ class X01Game implements DartGame {
       p.legDarts = 0;
     }
     current = legStarter;
-    visits.add(X01Visit(current, settings.startScore));
+    visits.add(X01Visit(current, settings.startScore, legNumber));
   }
 
   /// Checkout route for the player at the oche with the darts left in this visit, or null if there is none.

@@ -200,6 +200,9 @@ class _DoublesScreenState extends State<DoublesScreen> with RecordsGame {
       watching: widget.watching,
       onDart: _add,
       onChanged: () => setState(() {}),
+      onOutcomeChanged: (_) {
+        if (_game.isFinished) _showResult();
+      },
       panel: panel,
     );
   }

@@ -440,6 +440,48 @@ abstract class AppLocalizations {
   /// **'Menu'**
   String get backToMenu;
 
+  /// No description provided for @rematch.
+  ///
+  /// In en, this message translates to:
+  /// **'Rematch'**
+  String get rematch;
+
+  /// No description provided for @resultDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get resultDetails;
+
+  /// No description provided for @x01LastVisit.
+  ///
+  /// In en, this message translates to:
+  /// **'Last {points}'**
+  String x01LastVisit(int points);
+
+  /// No description provided for @x01LastVisitBust.
+  ///
+  /// In en, this message translates to:
+  /// **'Last visit bust'**
+  String get x01LastVisitBust;
+
+  /// No description provided for @x01ThrowsFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Throws first'**
+  String get x01ThrowsFirst;
+
+  /// No description provided for @pickPlayerToStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick at least one player to start.'**
+  String get pickPlayerToStart;
+
+  /// No description provided for @quickStartX01.
+  ///
+  /// In en, this message translates to:
+  /// **'Again: {score} · {players}'**
+  String quickStartX01(int score, String players);
+
   /// No description provided for @removePlayer.
   ///
   /// In en, this message translates to:

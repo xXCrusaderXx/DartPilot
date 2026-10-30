@@ -34,7 +34,7 @@ Future<void> pickPlayers(WidgetTester tester, List<String> names) async {
       await tester.pumpAndSettle();
       await tester.enterText(find.byKey(const ValueKey('new-profile-name')), name);
       await tester.tap(find.byKey(const ValueKey('new-profile-save')));
-    } else {
+    } else if (!_picked(tester, existing)) {
       await tester.tap(existing);
     }
     await tester.pumpAndSettle();
@@ -54,3 +54,10 @@ Future<void> openNetworkChoice(WidgetTester tester) async {
   await tester.tap(find.byKey(const ValueKey('count-network')));
   await tester.pump();
 }
+
+/// Whether a player's chip is picked already, such as the only profile or one of the last line-up
+bool _picked(WidgetTester tester, Finder chip) => switch (tester.widget(chip)) {
+  final FilterChip c => c.selected,
+  final ChoiceChip c => c.selected,
+  _ => false,
+};

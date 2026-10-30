@@ -1,5 +1,6 @@
 import 'package:dartpilot/src/app.dart';
 import 'package:dartpilot/src/stats/statistics.dart';
+import 'package:dartpilot/src/screens/x01_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -33,8 +34,12 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('keypad-20')));
       await tester.pump();
     }
+    await tester.pump(const Duration(milliseconds: 300));
     String remaining(String player) => tester.widget<Text>(find.byKey(ValueKey('remaining-$player'))).data!;
     expect(remaining('Anna'), '241');
+    // Anna's visit stays on show a moment, with its total, before the bot steps up.
+    expect(tester.widget<Text>(find.byKey(const ValueKey('visit-total'))).data, '60');
+    await tester.pump(X01Screen.holdTime);
 
     // The bot's turn: a keypad dart now is not counted for anyone.
     await tester.tap(find.byKey(const ValueKey('keypad-1')));

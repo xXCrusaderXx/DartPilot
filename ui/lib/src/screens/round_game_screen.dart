@@ -146,7 +146,12 @@ class _RoundGameScreenState extends State<RoundGameScreen> with RecordsGame, Bot
     } else if (_game.currentVisit.length == 3 && _game.currentVisit.every((d) => d.$2)) {
       _celebrations.show(l10n.celebrateThreeHits);
     }
-    if (!_game.isFinished) return;
+    if (_game.isFinished) _showEnd();
+  }
+
+  /// The end of the game, after its last dart or a correction that ended it
+  void _showEnd() {
+    final l10n = AppLocalizations.of(context);
     if (_game.players.length == 1) {
       _showSoloResult(l10n);
     } else if (_game.winner == null) {
@@ -283,6 +288,9 @@ class _RoundGameScreenState extends State<RoundGameScreen> with RecordsGame, Bot
         if (!isBotTurn) _add(dart);
       },
       onChanged: () => setState(() {}),
+      onOutcomeChanged: (_) {
+        if (_game.isFinished) _showEnd();
+      },
       panel: panel,
       celebrations: _celebrations,
     );

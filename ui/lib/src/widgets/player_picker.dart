@@ -32,6 +32,31 @@ class PlayerSelection extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Sets the whole line-up at once, such as the one of the last game
+  void setAll(List<String> names, Map<String, int> botLevels) {
+    players
+      ..clear()
+      ..addAll(names.take(maxPlayers));
+    bots
+      ..clear()
+      ..addAll({
+        for (final e in botLevels.entries)
+          if (players.contains(e.key)) e.key: e.value,
+      });
+    notifyListeners();
+  }
+
+  /// Turns the order round so that [name] throws first and the others follow as before
+  void startWith(String name) {
+    final i = players.indexOf(name);
+    if (i <= 0) return;
+    final rotated = [...players.sublist(i), ...players.sublist(0, i)];
+    players
+      ..clear()
+      ..addAll(rotated);
+    notifyListeners();
+  }
+
   /// Adds a bot; a second bot of the same level gets a number, so every player's name is unique in the game.
   void addBot(int level, String name) {
     if (players.length >= maxPlayers) return;

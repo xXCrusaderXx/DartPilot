@@ -107,7 +107,12 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
     final l10n = AppLocalizations.of(context);
     final marks = _game.currentVisit.fold(0, (sum, d) => sum + d.marks);
     if (_game.currentVisit.length == 3 && marks >= 6) _celebrations.show(l10n.celebrateMarks(marks));
-    if (!_game.isFinished) return;
+    if (_game.isFinished) _showEnd();
+  }
+
+  /// The end of the game, after its last dart or a correction that ended it
+  void _showEnd() {
+    final l10n = AppLocalizations.of(context);
     if (_game.players.length > 1) {
       showWinnerDialog(
         context,
@@ -370,6 +375,9 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
         if (!isBotTurn) _add(dart);
       },
       onChanged: () => setState(() {}),
+      onOutcomeChanged: (_) {
+        if (_game.isFinished) _showEnd();
+      },
       panel: panel,
       panelWidth: 120.0 + 90.0 * players.length.clamp(2, 4),
       celebrations: _celebrations,

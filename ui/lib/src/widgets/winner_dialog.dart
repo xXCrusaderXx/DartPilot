@@ -1,54 +1,219 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../display.dart';
 import '../stats/game_record.dart';
 import '../stats/player_stats.dart';
+import '../stats/statistics.dart';
+import '../theme.dart';
 import 'precision_text.dart';
 import 'leave_game_guard.dart';
 
-/// End of a match: the winner, the figures of this game per player, and undo, new game or back to the menu.
+/// One player's line in a match result: [value] large at its end (such as the legs won), [figures] before it
+class ResultLine {
+  const ResultLine(this.name, {this.value, this.figures});
+
+  final String name;
+  final String? value;
+  final String? figures;
+}
+
+/// End of a match, readable from the oche: the winner large in their colour, the [result] (such as the legs and the
+/// winning checkout), a line per player, and the figures of this game behind Details. A rematch with the same players
+/// is the first way on when the game offers one; a new game, the menu and undo follow.
 Future<void> showWinnerDialog(
   BuildContext context, {
   required String winner,
   required GameRecord record,
   required VoidCallback onUndo,
   required WidgetBuilder newGame,
+  String? result,
+  List<ResultLine> lines = const [],
+  VoidCallback? onRematch,
 }) {
   final l10n = AppLocalizations.of(context);
   return showDialog<void>(
     context: context,
     barrierDismissible: false,
-    builder: (dialogContext) => EndOfGameBack(
-      gameContext: context,
-      child: AlertDialog(
-        title: Text(l10n.matchWonBy(winner)),
-        content: SingleChildScrollView(child: GameSummary(record: record)),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              onUndo();
-            },
-            child: Text(l10n.undo),
+    builder: (dialogContext) {
+      final theme = Theme.of(dialogContext);
+      final far = DisplayScope.of(dialogContext).farFor(WindowClass.of(dialogContext));
+      final statistics = StatisticsScope.maybeOf(dialogContext);
+      void close() => Navigator.of(dialogContext).pop();
+      void menu() {
+        close();
+        Navigator.of(context).pop();
+      }
+
+      void another() {
+        close();
+        Navigator.of(context).pushReplacement(MaterialPageRoute<void>(builder: newGame));
+      }
+
+      final undo = TextButton(
+        key: const ValueKey('result-undo'),
+        onPressed: () {
+          close();
+          onUndo();
+        },
+        child: Text(l10n.undo),
+      );
+      final newGameButton = TextButton(
+        key: const ValueKey('result-new-game'),
+        onPressed: another,
+        child: Text(l10n.newGame),
+      );
+      // A rematch is the one way on that stands out: across the dialog, with the others small beside undo above it.
+      final Widget buttons = onRematch == null
+          ? OverflowBar(
+              alignment: MainAxisAlignment.end,
+              overflowAlignment: OverflowBarAlignment.end,
+              spacing: 8,
+              children: [
+                undo,
+                newGameButton,
+                FilledButton(key: const ValueKey('result-menu'), onPressed: menu, child: Text(l10n.backToMenu)),
+              ],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: 8,
+                  children: [
+                    undo,
+                    newGameButton,
+                    TextButton(key: const ValueKey('result-menu'), onPressed: menu, child: Text(l10n.backToMenu)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                FilledButton.icon(
+                  key: const ValueKey('result-rematch'),
+                  style: FilledButton.styleFrom(
+                    minimumSize: Size.fromHeight(far ? 72 : 52),
+                    textStyle: far ? theme.textTheme.headlineSmall : theme.textTheme.titleMedium,
+                  ),
+                  onPressed: () {
+                    close();
+                    onRematch();
+                  },
+                  icon: const Icon(Icons.replay),
+                  label: Text(l10n.rematch),
+                ),
+              ],
+            );
+      final summary = GameSummary(record: record);
+      return EndOfGameBack(
+        gameContext: context,
+        child: Dialog(
+          insetPadding: EdgeInsets.all(far ? 48 : 24),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: far ? 880 : 560),
+            child: SingleChildScrollView(
+              padding: EdgeInsets.all(far ? 32 : 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    l10n.matchWonBy(winner),
+                    key: const ValueKey('winner-title'),
+                    style: (far ? theme.textTheme.displayMedium : theme.textTheme.headlineLarge)?.copyWith(
+                      color: statistics?.colourOf(winner) ?? theme.colorScheme.primary,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  if (result != null && result.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      result,
+                      key: const ValueKey('match-result'),
+                      style: (far ? theme.textTheme.headlineMedium : theme.textTheme.titleLarge)?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  if (lines.isEmpty)
+                    summary
+                  else ...[
+                    for (final line in lines) _ResultRow(line: line, winner: line.name == winner, big: far),
+                    Theme(
+                      // A plain fold, without the lines an expansion tile draws around itself
+                      data: theme.copyWith(dividerColor: Colors.transparent),
+                      child: ExpansionTile(
+                        key: const ValueKey('result-details'),
+                        tilePadding: EdgeInsets.zero,
+                        childrenPadding: const EdgeInsets.only(bottom: 8),
+                        title: Text(l10n.resultDetails),
+                        children: [summary],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  buttons,
+                ],
+              ),
+            ),
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              Navigator.of(context).pushReplacement(MaterialPageRoute<void>(builder: newGame));
-            },
-            child: Text(l10n.newGame),
+        ),
+      );
+    },
+  );
+}
+
+class _ResultRow extends StatelessWidget {
+  const _ResultRow({required this.line, required this.winner, required this.big});
+
+  final ResultLine line;
+  final bool winner;
+  final bool big;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colour = StatisticsScope.maybeOf(context)?.colourOf(line.name);
+    return Padding(
+      key: ValueKey('result-${line.name}'),
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          if (colour != null) ...[PlayerDot(colour), const SizedBox(width: 12)],
+          Expanded(
+            child: Text(
+              line.name,
+              overflow: TextOverflow.ellipsis,
+              style: (big ? theme.textTheme.headlineSmall : theme.textTheme.titleMedium)?.copyWith(
+                fontWeight: winner ? FontWeight.w800 : FontWeight.w500,
+              ),
+            ),
           ),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              Navigator.of(context).pop();
-            },
-            child: Text(l10n.backToMenu),
-          ),
+          if (line.figures != null)
+            Text(
+              line.figures!,
+              style: (big ? theme.textTheme.titleLarge : theme.textTheme.bodyLarge)?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          if (line.value != null) ...[
+            const SizedBox(width: 16),
+            SizedBox(
+              width: big ? 72 : 48,
+              child: Text(
+                line.value!,
+                textAlign: TextAlign.end,
+                style: (big ? theme.textTheme.displaySmall : theme.textTheme.headlineMedium)?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
-    ),
-  );
+    );
+  }
 }
 
 /// End of a training round: what it gave, and undo the last dart, another round or back to the menu
@@ -146,6 +311,13 @@ class GameSummary extends StatelessWidget {
                   GameMode.halveIt => [(l10n.points, '${s.history.firstOrNull?.points ?? '–'}')],
                 },
               ];
+              // A figure without a value says nothing, and someone who never threw has only that to show.
+              final shown = s.darts + s.trainingDarts == 0
+                  ? figures.take(1).toList()
+                  : [
+                      for (final f in figures)
+                        if (f.$2 != '–') f,
+                    ];
               return Padding(
                 key: ValueKey('summary-$player'),
                 padding: const EdgeInsets.only(bottom: 12),
@@ -158,7 +330,7 @@ class GameSummary extends StatelessWidget {
                       spacing: 6,
                       runSpacing: 6,
                       children: [
-                        for (final (label, value) in figures)
+                        for (final (label, value) in shown)
                           Chip(
                             key: ValueKey('summary-$player-$label'),
                             visualDensity: VisualDensity.compact,

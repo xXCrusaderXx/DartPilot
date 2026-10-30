@@ -179,6 +179,9 @@ class _GroupingScreenState extends State<GroupingScreen> with RecordsGame {
       watching: widget.watching,
       onDart: _add,
       onChanged: () => setState(() {}),
+      onOutcomeChanged: (_) {
+        if (_game.isFinished) _showResult();
+      },
       panel: panel,
     );
   }

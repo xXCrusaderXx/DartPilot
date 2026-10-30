@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dartpilot/src/app.dart';
 import 'package:dartpilot/src/board/dartboard.dart';
 import 'package:dartpilot/src/engine/engine_connection.dart';
+import 'package:dartpilot/src/screens/x01_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -64,6 +65,9 @@ void main() {
     await tester.tap(find.text('Als Daneben zählen'));
     await tester.pumpAndSettle();
     expect(remaining(), '221');
+    // The visit stays on show a moment with what it came to, then the next one begins.
+    expect(tester.widget<Text>(find.byKey(const ValueKey('visit-total'))).data, '80');
+    await tester.pump(X01Screen.holdTime);
     expect(tester.widget<Text>(find.byKey(const ValueKey('visit-dart-0'))).data, '–');
   });
 
