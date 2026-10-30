@@ -169,7 +169,7 @@ void main() {
     await statistics.load();
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), statistics: statistics));
     await playOffline(tester);
-    await tester.tap(find.byIcon(Icons.insights_outlined));
+    await tester.tap(find.byIcon(Icons.bar_chart_outlined));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('stats-player-Anna')));
     await tester.pumpAndSettle();
@@ -300,7 +300,7 @@ void main() {
     await statistics.load();
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), statistics: statistics));
     await playOffline(tester);
-    await tester.tap(find.byIcon(Icons.insights_outlined));
+    await tester.tap(find.byIcon(Icons.bar_chart_outlined));
     await tester.pumpAndSettle();
     expect(find.byType(FloatingActionButton), findsNothing);
     expect(find.widgetWithText(FilledButton, 'Neues Profil'), findsOneWidget);
