@@ -41,6 +41,45 @@ class StatisticsScreen extends StatelessWidget {
     if (confirmed == true) await statistics.removeProfile(player);
   }
 
+  Future<void> _pickColour(BuildContext context, Statistics statistics, String player) async {
+    final l10n = AppLocalizations.of(context);
+    final current = statistics.colourOf(player);
+    final picked = await showDialog<Color?>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.playerColourOf(player)),
+        content: Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            for (var i = 0; i < playerColours.length; ++i)
+              Semantics(
+                button: true,
+                selected: playerColours[i] == current,
+                label: '${i + 1}',
+                child: InkResponse(
+                  key: ValueKey('player-colour-$i'),
+                  onTap: () => Navigator.of(context).pop(playerColours[i]),
+                  child: PlayerDot(playerColours[i], size: playerColours[i] == current ? 44 : 36),
+                ),
+              ),
+          ],
+        ),
+        actions: [
+          if (statistics.hasOwnColour(player))
+            TextButton(
+              key: const ValueKey('player-colour-reset'),
+              onPressed: () => Navigator.of(context).pop(Colors.transparent),
+              child: Text(l10n.playerColourReset),
+            ),
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(l10n.cancel)),
+        ],
+      ),
+    );
+    if (picked == null) return;
+    await statistics.setColour(player, picked == Colors.transparent ? null : picked);
+  }
+
   Future<void> _export(BuildContext context, Statistics statistics, String kind) async {
     final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
@@ -114,7 +153,7 @@ class StatisticsScreen extends StatelessWidget {
                           return Card(
                             child: ListTile(
                               key: ValueKey('stats-player-$player'),
-                              leading: CircleAvatar(child: Text(player.characters.first.toUpperCase())),
+                              leading: _Avatar(player: player, colour: statistics.colourOf(player)),
                               title: Text(player),
                               subtitle: Text(
                                 stats.games == 0
@@ -127,6 +166,11 @@ class StatisticsScreen extends StatelessWidget {
                               trailing: PopupMenuButton<void>(
                                 key: ValueKey('profile-menu-$player'),
                                 itemBuilder: (_) => [
+                                  PopupMenuItem(
+                                    key: ValueKey('profile-colour-$player'),
+                                    onTap: () => _pickColour(context, statistics, player),
+                                    child: Text(l10n.playerColour),
+                                  ),
                                   PopupMenuItem(
                                     onTap: () => _delete(context, statistics, player),
                                     child: Text(l10n.deleteProfile),
@@ -145,6 +189,25 @@ class StatisticsScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// The player's initial on their colour, black or white, whichever reads better
+class _Avatar extends StatelessWidget {
+  const _Avatar({required this.player, required this.colour});
+
+  final String player;
+  final Color? colour;
+
+  @override
+  Widget build(BuildContext context) {
+    final colour = this.colour;
+    final initial = Text(player.characters.first.toUpperCase());
+    if (colour == null) return CircleAvatar(child: initial);
+    final onColour = contrastRatio(colour, Colors.white) >= contrastRatio(colour, Colors.black)
+        ? Colors.white
+        : Colors.black;
+    return CircleAvatar(backgroundColor: colour, foregroundColor: onColour, child: initial);
   }
 }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../display.dart';
+import '../stats/statistics.dart';
 import '../theme.dart';
 
 /// One player in a score panel, in the player's display style: the player at the oche framed (clear) or as a bright
@@ -49,6 +50,7 @@ class PlayerRow extends StatelessWidget {
     final far = display.farFor(window);
     final palette = AppPalette.of(context);
     final onBlock = active && scoreboard ? palette.onHighlight : null;
+    final colour = StatisticsScope.maybeOf(context)?.colourOf(name);
     final valueStyle =
         (active
                 ? (far ? theme.textTheme.displayLarge : theme.textTheme.displayMedium)
@@ -59,7 +61,7 @@ class PlayerRow extends StatelessWidget {
       child: Row(
         children: [
           if (leading != null) ...[leading!, const SizedBox(width: 12)],
-          if (active) ...[
+          if (active && (scoreboard || colour == null)) ...[
             Icon(
               scoreboard ? Icons.play_arrow : Icons.circle,
               size: scoreboard ? 24 : 12,
@@ -67,6 +69,7 @@ class PlayerRow extends StatelessWidget {
             ),
             const SizedBox(width: 8),
           ],
+          if (colour != null) ...[PlayerDot(colour, ring: onBlock), const SizedBox(width: 8)],
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../display.dart';
 import '../games/x01.dart';
+import '../stats/statistics.dart';
 import '../theme.dart';
 import '../widgets/precision_text.dart';
 
@@ -73,7 +74,10 @@ class X01Panel extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(Icons.circle, size: 12, color: theme.colorScheme.primary),
+                  if (StatisticsScope.maybeOf(context)?.colourOf(active.name) case final colour?)
+                    PlayerDot(colour)
+                  else
+                    Icon(Icons.circle, size: 12, color: theme.colorScheme.primary),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -143,6 +147,10 @@ class X01Panel extends StatelessWidget {
                 children: [
                   Icon(Icons.play_arrow, color: onBlock),
                   const SizedBox(width: 4),
+                  if (StatisticsScope.maybeOf(context)?.colourOf(active.name) case final colour?) ...[
+                    PlayerDot(colour, ring: onBlock),
+                    const SizedBox(width: 8),
+                  ],
                   Expanded(
                     child: Text(
                       active.name.toUpperCase(),
@@ -253,6 +261,10 @@ class _OtherPlayer extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
+          if (StatisticsScope.maybeOf(context)?.colourOf(player.name) case final colour?) ...[
+            PlayerDot(colour),
+            const SizedBox(width: 12),
+          ],
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
