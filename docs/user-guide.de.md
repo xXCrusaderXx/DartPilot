@@ -10,7 +10,7 @@ English: [player guide](user-guide.md).
 - [Spiele](#spiele)
 - [Training](#training)
 - [Spieler und Statistik](#spieler-und-statistik)
-- [Score-Ansage](#score-ansage)
+- [Ton und Score-Ansage](#ton-und-score-ansage)
 - [Handy oder Tablet als zweite Anzeige](#handy-oder-tablet-als-zweite-anzeige)
 - [Wenn etwas nicht klappt](#wenn-etwas-nicht-klappt)
 
@@ -30,7 +30,7 @@ Lade die Datei für dein Gerät aus dem [neuesten Release](https://github.com/xX
 1. Mach die Datei ausführbar und starte sie: Rechtsklick, in den Eigenschaften „Als Programm ausführen“ erlauben, dann doppelklicken. Im Terminal: `chmod +x DartPilot-*.AppImage` und `./DartPilot-*.AppImage`.
 2. Damit DartPilot im Anwendungsmenü erscheint, nimm ein Werkzeug wie Gear Lever oder AppImageLauncher, oder leg die Datei nach `~/Applications`.
 
-Das AppImage läuft auf Ubuntu 22.04, Debian 12, Fedora 38 und neuer, und auf anderen Distributionen dieses Alters. Es braucht einen Desktop mit GTK 3, den jeder übliche Desktop hat. Für die Score-Ansage installiere speech-dispatcher (siehe [Score-Ansage](#score-ansage)).
+Das AppImage läuft auf Ubuntu 22.04, Debian 12, Fedora 38 und neuer, und auf anderen Distributionen dieses Alters. Es braucht einen Desktop mit GTK 3, den jeder übliche Desktop hat. Für die Score-Ansage installiere speech-dispatcher (siehe [Ton und Score-Ansage](#ton-und-score-ansage)).
 
 ### Android
 
@@ -100,9 +100,13 @@ Leg für jeden Spieler ein Profil an; jedes Spiel eines Profils zählt für sein
 
 **Exportieren** speichert alle Darts als CSV oder alle Spiele mit den Kennzahlen als JSON, für eine Tabellenkalkulation oder eigene Auswertungen. Die Datei landet am PC im Download-Ordner, unter Android im Ordner der App, im Browser als Download.
 
-## Score-Ansage
+## Ton und Score-Ansage
 
-Die Score-Ansage sagt die Punkte jeder Aufnahme an, wie ein Caller im Turnier. Du schaltest sie unter **Einstellungen → Score-Ansage** ein und stellst die Lautstärke ein; **Probe** spielt ein Beispiel.
+Die Score-Ansage sagt die Punkte jeder Aufnahme an, wie ein Caller im Turnier: „One hundred and eighty!“, „No score“ bei einem Bust, „Game shot, and the first leg!“. Sie ist an, wenn das Gerät sprechen kann.
+
+Dazu kommen wenige kurze Effekte: ein leiser Aufprall für jeden Dart, zwei fallende Töne bei einem Bust, ein kurzer Akkord beim Game Shot und ein doppeltes Ticken, wenn die Kameras dich bitten, einen Dart zu bestätigen. Bei eingeschalteter Ansage spricht sie das Ende der Aufnahme und die 180, ohne zusätzlichen Ton. Auf dem Handy vibriert jeder Dart, den du eingibst.
+
+Unter **Einstellungen → Ton & Ansager** schaltest du Effekte, Ansage und Vibration ein oder aus und stellst ihre Lautstärke ein; **Probe hören** spielt eine Beispiel-Aufnahme.
 
 Unter Linux nutzt die Ansage speech-dispatcher, das manche Distributionen nicht von sich aus installieren:
 
@@ -135,6 +139,6 @@ Das Handy zeigt dann das laufende Spiel mit. Darts werden auf dem Gerät eingege
 | Keine Engine im Netzwerk gefunden | Beide Geräte müssen im selben Heimnetz sein, nicht im Gastnetz. Tipp die Adresse ein, die der PC der Engine zeigt. |
 | Die Browser-Version verbindet sich nicht | Lade sie über `http://`, nicht `https://`, und tipp die Adresse der Engine ein; Browser können das Netz nicht durchsuchen. |
 | Darts landen im falschen Feld | **Einstellungen → Einrichtungsdiagnose** prüft die Einrichtung Schritt für Schritt; die [Einrichtungsdiagnose](setup-diagnosis.md) erklärt jeden Befund (auf Englisch). Korrigiere falsche Darts im Spiel; das hilft den Messungen. |
-| Keine Ansage zu hören | Installiere unter Linux speech-dispatcher (siehe [Score-Ansage](#score-ansage)) und prüfe die Lautstärke der Ansage. |
+| Keine Ansage zu hören | Installiere unter Linux speech-dispatcher (siehe [Ton und Score-Ansage](#ton-und-score-ansage)) und prüfe die Lautstärke der Ansage. |
 
 Kommst du nicht weiter? Eröffne ein [Issue](https://github.com/xXCrusaderXx/DartPilot/issues) und nenn die Version aus **Einstellungen → Über DartPilot**, dein Gerät und was du gemacht hast.

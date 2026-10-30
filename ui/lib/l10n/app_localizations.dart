@@ -3392,12 +3392,6 @@ abstract class AppLocalizations {
   /// **'Caller volume'**
   String get callerVolume;
 
-  /// No description provided for @callerTest.
-  ///
-  /// In en, this message translates to:
-  /// **'Test'**
-  String get callerTest;
-
   /// No description provided for @callerNoVoice.
   ///
   /// In en, this message translates to:
@@ -4717,6 +4711,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Score caller off'**
   String get settingsCallerOff;
+
+  /// No description provided for @settingsEffectsOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Effects on'**
+  String get settingsEffectsOn;
+
+  /// No description provided for @settingsEffectsOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Effects off'**
+  String get settingsEffectsOff;
+
+  /// No description provided for @soundSectionEffects.
+  ///
+  /// In en, this message translates to:
+  /// **'Effects'**
+  String get soundSectionEffects;
+
+  /// No description provided for @soundSectionCaller.
+  ///
+  /// In en, this message translates to:
+  /// **'Caller'**
+  String get soundSectionCaller;
+
+  /// No description provided for @soundEffects.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound effects'**
+  String get soundEffects;
+
+  /// No description provided for @soundEffectsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A soft thud for each dart, short sounds for a bust and a game shot'**
+  String get soundEffectsHint;
+
+  /// No description provided for @effectsVolume.
+  ///
+  /// In en, this message translates to:
+  /// **'Effects volume'**
+  String get effectsVolume;
+
+  /// No description provided for @vibration.
+  ///
+  /// In en, this message translates to:
+  /// **'Vibration'**
+  String get vibration;
+
+  /// No description provided for @vibrationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A short buzz for each dart you enter'**
+  String get vibrationHint;
+
+  /// No description provided for @soundSample.
+  ///
+  /// In en, this message translates to:
+  /// **'Play a sample'**
+  String get soundSample;
 
   /// No description provided for @settingsCamerasPage.
   ///

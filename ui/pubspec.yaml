@@ -47,6 +47,7 @@ dependencies:
   flutter_tts: ^4.2.5
   image_picker: ^1.2.4
   wakelock_plus: ^1.8.2
+  flutter_soloud: ^5.2.2
 
 dev_dependencies:
   flutter_test:
@@ -71,10 +72,14 @@ flutter:
   uses-material-design: true
   generate: true
 
-  # The fonts' licences, for the app's licence page
   assets:
+    # The fonts' licences, for the app's licence page
     - assets/fonts/barlow-condensed/OFL.txt
     - assets/fonts/inter/OFL.txt
+    # Made by tools/dartpilot_tools/sounds.py
+    - assets/sounds/
+    # The native code flutter_soloud builds into the app, for the licence page
+    - assets/licenses/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -120,3 +125,9 @@ flutter:
           weight: 500
         - asset: assets/fonts/inter/Inter-Bold.ttf
           weight: 700
+
+# The effects are WAV only; without the Ogg/Opus/Vorbis/FLAC codecs the build downloads nothing and the app stays small.
+hooks:
+  user_defines:
+    flutter_soloud:
+      no_xiph_libs: true

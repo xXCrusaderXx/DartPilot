@@ -23,6 +23,10 @@ DartPilot is its own implementation. Other open-source projects, such as [OpenDa
 - Release packages carry the licence texts of the native code they include: the AppImage those of OpenCV and its codecs, IXWebSocket, nlohmann/json and every library copied next to the engine, the Windows zip the notice for the Visual C++ runtime. They sit in `licenses/` next to the app's program, and the app lists them on its licence page beside the Dart packages. A new bundled library brings its licence the same way.
 - Fonts are bundled only under the SIL Open Font License 1.1 or another GPL-compatible font licence, with the licence file next to the font files. The player app bundles Barlow Condensed (Jeremy Tribby) and Inter (Rasmus Andersson), both OFL 1.1, in `ui/assets/fonts/`; that folder's README names their source and version, and the app lists their licences on its licence page.
 
+## Sounds
+
+The app's sound effects in `ui/assets/sounds/` are made by the project: [`tools/dartpilot_tools/sounds.py`](tools/dartpilot_tools/sounds.py) synthesises them from sines and noise, so they are licensed like the rest of the code. Change a sound by changing its recipe and running the script, not by adding a sample from elsewhere. Spoken calls come from the device's own text-to-speech and are not part of the repository.
+
 ## Recordings and datasets
 
 Camera recordings are the basis of the benchmark. They need care, because a camera pointed at a dartboard can also see a room and the people in it.

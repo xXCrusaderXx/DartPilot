@@ -1905,9 +1905,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get callerVolume => 'Caller volume';
 
   @override
-  String get callerTest => 'Test';
-
-  @override
   String get callerNoVoice => 'This device has no speech output. On Linux: install speech-dispatcher (spd-say).';
 
   @override
@@ -2669,6 +2666,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsCallerOff => 'Score caller off';
+
+  @override
+  String get settingsEffectsOn => 'Effects on';
+
+  @override
+  String get settingsEffectsOff => 'Effects off';
+
+  @override
+  String get soundSectionEffects => 'Effects';
+
+  @override
+  String get soundSectionCaller => 'Caller';
+
+  @override
+  String get soundEffects => 'Sound effects';
+
+  @override
+  String get soundEffectsHint => 'A soft thud for each dart, short sounds for a bust and a game shot';
+
+  @override
+  String get effectsVolume => 'Effects volume';
+
+  @override
+  String get vibration => 'Vibration';
+
+  @override
+  String get vibrationHint => 'A short buzz for each dart you enter';
+
+  @override
+  String get soundSample => 'Play a sample';
 
   @override
   String get settingsCamerasPage => 'Cameras & detection';

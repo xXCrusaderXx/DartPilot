@@ -6,9 +6,9 @@ import '../games/cricket.dart';
 import '../bots/bot_turns.dart';
 import '../games/dart_game.dart';
 import '../input/takeout_gate.dart';
-import '../sound/caller.dart';
+import '../sound/effects.dart';
+import '../sound/sfx.dart';
 import '../sound/game_calls.dart';
-import '../sound/x01_calls.dart';
 import '../stats/game_record.dart';
 import '../stats/statistics.dart';
 import '../widgets/winner_dialog.dart';
@@ -102,8 +102,12 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
   void addBotDart(DartThrow dart) => _add(dart);
 
   void _add(DartThrow dart) {
+    final bot = isBotTurn;
     setState(() => _game.add(dart));
-    if (!widget.watching) CallerScope.read(context).call(cricketCalls(_game), callLanguage);
+    if (!widget.watching) {
+      final effect = gameEffect(dart, finished: _game.isFinished, visitEnded: _game.dartsInVisit == 0);
+      dartFeedback(context, dart, effect: effect, calls: cricketCalls(_game), bot: bot);
+    }
     final l10n = AppLocalizations.of(context);
     final marks = _game.currentVisit.fold(0, (sum, d) => sum + d.marks);
     if (_game.currentVisit.length == 3 && marks >= 6) _celebrations.show(l10n.celebrateMarks(marks));

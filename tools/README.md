@@ -25,6 +25,7 @@ Python 3.11 or newer. Every tool runs as `python -m dartpilot_tools.<tool>`; `--
 | `candidate_recall` | How often one of a camera's tip candidates lies at the true tip | [tip candidates report](../docs/reports/tip-candidates-0.5.0.md) |
 | `timing` | How synchronous the cameras are: offsets, jitter and drift | [camera timing](../docs/benchmarks/camera-timing.md) |
 | `timeline` | One timeline per throw: every camera's frames, losses and the frames the detection used | [benchmark.md](../docs/benchmark.md) |
+| `sounds` | Synthesises the app's sound effects into `ui/assets/sounds/` (dart, bust, game shot, …); the recipes are in its docstring | [LEGAL.md](../LEGAL.md#sounds) |
 
 ## Modules
 

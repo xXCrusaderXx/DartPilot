@@ -1,9 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../engine/engine_choice.dart';
 import '../engine/engine_connection.dart';
+import '../board/dart_throw.dart';
+import '../board/scoring.dart';
 import '../sound/caller.dart';
+import '../sound/effects.dart';
+import '../sound/sfx.dart';
 import '../sound/x01_calls.dart';
 import '../widgets/appearance_preview.dart';
 import '../widgets/appearance_share.dart';
@@ -36,6 +42,7 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final caller = CallerScope.of(context);
+    final sfx = SfxScope.of(context);
     void open(Widget page) => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
     return Scaffold(
       appBar: AppBar(title: Text(l10n.navSettings)),
@@ -57,7 +64,12 @@ class SettingsScreen extends StatelessWidget {
                 key: const ValueKey('settings-page-sound'),
                 leading: const Icon(Icons.record_voice_over_outlined),
                 title: Text(l10n.settingsSound),
-                subtitle: Text(caller.enabled ? l10n.settingsCallerOn : l10n.settingsCallerOff),
+                subtitle: Text(
+                  [
+                    sfx.enabled ? l10n.settingsEffectsOn : l10n.settingsEffectsOff,
+                    caller.enabled ? l10n.settingsCallerOn : l10n.settingsCallerOff,
+                  ].join(' · '),
+                ),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => open(const SoundSettingsScreen()),
               ),
@@ -118,20 +130,118 @@ class _CamerasEntry extends StatelessWidget {
   }
 }
 
-/// The score caller on a page of its own
-class SoundSettingsScreen extends StatelessWidget {
+/// Sound on a page of its own: the effects and their volume, the score caller, vibration on a phone, and a sample
+/// visit to hear them together
+class SoundSettingsScreen extends StatefulWidget {
   const SoundSettingsScreen({super.key});
 
+  /// The time between the darts of the sample visit
+  static const Duration sampleDartTime = Duration(milliseconds: 450);
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(AppLocalizations.of(context).settingsSound)),
-    body: Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 720),
-        child: ListView(children: const [CallerSettings()]),
+  State<SoundSettingsScreen> createState() => _SoundSettingsScreenState();
+}
+
+class _SoundSettingsScreenState extends State<SoundSettingsScreen> {
+  final List<Timer> _sample = [];
+
+  @override
+  void dispose() {
+    for (final t in _sample) {
+      t.cancel();
+    }
+    super.dispose();
+  }
+
+  /// Three darts in the treble 20 as in a game: a thud for each, then the 180 from the caller or as an effect
+  void _playSample() {
+    for (final t in _sample) {
+      t.cancel();
+    }
+    _sample.clear();
+    final dart = DartThrow(fieldCentre(Ring.triple), ThrowInput.keypad);
+    for (var i = 0; i < 3; ++i) {
+      _sample.add(
+        Timer(SoundSettingsScreen.sampleDartTime * i, () {
+          if (!mounted) return;
+          final last = i == 2;
+          dartFeedback(
+            context,
+            dart,
+            effect: last ? Effect.oneEighty : Effect.dart,
+            calls: last ? const [callOneEighty] : const [],
+          );
+        }),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final sfx = SfxScope.of(context);
+    Widget section(String title) => Padding(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+      child: Text(title, style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.primary)),
+    );
+    return Scaffold(
+      appBar: AppBar(title: Text(l10n.settingsSound)),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 720),
+          child: ListView(
+            children: [
+              section(l10n.soundSectionEffects),
+              SwitchListTile(
+                key: const ValueKey('sfx-enabled'),
+                secondary: const Icon(Icons.graphic_eq),
+                title: Text(l10n.soundEffects),
+                subtitle: Text(l10n.soundEffectsHint),
+                value: sfx.enabled,
+                onChanged: (on) => sfx.set(enabled: on),
+              ),
+              if (sfx.enabled)
+                ListTile(
+                  leading: const Icon(Icons.volume_up_outlined),
+                  title: Text(l10n.effectsVolume),
+                  subtitle: Slider(
+                    key: const ValueKey('sfx-volume'),
+                    value: sfx.volume,
+                    onChanged: (v) => sfx.set(volume: v),
+                    // The thud of a dart at the new volume
+                    onChangeEnd: (_) => sfx.play(Effect.dart),
+                  ),
+                ),
+              if (sfx.canVibrate)
+                SwitchListTile(
+                  key: const ValueKey('sfx-vibration'),
+                  secondary: const Icon(Icons.vibration),
+                  title: Text(l10n.vibration),
+                  subtitle: Text(l10n.vibrationHint),
+                  value: sfx.vibration,
+                  onChanged: (on) => sfx.set(vibration: on),
+                ),
+              section(l10n.soundSectionCaller),
+              const CallerSettings(),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: OutlinedButton.icon(
+                    key: const ValueKey('sound-sample'),
+                    onPressed: _playSample,
+                    icon: const Icon(Icons.play_arrow),
+                    label: Text(l10n.soundSample),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 /// The cameras and the engine that runs them: the connection, the setup in the order it is done with where each
@@ -338,7 +448,7 @@ class EngineSettingsScreen extends StatelessWidget {
   );
 }
 
-/// The score caller in the settings: on or off, its volume, and a test phrase
+/// The score caller in the settings: on or off, and its volume
 class CallerSettings extends StatefulWidget {
   const CallerSettings({super.key});
 
@@ -381,11 +491,6 @@ class _CallerSettingsState extends State<CallerSettings> {
               key: const ValueKey('caller-volume'),
               value: caller.volume,
               onChanged: (v) => caller.set(volume: v),
-            ),
-            trailing: TextButton(
-              key: const ValueKey('caller-test'),
-              onPressed: () => caller.call([callOneEighty], callLanguage),
-              child: Text(l10n.callerTest),
             ),
           ),
       ],

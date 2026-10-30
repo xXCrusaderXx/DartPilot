@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../sound/effects.dart';
+import '../sound/sfx.dart';
 import '../../l10n/app_localizations.dart';
 import '../board/dart_throw.dart';
 import '../games/checkout_trainer.dart';
@@ -94,6 +96,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
 
   void _add(DartThrow dart) {
     setState(() => _game.add(dart));
+    dartFeedback(context, dart, effect: gameEffect(dart, finished: _game.isFinished, training: true));
     if (_game.isFinished) _showResult();
   }
 
