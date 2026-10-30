@@ -84,6 +84,10 @@ class EngineConnection extends ChangeNotifier {
   /// Tries since the engine went away
   int get reconnectAttempts => _reconnectAttempts;
 
+  /// Corrections, rejections and added darts made while the app tries to reach the engine again: sent once it is
+  /// back, so its throw log stays the game's
+  final List<Map<String, dynamic>> _whileAway = [];
+
   String url = defaultUrl;
   EngineConnectionState state = EngineConnectionState.disconnected;
   EngineHello? hello;
@@ -254,6 +258,7 @@ class EngineConnection extends ChangeNotifier {
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
     _reconnectAttempts = 0;
+    _whileAway.clear();
     if (reconnecting) {
       reconnecting = false;
       notifyListeners();
@@ -296,11 +301,16 @@ class EngineConnection extends ChangeNotifier {
       _reconnectAttempts = 0;
       reconnecting = false;
       pairingRequired = event.pairing == 'required';
-      if (pairingRequired) _pairOnConnect(event.engineId);
+      if (pairingRequired) {
+        _pairOnConnect(event.engineId);
+      } else {
+        _sendWhileAway();
+      }
       notifyListeners();
     }
     if (event is Paired) {
       pairingRequired = false;
+      _sendWhileAway();
       _pendingPin = null;
       final id = event.engineId.isNotEmpty ? event.engineId : hello?.engineId;
       if (id != null) tokens.store(id, event.token);
@@ -427,12 +437,31 @@ class EngineConnection extends ChangeNotifier {
 
   static Map<String, dynamic> _pointJson(BoardPoint p) => {'x_mm': p.xMm, 'y_mm': p.yMm};
 
+  /// A change to the throw log: while the app tries to reach the engine again it waits, and goes out once it is back.
+  void _sendToLog(Map<String, dynamic> request) {
+    if (reconnecting && !isConnected) {
+      _whileAway.add(request);
+    } else {
+      _send(request);
+    }
+  }
+
+  void _sendWhileAway() {
+    final waiting = [..._whileAway];
+    _whileAway.clear();
+    waiting.forEach(_send);
+  }
+
   /// [candidate] is the index of the throw's candidate the player picked, kept by the engine as a labelled example.
-  void correctThrow(String throwId, BoardPoint point, {int? candidate}) =>
-      _send({'type': 'correct_throw', 'throw_id': throwId, 'board_point': _pointJson(point), 'candidate': ?candidate});
+  void correctThrow(String throwId, BoardPoint point, {int? candidate}) => _sendToLog({
+    'type': 'correct_throw',
+    'throw_id': throwId,
+    'board_point': _pointJson(point),
+    'candidate': ?candidate,
+  });
 
   void rejectThrow(String throwId, String reason) =>
-      _send({'type': 'reject_throw', 'throw_id': throwId, 'reason': reason});
+      _sendToLog({'type': 'reject_throw', 'throw_id': throwId, 'reason': reason});
 
   /// Stores the cameras' order and names in the engine; every client gets them as [cameraAssignment].
   Future<String?> setCameraAssignment(List<AssignedCamera> cameras) => _request({
@@ -609,7 +638,7 @@ class EngineConnection extends ChangeNotifier {
       _request({'type': 'get_throw_views', 'throw_id': throwId, 'max_width': 320});
 
   /// A dart the engine missed, entered by hand
-  void addThrow(BoardPoint point) => _send({'type': 'add_throw', 'board_point': _pointJson(point)});
+  void addThrow(BoardPoint point) => _sendToLog({'type': 'add_throw', 'board_point': _pointJson(point)});
 
   /// For tests: feed a message as if the engine had sent it
   @visibleForTesting

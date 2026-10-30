@@ -29,7 +29,7 @@ void main() {
       tester.getSemantics(find.byKey(const ValueKey('dartboard'))),
       matchesSemantics(
         label: 'Dartscheibe',
-        value: 'S20',
+        value: '20',
         hint: 'Tippe dorthin, wo der Dart steckt',
         hasTapAction: true,
       ),

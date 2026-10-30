@@ -129,6 +129,10 @@ class DisplaySettings extends ChangeNotifier {
   /// The colour of the darts on the board, or the accent
   Color? dartColour;
 
+  /// Whether darts go in on the keypad rather than the board when entered by hand. It belongs to this device, as the
+  /// viewing distance does, so it stays out of a shared appearance.
+  bool keypadInput = false;
+
   static const defaultPanelDetails = {PanelDetail.visitDarts, PanelDetail.checkout, PanelDetail.average};
 
   static const _styleKey = 'display.style';
@@ -145,6 +149,7 @@ class DisplaySettings extends ChangeNotifier {
   static const _celebrationKey = 'display.celebration';
   static const _boardColoursKey = 'display.boardColours';
   static const _dartColourKey = 'display.dartColour';
+  static const _keypadInputKey = 'display.keypadInput';
 
   Future<void> load() async {
     if (!store) return;
@@ -168,6 +173,7 @@ class DisplaySettings extends ChangeNotifier {
     boardColours = BoardColours.values.asNameMap()[prefs.getString(_boardColoursKey)] ?? BoardColours.classic;
     final dart = prefs.getInt(_dartColourKey);
     dartColour = dart == null ? null : Color(dart);
+    keypadInput = prefs.getBool(_keypadInputKey) ?? false;
     notifyListeners();
   }
 
@@ -199,6 +205,13 @@ class DisplaySettings extends ChangeNotifier {
   /// Darts on the board in [colour], or in the accent when null
   Future<void> setDartColour(Color? colour) async {
     dartColour = colour;
+    await _changed();
+  }
+
+  /// Darts by hand on the keypad or on the board, the next game as well
+  Future<void> setKeypadInput(bool keypad) async {
+    if (keypad == keypadInput) return;
+    keypadInput = keypad;
     await _changed();
   }
 
@@ -260,6 +273,7 @@ class DisplaySettings extends ChangeNotifier {
     } else {
       await prefs.setInt(_dartColourKey, dart.toARGB32());
     }
+    await prefs.setBool(_keypadInputKey, keypadInput);
   }
 
   /// What a shared appearance starts with, so that a code is told apart from other text and QR codes
@@ -361,6 +375,53 @@ class DisplayScope extends InheritedNotifier<DisplaySettings> {
 
   static DisplaySettings of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<DisplayScope>()?.notifier ?? _defaults;
+}
+
+/// The text roles of a game screen, so that notices, prompts and detail lines grow together when the screen is read
+/// from the oche, not widget by widget. From close by a window wider than a phone upright reads a size up.
+class GameText {
+  const GameText._(this._text, {required this.far, required this.roomy});
+
+  factory GameText.of(BuildContext context) {
+    final window = WindowClass.of(context);
+    return GameText._(
+      Theme.of(context).textTheme,
+      far: DisplayScope.of(context).farFor(window),
+      roomy: window != WindowClass.compact,
+    );
+  }
+
+  final TextTheme _text;
+  final bool far;
+  final bool roomy;
+
+  /// What a notice says happened or asks for
+  TextStyle? get promptTitle => far ? _text.headlineSmall : _text.titleMedium;
+
+  /// The line below it: what to do
+  TextStyle? get promptBody => far ? _text.titleLarge : (roomy ? _text.bodyMedium : _text.bodySmall);
+
+  /// Details of the game below a player's name, such as progress, hit rate or record
+  TextStyle? get detail => far ? _text.headlineSmall : (roomy ? _text.bodyMedium : _text.bodySmall);
+
+  /// Buttons the player acts on in a game: larger and taller from the oche
+  ButtonStyle? get action => far
+      ? ButtonStyle(
+          minimumSize: const WidgetStatePropertyAll(Size(64, 56)),
+          textStyle: WidgetStatePropertyAll(_text.titleLarge),
+          iconSize: const WidgetStatePropertyAll(28),
+          padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 20)),
+        )
+      : null;
+
+  /// Undo below a score panel: from the oche read and hit like the rest of the panel
+  ButtonStyle? get undo => far
+      ? ButtonStyle(
+          minimumSize: const WidgetStatePropertyAll(Size.fromHeight(64)),
+          textStyle: WidgetStatePropertyAll(_text.titleLarge),
+          iconSize: const WidgetStatePropertyAll(28),
+        )
+      : null;
 }
 
 /// A motion's duration, or none where the system asks for less motion

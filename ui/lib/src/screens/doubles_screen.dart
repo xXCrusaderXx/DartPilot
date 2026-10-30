@@ -167,13 +167,16 @@ class _DoublesScreenState extends State<DoublesScreen> with RecordsGame {
           active: true,
         ),
         if (next != null) AimLine(field: next.label, fieldKey: const ValueKey('doubles-next')),
-        const SizedBox(height: 12),
-        Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 260),
-            child: PrecisionPlot(key: const ValueKey('doubles-plot'), target: shown, points: atTarget),
+        // Darts from the keypad have no spot: without a measured dart the plot would be an empty grid.
+        if (throws.any(hasMeasuredPoint)) ...[
+          const SizedBox(height: 12),
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 260),
+              child: PrecisionPlot(key: const ValueKey('doubles-plot'), target: shown, points: atTarget),
+            ),
           ),
-        ),
+        ],
         for (final i in shownIndexes.reversed)
           MissTile(key: ValueKey('doubles-dart-$i'), number: i + 1, dart: throws[i], target: shown),
         if (unmeasured && !far) ...[
@@ -187,13 +190,7 @@ class _DoublesScreenState extends State<DoublesScreen> with RecordsGame {
           for (final p in _roundRanking) Text(rankingLine(l10n, p)),
         ],
       ],
-      bottom: [
-        OutlinedButton.icon(
-          onPressed: throws.isEmpty || widget.watching ? null : () => setState(_game.undo),
-          icon: const Icon(Icons.undo),
-          label: Text(l10n.undo),
-        ),
-      ],
+      bottom: [GameUndoButton(onPressed: throws.isEmpty || widget.watching ? null : () => setState(_game.undo))],
     );
     return GameScaffold(
       title: l10n.modeDoubles,

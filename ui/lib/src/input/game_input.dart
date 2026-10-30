@@ -2,21 +2,37 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../board/dart_throw.dart';
 import '../bots/bot_turns.dart';
 import '../board/scoring.dart';
+import '../display.dart';
 import '../engine/engine_connection.dart';
 import '../engine/engine_events.dart';
 import '../games/dart_game.dart';
 import '../screens/throw_views_screen.dart';
 import '../sound/effects.dart';
 import '../sound/sfx.dart';
+import 'key_entry.dart';
 import 'takeout_gate.dart';
 import 'throw_input_panel.dart';
 import '../board/score_text.dart';
+import '../theme.dart';
 import '../widgets/precision_text.dart';
+
+/// How far the engine counts darts now, as the game screen tells the player
+enum _EngineHealth {
+  /// Counting, or no engine at all
+  ok,
+
+  /// Connected, but detection is paused or unavailable, or a camera delivers no frames
+  notCounting,
+
+  /// The connection went away and the app tries to reach the engine again
+  dropped,
+}
 
 /// Input of a game screen: darts from the engine when connected, manual input otherwise, uncertain darts as a
 /// suggestion to confirm or correct, corrections of the last darts, and the takeout that ends a visit. While an engine
@@ -49,10 +65,34 @@ class GameInput extends StatefulWidget {
 
 class _GameInputState extends State<GameInput> {
   EngineConnection? _engine;
-  ValueNotifier<Widget?>? _slot;
+  GameNoticeSlot? _slot;
   StreamSubscription<EngineEvent>? _subscription;
   EngineThrow? _pending;
   int? _correcting;
+
+  /// Darts by hand on the keypad rather than the board; null until the device's choice is read
+  bool? _keypad;
+
+  /// Darts typed on a keyboard
+  final KeyEntry _keys = KeyEntry();
+  final FocusNode _focus = FocusNode(debugLabel: 'game input');
+
+  _EngineHealth _health = _EngineHealth.ok;
+
+  /// Set for a while after the engine is back from a drop: darts thrown meanwhile may be missing
+  bool _back = false;
+  Timer? _backTimer;
+
+  /// A correction from another device, said for a while with the dart it changed
+  ({String text, DartThrow? dart})? _elsewhere;
+  Timer? _elsewhereTimer;
+
+  /// After a takeout the player chose to enter the visit's missing darts by hand: the engine's darts of the next visit
+  /// wait until they are in.
+  bool _enteringMissing = false;
+
+  /// How long a notice about something that already happened stays
+  static const Duration noticeTime = Duration(seconds: 6);
 
   /// Engine events of the next visit, kept while the darts of the last one are still in the board
   final List<EngineEvent> _held = [];
@@ -89,7 +129,8 @@ class _GameInputState extends State<GameInput> {
       engine?.rejectThrow(id, 'undone in the app');
     }
     _engineIds = ids;
-    if (_held.isNotEmpty && !_waiting) {
+    if (_enteringMissing && widget.game.dartsInVisit == 0) _missingEntered();
+    if (_held.isNotEmpty && !_waiting && !_enteringMissing) {
       for (final event in _held) {
         if (event is EngineThrow) engine?.rejectThrow(event.throwId, 'undone in the app');
       }
@@ -107,21 +148,115 @@ class _GameInputState extends State<GameInput> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Events arrive through the stream; the input does not rebuild on every change of the connection.
-    _slot = GameNoticeSlot.maybeOf(context);
+    // Events arrive through the stream; the input rebuilds only when the engine's health changes.
+    _slot = context.getInheritedWidgetOfExactType<GameNoticeSlot>();
     final engine = EngineScope.read(context);
     if (!identical(engine, _engine)) {
       _subscription?.cancel();
+      _engine?.removeListener(_engineChanged);
       _engine = engine;
       _subscription = engine.events.listen(_onEvent);
+      engine.addListener(_engineChanged);
+      _health = _healthOf(engine);
     }
+    // With an engine the board shows where the cameras saw the darts; by hand the device's own choice
+    _keypad ??= !engine.isConnected && DisplayScope.of(context).keypadInput;
   }
 
   @override
   void dispose() {
     _subscription?.cancel();
-    _slot?.value = null;
+    _engine?.removeListener(_engineChanged);
+    _backTimer?.cancel();
+    _elsewhereTimer?.cancel();
+    _focus.dispose();
+    _slot?.notice.value = null;
+    _slot?.marked.value = null;
     super.dispose();
+  }
+
+  static _EngineHealth _healthOf(EngineConnection engine) {
+    if (engine.reconnecting && !engine.isConnected) return _EngineHealth.dropped;
+    if (!engine.isConnected) return _EngineHealth.ok;
+    final lost = engine.cameraStatus.values.any((c) => c.state == 'lost');
+    return engine.detection != 'running' || lost ? _EngineHealth.notCounting : _EngineHealth.ok;
+  }
+
+  void _engineChanged() {
+    final engine = _engine;
+    if (engine == null || !mounted) return;
+    final health = _healthOf(engine);
+    if (health == _health) return;
+    final back = _health == _EngineHealth.dropped && engine.isConnected;
+    setState(() {
+      _health = health;
+      if (back) {
+        _back = true;
+        _backTimer?.cancel();
+        _backTimer = Timer(noticeTime, () {
+          if (mounted) setState(() => _back = false);
+        });
+      } else if (health == _EngineHealth.dropped) {
+        _back = false;
+      }
+    });
+  }
+
+  /// Says for a while that another device changed a dart, and marks that dart
+  void _changedElsewhere(String text, DartThrow? dart) {
+    _elsewhereTimer?.cancel();
+    setState(() => _elsewhere = (text: text, dart: dart));
+    _elsewhereTimer = Timer(noticeTime, () {
+      if (mounted) setState(() => _elsewhere = null);
+    });
+  }
+
+  void _setKeypad(bool keypad, {bool remember = true}) {
+    setState(() => _keypad = keypad);
+    if (remember) DisplayScope.of(context).setKeypadInput(keypad);
+  }
+
+  /// A keyboard beside the board, as on a desktop or TV box: digits with S, D or T, Backspace undoes.
+  KeyEventResult _onKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+    TypedField? field;
+    if (key == LogicalKeyboardKey.backspace) {
+      if (!_keys.clear()) _undo();
+      setState(() {});
+      return KeyEventResult.handled;
+    } else if (key == LogicalKeyboardKey.escape) {
+      if (!_keys.clear()) return KeyEventResult.ignored;
+      setState(() {});
+      return KeyEventResult.handled;
+    } else if (key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.numpadEnter) {
+      if (_keys.pending.isEmpty) return KeyEventResult.ignored;
+      field = _keys.enter();
+    } else {
+      final character = event.character;
+      if (character == null || character.length != 1) return KeyEventResult.ignored;
+      final before = _keys.pending;
+      field = _keys.type(character);
+      if (field == null && before == _keys.pending) return KeyEventResult.ignored;
+    }
+    setState(() {});
+    if (field != null) {
+      _onInput(
+        DartThrow(
+          fieldCentre(field.ring, sector: field.sector, geometry: _geometry),
+          ThrowInput.keypad,
+          geometry: _geometry,
+        ),
+      );
+    }
+    return KeyEventResult.handled;
+  }
+
+  void _undo() {
+    final game = widget.game;
+    if (game.throws.isEmpty || game.isFinished) return;
+    game.undo();
+    widget.onChanged();
   }
 
   BoardGeometry get _geometry => _engine?.geometry ?? const BoardGeometry();
@@ -136,6 +271,11 @@ class _GameInputState extends State<GameInput> {
     final inVisit = game.dartsInVisit;
     widget.onDart(dart);
     final gate = widget.takeout;
+    if (_enteringMissing) {
+      // That visit's darts are out of the board already: the next visit starts without waiting for a takeout.
+      if (game.dartsInVisit == 0 || game.isFinished) _missingEntered();
+      return;
+    }
     if (gate != null &&
         !_takenOut &&
         (_engine?.isConnected ?? false) &&
@@ -145,6 +285,14 @@ class _GameInputState extends State<GameInput> {
       gate.close(game, inVisit + 1);
       widget.onChanged();
     }
+  }
+
+  /// The missing darts of a taken-out visit are in: the darts that waited meanwhile count now.
+  void _missingEntered() {
+    setState(() => _enteringMissing = false);
+    final held = [..._held];
+    _held.clear();
+    held.forEach(_onEvent);
   }
 
   void _dartsRemoved() {
@@ -157,9 +305,14 @@ class _GameInputState extends State<GameInput> {
 
   void _onEvent(EngineEvent event) {
     if (!mounted || widget.game.isFinished) return;
-    if (_waiting) {
+    if (_waiting || _enteringMissing) {
       if (event is EngineTakeout) {
-        _dartsRemoved();
+        // While missing darts are typed in, a takeout belongs to the next visit's held darts and follows them
+        if (_waiting) {
+          _dartsRemoved();
+        } else {
+          _held.add(event);
+        }
       } else if (event is EngineThrow) {
         if (!_known(event.throwId)) _held.add(event);
       } else if (event is EngineThrowCorrected && _holds(event)) {
@@ -213,13 +366,20 @@ class _GameInputState extends State<GameInput> {
       case EngineThrowCorrected(:final client, :final throwId, :final action, :final point):
         if (client == _engine?.clientName) return;
         final index = widget.game.throws.indexWhere((d) => d.engineThrowId == throwId);
+        final l10n = AppLocalizations.of(context);
         if (action == 'corrected' && index >= 0 && point != null) {
-          widget.game.replace(index, _engineDart(point, throwId, null));
+          // Said and marked, so a score that changes by itself is not taken for a fault
+          final old = widget.game.throws[index].score.text(l10n);
+          final dart = _engineDart(point, throwId, null);
+          widget.game.replace(index, dart);
           widget.onChanged();
+          _changedElsewhere(l10n.correctedElsewhere(old, dart.score.text(l10n)), dart);
         } else if (action == 'added' && point != null && !_known(throwId)) {
           _add(_engineDart(point, throwId, null));
         } else if (action == 'rejected' && index >= 0) {
+          final old = widget.game.throws[index].score.text(l10n);
           _remove(index);
+          _changedElsewhere(l10n.rejectedElsewhere(old), null);
         } else if (action == 'rejected' && _pending?.throwId == throwId) {
           setState(() => _pending = null);
           _pendingSettled();
@@ -250,17 +410,38 @@ class _GameInputState extends State<GameInput> {
     final missing = 3 - inVisit;
     final l10n = AppLocalizations.of(context);
     SfxScope.read(context).play(Effect.attention);
+    // Answered, never dismissed: a visit left open would take the next player's darts.
     final countAsMiss = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.missingDarts(missing)),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(l10n.enterManually)),
-          FilledButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: Text(l10n.countAsMiss)),
-        ],
-      ),
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        final text = GameText.of(dialogContext);
+        return AlertDialog(
+          title: Text(l10n.missingDarts(missing), style: text.promptTitle),
+          content: Text(l10n.missingDartsHint, style: text.promptBody),
+          actions: [
+            TextButton(
+              key: const ValueKey('missing-enter'),
+              style: text.action,
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(l10n.enterManually),
+            ),
+            FilledButton(
+              key: const ValueKey('missing-count-miss'),
+              style: text.action,
+              autofocus: true,
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(l10n.countAsMiss),
+            ),
+          ],
+        );
+      },
     );
-    if (countAsMiss != true || !mounted) return;
+    if (!mounted) return;
+    if (countAsMiss != true) {
+      if (widget.game.dartsInVisit > 0) setState(() => _enteringMissing = true);
+      return;
+    }
     _takenOut = true;
     for (var i = 0; i < missing && !widget.game.isFinished; ++i) {
       _manual(DartThrow(fieldCentre(Ring.miss, geometry: _geometry), ThrowInput.keypad, geometry: _geometry));
@@ -288,6 +469,8 @@ class _GameInputState extends State<GameInput> {
       );
       setState(() => _correcting = null);
       widget.onChanged();
+      // With cameras the board shows what they saw; the keypad was only for this correction.
+      if (_engine?.isConnected ?? false) _setKeypad(false, remember: false);
     } else if (!_waiting) {
       _manual(dart);
     }
@@ -318,12 +501,22 @@ class _GameInputState extends State<GameInput> {
     _pendingSettled();
   }
 
-  String _candidateLabel(EngineThrow pending, int index) {
-    final c = pending.candidates[index];
-    return '${_scoreAt(c.point).text(AppLocalizations.of(context))} (${percentText(AppLocalizations.of(context), c.probability)})';
+  /// The fields an uncertain dart may be in, one per field: candidates in the same field are one choice, with their
+  /// probabilities added and the most likely one's point and index, most likely first
+  List<({int index, DartThrow dart, double probability})> _fields(EngineThrow? pending) {
+    final byField = <String, ({int index, DartThrow dart, double probability})>{};
+    final candidates = pending?.candidates ?? const <ThrowCandidate>[];
+    for (var i = 0; i < candidates.length; ++i) {
+      final c = candidates[i];
+      final dart = DartThrow(c.point, ThrowInput.engine, geometry: _geometry);
+      final label = dart.score.label;
+      final known = byField[label];
+      byField[label] = known == null
+          ? (index: i, dart: dart, probability: c.probability)
+          : (index: known.index, dart: known.dart, probability: known.probability + c.probability);
+    }
+    return byField.values.toList()..sort((a, b) => b.probability.compareTo(a.probability));
   }
-
-  Score _scoreAt(BoardPoint point) => DartThrow(point, ThrowInput.engine, geometry: _geometry).score;
 
   /// The camera views of a detected dart (#129); the player may go on to correct it from there.
   Future<void> _openViews(int index) async {
@@ -348,18 +541,71 @@ class _GameInputState extends State<GameInput> {
     _pendingSettled();
   }
 
+  /// The notice about the engine's health, which stays while it holds, above any prompt
+  Widget? _healthNotice(AppLocalizations l10n, ThemeData theme) {
+    final colours = StatusColors.of(context);
+    final warning = Color.alphaBlend(colours.warning.withValues(alpha: 0.22), theme.colorScheme.surface);
+    final keypad = TextButton(
+      key: const ValueKey('health-keypad'),
+      onPressed: () => _setKeypad(true, remember: false),
+      child: Text(l10n.inputKeypad),
+    );
+    final engine = _engine;
+    switch (_health) {
+      case _EngineHealth.dropped:
+        return _Notice(
+          key: const ValueKey('engine-dropped'),
+          color: warning,
+          icon: Icons.link_off,
+          title: l10n.gameConnectionLost,
+          subtitle: l10n.gameConnectionLostHint,
+          actions: [if (_keypad != true) keypad],
+        );
+      case _EngineHealth.notCounting:
+        final lost = engine?.cameraStatus.values.any((c) => c.state == 'lost') ?? false;
+        return _Notice(
+          key: const ValueKey('engine-not-counting'),
+          color: warning,
+          icon: Icons.videocam_off_outlined,
+          title: l10n.gameCamerasNotCounting,
+          subtitle: lost
+              ? l10n.gameCameraLost
+              : engine?.detection == 'paused'
+              ? l10n.detectionPaused
+              : l10n.detectionUnavailable,
+          actions: [if (_keypad != true) keypad],
+        );
+      case _EngineHealth.ok:
+        if (!_back) return null;
+        return _Notice(
+          key: const ValueKey('engine-back'),
+          color: theme.colorScheme.secondaryContainer,
+          icon: Icons.link,
+          title: l10n.gameReconnected,
+          subtitle: l10n.gameReconnectedHint,
+          actions: [
+            TextButton(
+              onPressed: () {
+                _backTimer?.cancel();
+                setState(() => _back = false);
+              },
+              child: Text(l10n.noticeOk),
+            ),
+          ],
+        );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    final text = GameText.of(context);
     final pending = _pending;
     final pendingDart = pending?.point == null
         ? null
         : _engineDart(pending!.point!, pending.throwId, pending.confidence);
-    final candidates = [
-      for (final c in pending?.candidates ?? const <ThrowCandidate>[])
-        DartThrow(c.point, ThrowInput.engine, geometry: _geometry),
-    ];
+    final fields = _fields(pending);
     final game = widget.game;
     final throws = game.throws;
     // The visit that ended last, with whose it was and, where the game knows, what it came to, so a bust is not read
@@ -372,9 +618,25 @@ class _GameInputState extends State<GameInput> {
     final correcting = _correcting;
 
     final waiting = _waiting;
-    Widget? banner;
-    if (waiting && correcting == null) {
-      banner = _Notice(
+    Widget? prompt;
+    if (_enteringMissing) {
+      prompt = _Notice(
+        key: const ValueKey('enter-missing'),
+        color: theme.colorScheme.primaryContainer,
+        icon: Icons.dialpad,
+        title: l10n.enterMissingDarts(3 - inVisit),
+        subtitle: l10n.enterMissingDartsHint,
+        actions: [
+          if (_keypad != true)
+            TextButton(
+              key: const ValueKey('missing-keypad'),
+              onPressed: () => _setKeypad(true),
+              child: Text(l10n.inputKeypad),
+            ),
+        ],
+      );
+    } else if (waiting && correcting == null) {
+      prompt = _Notice(
         key: const ValueKey('remove-darts'),
         color: theme.colorScheme.primaryContainer,
         icon: Icons.back_hand_outlined,
@@ -384,32 +646,35 @@ class _GameInputState extends State<GameInput> {
           TextButton(key: const ValueKey('darts-removed'), onPressed: _dartsRemoved, child: Text(l10n.dartsRemoved)),
         ],
       );
-    } else if (pending != null && candidates.length >= 2) {
-      banner = _Notice(
+    } else if (pending != null && fields.length >= 2) {
+      String label(({int index, DartThrow dart, double probability}) f) =>
+          '${f.dart.score.text(l10n)} (${percentText(l10n, f.probability)})';
+      prompt = _Notice(
         key: const ValueKey('uncertain-candidates'),
         color: theme.colorScheme.tertiaryContainer,
         icon: Icons.help_outline,
-        title: '${candidates.map((c) => c.score.text(l10n)).join(' ${l10n.or} ')}?',
+        title: '${fields.map((f) => f.dart.score.text(l10n)).join(' ${l10n.or} ')}?',
+        scoreTitle: true,
         subtitle: l10n.pickCandidate,
         actions: [
           TextButton(onPressed: _discardPending, child: Text(l10n.discard)),
-          for (var i = 0; i < candidates.length; ++i)
+          for (var i = 0; i < fields.length; ++i)
             if (i == 0)
               FilledButton(
                 key: const ValueKey('candidate-0'),
-                onPressed: () => _pickCandidate(0),
-                child: Text(_candidateLabel(pending, 0)),
+                onPressed: () => _pickCandidate(fields[0].index),
+                child: Text(label(fields[0])),
               )
             else
               OutlinedButton(
                 key: ValueKey('candidate-$i'),
-                onPressed: () => _pickCandidate(i),
-                child: Text(_candidateLabel(pending, i)),
+                onPressed: () => _pickCandidate(fields[i].index),
+                child: Text(label(fields[i])),
               ),
         ],
       );
     } else if (pending != null) {
-      banner = _Notice(
+      prompt = _Notice(
         key: const ValueKey('uncertain-dart'),
         color: theme.colorScheme.tertiaryContainer,
         icon: Icons.help_outline,
@@ -423,7 +688,8 @@ class _GameInputState extends State<GameInput> {
         ],
       );
     } else if (correcting != null && correcting < throws.length) {
-      banner = _Notice(
+      prompt = _Notice(
+        key: const ValueKey('correcting'),
         color: theme.colorScheme.tertiaryContainer,
         icon: Icons.edit_location_alt,
         title: l10n.correctingDart(throws[correcting].score.text(l10n)),
@@ -438,76 +704,142 @@ class _GameInputState extends State<GameInput> {
         ],
       );
     }
+    // What happened elsewhere is said beside whatever the player is asked now
+    final notices = [
+      ?_healthNotice(l10n, theme),
+      if (_elsewhere case final elsewhere?)
+        _Notice(
+          key: const ValueKey('corrected-elsewhere'),
+          color: theme.colorScheme.secondaryContainer,
+          icon: Icons.devices_other,
+          title: elsewhere.text,
+          actions: const [],
+        ),
+      ?prompt,
+    ];
+    final banner = notices.length <= 1
+        ? notices.firstOrNull
+        : Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: notices);
+    // The dart the player is asked about, framed in the panel's visit as well as here
+    final marked = correcting != null && correcting < throws.length ? throws[correcting] : _elsewhere?.dart;
 
-    final slot = GameNoticeSlot.maybeOf(context);
+    final slot = _slot;
     if (slot != null) {
       // After this frame: the slot's listener belongs to another part of the tree, built in the same frame
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) slot.value = banner;
+        if (!mounted) return;
+        slot.notice.value = banner;
+        slot.marked.value = marked;
       });
     }
-    return Column(
-      children: [
-        if (slot == null) ?banner,
-        Expanded(
-          child: EngineSelect(
-            select: (engine) => engine.geometry,
-            builder: (context, geometry) => ThrowInputPanel(
-              geometry: geometry,
-              shownThrows: waiting ? widget.takeout!.darts(widget.game) : [...widget.shownThrows, ?pendingDart],
-              highlights: !waiting && candidates.length >= 2 ? [for (final c in candidates) c.score] : const [],
-              onThrow: _onInput,
+    // Which darts came from where matters only where a game mixes them.
+    final mixed = throws.any((t) => t.input == ThrowInput.engine) && throws.any((t) => t.input != ThrowInput.engine);
+    final chipStyle = (text.far ? theme.textTheme.titleLarge : theme.textTheme.labelLarge)?.copyWith(
+      fontWeight: FontWeight.w600,
+    );
+    final labelStyle = text.far ? theme.textTheme.titleLarge : theme.textTheme.labelLarge;
+    // The strip of last darts keeps one line of one height from the first dart on, so the keypad above never moves
+    // during a visit; what does not fit scrolls, the newest darts in view.
+    final media = MediaQuery.of(context);
+    final stripScaler = media.textScaler.clamp(maxScaleFactor: 1.3);
+    final stripHeight = math.max(48.0, stripScaler.scale(chipStyle?.fontSize ?? 14) * 1.5 + 24);
+    final strip = MediaQuery(
+      data: media.copyWith(textScaler: stripScaler),
+      child: SizedBox(
+        key: const ValueKey('recent-strip'),
+        height: stripHeight,
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            reverse: true,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minWidth: constraints.maxWidth),
+              child: Row(
+                children: [
+                  if (throws.isNotEmpty)
+                    if (lastVisit == null || endedStart == visitStart)
+                      Text(l10n.recentDarts, style: labelStyle)
+                    else
+                      Text(
+                        [
+                          lastVisit.player,
+                          if (lastVisit.bust) l10n.bust else ?lastVisit.points?.toString(),
+                        ].join(' · '),
+                        key: const ValueKey('recent-visit'),
+                        style: labelStyle?.copyWith(
+                          color: lastVisit.bust ? theme.colorScheme.error : null,
+                          fontWeight: lastVisit.bust ? FontWeight.w700 : null,
+                        ),
+                      ),
+                  for (var i = endedStart; i < throws.length; ++i) ...[
+                    if (i == visitStart && i > endedStart)
+                      SizedBox(
+                        key: const ValueKey('recent-divider'),
+                        height: 24,
+                        child: VerticalDivider(width: 9, thickness: 1, color: theme.colorScheme.outline),
+                      ),
+                    const SizedBox(width: 8),
+                    Opacity(
+                      opacity: i < visitStart && inVisit > 0 && correcting != i ? 0.55 : 1,
+                      child: ChoiceChip(
+                        key: ValueKey('recent-$i'),
+                        labelPadding: EdgeInsets.symmetric(horizontal: mixed ? 4 : 8),
+                        avatar: mixed
+                            ? Icon(throws[i].input == ThrowInput.engine ? Icons.videocam : Icons.touch_app, size: 16)
+                            : null,
+                        showCheckmark: false,
+                        label: Text(throws[i].score.text(l10n), style: chipStyle),
+                        tooltip: l10n.correctDartTooltip,
+                        selected: correcting == i,
+                        onSelected: (_) => setState(() => _correcting = correcting == i ? null : i),
+                      ),
+                    ),
+                  ],
+                  if (_keys.pending.isNotEmpty) ...[
+                    const SizedBox(width: 12),
+                    Text(
+                      '${_keys.pending}…',
+                      key: const ValueKey('key-entry'),
+                      style: scoreStyle(chipStyle)?.copyWith(color: theme.colorScheme.primary),
+                    ),
+                  ],
+                ],
+              ),
             ),
           ),
         ),
-        if (throws.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Wrap(
-              spacing: 8,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                if (lastVisit == null || endedStart == visitStart)
-                  Text(l10n.recentDarts, style: theme.textTheme.labelLarge)
-                else
-                  Text(
-                    [lastVisit.player, if (lastVisit.bust) l10n.bust else ?lastVisit.points?.toString()].join(' · '),
-                    key: const ValueKey('recent-visit'),
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: lastVisit.bust ? theme.colorScheme.error : null,
-                      fontWeight: lastVisit.bust ? FontWeight.w700 : null,
-                    ),
-                  ),
-                for (var i = endedStart; i < throws.length; ++i) ...[
-                  if (i == visitStart && i > endedStart)
-                    SizedBox(
-                      key: const ValueKey('recent-divider'),
-                      height: 24,
-                      child: VerticalDivider(width: 9, thickness: 1, color: theme.colorScheme.outline),
-                    ),
-                  Opacity(
-                    opacity: i < visitStart && inVisit > 0 && correcting != i ? 0.55 : 1,
-                    child: ChoiceChip(
-                      key: ValueKey('recent-$i'),
-                      // Narrow, so a visit's three darts and whose they were fit one line on a phone
-                      labelPadding: const EdgeInsets.only(left: 2, right: 6),
-                      avatar: Icon(throws[i].input == ThrowInput.engine ? Icons.videocam : Icons.touch_app, size: 16),
-                      label: Text(throws[i].score.text(l10n)),
-                      selected: correcting == i,
-                      onSelected: (_) => setState(() => _correcting = correcting == i ? null : i),
-                    ),
-                  ),
-                ],
-              ],
+      ),
+    );
+    return Focus(
+      focusNode: _focus,
+      autofocus: true,
+      onKeyEvent: _onKey,
+      child: Column(
+        children: [
+          if (slot == null) ?banner,
+          Expanded(
+            child: EngineSelect(
+              select: (engine) => engine.geometry,
+              builder: (context, geometry) => ThrowInputPanel(
+                geometry: geometry,
+                keypad: _keypad ?? false,
+                onKeypadChanged: _setKeypad,
+                shownThrows: waiting ? widget.takeout!.darts(widget.game) : [...widget.shownThrows, ?pendingDart],
+                highlights: !waiting && fields.length >= 2 ? [for (final f in fields) f.dart.score] : const [],
+                onThrow: _onInput,
+              ),
             ),
           ),
-      ],
+          const SizedBox(height: 8),
+          strip,
+        ],
+      ),
     );
   }
 }
 
-/// A notice above the board: what happened, what to do, and its buttons. On narrow screens the buttons go below the
-/// text, so the notice stays low enough for the board or keypad underneath.
+/// A notice above the board: what happened, what to do, and its buttons, read from the oche where the screen is. On
+/// narrow screens the buttons go below the text, so the notice stays low enough for the board or keypad underneath.
 class _Notice extends StatelessWidget {
   const _Notice({
     super.key,
@@ -515,6 +847,7 @@ class _Notice extends StatelessWidget {
     required this.icon,
     required this.title,
     this.subtitle,
+    this.scoreTitle = false,
     required this.actions,
   });
 
@@ -522,38 +855,56 @@ class _Notice extends StatelessWidget {
   final IconData icon;
   final String title;
   final String? subtitle;
+
+  /// The title names fields, set in the score face
+  final bool scoreTitle;
   final List<Widget> actions;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final text = GameText.of(context);
+    final titleStyle = scoreTitle
+        ? scoreStyle(text.far ? theme.textTheme.headlineMedium : theme.textTheme.titleLarge)
+        : text.promptTitle;
     final texts = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(title, style: theme.textTheme.titleMedium),
+        Text(title, style: titleStyle?.copyWith(fontWeight: FontWeight.w600)),
         if (subtitle != null)
-          Text(subtitle!, maxLines: 2, overflow: TextOverflow.ellipsis, style: theme.textTheme.bodySmall),
+          Text(subtitle!, maxLines: text.far ? 3 : 2, overflow: TextOverflow.ellipsis, style: text.promptBody),
       ],
     );
-    final buttons = Wrap(spacing: 8, alignment: WrapAlignment.end, children: actions);
+    final action = text.action;
+    final buttons = Theme(
+      // From the oche the buttons grow with the text
+      data: action == null
+          ? theme
+          : theme.copyWith(
+              textButtonTheme: TextButtonThemeData(style: action),
+              filledButtonTheme: FilledButtonThemeData(style: action),
+              outlinedButtonTheme: OutlinedButtonThemeData(style: action),
+            ),
+      child: Wrap(spacing: 8, runSpacing: 4, alignment: WrapAlignment.end, children: actions),
+    );
     return Card(
       color: color,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+        padding: EdgeInsets.fromLTRB(16, text.far ? 12 : 8, 8, text.far ? 12 : 8),
         child: LayoutBuilder(
           builder: (context, constraints) {
             final narrow = constraints.maxWidth < 480;
             final top = Row(
               children: [
-                Icon(icon),
+                Icon(icon, size: text.far ? 36 : null),
                 const SizedBox(width: 16),
                 Expanded(child: texts),
                 // Two or three candidates are wider than the space beside the text; they wrap instead.
-                if (!narrow) Flexible(child: buttons),
+                if (!narrow && actions.isNotEmpty) Flexible(child: buttons),
               ],
             );
-            return narrow
+            return narrow && actions.isNotEmpty
                 ? Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -569,16 +920,34 @@ class _Notice extends StatelessWidget {
   }
 }
 
-/// Where a game screen shows the input's notices (an uncertain dart, darts to pull): beside the board in the score
-/// panel, so the board keeps its size while the player taps it. Without a slot the input shows them above the board.
+/// Where a game screen shows the input's notices (an uncertain dart, darts to pull) and which dart they are about:
+/// beside the board in the score panel, so the board keeps its size while the player taps it. Without a slot the
+/// input shows them above the board.
 class GameNoticeSlot extends InheritedWidget {
-  const GameNoticeSlot({super.key, required this.notice, required super.child});
+  const GameNoticeSlot({super.key, required this.notice, required this.marked, required super.child});
 
   final ValueNotifier<Widget?> notice;
+
+  /// The dart a notice is about, such as one being corrected, for the panel to frame in the visit
+  final ValueNotifier<DartThrow?> marked;
 
   static ValueNotifier<Widget?>? maybeOf(BuildContext context) =>
       context.getInheritedWidgetOfExactType<GameNoticeSlot>()?.notice;
 
   @override
-  bool updateShouldNotify(GameNoticeSlot old) => !identical(old.notice, notice);
+  bool updateShouldNotify(GameNoticeSlot old) => !identical(old.notice, notice) || !identical(old.marked, marked);
+}
+
+/// Builds with the dart the input marks, or null; outside a game screen always null
+class MarkedDart extends StatelessWidget {
+  const MarkedDart({super.key, required this.builder});
+
+  final Widget Function(BuildContext context, DartThrow? marked) builder;
+
+  @override
+  Widget build(BuildContext context) {
+    final marked = context.getInheritedWidgetOfExactType<GameNoticeSlot>()?.marked;
+    if (marked == null) return builder(context, null);
+    return ValueListenableBuilder(valueListenable: marked, builder: (context, dart, _) => builder(context, dart));
+  }
 }

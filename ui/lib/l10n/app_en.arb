@@ -243,7 +243,7 @@
   "discardCameraOrderTitle": "Discard the changed order and names?",
   "tapToCorrect": "Tap the board where the dart is",
   "recentDarts": "Last darts",
-  "correctingDart": "Correcting {label} – tap the board",
+  "correctingDart": "Correct {label} – tap the right field",
   "@correctingDart": {
     "placeholders": {
       "label": {
@@ -1887,5 +1887,51 @@
       }
     }
   },
-  "marksPerRoundShort": "MPR"
+  "marksPerRoundShort": "MPR",
+  "gameCamerasNotCounting": "The cameras are not counting right now – enter the darts by hand",
+  "gameCameraLost": "A camera delivers no pictures.",
+  "gameConnectionLost": "Connection to the camera detection lost",
+  "gameConnectionLostHint": "Check the darts of this visit or enter them by hand. Corrections are sent once it is back.",
+  "gameReconnected": "Connected again",
+  "gameReconnectedHint": "Darts thrown while the connection was gone may be missing – check the last visit.",
+  "noticeOk": "OK",
+  "correctedElsewhere": "Corrected on another device: {old} → {corrected}",
+  "@correctedElsewhere": {
+    "placeholders": {
+      "old": {
+        "type": "String"
+      },
+      "corrected": {
+        "type": "String"
+      }
+    }
+  },
+  "rejectedElsewhere": "Removed on another device: {label}",
+  "@rejectedElsewhere": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "missingDartsHint": "The darts are out of the board. Count the rest as misses, or enter them yourself before the next player throws.",
+  "enterMissingDarts": "{count, plural, =1{Enter 1 more dart by hand} other{Enter {count} more darts by hand}}",
+  "@enterMissingDarts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "enterMissingDartsHint": "The cameras' next darts wait until this visit is complete.",
+  "correctDartTooltip": "Tap to correct this dart",
+  "x01RemainingSpoken": "{score} left",
+  "@x01RemainingSpoken": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "homeConnectedNotDetecting": "Camera detection connected – not detecting darts yet"
 }

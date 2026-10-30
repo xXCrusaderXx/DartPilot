@@ -235,38 +235,23 @@ class _X01ScreenState extends State<X01Screen> with RecordsGame, BotTurns {
 
     final display = DisplayScope.of(context);
     final window = WindowClass.of(context);
-    // The panel's height lets the score shrink where it would push the other players and Undo out of view.
+    // The panel budgets its rows in the room it has: the score takes what the others leave, Undo stays at the foot.
     final scoreboard = LayoutBuilder(
       builder: (context, constraints) => ScrollingPanel(
-        top: [
-          X01Panel(
-            game: _game,
-            visit: visit,
-            dartTexts: [for (final d in visit.darts) _dartText(l10n, d)],
-            checkout: checkout,
-            onCallCheckout: () => CallerScope.read(context).say([callRoute(checkout!)], callLanguage),
-            style: display.styleFor(window),
-            far: display.farFor(window),
-            details: display.panelDetails,
-            legWon: _legWon(l10n),
-            height: constraints.maxHeight,
-          ),
-        ],
-        bottom: [
-          OutlinedButton.icon(
-            onPressed: _game.canUndo && !widget.watching ? () => setState(_game.undo) : null,
-            icon: const Icon(Icons.undo),
-            label: Text(l10n.undo),
-            // From the oche the button is read and hit like the rest of the panel.
-            style: display.farFor(window)
-                ? OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(64),
-                    iconSize: 28,
-                    textStyle: Theme.of(context).textTheme.titleLarge,
-                  )
-                : null,
-          ),
-        ],
+        fill: X01Panel(
+          game: _game,
+          visit: visit,
+          dartTexts: [for (final d in visit.darts) _dartText(l10n, d)],
+          checkout: checkout,
+          onCallCheckout: () => CallerScope.read(context).say([callRoute(checkout!)], callLanguage),
+          style: display.styleFor(window),
+          far: display.farFor(window),
+          details: display.panelDetails,
+          legWon: _legWon(l10n),
+          width: constraints.maxWidth,
+          height: constraints.maxHeight,
+        ),
+        bottom: [GameUndoButton(onPressed: _game.canUndo && !widget.watching ? () => setState(_game.undo) : null)],
       ),
     );
     return GameScaffold(

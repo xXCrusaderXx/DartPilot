@@ -95,19 +95,29 @@ class _KeypadState extends State<Keypad> {
         );
         Widget modifier(Ring ring, String text) {
           final selected = _modifier == ring;
+          // Told apart by colour on screen, and by its selected state to a screen reader
           return cell(
-            FilledButton(
-              key: ValueKey('keypad-modifier-${ring.name}'),
-              onPressed: () => setState(() => _modifier = ring),
-              style: FilledButton.styleFrom(
-                shape: shape,
-                padding: EdgeInsets.zero,
-                splashFactory: InkRipple.splashFactory,
-                backgroundColor: selected ? scheme.primary : scheme.surfaceContainerHighest,
-                foregroundColor: selected ? scheme.onPrimary : scheme.onSurfaceVariant,
-                textStyle: theme.textTheme.labelLarge?.copyWith(fontSize: fontSize * 0.8, fontWeight: FontWeight.w600),
+            MergeSemantics(
+              child: Semantics(
+                selected: selected,
+                inMutuallyExclusiveGroup: true,
+                child: FilledButton(
+                  key: ValueKey('keypad-modifier-${ring.name}'),
+                  onPressed: () => setState(() => _modifier = ring),
+                  style: FilledButton.styleFrom(
+                    shape: shape,
+                    padding: EdgeInsets.zero,
+                    splashFactory: InkRipple.splashFactory,
+                    backgroundColor: selected ? scheme.primary : scheme.surfaceContainerHighest,
+                    foregroundColor: selected ? scheme.onPrimary : scheme.onSurfaceVariant,
+                    textStyle: theme.textTheme.labelLarge?.copyWith(
+                      fontSize: fontSize * 0.8,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  child: FittedBox(fit: BoxFit.scaleDown, child: Text(text, maxLines: 1)),
+                ),
               ),
-              child: FittedBox(fit: BoxFit.scaleDown, child: Text(text, maxLines: 1)),
             ),
           );
         }

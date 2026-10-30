@@ -137,17 +137,20 @@ class _GroupingScreenState extends State<GroupingScreen> with RecordsGame {
           detailsFromAfar: true,
           active: true,
         ),
-        const SizedBox(height: 12),
-        Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 260),
-            child: PrecisionPlot(
-              key: const ValueKey('grouping-plot'),
-              target: widget.target,
-              points: [for (final t in _game.measured) t.point],
+        // Darts from the keypad have no spot: without a measured dart the plot would be an empty grid.
+        if (_game.measured.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 260),
+              child: PrecisionPlot(
+                key: const ValueKey('grouping-plot'),
+                target: widget.target,
+                points: [for (final t in _game.measured) t.point],
+              ),
             ),
           ),
-        ),
+        ],
         const SizedBox(height: 12),
         _Figure(
           label: l10n.precisionSpread,
@@ -166,13 +169,7 @@ class _GroupingScreenState extends State<GroupingScreen> with RecordsGame {
         for (var i = throws.length - 1; i >= throws.length - listed; --i)
           MissTile(key: ValueKey('grouping-dart-$i'), number: i + 1, dart: throws[i], target: widget.target),
       ],
-      bottom: [
-        OutlinedButton.icon(
-          onPressed: throws.isEmpty || widget.watching ? null : () => setState(_game.undo),
-          icon: const Icon(Icons.undo),
-          label: Text(l10n.undo),
-        ),
-      ],
+      bottom: [GameUndoButton(onPressed: throws.isEmpty || widget.watching ? null : () => setState(_game.undo))],
     );
     return GameScaffold(
       title: '${l10n.modeGrouping} ${widget.target.label}',

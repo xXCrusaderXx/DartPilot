@@ -46,18 +46,12 @@ class _TrainingScreenState extends State<TrainingScreen> {
           detailsFromAfar: true,
           active: true,
         ),
-        VisitDarts([for (final t in visit) t.score.text(l10n)]),
+        VisitDarts([for (final t in visit) t.score.text(l10n)], darts: visit),
         const SizedBox(height: 12),
         if (_training.dartCount == 0) Text(l10n.noThrowsYet, style: theme.textTheme.bodyMedium),
         Text(l10n.trainingNotKept, key: const ValueKey('training-not-kept'), style: theme.textTheme.bodySmall),
       ],
-      bottom: [
-        OutlinedButton.icon(
-          onPressed: _training.dartCount == 0 ? null : () => setState(_training.undo),
-          icon: const Icon(Icons.undo),
-          label: Text(l10n.undo),
-        ),
-      ],
+      bottom: [GameUndoButton(onPressed: _training.dartCount == 0 ? null : () => setState(_training.undo))],
     );
     final input = GameInput(
       takeout: _takeout,

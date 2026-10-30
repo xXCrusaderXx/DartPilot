@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui' show AppExitResponse;
 
 import 'package:flutter/material.dart';
@@ -105,6 +106,10 @@ class _DartPilotAppState extends State<DartPilotApp> {
           moved.length > 1
               ? l10n.rigKnockedNotice
               : l10n.cameraMovedNotice(_cameraOrder.label(l10n, cameras, moved.first)),
+          // Often shown during a game, so read from the oche like the game's own notices
+          style: GameText.of(context).far
+              ? TextStyle(fontSize: Theme.of(context).textTheme.titleLarge?.fontSize)
+              : null,
         ),
         duration: const Duration(seconds: 8),
       ),
@@ -226,6 +231,8 @@ class _DartPilotAppState extends State<DartPilotApp> {
 class _TextSizeScope extends StatelessWidget {
   const _TextSizeScope({required this.factor, required this.child});
 
+  static const double maxScale = 2.0;
+
   final double factor;
   final Widget child;
 
@@ -233,8 +240,11 @@ class _TextSizeScope extends StatelessWidget {
   Widget build(BuildContext context) {
     if (factor == 1.0) return child;
     final media = MediaQuery.of(context);
+    // On top of the system's largest text the app's own factor stops at twice the size, where game screens still fit
+    final system = media.textScaler.scale(1.0);
+    final scale = factor < 1 ? system * factor : math.max(system, math.min(system * factor, maxScale));
     return MediaQuery(
-      data: media.copyWith(textScaler: TextScaler.linear(media.textScaler.scale(1.0) * factor)),
+      data: media.copyWith(textScaler: TextScaler.linear(scale)),
       child: child,
     );
   }
@@ -274,7 +284,7 @@ class _ReconnectBanner extends StatelessWidget {
                     child: Text(
                       long ? l10n.engineReconnectingLong : l10n.engineReconnecting,
                       key: const ValueKey('engine-reconnecting'),
-                      style: theme.textTheme.bodyMedium,
+                      style: GameText.of(context).far ? theme.textTheme.titleLarge : theme.textTheme.bodyMedium,
                     ),
                   ),
                   const SizedBox(width: 8),
