@@ -54,6 +54,27 @@ enum PanelDetail { visitDarts, checkout, average, dartsThrown }
 /// How strongly a 180 or a checkout is celebrated on the game screen
 enum Celebration { full, subtle, off }
 
+/// The colours the drawn board is painted in: the usual red and green, blue and orange that stay apart with red-green
+/// colour blindness, or black and white with yellow and blue for the most contrast. A photographed board keeps its own.
+enum BoardColours {
+  classic(Color(0xFF1B1B1B), Color(0xFFF1E9D2), Color(0xFFD03A2B), Color(0xFF1E8F4E)),
+  colourSafe(Color(0xFF1B1B1B), Color(0xFFF1E9D2), Color(0xFFE07B00), Color(0xFF1F5FBF)),
+  contrast(Color(0xFF000000), Color(0xFFFFFFFF), Color(0xFFFFD400), Color(0xFF0050D0));
+
+  const BoardColours(this.darkSingle, this.lightSingle, this.darkRing, this.lightRing);
+
+  /// The singles of the sectors that start at 20, and of the others
+  final Color darkSingle;
+  final Color lightSingle;
+
+  /// Double and triple of the dark sectors and the bull, and of the light sectors and the outer bull
+  final Color darkRing;
+  final Color lightRing;
+}
+
+/// The colours a dart can be marked in on the board, besides the accent; each stands out on every field's dark single
+const dartSwatches = [Color(0xFFFFFFFF), Color(0xFFFACC15), Color(0xFF22D3EE), Color(0xFFE879F9)];
+
 /// A starting point for the appearance; the player changes single values from there, and Reset returns to it.
 enum AppearancePreset {
   standard(AppBrightness.dark, TextSize.normal, false, DisplayStyle.auto),
@@ -90,6 +111,10 @@ class DisplaySettings extends ChangeNotifier {
   BoardSize boardSize = BoardSize.medium;
   Set<PanelDetail> panelDetails = defaultPanelDetails;
   Celebration celebration = Celebration.full;
+  BoardColours boardColours = BoardColours.classic;
+
+  /// The colour of the darts on the board, or the accent
+  Color? dartColour;
 
   static const defaultPanelDetails = {PanelDetail.visitDarts, PanelDetail.checkout, PanelDetail.average};
 
@@ -104,6 +129,8 @@ class DisplaySettings extends ChangeNotifier {
   static const _boardSizeKey = 'display.boardSize';
   static const _panelDetailsKey = 'display.panelDetails';
   static const _celebrationKey = 'display.celebration';
+  static const _boardColoursKey = 'display.boardColours';
+  static const _dartColourKey = 'display.dartColour';
 
   Future<void> load() async {
     if (!store) return;
@@ -123,6 +150,9 @@ class DisplaySettings extends ChangeNotifier {
         ? defaultPanelDetails
         : {for (final name in details) ?PanelDetail.values.asNameMap()[name]};
     celebration = Celebration.values.asNameMap()[prefs.getString(_celebrationKey)] ?? Celebration.full;
+    boardColours = BoardColours.values.asNameMap()[prefs.getString(_boardColoursKey)] ?? BoardColours.classic;
+    final dart = prefs.getInt(_dartColourKey);
+    dartColour = dart == null ? null : Color(dart);
     notifyListeners();
   }
 
@@ -135,6 +165,7 @@ class DisplaySettings extends ChangeNotifier {
     BoardSide? boardSide,
     BoardSize? boardSize,
     Celebration? celebration,
+    BoardColours? boardColours,
   }) async {
     this.style = style ?? this.style;
     this.distance = distance ?? this.distance;
@@ -144,6 +175,13 @@ class DisplaySettings extends ChangeNotifier {
     this.boardSide = boardSide ?? this.boardSide;
     this.boardSize = boardSize ?? this.boardSize;
     this.celebration = celebration ?? this.celebration;
+    this.boardColours = boardColours ?? this.boardColours;
+    await _changed();
+  }
+
+  /// Darts on the board in [colour], or in the accent when null
+  Future<void> setDartColour(Color? colour) async {
+    dartColour = colour;
     await _changed();
   }
 
@@ -162,7 +200,8 @@ class DisplaySettings extends ChangeNotifier {
   }
 
   /// Starts from [preset]: its brightness, text size, contrast and game display, with the default accent. The viewing
-  /// distance and the game screen's layout belong to where the device stands and are kept, as is the celebration.
+  /// distance and the game screen's layout belong to where the device stands and are kept, as are the celebration and
+  /// the board's colours.
   Future<void> applyPreset(AppearancePreset preset) async {
     this.preset = preset;
     brightness = preset.brightness;
@@ -196,6 +235,13 @@ class DisplaySettings extends ChangeNotifier {
     await prefs.setString(_boardSizeKey, boardSize.name);
     await prefs.setStringList(_panelDetailsKey, [for (final d in panelDetails) d.name]);
     await prefs.setString(_celebrationKey, celebration.name);
+    await prefs.setString(_boardColoursKey, boardColours.name);
+    final dart = dartColour;
+    if (dart == null) {
+      await prefs.remove(_dartColourKey);
+    } else {
+      await prefs.setInt(_dartColourKey, dart.toARGB32());
+    }
   }
 
   ThemeMode get themeMode => switch (brightness) {

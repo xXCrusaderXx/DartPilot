@@ -4177,6 +4177,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Checkout {points}'**
   String celebrateCheckout(int points);
+
+  /// No description provided for @boardColours.
+  ///
+  /// In en, this message translates to:
+  /// **'Board colours'**
+  String get boardColours;
+
+  /// No description provided for @boardColoursHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For the drawn board; a photographed board keeps its own'**
+  String get boardColoursHint;
+
+  /// No description provided for @boardClassic.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic'**
+  String get boardClassic;
+
+  /// No description provided for @boardColourSafe.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour-safe'**
+  String get boardColourSafe;
+
+  /// No description provided for @boardContrast.
+  ///
+  /// In en, this message translates to:
+  /// **'Contrast'**
+  String get boardContrast;
+
+  /// No description provided for @dartColour.
+  ///
+  /// In en, this message translates to:
+  /// **'Darts on the board'**
+  String get dartColour;
+
+  /// No description provided for @dartAccent.
+  ///
+  /// In en, this message translates to:
+  /// **'Accent'**
+  String get dartAccent;
+
+  /// No description provided for @dartWhite.
+  ///
+  /// In en, this message translates to:
+  /// **'White'**
+  String get dartWhite;
+
+  /// No description provided for @dartYellow.
+  ///
+  /// In en, this message translates to:
+  /// **'Yellow'**
+  String get dartYellow;
+
+  /// No description provided for @dartCyan.
+  ///
+  /// In en, this message translates to:
+  /// **'Cyan'**
+  String get dartCyan;
+
+  /// No description provided for @dartMagenta.
+  ///
+  /// In en, this message translates to:
+  /// **'Magenta'**
+  String get dartMagenta;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

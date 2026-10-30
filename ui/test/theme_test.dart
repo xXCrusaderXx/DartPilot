@@ -180,11 +180,13 @@ void main() {
     double scale() => MediaQuery.textScalerOf(tester.element(find.byKey(const ValueKey('brightness')))).scale(1);
 
     await tester.ensureVisible(find.byKey(const ValueKey('accent-1')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('accent-1')));
     await tester.pumpAndSettle();
     expect(palette(), AppPalette.dark.withAccent(accentSwatches[1]));
 
     await tester.ensureVisible(find.byKey(const ValueKey('accent-custom')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('accent-custom')));
     await tester.pumpAndSettle();
     await tester.drag(find.byKey(const ValueKey('accent-hue')), const Offset(-400, 0));
@@ -194,11 +196,13 @@ void main() {
     expect(_failing(palette()), isEmpty);
 
     await tester.ensureVisible(find.byKey(const ValueKey('text-size')));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Sehr groß'));
     await tester.pumpAndSettle();
     expect(scale(), closeTo(1.3, 0.001));
 
     await tester.ensureVisible(find.byKey(const ValueKey('high-contrast')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('high-contrast')));
     await tester.pumpAndSettle();
     expect(palette().background, AppPalette.highContrastDark.background);

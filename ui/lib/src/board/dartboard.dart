@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../engine/engine_events.dart';
 import 'dart_throw.dart';
 import 'scoring.dart';
+import '../display.dart';
 import '../widgets/live_jpeg.dart';
 import '../../l10n/app_localizations.dart';
 import 'score_text.dart';
@@ -52,6 +53,7 @@ class Dartboard extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final size = constraints.biggest;
+            final display = DisplayScope.of(context);
             return GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTapUp: onTap == null
@@ -68,6 +70,8 @@ class Dartboard extends StatelessWidget {
                     Theme.of(context).colorScheme,
                     image: image,
                     highlights: highlights,
+                    fields: display.boardColours,
+                    dartColour: display.dartColour,
                   ),
                 ),
               ),
@@ -121,7 +125,15 @@ class Dartboard extends StatelessWidget {
 }
 
 class _DartboardPainter extends CustomPainter {
-  _DartboardPainter(this.geometry, this.throws, this.colors, {this.image, this.highlights = const []});
+  _DartboardPainter(
+    this.geometry,
+    this.throws,
+    this.colors, {
+    this.image,
+    this.highlights = const [],
+    this.fields = BoardColours.classic,
+    this.dartColour,
+  });
 
   final BoardGeometry geometry;
   final List<DartThrow> throws;
@@ -131,12 +143,12 @@ class _DartboardPainter extends CustomPainter {
   /// The real board's image underneath; the painted board is left out then
   final BoardImage? image;
 
-  bool get drawBoard => image == null;
+  final BoardColours fields;
 
-  static const _black = Color(0xFF1B1B1B);
-  static const _white = Color(0xFFF1E9D2);
-  static const _red = Color(0xFFD03A2B);
-  static const _green = Color(0xFF1E8F4E);
+  /// The darts' colour, or the accent
+  final Color? dartColour;
+
+  bool get drawBoard => image == null;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -144,7 +156,11 @@ class _DartboardPainter extends CustomPainter {
     final centre = size.center(Offset.zero);
     if (drawBoard) {
       final g = geometry;
-      canvas.drawCircle(centre, (g.doubleOuterRadiusMm + Dartboard.numberRingMm) * scale, Paint()..color = _black);
+      canvas.drawCircle(
+        centre,
+        (g.doubleOuterRadiusMm + Dartboard.numberRingMm) * scale,
+        Paint()..color = fields.darkSingle,
+      );
 
       // Sectors from the outside in: double, outer single, triple, inner single
       final bands = [
@@ -160,7 +176,9 @@ class _DartboardPainter extends CustomPainter {
         final start = -(sectorMiddleDeg(sector, g) + 9.0) * math.pi / 180.0;
         const sweep = 18.0 * math.pi / 180.0;
         for (final (radius, scoringRing) in bands) {
-          final color = scoringRing ? (dark ? _red : _green) : (dark ? _black : _white);
+          final color = scoringRing
+              ? (dark ? fields.darkRing : fields.lightRing)
+              : (dark ? fields.darkSingle : fields.lightSingle);
           canvas.drawArc(
             Rect.fromCircle(center: centre, radius: radius * scale),
             start,
@@ -171,8 +189,8 @@ class _DartboardPainter extends CustomPainter {
         }
         _drawNumber(canvas, centre, scale, sector);
       }
-      canvas.drawCircle(centre, g.outerBullRadiusMm * scale, Paint()..color = _green);
-      canvas.drawCircle(centre, g.bullRadiusMm * scale, Paint()..color = _red);
+      canvas.drawCircle(centre, g.outerBullRadiusMm * scale, Paint()..color = fields.lightRing);
+      canvas.drawCircle(centre, g.bullRadiusMm * scale, Paint()..color = fields.darkRing);
 
       final wire = Paint()
         ..color = const Color(0xFFB0B0B0)
@@ -213,18 +231,28 @@ class _DartboardPainter extends CustomPainter {
       );
     }
 
+    final dart = dartColour;
+    // The earlier darts of the visit in a duller shade of the chosen colour
+    final latestColour = dart ?? colors.primary;
+    final earlierColour = dart == null ? colors.tertiary : Color.lerp(dart, const Color(0xFF808080), 0.45)!;
     for (var i = 0; i < throws.length; ++i) {
       final point = throws[i].point;
       final position = centre + Offset(point.xMm * scale, -point.yMm * scale);
       final latest = i == throws.length - 1;
+      final radius = math.max(4.0, 3.5 * scale);
+      // A light halo outside the dark outline keeps a dark dart colour visible on the board's dark fields.
       canvas.drawCircle(
         position,
-        math.max(4.0, 3.5 * scale),
-        Paint()..color = latest ? colors.primary : colors.tertiary,
+        radius + 1.5,
+        Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5,
       );
+      canvas.drawCircle(position, radius, Paint()..color = latest ? latestColour : earlierColour);
       canvas.drawCircle(
         position,
-        math.max(4.0, 3.5 * scale),
+        radius,
         Paint()
           ..color = Colors.black
           ..style = PaintingStyle.stroke
@@ -287,5 +315,7 @@ class _DartboardPainter extends CustomPainter {
       old.highlights != highlights ||
       old.geometry != geometry ||
       old.colors != colors ||
+      old.fields != fields ||
+      old.dartColour != dartColour ||
       old.image != image;
 }
