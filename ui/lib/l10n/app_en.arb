@@ -1933,5 +1933,20 @@
       }
     }
   },
-  "homeConnectedNotDetecting": "Camera detection connected – not detecting darts yet"
+  "homeConnectedNotDetecting": "Camera detection connected – not detecting darts yet",
+  "celebrateNineDarter": "Nine-darter!",
+  "legsFormat": "First to {first} · best of {bestOf}",
+  "@legsFormat": {
+    "placeholders": {
+      "first": {
+        "type": "int"
+      },
+      "bestOf": {
+        "type": "int"
+      }
+    }
+  },
+  "legsSingle": "A single leg decides",
+  "cutThroatLowestWins": "Fewest points win",
+  "modeCricketCutThroat": "Cricket · Cut-Throat"
 }

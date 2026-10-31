@@ -13,8 +13,13 @@ import '../sound/sfx.dart';
 import '../sound/game_calls.dart';
 import '../stats/game_record.dart';
 import '../stats/statistics.dart';
+import '../theme.dart';
+import '../widgets/board_check.dart';
+import '../widgets/precision_text.dart';
+import '../widgets/target_tile.dart';
 import '../widgets/winner_dialog.dart';
 import 'game_layout.dart';
+import 'game_flow.dart';
 import 'game_scaffold.dart';
 import 'my_darts_screen.dart';
 import 'players_setup_screen.dart';
@@ -52,10 +57,14 @@ class KillerScreen extends StatefulWidget {
   /// Only shows another app's game: no input, nothing kept or shared (#116)
   final bool watching;
 
+  /// The kept line-up of Killer games
+  static const lineUpKey = 'killer';
+
   static Widget setup(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return PlayersSetupScreen(
       title: l10n.modeKiller,
+      game: lineUpKey,
       rules: l10n.killerRules,
       minPlayers: 2,
       options: [(l10n.killerFiveLives, false)],
@@ -72,7 +81,7 @@ class KillerScreen extends StatefulWidget {
   State<KillerScreen> createState() => _KillerScreenState();
 }
 
-class _KillerScreenState extends State<KillerScreen> with RecordsGame, BotTurns {
+class _KillerScreenState extends State<KillerScreen> with RecordsGame, BotTurns, HoldsVisits {
   @override
   bool get watching => widget.watching;
 
@@ -87,7 +96,11 @@ class _KillerScreenState extends State<KillerScreen> with RecordsGame, BotTurns 
   }
 
   @override
-  bool get waitsForTakeout => _takeout.isClosed(_game);
+  DartGame get heldGame => _game;
+
+  // A bot waits until the players have seen the visit before it.
+  @override
+  bool get waitsForTakeout => _takeout.isClosed(_game) || holding;
 
   @override
   GameRecord buildRecord(String id, DateTime started, DateTime ended) => GameRecord(
@@ -114,7 +127,10 @@ class _KillerScreenState extends State<KillerScreen> with RecordsGame, BotTurns 
     final livesBefore = [for (final p in _game.players) p.lives];
     final killersBefore = [for (final p in _game.players) p.isKiller];
     final bot = isBotTurn;
-    setState(() => _game.add(dart));
+    setState(() {
+      _game.add(dart);
+      holdEndedVisit(bot: bot);
+    });
     if (!widget.watching) {
       final effect = gameEffect(dart, finished: _game.isFinished, visitEnded: _game.dartsInVisit == 0);
       final calls = killerCalls(_game, livesBefore: livesBefore, killersBefore: killersBefore);
@@ -123,24 +139,65 @@ class _KillerScreenState extends State<KillerScreen> with RecordsGame, BotTurns 
     final l10n = AppLocalizations.of(context);
     for (var i = 0; i < _game.players.length; ++i) {
       final p = _game.players[i];
+      // What a bot did is told in the small plate, clear of the row of the player who throws next.
       if (p.out && livesBefore[i] > 0 && !_game.isFinished) {
-        _celebrations.show(l10n.celebrateOut(p.name));
+        _celebrations.show(l10n.celebrateOut(p.name), big: !bot);
       } else if (p.isKiller && !killersBefore[i]) {
-        _celebrations.show(l10n.celebrateKiller(p.name));
+        _celebrations.show(l10n.celebrateKiller(p.name), big: !bot);
       }
     }
     if (_game.isFinished) _showEnd();
   }
 
+  /// The same game again with the next player first and new numbers
+  KillerScreen _rematch() {
+    final next = LineUp(widget.names, bots: widget.bots, options: [widget.lives == 5]).rematch(KillerScreen.lineUpKey);
+    return KillerScreen(
+      names: next.players,
+      numbers: killerNumbers(math.Random().nextInt(1 << 31), next.players.length),
+      lives: widget.lives,
+      bots: next.bots,
+    );
+  }
+
   /// The end of the game, after its last dart or a correction that ended it
   void _showEnd() {
+    final l10n = AppLocalizations.of(context);
+    final players = _game.players;
+    final winner = players[_game.winner!];
+    // The winner first, then the players in the reverse order they went out
+    int outAt(int i) => players[i].out ? _game.outOrder.indexOf(i) : players.length;
     showWinnerDialog(
       context,
-      winner: _game.players[_game.winner!].name,
+      winner: winner.name,
       record: currentRecord,
+      result: l10n.labelValue(l10n.statsLivesLeft, '${winner.lives}'),
+      lines: rankedLines([
+        for (var i = 0; i < players.length; ++i)
+          (
+            ResultLine(
+              players[i].name,
+              value: players[i].out ? null : '${players[i].lives}',
+              figures: players[i].out ? l10n.playerOut : l10n.killerLives(players[i].lives),
+            ),
+            [i == _game.winner ? 0 : 1, -players[i].lives, -outAt(i)],
+          ),
+      ]),
       onUndo: () => setState(_game.undo),
       newGame: KillerScreen.setup,
+      rematch: widget.watching ? null : (_) => _rematch(),
+      readyForRematch: () => confirmBoardEmpty(context),
     );
+  }
+
+  /// The doubles the player at [i] throws at now: their own until they are a killer, then those of everyone still in
+  String _targets(int i) {
+    final p = _game.players[i];
+    if (!p.isKiller) return 'D${p.number}';
+    return [
+      for (final o in _game.players)
+        if (!identical(o, p) && !o.out) 'D${o.number}',
+    ].join(' · ');
   }
 
   @override
@@ -155,36 +212,98 @@ class _KillerScreenState extends State<KillerScreen> with RecordsGame, BotTurns 
     final theme = Theme.of(context);
     // While its darts are in the board, the visit that ended stays on the scoreboard with its player; a new visit
     // starts with no darts.
-    final waiting = _takeout.isClosed(_game);
+    final waiting = _takeout.isClosed(_game) || holding;
     final atOche = _game.isFinished
         ? null
         : waiting
         ? _game.visitPlayer
         : _game.current;
     final visit = waiting || _game.isFinished || _game.dartsInVisit > 0 ? _game.currentVisit : const <DartThrow>[];
+    final far = readFromAfar(context);
+    final palette = AppPalette.of(context);
+    // From afar the double to throw at is the panel's headline. Nearer by, where every player's lives must stay in
+    // view to pick a victim, it is the value of the player at the oche instead.
+    final tile = atOche != null && far;
+    // A phone on its side has room for every row only at their least height.
+    final dense = !far && MediaQuery.sizeOf(context).height < 500;
     final panel = PlayersPanel(
+      header: [
+        if (tile) ...[
+          TargetTile(
+            key: const ValueKey('killer-target'),
+            label: _game.players[atOche].isKiller ? l10n.killerIsKiller : l10n.roundTarget,
+            target: _targets(atOche),
+            round: _game.players[atOche].isKiller
+                ? _game.players[atOche].name
+                : '${_game.players[atOche].name} · '
+                      '${l10n.countOf(_game.players[atOche].marks, KillerGame.marksToKill)}',
+          ),
+          const SizedBox(height: 12),
+        ],
+      ],
       active: atOche,
       players: [
         for (var i = 0; i < _game.players.length; ++i)
           Builder(
             builder: (context) {
               final p = _game.players[i];
+              final size = far ? 52.0 : (dense ? 32.0 : 40.0);
+              final aims = !tile && i == atOche;
+              final lives = KeyedSubtree(
+                key: ValueKey('lives-${p.name}'),
+                child: Lives(p.lives.clamp(0, _game.lives), of: _game.lives),
+              );
               return PlayerRow(
                 name: p.name,
                 active: i == atOche,
                 enabled: !p.out,
-                leading: CircleAvatar(child: Text('${p.number}')),
+                // The player's number as a badge, filled once they are a killer
+                leading: Container(
+                  key: ValueKey('killer-number-${p.name}'),
+                  width: size,
+                  height: size,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: p.isKiller ? theme.colorScheme.error : theme.colorScheme.surfaceContainerHighest,
+                    border: Border.all(color: p.isKiller ? theme.colorScheme.error : palette.highlight, width: 2),
+                  ),
+                  child: Text(
+                    '${p.number}',
+                    style:
+                        scoreStyle(
+                          far
+                              ? theme.textTheme.headlineMedium
+                              : (dense ? theme.textTheme.titleMedium : theme.textTheme.titleLarge),
+                        )?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: p.isKiller ? theme.colorScheme.onError : theme.colorScheme.onSurface,
+                        ),
+                  ),
+                ),
                 details: p.out
                     ? l10n.playerOut
                     : p.isKiller
                     ? l10n.killerIsKiller
+                    // Dense, the badge beside it already says which double
+                    : dense
+                    ? l10n.countOf(p.marks, KillerGame.marksToKill)
                     : l10n.killerMarks(p.marks, KillerGame.marksToKill, 'D${p.number}'),
                 detailsKey: ValueKey('killer-state-${p.name}'),
                 detailsFromAfar: true,
-                value: l10n.killerLives(p.lives),
-                valueKey: ValueKey('lives-${p.name}'),
-                valueColour: theme.colorScheme.error,
-                valueIcons: Lives(p.lives.clamp(0, _game.lives), of: _game.lives),
+                // Dense there is no room for both beside the name: the progress on the own double comes first
+                detailsIcons: aims && !dense
+                    ? Semantics(
+                        label: l10n.killerLives(p.lives),
+                        child: ExcludeSemantics(child: lives),
+                      )
+                    : null,
+                value: aims ? _targets(i) : l10n.killerLives(p.lives),
+                valueKey: aims ? ValueKey('killer-target-${p.name}') : ValueKey('lives-row-${p.name}'),
+                valueLabel: aims ? l10n.roundTarget : null,
+                valueIcons: aims ? null : lives,
+                heroValue: aims,
+                dense: dense,
               );
             },
           ),
@@ -215,7 +334,7 @@ class _KillerScreenState extends State<KillerScreen> with RecordsGame, BotTurns 
   }
 }
 
-/// A player's lives as hearts, the lost ones as outlines
+/// A player's lives as compact pips, the lost ones as rings
 class Lives extends StatelessWidget {
   const Lives(this.lives, {super.key, required this.of});
 
@@ -225,10 +344,12 @@ class Lives extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lost = IconTheme.of(context).color?.withValues(alpha: 0.35);
+    final size = (IconTheme.of(context).size ?? 24) * 0.75;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        for (var i = 0; i < of; ++i) i < lives ? const Icon(Icons.favorite) : Icon(Icons.favorite_border, color: lost),
+        for (var i = 0; i < of; ++i)
+          i < lives ? Icon(Icons.circle, size: size) : Icon(Icons.circle_outlined, color: lost, size: size),
       ],
     );
   }

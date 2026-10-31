@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
@@ -11,9 +13,12 @@ import '../sound/sfx.dart';
 import '../sound/game_calls.dart';
 import '../stats/game_record.dart';
 import '../stats/statistics.dart';
+import '../widgets/board_check.dart';
+import '../widgets/player_picker.dart';
 import '../widgets/winner_dialog.dart';
 import 'my_darts_screen.dart';
 import 'game_layout.dart';
+import 'game_flow.dart';
 import 'game_scaffold.dart';
 import 'players_setup_screen.dart';
 import '../board/score_text.dart';
@@ -49,10 +54,14 @@ class CricketScreen extends StatefulWidget {
   /// Only shows another app's game: no input, nothing kept or shared (#116)
   final bool watching;
 
+  /// The kept line-up of Cricket games
+  static const lineUpKey = 'cricket';
+
   static Widget setup(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return PlayersSetupScreen(
       title: l10n.cricketSetup,
+      game: lineUpKey,
       rules: l10n.cricketRules,
       options: [(l10n.cutThroat, false)],
       start: (names, bots, options) => CricketScreen(names: names, cutThroat: options.first, bots: bots),
@@ -63,7 +72,7 @@ class CricketScreen extends StatefulWidget {
   State<CricketScreen> createState() => _CricketScreenState();
 }
 
-class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurns {
+class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurns, HoldsVisits {
   @override
   bool get watching => widget.watching;
 
@@ -78,7 +87,11 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
   }
 
   @override
-  bool get waitsForTakeout => _takeout.isClosed(_game);
+  DartGame get heldGame => _game;
+
+  // A bot waits until the players have seen the visit before it.
+  @override
+  bool get waitsForTakeout => _takeout.isClosed(_game) || holding;
 
   @override
   GameRecord buildRecord(String id, DateTime started, DateTime ended) => GameRecord(
@@ -103,27 +116,58 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
 
   void _add(DartThrow dart) {
     final bot = isBotTurn;
-    setState(() => _game.add(dart));
+    setState(() {
+      _game.add(dart);
+      holdEndedVisit(bot: bot);
+    });
     if (!widget.watching) {
       final effect = gameEffect(dart, finished: _game.isFinished, visitEnded: _game.dartsInVisit == 0);
       dartFeedback(context, dart, effect: effect, calls: cricketCalls(_game), bot: bot);
     }
     final l10n = AppLocalizations.of(context);
     final marks = _game.currentVisit.fold(0, (sum, d) => sum + d.marks);
-    if (_game.currentVisit.length == 3 && marks >= 6) _celebrations.show(l10n.celebrateMarks(marks));
+    // A bot's strong visit is routine for it, and not worth covering the next player's column.
+    if (_game.currentVisit.length == 3 && marks >= 6 && !bot) _celebrations.show(l10n.celebrateMarks(marks));
     if (_game.isFinished) _showEnd();
+  }
+
+  /// The same game again with the next player first
+  CricketScreen _rematch() {
+    final next = LineUp(widget.names, bots: widget.bots, options: [widget.cutThroat]).rematch(CricketScreen.lineUpKey);
+    return CricketScreen(names: next.players, cutThroat: widget.cutThroat, bots: next.bots);
   }
 
   /// The end of the game, after its last dart or a correction that ended it
   void _showEnd() {
     final l10n = AppLocalizations.of(context);
     if (_game.players.length > 1) {
+      final players = _game.players;
+      // The winner first, then by points (fewest first in cut-throat) and by marks
+      final lines = rankedLines([
+        for (var i = 0; i < players.length; ++i)
+          (
+            ResultLine(
+              players[i].name,
+              value: '${players[i].points}',
+              figures: '${l10n.marksPerRoundShort} ${decimal(l10n, players[i].marksPerRound, digits: 2)}',
+            ),
+            [
+              i == _game.winner ? 0 : 1,
+              widget.cutThroat ? players[i].points : -players[i].points,
+              -players[i].totalMarks,
+            ],
+          ),
+      ]);
       showWinnerDialog(
         context,
-        winner: _game.players[_game.winner!].name,
+        winner: players[_game.winner!].name,
         record: currentRecord,
+        result: widget.cutThroat ? l10n.cutThroatLowestWins : l10n.resultPoints(players[_game.winner!].points),
+        lines: lines,
         onUndo: () => setState(_game.undo),
         newGame: CricketScreen.setup,
+        rematch: widget.watching ? null : (_) => _rematch(),
+        readyForRematch: () => confirmBoardEmpty(context),
       );
       return;
     }
@@ -144,6 +188,7 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
       ),
       onUndo: () => setState(_game.undo),
       newGame: CricketScreen.setup,
+      again: (_) => _rematch(),
     );
   }
 
@@ -159,7 +204,7 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
     final theme = Theme.of(context);
     // While its darts are in the board, the visit that ended stays on the scoreboard with its player; a new visit
     // starts with no darts.
-    final waiting = _takeout.isClosed(_game);
+    final waiting = _takeout.isClosed(_game) || holding;
     final atOche = _game.isFinished
         ? null
         : waiting
@@ -181,6 +226,10 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
         : theme.colorScheme.primary.withValues(alpha: 0.18);
     final labelWidth = far ? 96.0 : 60.0;
     final divider = BorderSide(color: theme.dividerColor);
+    // Who leads on points: the most, or in cut-throat the fewest; nobody while all are level
+    final points = [for (final p in players) p.points];
+    final bestPoints = widget.cutThroat ? points.reduce(math.min) : points.reduce(math.max);
+    final leads = [for (final p in points) players.length > 1 && points.toSet().length > 1 && p == bestPoints];
 
     Widget cell(int i, Widget child, {bool head = false}) => Expanded(
       child: Container(
@@ -195,6 +244,14 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
     Color? onCell(int i) => i == atOche && scoreboard ? palette.onHighlight : null;
 
     // In a tight panel, such as a phone on its side, the points sit beside the name, so the numbers keep their rows.
+    TextStyle? pointsStyle(bool short) => scoreStyle(
+      far
+          ? theme.textTheme.displayMedium
+          : short
+          ? theme.textTheme.titleLarge
+          : theme.textTheme.headlineMedium,
+    )?.copyWith(fontWeight: FontWeight.w800, height: 1.1);
+
     Widget header(bool short, bool tight, double width) => IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -211,8 +268,8 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // One line, cut short rather than broken inside a word; in a narrow column the player's colour
-                    // is a bar under the name, so the dot leaves the name its room.
+                    // One line, never broken inside a word; in a narrow column the player's colour is a bar under
+                    // the name, so the dot leaves the name its room.
                     Flexible(
                       fit: FlexFit.loose,
                       flex: tight ? 1 : 0,
@@ -220,20 +277,46 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
                         builder: (context) {
                           final colour = statistics?.colourOf(players[i].name);
                           final narrow = (width - labelWidth) / players.length < 88;
-                          final name = Text(
-                            players[i].name,
-                            maxLines: 1,
-                            softWrap: false,
-                            overflow: TextOverflow.ellipsis,
-                            style: (far ? theme.textTheme.headlineSmall : theme.textTheme.titleMedium)?.copyWith(
-                              fontWeight: i == atOche ? FontWeight.w800 : FontWeight.w600,
-                              color: onCell(i),
-                            ),
+                          // A bot goes by its level beside its icon: "Stark" for "Bot · Stark"
+                          final bot = widget.bots.containsKey(i);
+                          final label = bot ? botShortName(l10n, players[i].name) : players[i].name;
+                          final style = (far ? theme.textTheme.headlineSmall : theme.textTheme.titleMedium)?.copyWith(
+                            fontWeight: i == atOche ? FontWeight.w800 : FontWeight.w600,
+                            color: onCell(i),
                           );
+                          final iconSize = far ? 20.0 : 14.0;
+                          // The column less its padding, the icon or dot before the name and, in a low panel, the
+                          // points beside it
+                          final room =
+                              (width - labelWidth) / players.length -
+                              8 -
+                              (bot ? iconSize : (!narrow && colour != null ? 18 : 0)) -
+                              (tight ? 8 + _textWidth(context, '${players[i].points}', pointsStyle(short)) : 0);
+                          // Shrunk a little to the column before it is cut short, never to a size the oche cannot
+                          // read; a bot too long for that goes by its level number, which always fits.
+                          final Widget name = room >= _textWidth(context, label, style) * 0.85
+                              ? FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(label, maxLines: 1, softWrap: false, style: style),
+                                )
+                              : Text(
+                                  bot ? '${widget.bots[i]}' : label,
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: style,
+                                );
+                          final botIcon = Icon(Icons.smart_toy_outlined, size: iconSize, color: onCell(i));
                           if (narrow) {
                             return Column(
                               children: [
-                                name,
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    if (bot) botIcon,
+                                    Flexible(child: name),
+                                  ],
+                                ),
                                 if (colour != null)
                                   Container(
                                     height: 4,
@@ -246,7 +329,12 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
                           return Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              if (colour != null) ...[PlayerDot(colour, ring: onCell(i)), const SizedBox(width: 6)],
+                              if (bot)
+                                botIcon
+                              else if (colour != null) ...[
+                                PlayerDot(colour, ring: onCell(i)),
+                                const SizedBox(width: 6),
+                              ],
                               Flexible(child: name),
                             ],
                           );
@@ -254,19 +342,30 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
                       ),
                     ),
                     if (tight) const SizedBox(width: 8),
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        '${players[i].points}',
-                        key: ValueKey('points-${players[i].name}'),
-                        style: scoreStyle(
-                          far
-                              ? theme.textTheme.displayMedium
-                              : short
-                              ? theme.textTheme.titleLarge
-                              : theme.textTheme.headlineMedium,
-                        )?.copyWith(fontWeight: FontWeight.w800, color: onCell(i), height: 1.1),
-                      ),
+                    Builder(
+                      builder: (context) {
+                        // Beside the name in a low panel there is no room for the cup: the leader's points take
+                        // the highlight colour instead.
+                        final style = pointsStyle(short)
+                            ?.copyWith(color: onCell(i) ?? (tight && leads[i] ? palette.highlight : null));
+                        return FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // The leader on points, which in cut-throat is the lowest figure
+                              if (leads[i] && !tight)
+                                Icon(
+                                  Icons.emoji_events,
+                                  key: ValueKey('leader-${players[i].name}'),
+                                  size: (style?.fontSize ?? 24) * 0.6,
+                                  color: onCell(i) ?? palette.highlight,
+                                ),
+                              Text('${players[i].points}', key: ValueKey('points-${players[i].name}'), style: style),
+                            ],
+                          ),
+                        );
+                      },
                     ),
                     if (!short && !tight)
                       Text(
@@ -345,6 +444,20 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Cut-throat turns the meaning of the points round, which those who join later must see; where the panel
+            // is too low for the line, the title and the leader's cup say it.
+            if (widget.cutThroat && !tight)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  l10n.cutThroatLowestWins,
+                  key: const ValueKey('cut-throat-note'),
+                  textAlign: TextAlign.center,
+                  style: (far ? theme.textTheme.titleLarge : theme.textTheme.labelLarge)?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
             header(short, tight, constraints.maxWidth),
             Expanded(
               child: LayoutBuilder(
@@ -367,7 +480,7 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
       },
     );
     return GameScaffold(
-      title: l10n.modeCricket,
+      title: widget.cutThroat ? l10n.modeCricketCutThroat : l10n.modeCricket,
       game: _game,
       takeout: _takeout,
       shownThrows: [for (final d in shown) d.dart],
@@ -385,4 +498,17 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
       celebrations: _celebrations,
     );
   }
+}
+
+/// The width of [text] on one line in [style], as this screen's text scale draws it
+double _textWidth(BuildContext context, String text, TextStyle? style) {
+  final painter = TextPainter(
+    text: TextSpan(text: text, style: style),
+    textDirection: Directionality.of(context),
+    textScaler: MediaQuery.textScalerOf(context),
+    maxLines: 1,
+  )..layout();
+  final width = painter.width;
+  painter.dispose();
+  return width;
 }

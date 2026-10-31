@@ -1,4 +1,6 @@
 import '../board/dart_throw.dart';
+import '../games/checkout_trainer.dart';
+import '../games/doubles.dart';
 import '../games/x01.dart';
 
 /// The app's few sound effects (tools/dartpilot_tools/sounds.py makes them): one short sound per dart, a few for what
@@ -67,4 +69,25 @@ Effect x01Effect(X01Game game, DartThrow dart, {required int visitsBefore, requi
 Effect gameEffect(DartThrow dart, {required bool finished, bool visitEnded = false, bool training = false}) {
   if (finished) return training ? Effect.leg : Effect.match;
   return visitEnded ? Effect.visit : dartEffect(dart);
+}
+
+/// The sound after a dart of the checkout trainer or the 121 ladder: a checkout made sounds like a leg won and a bust
+/// like a bust, so the player at the board hears what the dart did. `attemptsBefore` and `bustsBefore` are the
+/// trainer's attempts and the bust visits of its current attempt before the dart.
+Effect checkoutTrainerEffect(
+  CheckoutTrainer game,
+  DartThrow dart, {
+  required int attemptsBefore,
+  required int bustsBefore,
+}) {
+  final attempt = game.attempts[attemptsBefore - 1];
+  if (attempt.checkedOut) return Effect.leg;
+  if (attempt.leg.visits.where((v) => v.isBust).length > bustsBefore) return Effect.bust;
+  return gameEffect(dart, finished: game.isFinished, training: true);
+}
+
+/// The sound after a dart of doubles practice: a double hit gets the short sound of a visit, a miss the dart's own
+Effect doublesEffect(DoublesGame game, DartThrow dart) {
+  if (game.isFinished) return Effect.leg;
+  return game.targetOf(game.throws.length - 1).isHit(dart.score) ? Effect.visit : dartEffect(dart);
 }

@@ -2881,4 +2881,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeConnectedNotDetecting => 'Camera detection connected – not detecting darts yet';
+
+  @override
+  String get celebrateNineDarter => 'Nine-darter!';
+
+  @override
+  String legsFormat(int first, int bestOf) {
+    return 'First to $first · best of $bestOf';
+  }
+
+  @override
+  String get legsSingle => 'A single leg decides';
+
+  @override
+  String get cutThroatLowestWins => 'Fewest points win';
+
+  @override
+  String get modeCricketCutThroat => 'Cricket · Cut-Throat';
 }

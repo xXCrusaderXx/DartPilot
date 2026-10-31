@@ -21,6 +21,7 @@ import 'game_layout.dart';
 import '../widgets/player_row.dart';
 import 'game_scaffold.dart';
 import 'my_darts_screen.dart';
+import '../widgets/game_result.dart';
 import '../widgets/winner_dialog.dart';
 
 /// Grouping training (#125): darts at one target, with the miss of every dart and the group's spread in mm.
@@ -86,20 +87,13 @@ class _GroupingScreenState extends State<GroupingScreen> with RecordsGame {
     final earlier = _earlier;
     return showRoundResult(
       context,
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            l10n.resultSpread(spread == null ? '–' : mmText(l10n, spread.spreadMm)),
-            key: const ValueKey('grouping-result-spread'),
-          ),
-          if (spread != null) Text(l10n.resultOffset(offsetText(l10n, spread.offsetXMm, spread.offsetYMm))),
-          if (spread != null && earlier != null) ...[
-            const SizedBox(height: 8),
-            PersonalBestLine(comparison: earlier, value: spread.spreadMm, format: (v) => mmText(l10n, v)),
-          ],
-        ],
+      content: SoloResult(
+        headline: l10n.resultSpread(spread == null ? '–' : mmText(l10n, spread.spreadMm)),
+        headlineKey: const ValueKey('grouping-result-spread'),
+        details: spread == null ? null : l10n.resultOffset(offsetText(l10n, spread.offsetXMm, spread.offsetYMm)),
+        comparison: spread == null || earlier == null
+            ? null
+            : PersonalBestLine(comparison: earlier, value: spread.spreadMm, format: (v) => mmText(l10n, v)),
       ),
       onUndo: () => setState(_game.undo),
       again: (_) => GroupingScreen(player: widget.player, target: widget.target, dartCount: widget.dartCount),

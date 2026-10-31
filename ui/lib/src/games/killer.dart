@@ -52,6 +52,9 @@ class KillerGame implements DartGame {
   late bool _visitOver;
   int? winner;
 
+  /// The players who went out, in the order they did, for the places at the end
+  late List<int> outOrder;
+
   @override
   bool get isFinished => winner != null;
   bool get canUndo => _throws.isNotEmpty;
@@ -89,6 +92,7 @@ class KillerGame implements DartGame {
     visitPlayer = 0;
     _visitOver = false;
     winner = null;
+    outOrder = [];
     for (final dart in _throws) {
       _apply(dart);
     }
@@ -108,8 +112,11 @@ class KillerGame implements DartGame {
       if (!player.isKiller) {
         if (score.sector == player.number) player.marks++;
       } else {
-        for (final p in players) {
-          if (p.number == score.sector && !p.out) p.lives--;
+        for (var i = 0; i < players.length; ++i) {
+          final p = players[i];
+          if (p.number != score.sector || p.out) continue;
+          p.lives--;
+          if (p.out) outOrder.add(i);
         }
       }
     }

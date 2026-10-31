@@ -9,7 +9,7 @@ import 'x01_calls.dart';
 List<String> cricketCalls(CricketGame game) {
   if (game.isFinished) {
     if (game.players.length == 1) return ['All closed in ${game.players.single.dartsThrown} darts'];
-    return ['${game.players[game.winner!].name} wins'];
+    return ['${spokenName(game.players[game.winner!].name)} wins'];
   }
   if (game.currentVisit.length < 3) return const [];
   final marks = game.currentVisit.fold(0, (sum, d) => sum + d.marks);
@@ -27,11 +27,11 @@ List<String> cricketCalls(CricketGame game) {
 List<String> aroundTheClockCalls(AroundTheClockGame game) {
   if (game.isFinished) {
     if (game.players.length == 1) return ['Round the clock in ${game.players.single.dartsThrown} darts'];
-    return ['${game.players[game.winner!].name} wins'];
+    return ['${spokenName(game.players[game.winner!].name)} wins'];
   }
   if (game.currentVisit.length < 3) return const [];
   final next = game.players[game.current];
-  return ['${next.name}, ${game.targetLabel(next.position.clamp(0, game.targetCount - 1))}'];
+  return ['${spokenName(next.name)}, ${game.targetLabel(next.position.clamp(0, game.targetCount - 1))}'];
 }
 
 /// What a caller says after a dart of Shanghai, Bob's 27 or Halve-It (#118, #132): what the visit did to the score of
@@ -41,7 +41,7 @@ List<String> roundCalls(RoundGame game, {required int player, required int score
   final state = game.players[player];
   final change = state.score - scoreBefore;
   if (game.isFinished && game.wonAtOnce) {
-    return ['Shanghai!', if (game.winner != null) '${game.players[game.winner!].name} wins'];
+    return ['Shanghai!', if (game.winner != null) '${spokenName(game.players[game.winner!].name)} wins'];
   }
   if (game.currentVisit.length < 3) return const [];
   return [
@@ -52,10 +52,10 @@ List<String> roundCalls(RoundGame game, {required int player, required int score
       _ when change == 0 => callNoScore,
       _ => '$change',
     },
-    if (state.out) '${state.name} is out',
+    if (state.out) '${spokenName(state.name)} is out',
     if (game.isFinished)
       if (game.winner != null)
-        '${game.players[game.winner!].name} wins'
+        '${spokenName(game.players[game.winner!].name)} wins'
       else if (game.isDraw)
         "It's a draw"
       else if (!state.out)
@@ -70,13 +70,17 @@ List<String> killerCalls(KillerGame game, {required List<int> livesBefore, requi
   for (var i = 0; i < game.players.length; ++i) {
     final p = game.players[i];
     if (p.isKiller && !killersBefore[i]) {
-      calls.add('${p.name} is a killer!');
+      calls.add('${spokenName(p.name)} is a killer!');
     }
     if (p.lives < livesBefore[i]) {
-      calls.add(p.out ? '${p.name} is out' : '${p.name}, ${p.lives} ${p.lives == 1 ? 'life' : 'lives'} left');
+      calls.add(
+        p.out
+            ? '${spokenName(p.name)} is out'
+            : '${spokenName(p.name)}, ${p.lives} ${p.lives == 1 ? 'life' : 'lives'} left',
+      );
     }
   }
-  if (game.isFinished) calls.add('${game.players[game.winner!].name} wins');
+  if (game.isFinished) calls.add('${spokenName(game.players[game.winner!].name)} wins');
   return calls;
 }
 

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../sound/effects.dart';
 import '../sound/sfx.dart';
+import '../sound/x01_calls.dart';
 import '../../l10n/app_localizations.dart';
 import '../board/dart_throw.dart';
 import '../games/checkout_trainer.dart';
@@ -22,6 +23,7 @@ import 'game_layout.dart';
 import '../widgets/player_row.dart';
 import 'game_scaffold.dart';
 import 'my_darts_screen.dart';
+import '../widgets/game_result.dart';
 import '../widgets/winner_dialog.dart';
 
 /// Checkout trainer (#125): random finishes, the field to aim at before every dart, and how far each dart missed it.
@@ -95,8 +97,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
   );
 
   void _add(DartThrow dart) {
+    final attemptsBefore = _game.attempts.length;
+    final bustsBefore = _game.current.leg.visits.where((v) => v.isBust).length;
     setState(() => _game.add(dart));
-    dartFeedback(context, dart, effect: gameEffect(dart, finished: _game.isFinished, training: true));
+    final effect = checkoutTrainerEffect(_game, dart, attemptsBefore: attemptsBefore, bustsBefore: bustsBefore);
+    dartFeedback(
+      context,
+      dart,
+      effect: effect,
+      calls: [if (effect == Effect.leg && !_game.isFinished) callCheckedOut, if (effect == Effect.bust) callBust],
+    );
     if (_game.isFinished) _showResult();
   }
 
@@ -104,28 +114,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
     final l10n = AppLocalizations.of(context);
     final earlier = _earlier(StatisticsScope.read(context)?.games ?? const []);
     final score = trainingScore(currentRecord);
+    final checkouts = l10n.resultCheckouts(_game.checkouts, _game.attemptsDone);
     return showRoundResult(
       context,
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            [
-              l10n.resultCheckouts(_game.checkouts, _game.attemptsDone),
-              if (widget.ladder) l10n.ladderBest(_game.bestCheckout?.toString() ?? '–'),
-            ].join('\n'),
-            key: const ValueKey('checkout-result'),
-          ),
-          if (earlier != null && score != null) ...[
-            const SizedBox(height: 8),
-            PersonalBestLine(
-              comparison: earlier,
-              value: score.value,
-              format: (v) => widget.ladder ? v.toStringAsFixed(0) : percentText(l10n, v),
-            ),
-          ],
-        ],
+      content: SoloResult(
+        headline: widget.ladder ? l10n.ladderBest(_game.bestCheckout?.toString() ?? '–') : checkouts,
+        headlineKey: const ValueKey('checkout-result'),
+        details: widget.ladder ? checkouts : null,
+        comparison: earlier == null || score == null
+            ? null
+            : PersonalBestLine(
+                comparison: earlier,
+                value: score.value,
+                format: (v) => widget.ladder ? v.toStringAsFixed(0) : percentText(l10n, v),
+              ),
       ),
       onUndo: () => setState(_game.undo),
       again: (_) => CheckoutScreen(
@@ -187,7 +189,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
       top: [
         PlayerRow(
           name: widget.player,
-          value: '${_game.isFinished ? 0 : attempt.remaining}',
+          // A finished round shows what it came to, not a remaining score that reads like a checkout
+          value: !_game.isFinished
+              ? '${attempt.remaining}'
+              : widget.ladder
+              ? '${_game.bestCheckout ?? '–'}'
+              : '${_game.checkouts}/${_game.attemptsDone}',
           valueKey: const ValueKey('checkout-remaining'),
           details: _progress(l10n),
           detailsKey: const ValueKey('checkout-progress'),

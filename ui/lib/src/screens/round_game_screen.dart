@@ -12,8 +12,10 @@ import '../sound/sfx.dart';
 import '../sound/game_calls.dart';
 import '../stats/game_record.dart';
 import '../stats/statistics.dart';
+import '../widgets/board_check.dart';
 import '../widgets/winner_dialog.dart';
 import 'game_layout.dart';
+import 'game_flow.dart';
 import 'game_scaffold.dart';
 import 'my_darts_screen.dart';
 import 'players_setup_screen.dart';
@@ -23,8 +25,7 @@ import '../widgets/celebration.dart';
 import '../widgets/game_result.dart';
 import '../widgets/players_panel.dart';
 import '../stats/personal_best.dart';
-import '../display.dart';
-import '../theme.dart';
+import '../widgets/target_tile.dart';
 
 /// Shanghai, Bob's 27 and Halve-It (#118): a round's target, every player's score, and the darts of the visit.
 class RoundGameScreen extends StatefulWidget {
@@ -70,6 +71,7 @@ class RoundGameScreen extends StatefulWidget {
     final l10n = AppLocalizations.of(context);
     return PlayersSetupScreen(
       title: title(l10n, mode),
+      game: mode.name,
       rules: rules(l10n, mode),
       options: [if (mode == GameMode.shanghai) (l10n.shanghaiAllNumbers, false)],
       start: (names, bots, options) => RoundGameScreen(
@@ -85,7 +87,7 @@ class RoundGameScreen extends StatefulWidget {
   State<RoundGameScreen> createState() => _RoundGameScreenState();
 }
 
-class _RoundGameScreenState extends State<RoundGameScreen> with RecordsGame, BotTurns {
+class _RoundGameScreenState extends State<RoundGameScreen> with RecordsGame, BotTurns, HoldsVisits {
   @override
   bool get watching => widget.watching;
 
@@ -111,7 +113,11 @@ class _RoundGameScreenState extends State<RoundGameScreen> with RecordsGame, Bot
   }
 
   @override
-  bool get waitsForTakeout => _takeout.isClosed(_game);
+  DartGame get heldGame => _game;
+
+  // A bot waits until the players have seen the visit before it.
+  @override
+  bool get waitsForTakeout => _takeout.isClosed(_game) || holding;
 
   @override
   GameRecord buildRecord(String id, DateTime started, DateTime ended) => GameRecord(
@@ -138,7 +144,10 @@ class _RoundGameScreenState extends State<RoundGameScreen> with RecordsGame, Bot
     final player = _game.current;
     final scoreBefore = _game.players[player].score;
     final bot = isBotTurn;
-    setState(() => _game.add(dart));
+    setState(() {
+      _game.add(dart);
+      holdEndedVisit(bot: bot);
+    });
     if (!widget.watching) {
       final effect = gameEffect(dart, finished: _game.isFinished, visitEnded: _game.dartsInVisit == 0);
       final calls = roundCalls(_game, player: player, scoreBefore: scoreBefore);
@@ -147,10 +156,21 @@ class _RoundGameScreenState extends State<RoundGameScreen> with RecordsGame, Bot
     final l10n = AppLocalizations.of(context);
     if (_game.wonAtOnce) {
       _celebrations.show(l10n.celebrateShanghai);
-    } else if (_game.currentVisit.length == 3 && _game.currentVisit.every((d) => d.$2)) {
+    } else if (_game.currentVisit.length == 3 && _game.currentVisit.every((d) => d.$2) && !bot) {
+      // Three of three is routine for a bot, and not worth covering the next player's row.
       _celebrations.show(l10n.celebrateThreeHits);
     }
     if (_game.isFinished) _showEnd();
+  }
+
+  /// The same game again with the next player first
+  RoundGameScreen _rematch() {
+    final next = LineUp(
+      widget.names,
+      bots: widget.bots,
+      options: [if (widget.mode == GameMode.shanghai) widget.settings['rounds'] == 20],
+    ).rematch(widget.mode.name);
+    return RoundGameScreen(mode: widget.mode, names: next.players, bots: next.bots, settings: widget.settings);
   }
 
   /// The end of the game, after its last dart or a correction that ended it
@@ -158,39 +178,39 @@ class _RoundGameScreenState extends State<RoundGameScreen> with RecordsGame, Bot
     final l10n = AppLocalizations.of(context);
     if (_game.players.length == 1) {
       _showSoloResult(l10n);
-    } else if (_game.winner == null) {
-      final leaders = _game.leaders;
-      showGameResult(
-        context,
-        title: l10n.gameDraw,
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              l10n.drawBetween(
-                [for (final i in leaders) _game.players[i].name].join(', '),
-                _game.players[leaders.first].score,
-              ),
-              key: const ValueKey('draw'),
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 16),
-            GameSummary(record: currentRecord),
-          ],
-        ),
-        onUndo: () => setState(_game.undo),
-        newGame: RoundGameScreen.setup(widget.mode),
-      );
-    } else {
-      showWinnerDialog(
-        context,
-        winner: _game.players[_game.winner!].name,
-        record: currentRecord,
-        onUndo: () => setState(_game.undo),
-        newGame: RoundGameScreen.setup(widget.mode),
-      );
+      return;
     }
+    final players = _game.players;
+    final leaders = _game.leaders;
+    final winner = _game.winner;
+    // A win at once first, then by points, those who went out after those who did not
+    final lines = rankedLines([
+      for (var i = 0; i < players.length; ++i)
+        (
+          ResultLine(
+            players[i].name,
+            value: '${players[i].score}',
+            figures: players[i].out ? l10n.playerOut : percentText(l10n, players[i].hitRate),
+          ),
+          [i == winner ? 0 : 1, players[i].out ? 1 : 0, -players[i].score],
+        ),
+    ]);
+    showWinnerDialog(
+      context,
+      winner: winner == null ? null : players[winner].name,
+      tied: winner == null ? [for (final i in leaders) players[i].name] : const [],
+      record: currentRecord,
+      result: winner == null
+          ? l10n.drawBetween([for (final i in leaders) players[i].name].join(', '), players[leaders.first].score)
+          : _game.wonAtOnce
+          ? l10n.celebrateShanghai
+          : l10n.resultPoints(players[winner].score),
+      lines: lines,
+      onUndo: () => setState(_game.undo),
+      newGame: RoundGameScreen.setup(widget.mode),
+      rematch: widget.watching ? null : (_) => _rematch(),
+      readyForRematch: () => confirmBoardEmpty(context),
+    );
   }
 
   /// A game played alone ends on its score and how that stands against the player's best, not on a win
@@ -216,6 +236,7 @@ class _RoundGameScreenState extends State<RoundGameScreen> with RecordsGame, Bot
       ),
       onUndo: () => setState(_game.undo),
       newGame: RoundGameScreen.setup(widget.mode),
+      again: (_) => _rematch(),
     );
   }
 
@@ -236,7 +257,7 @@ class _RoundGameScreenState extends State<RoundGameScreen> with RecordsGame, Bot
     final l10n = AppLocalizations.of(context);
     // While its darts are in the board, the visit that ended stays on the scoreboard with its player, round and target;
     // a new visit starts with no darts.
-    final waiting = _takeout.isClosed(_game);
+    final waiting = _takeout.isClosed(_game) || holding;
     final atOche = _game.isFinished
         ? null
         : waiting
@@ -249,7 +270,7 @@ class _RoundGameScreenState extends State<RoundGameScreen> with RecordsGame, Bot
     final visit = [for (final (dart, _) in shown) dart];
     final panel = PlayersPanel(
       header: [
-        RoundTargetTile(
+        TargetTile(
           target: _targetText(l10n, _game.targets[round.clamp(0, _game.targets.length - 1)]),
           round: l10n.roundOf((round + 1).clamp(1, _game.targets.length), _game.targets.length),
         ),
@@ -297,77 +318,6 @@ class _RoundGameScreenState extends State<RoundGameScreen> with RecordsGame, Bot
       },
       panel: panel,
       celebrations: _celebrations,
-    );
-  }
-}
-
-/// The round's target as the panel's headline, with the round below it: what every player in the round aims at
-class RoundTargetTile extends StatelessWidget {
-  const RoundTargetTile({super.key, required this.target, required this.round});
-
-  final String target;
-  final String round;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final display = DisplayScope.of(context);
-    final window = WindowClass.of(context);
-    final far = display.farFor(window);
-    // A phone on its side has no height to spare.
-    final short = MediaQuery.sizeOf(context).height < 500;
-    final targetStyle = scoreStyle(
-      far
-          ? theme.textTheme.displayLarge
-          : short
-          ? theme.textTheme.headlineMedium
-          : theme.textTheme.displayMedium,
-    )?.copyWith(fontWeight: FontWeight.w800, color: theme.colorScheme.primary, height: 1.0);
-    // From afar the target grows with the panel, as the score of the player at the oche does.
-    return LayoutBuilder(
-      builder: (context, constraints) => _tile(
-        context,
-        far ? targetStyle?.copyWith(fontSize: (constraints.maxWidth * 0.14).clamp(57, 120).toDouble()) : targetStyle,
-        far: far,
-        short: short,
-      ),
-    );
-  }
-
-  Widget _tile(BuildContext context, TextStyle? targetStyle, {required bool far, required bool short}) {
-    final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: short ? 8 : 12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.colorScheme.primary, width: 2),
-      ),
-      child: Row(
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(l10n.roundTarget.toUpperCase(), style: theme.textTheme.labelLarge?.copyWith(letterSpacing: 1.2)),
-              Text(
-                round,
-                key: const ValueKey('round'),
-                style: far ? theme.textTheme.titleLarge : theme.textTheme.titleSmall,
-              ),
-            ],
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(target, key: const ValueKey('round-target'), style: targetStyle),
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
