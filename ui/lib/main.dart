@@ -12,9 +12,11 @@ import 'src/sound/sfx.dart';
 import 'src/stats/dart_links.dart';
 import 'src/stats/prefs_game_store.dart';
 import 'src/stats/statistics.dart';
+import 'src/widgets/window_frame.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await WindowFrame.setUp();
   registerBundledLicenses();
   registerSoundLicenses();
   // Read before the first page, which depends on it: the choice of how darts are counted, or that choice itself.

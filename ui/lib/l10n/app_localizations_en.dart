@@ -2974,4 +2974,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backupInvalid => 'This file is not a DartPilot backup. Nothing was changed.';
+
+  @override
+  String get windowMinimize => 'Minimise';
+
+  @override
+  String get windowMaximize => 'Maximise';
+
+  @override
+  String get windowRestore => 'Restore';
+
+  @override
+  String get windowClose => 'Close';
 }

@@ -18,6 +18,7 @@ import 'sound/sfx.dart';
 import 'stats/dart_links.dart';
 import 'stats/statistics.dart';
 import 'theme.dart';
+import 'widgets/window_frame.dart';
 import 'screens/main_shell.dart';
 
 class DartPilotApp extends StatefulWidget {
@@ -194,7 +195,14 @@ class _DartPilotAppState extends State<DartPilotApp> {
         themeMode: _display.themeMode,
         builder: (context, child) => _TextSizeScope(
           factor: _display.textSize.factor,
-          child: _ReconnectBanner(child: child!),
+          child: WindowFrame.enabled
+              ? Column(
+                  children: [
+                    const TitleBar(),
+                    Expanded(child: _ReconnectBanner(child: child!)),
+                  ],
+                )
+              : _ReconnectBanner(child: child!),
         ),
         home: const RootScreen(),
       ),

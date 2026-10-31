@@ -2050,5 +2050,9 @@
       }
     }
   },
-  "backupInvalid": "This file is not a DartPilot backup. Nothing was changed."
+  "backupInvalid": "This file is not a DartPilot backup. Nothing was changed.",
+  "windowMinimize": "Minimise",
+  "windowMaximize": "Maximise",
+  "windowRestore": "Restore",
+  "windowClose": "Close"
 }

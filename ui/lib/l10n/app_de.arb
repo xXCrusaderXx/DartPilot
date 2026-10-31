@@ -844,5 +844,9 @@
   "backupAdd": "Hinzufügen",
   "backupNothingNew": "Alles aus dieser Sicherung ist schon da.",
   "backupImported": "Dazugekommen: {games} und {profiles}",
-  "backupInvalid": "Diese Datei ist keine DartPilot-Sicherung. Es wurde nichts geändert."
+  "backupInvalid": "Diese Datei ist keine DartPilot-Sicherung. Es wurde nichts geändert.",
+  "windowMinimize": "Minimieren",
+  "windowMaximize": "Maximieren",
+  "windowRestore": "Wiederherstellen",
+  "windowClose": "Schließen"
 }
