@@ -132,7 +132,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String x01LegOf(int number, int total) {
-    return 'Leg $number · $total zum Sieg';
+    return 'Leg $number · First to $total';
   }
 
   @override
@@ -2826,6 +2826,23 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get homeConnectedNotDetecting => 'Kamera-Erkennung verbunden – erkennt noch keine Darts';
+
+  @override
+  String get celebrateNineDarter => 'Neun-Darter!';
+
+  @override
+  String legsFormat(int first, int bestOf) {
+    return 'First to $first · Best of $bestOf';
+  }
+
+  @override
+  String get legsSingle => 'Ein Leg entscheidet';
+
+  @override
+  String get cutThroatLowestWins => 'Wenigste Punkte gewinnen';
+
+  @override
+  String get modeCricketCutThroat => 'Cricket · Cut-Throat';
 
   @override
   String hitFromCentre(String mm) {

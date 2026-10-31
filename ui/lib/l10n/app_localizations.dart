@@ -4958,6 +4958,36 @@ abstract class AppLocalizations {
   /// **'Camera detection connected – not detecting darts yet'**
   String get homeConnectedNotDetecting;
 
+  /// No description provided for @celebrateNineDarter.
+  ///
+  /// In en, this message translates to:
+  /// **'Nine-darter!'**
+  String get celebrateNineDarter;
+
+  /// No description provided for @legsFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'First to {first} · best of {bestOf}'**
+  String legsFormat(int first, int bestOf);
+
+  /// No description provided for @legsSingle.
+  ///
+  /// In en, this message translates to:
+  /// **'A single leg decides'**
+  String get legsSingle;
+
+  /// No description provided for @cutThroatLowestWins.
+  ///
+  /// In en, this message translates to:
+  /// **'Fewest points win'**
+  String get cutThroatLowestWins;
+
+  /// No description provided for @modeCricketCutThroat.
+  ///
+  /// In en, this message translates to:
+  /// **'Cricket · Cut-Throat'**
+  String get modeCricketCutThroat;
+
   /// No description provided for @hitFromCentre.
   ///
   /// In en, this message translates to:

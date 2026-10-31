@@ -8,6 +8,7 @@ import '../games/dart_game.dart';
 import '../games/doubles.dart';
 import '../input/takeout_gate.dart';
 import '../stats/game_record.dart';
+import '../stats/player_stats.dart';
 import '../stats/precision.dart';
 import '../stats/statistics.dart';
 import '../stats/training_best.dart';
