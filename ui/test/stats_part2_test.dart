@@ -12,15 +12,16 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'statistics_screen_test.dart' show at;
 
-GameRecord x01(DateTime ended, List<DartThrow> throws, {List<String> players = const ['Anna']}) => GameRecord(
-  id: 'g-${ended.millisecondsSinceEpoch}',
-  mode: GameMode.x01,
-  started: ended,
-  ended: ended,
-  players: players,
-  settings: {'start_score': 301, 'double_out': true},
-  throws: throws,
-);
+GameRecord x01(DateTime ended, List<DartThrow> throws, {List<String> players = const ['Anna'], int start = 301}) =>
+    GameRecord(
+      id: 'g-${ended.millisecondsSinceEpoch}',
+      mode: GameMode.x01,
+      started: ended,
+      ended: ended,
+      players: players,
+      settings: {'start_score': start, 'double_out': true},
+      throws: throws,
+    );
 
 void main() {
   final day = DateTime.utc(2026, 10, 20, 18);
@@ -69,8 +70,17 @@ void main() {
     final now = DateTime.now();
     final statistics = Statistics(
       MemoryGameStore([
-        x01(now.subtract(const Duration(days: 2)), [at(Ring.outerSingle), at(Ring.outerSingle), at(Ring.outerSingle)]),
-        x01(now.subtract(const Duration(days: 1)), [at(Ring.triple), at(Ring.triple), at(Ring.triple)]),
+        // Two finished 101 legs; only finished games make the trend.
+        x01(now.subtract(const Duration(days: 2)), [
+          at(Ring.triple),
+          at(Ring.outerSingle, 1),
+          at(Ring.double, 20),
+        ], start: 101),
+        x01(now.subtract(const Duration(days: 1)), [
+          at(Ring.triple),
+          at(Ring.triple, 7),
+          at(Ring.double, 10),
+        ], start: 101),
       ]),
       MemoryProfileStore(['Anna']),
     );

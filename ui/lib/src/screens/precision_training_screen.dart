@@ -30,7 +30,7 @@ class PrecisionTrainingScreen extends StatelessWidget {
                 Card(
                   child: ListTile(
                     key: ValueKey('mode-$title'),
-                    leading: Icon(icon, size: 32),
+                    leading: Icon(icon, size: 32, color: Theme.of(context).colorScheme.primary),
                     title: Text(title),
                     subtitle: Text(description),
                     trailing: const Icon(Icons.chevron_right),

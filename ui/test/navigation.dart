@@ -44,7 +44,7 @@ Future<void> pickPlayers(WidgetTester tester, List<String> names) async {
   }
 }
 
-/// A page of the settings: 'display', 'sound' or 'cameras'
+/// A page of the settings: 'display', 'game-screen', 'sound' or 'cameras'
 Future<void> openSettingsPage(WidgetTester tester, String page) async {
   await openSettings(tester);
   await tester.tap(find.byKey(ValueKey('settings-page-$page')));

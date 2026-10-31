@@ -16,6 +16,21 @@ void main() {
     expect(keys('en').difference(keys('de')), isEmpty, reason: 'only in English');
   });
 
+  test('every message is used somewhere in the app', () {
+    final code = [
+      for (final f in Directory('lib').listSync(recursive: true))
+        if (f is File &&
+            f.path.endsWith('.dart') &&
+            !f.path.contains('${Platform.pathSeparator}l10n${Platform.pathSeparator}'))
+          f.readAsStringSync(),
+    ].join('\n');
+    final unused = [
+      for (final key in _arb('en').keys)
+        if (!key.startsWith('@') && !RegExp('\\b$key\\b').hasMatch(code)) key,
+    ];
+    expect(unused, isEmpty, reason: 'messages no screen shows any more');
+  });
+
   test('English is the language for a system language the app does not have', () {
     expect(AppLocalizations.supportedLocales.first, const Locale('en'));
   });

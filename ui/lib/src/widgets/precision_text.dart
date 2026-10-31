@@ -55,7 +55,9 @@ class MissTile extends StatelessWidget {
     if (aim != null && hasMeasuredPoint(dart)) {
       final centre = aim.centre();
       final dx = dart.point.xMm - centre.xMm, dy = dart.point.yMm - centre.yMm;
-      miss = l10n.missFromTarget(mmNumber(l10n, math.sqrt(dx * dx + dy * dy)), offsetText(l10n, dx, dy));
+      final mm = mmNumber(l10n, math.sqrt(dx * dx + dy * dy));
+      // A dart in the field is a hit, however far from its middle; only a dart outside it missed.
+      miss = aim.isHit(dart.score) ? l10n.hitFromCentre(mm) : l10n.missFromTarget(mm, offsetText(l10n, dx, dy));
     }
     final far = readFromAfar(context);
     return ListTile(

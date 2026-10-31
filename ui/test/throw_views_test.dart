@@ -149,7 +149,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('game-dart-0')));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('throw-views-message')), findsOneWidget);
-    expect(find.textContaining('Verbinde dich mit der Engine'), findsOneWidget);
+    expect(find.textContaining('Verbinde dich mit der, die diesen Dart erkannt hat'), findsOneWidget);
   });
 
   testWidgets('in a game, a detected dart opens its views and can be corrected from there', (tester) async {

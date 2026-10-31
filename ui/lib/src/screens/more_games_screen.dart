@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../stats/game_record.dart';
+import '../theme.dart';
 import 'killer_screen.dart';
 import 'round_game_screen.dart';
 
@@ -12,11 +13,12 @@ class MoreGamesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    // Each game by what it is about: Shanghai's rounds, Bob's 27 start, the halving, Killer's target
     final games = [
-      (Icons.filter_7, GameMode.shanghai, l10n.modeShanghai, l10n.modeShanghaiDescription),
-      (Icons.exposure, GameMode.bobs27, l10n.modeBobs27, l10n.modeBobs27Description),
-      (Icons.call_split, GameMode.halveIt, l10n.modeHalveIt, l10n.modeHalveItDescription),
-      (Icons.gps_fixed, GameMode.killer, l10n.modeKiller, l10n.modeKillerDescription),
+      (const _Mark('1–7'), GameMode.shanghai, l10n.modeShanghai, l10n.modeShanghaiDescription),
+      (const _Mark('27'), GameMode.bobs27, l10n.modeBobs27, l10n.modeBobs27Description),
+      (const _Mark('½'), GameMode.halveIt, l10n.modeHalveIt, l10n.modeHalveItDescription),
+      (const _Mark(null), GameMode.killer, l10n.modeKiller, l10n.modeKillerDescription),
     ];
     return Scaffold(
       appBar: AppBar(title: Text(l10n.modeMoreGames)),
@@ -26,11 +28,11 @@ class MoreGamesScreen extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              for (final (icon, mode, title, description) in games)
+              for (final (mark, mode, title, description) in games)
                 Card(
                   child: ListTile(
                     key: ValueKey('mode-$title'),
-                    leading: Icon(icon, size: 32),
+                    leading: mark,
                     title: Text(title),
                     subtitle: Text(description),
                     trailing: const Icon(Icons.chevron_right),
@@ -44,6 +46,30 @@ class MoreGamesScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// A game's sign in the accent colour, as the home page shows its games: a figure in the score face, or Killer's target
+class _Mark extends StatelessWidget {
+  const _Mark(this.text);
+
+  final String? text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colour = theme.colorScheme.primary;
+    return SizedBox(
+      width: 40,
+      child: Center(
+        child: text == null
+            ? Icon(Icons.gps_fixed, size: 32, color: colour)
+            : Text(
+                text!,
+                style: scoreStyle(theme.textTheme.titleLarge)?.copyWith(color: colour, fontWeight: FontWeight.w700),
+              ),
       ),
     );
   }

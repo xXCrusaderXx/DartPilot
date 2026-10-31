@@ -153,6 +153,11 @@ class TargetPrecision {
   TargetPrecision(this.target);
 
   final PrecisionTarget target;
+
+  /// Every dart aimed at the target, from any input: what the hit rate counts
+  int darts = 0;
+
+  /// The measured board points among them: what the spread and the plot show
   final List<BoardPoint> points = [];
 
   /// Spread per week, oldest first, for the trend
@@ -163,7 +168,7 @@ class TargetPrecision {
 
   Spread? get spread => Spread.of(points, target.centre());
 
-  double get hitRate => points.isEmpty ? 0 : hits / points.length;
+  double get hitRate => darts == 0 ? 0 : hits / darts;
 }
 
 /// The Monday a date's week starts on
@@ -172,37 +177,39 @@ DateTime weekOf(DateTime date) => DateTime(date.year, date.month, date.day - (da
 /// A dart aimed at a target, with the time it was thrown, for the precision statistics
 typedef AimedDart = ({PrecisionTarget target, DartThrow dart, DateTime thrown});
 
-/// The precision per target from [darts], the most thrown at first; darts without a measured point are left out.
+/// The precision per target from [darts], the most thrown at first. Every dart counts for the hit rate; only darts
+/// with a measured point count for the spread.
 List<TargetPrecision> computePrecision(Iterable<AimedDart> darts) {
   final byTarget = <PrecisionTarget, TargetPrecision>{};
   final byWeek = <PrecisionTarget, Map<DateTime, List<BoardPoint>>>{};
   for (final (:target, :dart, :thrown) in darts) {
-    if (!hasMeasuredPoint(dart)) continue;
     final precision = byTarget.putIfAbsent(target, () => TargetPrecision(target));
-    precision.points.add(dart.point);
+    precision.darts++;
     if (target.isHit(dart.score)) precision.hits++;
+    if (!hasMeasuredPoint(dart)) continue;
+    precision.points.add(dart.point);
     byWeek.putIfAbsent(target, () => {}).putIfAbsent(weekOf(thrown), () => []).add(dart.point);
   }
   for (final precision in byTarget.values) {
-    final weeks = byWeek[precision.target]!.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
+    final weeks = (byWeek[precision.target] ?? const {}).entries.toList()..sort((a, b) => a.key.compareTo(b.key));
     for (final week in weeks) {
       final spread = Spread.of(week.value, precision.target.centre());
       if (spread != null) precision.weeks.add((week: week.key, spread: spread));
     }
   }
-  return byTarget.values.toList()..sort((a, b) => b.points.length.compareTo(a.points.length));
+  return byTarget.values.toList()..sort((a, b) => b.darts.compareTo(a.darts));
 }
 
 /// Darts at a target before its hit rate and spread say something about the player: a target with fewer is shown, but
 /// not ranked or given its own card.
 const int minRankedDarts = 6;
 
-/// The doubles and the bull with at least [minDarts] measured darts, best first: the highest hit rate, then the
+/// The doubles and the bull with at least [minDarts] darts, best first: the highest hit rate, then the
 /// smallest spread; targets without a spread last
 List<TargetPrecision> doublesRanking(List<TargetPrecision> precision, {int minDarts = 0}) {
   final doubles = [
     for (final p in precision)
-      if ((p.target.ring == Ring.double || p.target.ring == Ring.innerBull) && p.points.length >= minDarts) p,
+      if ((p.target.ring == Ring.double || p.target.ring == Ring.innerBull) && p.darts >= minDarts) p,
   ];
   return doubles..sort((a, b) {
     final byRate = b.hitRate.compareTo(a.hitRate);

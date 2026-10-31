@@ -89,13 +89,22 @@ void main() {
     expect(effects.effects.last, Effect.bust);
     expect(effects.felt.last, Haptic.medium);
     await tester.pump(callerDelay);
+    expect(voice.spoken.last, isNot('No score'));
+    await tester.pump(callerDelayAfter(Effect.bust) - callerDelay);
     expect(voice.spoken.last, 'No score');
+
+    // The game shot waits for most of the match chord, so the voice does not talk over it.
+    dartFeedback(context, at(Ring.double), effect: Effect.match, calls: const ['Game shot, and the match!']);
+    await tester.pump(const Duration(milliseconds: 900));
+    expect(voice.spoken.last, 'No score');
+    await tester.pump(callerDelayAfter(Effect.match) - const Duration(milliseconds: 900));
+    expect(voice.spoken.last, 'Game shot, and the match!');
 
     // With the caller off, the 180 is the effect's
     caller.enabled = false;
     dartFeedback(context, at(Ring.triple), effect: Effect.oneEighty, calls: const ['One hundred and eighty!']);
     expect(effects.effects.last, Effect.oneEighty);
-    expect(voice.spoken, hasLength(2));
+    expect(voice.spoken, hasLength(3));
   });
 
   testWidgets('a bot is heard quieter and not felt; engine darts are not felt; effects off speak at once', (

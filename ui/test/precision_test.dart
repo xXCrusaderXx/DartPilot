@@ -348,12 +348,16 @@ void main() {
     await tester.tap(find.text('3'));
     await tester.tap(find.byKey(const ValueKey('start-game')));
     await tester.pumpAndSettle();
+    // No rate before the first checkout is over
+    expect(tester.widget<Text>(find.byKey(const ValueKey('checkout-progress'))).data, isNot(contains('Quote')));
     // Always hitting the field shown checks every finish out.
     for (var i = 0; i < 15 && find.byKey(const ValueKey('checkout-result')).evaluate().isEmpty; ++i) {
       final label = tester.widget<Text>(find.byKey(const ValueKey('checkout-aim'))).data!.split(' ').last;
       await tapBoard(tester, PrecisionTarget.parse(label)!.centre());
     }
     expect(find.text('Checkout-Quote: 5 von 5'), findsOneWidget);
+    // The finished round shows what it came to, not a score of 0 left
+    expect(tester.widget<Text>(find.byKey(const ValueKey('checkout-remaining'))).data, '5/5');
     await tester.tap(find.text('Menü'));
     await tester.pumpAndSettle();
     final record = statistics.games.single;

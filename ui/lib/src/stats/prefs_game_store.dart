@@ -32,6 +32,24 @@ class PrefsGameStore implements GameStore {
   }
 
   @override
+  Future<void> replaceAll(List<GameRecord> records) async {
+    final prefs = await SharedPreferences.getInstance();
+    final unread = [
+      for (final entry in prefs.getStringList(_gamesKey) ?? const <String>[])
+        if (_unreadable(entry)) entry,
+    ];
+    await prefs.setStringList(_gamesKey, [...unread, for (final r in records) jsonEncode(r.toJson())]);
+  }
+
+  static bool _unreadable(String entry) {
+    try {
+      return GameRecord.tryParse(jsonDecode(entry)) == null;
+    } on FormatException {
+      return true;
+    }
+  }
+
+  @override
   Future<GameRecord?> loadRunning() async {
     final text = (await SharedPreferences.getInstance()).getString(_runningKey);
     if (text == null) return null;

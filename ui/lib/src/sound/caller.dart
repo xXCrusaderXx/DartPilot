@@ -113,11 +113,12 @@ class Caller extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> set({bool? enabled, double? volume}) async {
+  /// Changes the settings; [save] false only shows a value while a slider is dragged, and keeps it at its end.
+  Future<void> set({bool? enabled, double? volume, bool save = true}) async {
     this.enabled = enabled ?? this.enabled;
     this.volume = volume ?? this.volume;
     notifyListeners();
-    if (!store) return;
+    if (!store || !save) return;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_enabledKey, this.enabled);
     await prefs.setDouble(_volumeKey, this.volume);
@@ -129,10 +130,13 @@ class Caller extends ChangeNotifier {
     say(calls, language);
   }
 
-  /// Says `calls` at the caller's volume, also when the caller is off: for what a player asked for
+  /// Says `calls` at the caller's volume, also when the caller is off: for what a player asked for. A voice that
+  /// fails, e.g. one removed from the device, costs the call, not the game.
   void say(List<String> calls, String language) {
     if (calls.isEmpty) return;
-    voice.speak(calls.join('. '), language: language, volume: volume);
+    voice.speak(calls.join('. '), language: language, volume: volume).catchError((Object e) {
+      debugPrint('The caller cannot speak: $e');
+    });
   }
 }
 

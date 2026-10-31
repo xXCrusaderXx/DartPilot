@@ -197,7 +197,7 @@ void main() {
     final display = DisplaySettings(store: false);
     await tester.pumpWidget(DartPilotApp(locale: const Locale('de'), display: display));
     await playOffline(tester);
-    await openSettingsPage(tester, 'display');
+    await openSettingsPage(tester, 'game-screen');
 
     Future<void> tapIn(String key, String text) async {
       await showSettingsEntry(tester, key);
@@ -219,12 +219,13 @@ void main() {
     expect(display.shows(PanelDetail.dartsThrown), isTrue);
 
     // A preset leaves the layout alone.
-    await tester.scrollUntilVisible(
-      find.byKey(const ValueKey('preset-light')),
-      -200,
-      scrollable: find.byWidgetPredicate((w) => w is Scrollable && w.axisDirection == AxisDirection.down).last,
-    );
+    Navigator.of(tester.element(find.byKey(const ValueKey('board-side')))).pop();
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('settings-page-display')));
+    await tester.pumpAndSettle();
+    // The display page holds only how the app looks; the game screen has a page of its own.
+    expect(find.byKey(const ValueKey('board-side'), skipOffstage: false), findsNothing);
+    expect(find.byKey(const ValueKey('display-style'), skipOffstage: false), findsNothing);
     await tester.tap(find.byKey(const ValueKey('preset-light')));
     await tester.pumpAndSettle();
     expect(display.boardSide, BoardSide.right);

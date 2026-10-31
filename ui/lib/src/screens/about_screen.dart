@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../app_info.dart';
+import '../widgets/app_mark.dart';
 
 /// What this app is: name, version, licence, where the source and the guide are, and the licences of what it includes
 class AboutScreen extends StatelessWidget {
@@ -24,22 +25,31 @@ class AboutScreen extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Text(l10n.appTitle, style: theme.textTheme.headlineMedium),
-              const SizedBox(height: 4),
-              Text(versionText, key: const ValueKey('about-version'), style: theme.textTheme.titleMedium),
+              Row(
+                children: [
+                  const AppMark(key: ValueKey('about-mark'), size: 88),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(l10n.appTitle, style: theme.textTheme.headlineMedium),
+                        Text(
+                          versionText,
+                          key: const ValueKey('about-version'),
+                          style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 16),
               Text(l10n.aboutDescription),
               const SizedBox(height: 16),
               Card(
                 child: Column(
                   children: [
-                    _LinkTile(
-                      key: const ValueKey('about-licence'),
-                      icon: Icons.gavel,
-                      title: l10n.aboutLicence,
-                      subtitle: l10n.aboutLicenceText,
-                      url: licenceUrl,
-                    ),
                     _LinkTile(
                       key: const ValueKey('about-source'),
                       icon: Icons.code,
@@ -52,6 +62,13 @@ class AboutScreen extends StatelessWidget {
                       title: l10n.aboutGuide,
                       url: userGuideUrl(Localizations.localeOf(context).languageCode),
                     ),
+                    _LinkTile(
+                      key: const ValueKey('about-licence'),
+                      icon: Icons.gavel,
+                      title: l10n.aboutLicence,
+                      shown: 'GPL-3.0-or-later',
+                      url: licenceUrl,
+                    ),
                     ListTile(
                       key: const ValueKey('about-third-party'),
                       leading: const Icon(Icons.description_outlined),
@@ -62,6 +79,7 @@ class AboutScreen extends StatelessWidget {
                         context: context,
                         applicationName: l10n.appTitle,
                         applicationVersion: versionText,
+                        applicationIcon: const Padding(padding: EdgeInsets.all(8), child: AppMark(size: 64)),
                         applicationLegalese: l10n.aboutLegalese,
                       ),
                     ),
@@ -69,9 +87,13 @@ class AboutScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              Text(l10n.aboutCredits, style: theme.textTheme.titleMedium),
-              const SizedBox(height: 4),
               Text(l10n.aboutCreditsText, key: const ValueKey('about-credits')),
+              const SizedBox(height: 16),
+              Text(
+                l10n.aboutLicenceText,
+                key: const ValueKey('about-legal'),
+                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
             ],
           ),
         ),
@@ -80,34 +102,32 @@ class AboutScreen extends StatelessWidget {
   }
 }
 
-/// A link shown as text that can be copied; the app opens no browser itself
+/// A link as a row: tapping it copies the address, which is shown without its scheme; the app opens no browser itself.
 class _LinkTile extends StatelessWidget {
-  const _LinkTile({super.key, required this.icon, required this.title, this.subtitle, required this.url});
+  const _LinkTile({super.key, required this.icon, required this.title, required this.url, this.shown});
 
   final IconData icon;
   final String title;
-  final String? subtitle;
   final String url;
+
+  /// What the row shows in place of the address
+  final String? shown;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    Future<void> copy() async {
+      final messenger = ScaffoldMessenger.of(context);
+      await Clipboard.setData(ClipboardData(text: url));
+      messenger.showSnackBar(SnackBar(content: Text(l10n.aboutLinkCopied)));
+    }
+
     return ListTile(
       leading: Icon(icon),
       title: Text(title),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [if (subtitle != null) Text(subtitle!), SelectableText(url)],
-      ),
-      trailing: IconButton(
-        tooltip: l10n.aboutCopyLink,
-        icon: const Icon(Icons.copy),
-        onPressed: () async {
-          final messenger = ScaffoldMessenger.of(context);
-          await Clipboard.setData(ClipboardData(text: url));
-          messenger.showSnackBar(SnackBar(content: Text(l10n.aboutLinkCopied)));
-        },
-      ),
+      subtitle: Text(shown ?? url.replaceFirst('https://', ''), maxLines: 1, overflow: TextOverflow.ellipsis),
+      trailing: Icon(Icons.copy, semanticLabel: l10n.aboutCopyLink),
+      onTap: copy,
     );
   }
 }

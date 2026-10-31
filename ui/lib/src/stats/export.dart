@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
 
+import 'backup.dart';
 import 'game_record.dart';
 import 'player_stats.dart';
 
@@ -44,8 +45,9 @@ String dartsCsv(List<GameRecord> games) {
   return out.toString();
 }
 
-/// The games as the app stores them, and each player's figures over them, as JSON
-String gamesJson(List<GameRecord> games, List<String> players, {DateTime? now}) {
+/// The games as the app stores them, the profiles with their chosen colours (ARGB by the name in lower case), and
+/// each player's figures over the games, as JSON: also the backup that [Backup.parse] reads back
+String gamesJson(List<GameRecord> games, List<String> players, {Map<String, int> colours = const {}, DateTime? now}) {
   Map<String, Object?> figures(PlayerStats s) => {
     'games': s.games,
     'matches': s.matches,
@@ -70,7 +72,11 @@ String gamesJson(List<GameRecord> games, List<String> players, {DateTime? now}) 
     'fields': s.fields,
   };
   return const JsonEncoder.withIndent('  ').convert({
+    'format': 'dartpilot-backup',
+    'version': 1,
     'exported_utc': (now ?? DateTime.now()).toUtc().toIso8601String(),
+    'profiles': players,
+    'colours': colours,
     'players': {for (final p in players) p: figures(computePlayerStats(games, p))},
     'games': [for (final g in games) g.toJson()],
   });
