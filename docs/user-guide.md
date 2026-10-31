@@ -52,7 +52,7 @@ Unzip the folder onto any web server, or serve it on your own PC, for example wi
 The first screen asks how to play.
 
 - **Play without an engine (enter darts by hand):** no cameras needed. Every game and training works; you tap the board or the keypad for each dart.
-- **On this device** (Linux): the app starts the camera engine itself. Plug in the three cameras first. The first time, set them up under **Settings → Setup**: assign the cameras, calibrate from the board, and let the setup diagnosis check the result. [Hardware](hardware.md) describes the board, cameras and mounting; [calibration](calibration.md) explains what happens in the background.
+- **On this device** (Linux): the app starts the camera engine itself. Plug in the three cameras first. The first time, set them up under **Settings → Cameras & detection**: assign the cameras, calibrate from the board, and let the setup diagnosis check the result. [Setting up the cameras](setup-guide.md) walks you through mounting, focus, calibration and checking, step by step.
 - **In the network:** the engine runs on another PC. The app searches your home network for it; if it finds nothing, type the address shown on that PC, for example `ws://192.168.1.20:8484`. The first time, enter the PIN the engine's device shows.
 
 You can change this later under **Settings → Connection**.
@@ -142,7 +142,7 @@ The phone then shows the running game as it goes on. Darts are entered and corre
 | "The engine's port is in use" | Another engine is already running, for example from an earlier start. Close it or restart the PC. |
 | No engine found in the network | Both devices must be in the same home network, not a guest network. Type the address shown on the engine's PC. |
 | The browser version cannot connect | Load it over `http://`, not `https://`, and type the engine's address; browsers cannot search the network. |
-| Darts are detected in the wrong field | **Settings → Setup diagnosis** checks the setup step by step; [setup diagnosis](setup-diagnosis.md) explains each finding. Correct wrong darts in the game; it helps the measurements. |
+| Darts are detected in the wrong field | **Settings → Cameras & detection → Advanced → Setup diagnosis** checks the setup step by step; [setup diagnosis](setup-diagnosis.md) explains each finding. Correct wrong darts in the game; it helps the measurements. |
 | No voice | Install speech-dispatcher on Linux (see [Sound and score caller](#sound-and-score-caller)) and check the caller volume. |
 
 Still stuck? Open an [issue](https://github.com/xXCrusaderXx/DartPilot/issues) and give the version from **Settings → About DartPilot**, your device, and what you did.
