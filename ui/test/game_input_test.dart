@@ -99,7 +99,7 @@ void main() {
     expect(find.text('2 Darts fehlen'), findsOneWidget);
   });
 
-  testWidgets('three candidates fit beside the question on a medium window', (tester) async {
+  testWidgets('candidates fit beside the question on a medium window, two in the same field as one', (tester) async {
     tester.view.physicalSize = const Size(1000, 700);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -130,7 +130,10 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    expect(find.text('T1 (35\u00a0%)'), findsOneWidget);
+    // Two of the three are in T1: one choice with their probabilities added, now the most likely
+    expect(find.text('T1 oder T20?'), findsOneWidget);
+    expect(find.text('T1 (55\u00a0%)'), findsOneWidget);
+    expect(find.byKey(const ValueKey('candidate-2')), findsNothing);
   });
 
   testWidgets('a notice shows in the score panel and the board keeps its size', (tester) async {

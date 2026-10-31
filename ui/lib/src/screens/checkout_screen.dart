@@ -223,13 +223,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with RecordsGame {
           Text(l10n.precisionNeedsPoints, style: theme.textTheme.bodySmall),
         ],
       ],
-      bottom: [
-        OutlinedButton.icon(
-          onPressed: _game.throws.isEmpty || widget.watching ? null : () => setState(_game.undo),
-          icon: const Icon(Icons.undo),
-          label: Text(l10n.undo),
-        ),
-      ],
+      bottom: [GameUndoButton(onPressed: _game.throws.isEmpty || widget.watching ? null : () => setState(_game.undo))],
     );
     return GameScaffold(
       title: widget.ladder ? l10n.modeLadder : l10n.modeCheckout,

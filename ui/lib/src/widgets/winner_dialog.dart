@@ -81,7 +81,12 @@ Future<void> showWinnerDialog(
               children: [
                 undo,
                 newGameButton,
-                FilledButton(key: const ValueKey('result-menu'), onPressed: menu, child: Text(l10n.backToMenu)),
+                FilledButton(
+                  key: const ValueKey('result-menu'),
+                  autofocus: true,
+                  onPressed: menu,
+                  child: Text(l10n.backToMenu),
+                ),
               ],
             )
           : Column(
@@ -99,6 +104,8 @@ Future<void> showWinnerDialog(
                 const SizedBox(height: 8),
                 FilledButton.icon(
                   key: const ValueKey('result-rematch'),
+                  // Enter on a keyboard or remote plays the rematch
+                  autofocus: true,
                   style: FilledButton.styleFrom(
                     minimumSize: Size.fromHeight(far ? 72 : 52),
                     textStyle: far ? theme.textTheme.headlineSmall : theme.textTheme.titleMedium,
@@ -116,52 +123,62 @@ Future<void> showWinnerDialog(
           insetPadding: EdgeInsets.all(far ? 48 : 24),
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: far ? 880 : 560),
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(far ? 32 : 24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    l10n.matchWonBy(winner),
-                    key: const ValueKey('winner-title'),
-                    style: scoreStyle(far ? theme.textTheme.displayMedium : theme.textTheme.headlineLarge)?.copyWith(
-                      color: statistics?.colourOf(winner) ?? theme.colorScheme.primary,
-                      fontWeight: FontWeight.w800,
+            // The ways on stay at the foot, the result above them scrolls where the window is short, as a phone on
+            // its side
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(far ? 32 : 24, far ? 32 : 24, far ? 32 : 24, 0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          l10n.matchWonBy(winner),
+                          key: const ValueKey('winner-title'),
+                          style: scoreStyle(far ? theme.textTheme.displayMedium : theme.textTheme.headlineLarge)
+                              ?.copyWith(
+                                color: statistics?.colourOf(winner) ?? theme.colorScheme.primary,
+                                fontWeight: FontWeight.w800,
+                              ),
+                        ),
+                        if (result != null && result.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            result,
+                            key: const ValueKey('match-result'),
+                            style: (far ? theme.textTheme.headlineMedium : theme.textTheme.titleLarge)?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+                        if (lines.isEmpty)
+                          summary
+                        else ...[
+                          for (final line in lines) _ResultRow(line: line, winner: line.name == winner, big: far),
+                          Theme(
+                            // A plain fold, without the lines an expansion tile draws around itself
+                            data: theme.copyWith(dividerColor: Colors.transparent),
+                            child: ExpansionTile(
+                              key: const ValueKey('result-details'),
+                              tilePadding: EdgeInsets.zero,
+                              childrenPadding: const EdgeInsets.only(bottom: 8),
+                              title: Text(l10n.resultDetails),
+                              children: [summary],
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
-                  if (result != null && result.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      result,
-                      key: const ValueKey('match-result'),
-                      style: (far ? theme.textTheme.headlineMedium : theme.textTheme.titleLarge)?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                  if (lines.isEmpty)
-                    summary
-                  else ...[
-                    for (final line in lines) _ResultRow(line: line, winner: line.name == winner, big: far),
-                    Theme(
-                      // A plain fold, without the lines an expansion tile draws around itself
-                      data: theme.copyWith(dividerColor: Colors.transparent),
-                      child: ExpansionTile(
-                        key: const ValueKey('result-details'),
-                        tilePadding: EdgeInsets.zero,
-                        childrenPadding: const EdgeInsets.only(bottom: 8),
-                        title: Text(l10n.resultDetails),
-                        children: [summary],
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                  buttons,
-                ],
-              ),
+                ),
+                Padding(padding: EdgeInsets.fromLTRB(far ? 32 : 24, 16, far ? 32 : 24, far ? 32 : 24), child: buttons),
+              ],
             ),
           ),
         ),

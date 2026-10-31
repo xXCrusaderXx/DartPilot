@@ -232,9 +232,14 @@ class _StatusCard extends StatelessWidget {
     final change = TextButton(key: const ValueKey('home-change'), onPressed: onConnect, child: Text(l10n.homeChange));
     // Connected, by hand, on the way to the engine, by hand for now, or the engine chosen but out of reach
     final (Widget icon, String text, List<Widget> actions) = connected
+        // Connected but not detecting, as before calibration: a warning, not the green all-clear
         ? (
-            Icon(Icons.link, color: colours.good),
-            engine.hello?.mode == 'simulate' ? l10n.homeConnectedSimulated : l10n.homeConnected,
+            Icon(Icons.link, color: engine.detection == 'running' ? colours.good : colours.warning),
+            engine.detection != 'running'
+                ? l10n.homeConnectedNotDetecting
+                : engine.hello?.mode == 'simulate'
+                ? l10n.homeConnectedSimulated
+                : l10n.homeConnected,
             const <Widget>[],
           )
         : trying

@@ -93,7 +93,22 @@ class _CelebrationOverlayState extends State<CelebrationOverlay> with SingleTick
     return Stack(
       fit: StackFit.expand,
       children: [
-        widget.child,
+        // Under the large plate the score fades, so the plate is never read together with the figures below it
+        AnimatedBuilder(
+          animation: _controller,
+          child: widget.child,
+          builder: (context, child) {
+            final plate =
+                widget.celebrations.text != null &&
+                _controller.isAnimating &&
+                display.celebration == Celebration.full &&
+                widget.celebrations.big;
+            if (!plate) return child!;
+            final still = MediaQuery.disableAnimationsOf(context);
+            final shown = still ? 1.0 : _opacity(_controller.value, fadeIn: 0.1, fadeOut: 0.25);
+            return Opacity(opacity: 1 - 0.85 * shown, child: child);
+          },
+        ),
         Positioned.fill(
           child: IgnorePointer(
             child: AnimatedBuilder(

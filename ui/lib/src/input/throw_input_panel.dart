@@ -7,17 +7,21 @@ import '../board/dartboard.dart';
 import '../board/scoring.dart';
 import 'keypad.dart';
 
-/// Manual input until the engine is connected: the dartboard or the keypad, switchable.
-class ThrowInputPanel extends StatefulWidget {
+/// Manual input until the engine is connected: the dartboard or the keypad, switchable; the caller keeps which.
+class ThrowInputPanel extends StatelessWidget {
   const ThrowInputPanel({
     super.key,
     required this.onThrow,
+    required this.keypad,
+    required this.onKeypadChanged,
     this.shownThrows = const [],
     this.highlights = const [],
     this.geometry = const BoardGeometry(),
   });
 
   final ValueChanged<DartThrow> onThrow;
+  final bool keypad;
+  final ValueChanged<bool> onKeypadChanged;
 
   /// Throws to mark on the board, e.g. the current visit
   final List<DartThrow> shownThrows;
@@ -27,48 +31,49 @@ class ThrowInputPanel extends StatefulWidget {
   final BoardGeometry geometry;
 
   @override
-  State<ThrowInputPanel> createState() => _ThrowInputPanelState();
-}
-
-class _ThrowInputPanelState extends State<ThrowInputPanel> {
-  bool _keypad = false;
-
-  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Column(
       children: [
-        SegmentedButton<bool>(
-          segments: [
-            ButtonSegment(value: false, icon: const Icon(Icons.adjust), label: Text(l10n.inputBoard)),
-            ButtonSegment(value: true, icon: const Icon(Icons.dialpad), label: Text(l10n.inputKeypad)),
-          ],
-          selected: {_keypad},
-          onSelectionChanged: (selection) => setState(() => _keypad = selection.first),
+        // Two words that must not break inside: with the largest text they stay at a size that fits
+        MediaQuery.withClampedTextScaling(
+          maxScaleFactor: 1.5,
+          child: SegmentedButton<bool>(
+            segments: [
+              ButtonSegment(
+                value: false,
+                icon: const Icon(Icons.adjust),
+                label: Text(l10n.inputBoard, softWrap: false),
+              ),
+              ButtonSegment(
+                value: true,
+                icon: const Icon(Icons.dialpad),
+                label: Text(l10n.inputKeypad, softWrap: false),
+              ),
+            ],
+            selected: {keypad},
+            onSelectionChanged: (selection) => onKeypadChanged(selection.first),
+          ),
         ),
         const SizedBox(height: 12),
         Expanded(
           child: Center(
-            child: _keypad
+            child: keypad
                 ? LayoutBuilder(
                     // Fits the space it has; scrolls only where its keys would get too small to hit
                     builder: (context, constraints) => SingleChildScrollView(
-                      child: Keypad(
-                        onThrow: widget.onThrow,
-                        geometry: widget.geometry,
-                        maxHeight: constraints.maxHeight,
-                      ),
+                      child: Keypad(onThrow: onThrow, geometry: geometry, maxHeight: constraints.maxHeight),
                     ),
                   )
                 : EngineSelect(
                     select: (engine) => engine.boardImage,
                     builder: (context, image) => Dartboard(
                       key: const ValueKey('dartboard'),
-                      geometry: widget.geometry,
-                      throws: widget.shownThrows,
-                      highlights: widget.highlights,
+                      geometry: geometry,
+                      throws: shownThrows,
+                      highlights: highlights,
                       image: image,
-                      onTap: (point) => widget.onThrow(DartThrow(point, ThrowInput.board, geometry: widget.geometry)),
+                      onTap: (point) => onThrow(DartThrow(point, ThrowInput.board, geometry: geometry)),
                     ),
                   ),
           ),

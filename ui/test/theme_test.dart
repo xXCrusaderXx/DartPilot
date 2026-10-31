@@ -142,6 +142,14 @@ void main() {
     expect(scoreStyle(system.textTheme.headlineSmall)?.fontFamily, scoreFontFamily);
   });
 
+  test("titles keep the text face's own figures, so hyphens and digits in words are not spread", () {
+    final text = dartPilotTheme().textTheme;
+    for (final style in [text.titleLarge, text.titleMedium, text.headlineSmall, text.headlineMedium]) {
+      expect(style?.fontFeatures ?? const [], isNot(contains(const FontFeature.tabularFigures())));
+    }
+    expect(dartPilotTheme().snackBarTheme.contentTextStyle?.fontFamily, textFontFamily);
+  });
+
   test('the font is kept for this device and survives a preset', () async {
     SharedPreferences.setMockInitialValues({});
     final display = DisplaySettings();

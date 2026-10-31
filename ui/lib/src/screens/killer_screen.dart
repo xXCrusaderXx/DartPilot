@@ -190,13 +190,9 @@ class _KillerScreenState extends State<KillerScreen> with RecordsGame, BotTurns 
           ),
       ],
       footer: [
-        VisitDarts([for (final dart in visit) dart.score.text(l10n)]),
+        VisitDarts([for (final dart in visit) dart.score.text(l10n)], darts: visit),
         const SizedBox(height: 8),
-        OutlinedButton.icon(
-          onPressed: _game.canUndo && !widget.watching ? () => setState(_game.undo) : null,
-          icon: const Icon(Icons.undo),
-          label: Text(l10n.undo),
-        ),
+        GameUndoButton(onPressed: _game.canUndo && !widget.watching ? () => setState(_game.undo) : null),
       ],
     );
     return GameScaffold(

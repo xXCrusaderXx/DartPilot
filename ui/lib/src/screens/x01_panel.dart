@@ -4,15 +4,21 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../display.dart';
+import '../board/dart_throw.dart';
 import '../games/x01.dart';
+import '../input/game_input.dart';
 import '../stats/statistics.dart';
 import '../theme.dart';
 import '../widgets/precision_text.dart';
+import 'game_layout.dart';
 
 /// The X01 score panel in the player's display style: clear (the remaining score large in the app's colours) or a
 /// scoreboard (the player at the oche as a bright block, darts and checkout in a strip). From afar it shows only what
 /// is read from the oche; where the window is short, as a phone on its side, it packs tighter so the other players
 /// stay in view.
+///
+/// Its height is budgeted: every row has a fixed place, the checkout's row too while there is no route, and the
+/// remaining score takes the room that is left, down to a least size. Placed as a [ScrollingPanel.fill].
 class X01Panel extends StatelessWidget {
   const X01Panel({
     super.key,
@@ -23,6 +29,7 @@ class X01Panel extends StatelessWidget {
     required this.onCallCheckout,
     required this.style,
     required this.far,
+    required this.width,
     this.details = DisplaySettings.defaultPanelDetails,
     this.legWon,
     this.height,
@@ -38,17 +45,17 @@ class X01Panel extends StatelessWidget {
   final DisplayStyle style;
   final bool far;
 
+  /// The panel's width, which the remaining score grows with
+  final double width;
+
   /// What the panel shows besides the score
   final Set<PanelDetail> details;
 
-  /// Who won the leg just ended, shown until the next leg's first dart
+  /// Who won the leg just ended, shown in place of the leg line until the next leg's first dart
   final String? legWon;
 
-  /// The height the panel has, when known: the score then shrinks so the other players and Undo stay in view
+  /// The height the panel has, when known: a short one packs its rows tighter
   final double? height;
-
-  /// The remaining score on show: none left after a visit that won the leg, even when the next leg has begun
-  int get _shownRemaining => visit.isCheckout ? 0 : game.players[visit.player].remaining;
 
   /// The big score rolls only within one player's leg; a new player or leg shows at once.
   Key get _rollKey => ValueKey('roll-${visit.player}-${visit.leg}');
@@ -61,26 +68,47 @@ class X01Panel extends StatelessWidget {
   Widget build(BuildContext context) {
     final height = MediaQuery.sizeOf(context).height;
     final short = height < shortBelow || (this.height ?? double.infinity) < shortPanelBelow;
-    return LayoutBuilder(
-      builder: (context, constraints) => style == DisplayStyle.scoreboard
-          ? _scoreboard(context, constraints.maxWidth, height, short: short)
-          : _clear(context, constraints.maxWidth, height, short: short),
+    return style == DisplayStyle.scoreboard
+        ? _scoreboard(context, width, height, short: short)
+        : _clear(context, width, height, short: short);
+  }
+
+  /// The largest the active player's remaining score gets: by the panel's width, within bounds for near and far; from
+  /// afar on a tall screen such as a TV it also grows with the height. The room left in the panel may make it smaller.
+  double _bigSize(double width, double height, {required bool short, bool scoreboard = false}) {
+    if (short) return (width * 0.24).clamp(48, 80).toDouble();
+    return (width * 0.34).clamp(56.0, far ? math.max(220.0, height * 0.26) : 120.0) * (scoreboard ? 1.15 : 1);
+  }
+
+  /// The remaining score in the room the panel leaves it, at least [least] high
+  Widget _score(BuildContext context, double size, {required bool short, Color? color}) {
+    final l10n = AppLocalizations.of(context);
+    final active = game.players[visit.player];
+    return Flexible(
+      child: LeastHeight(
+        height: short ? 44 : 56,
+        child: _Remaining(
+          key: _rollKey,
+          name: active.name,
+          remaining: active.remaining,
+          // A leg won shows its checkout, not a remaining 0 under the plate and the result
+          checkout: visit.isCheckout ? l10n.celebrateCheckout(visit.startRemaining) : null,
+          size: size,
+          color: color,
+        ),
+      ),
     );
   }
 
-  /// The active player's remaining score fills the panel's width, within bounds for near and far; from afar on a tall
-  /// screen such as a TV it also grows with the height, and in a short window it leaves room for the others.
-  double _bigSize(double width, double height, {required bool short, bool scoreboard = false}) {
-    if (short) return (width * 0.24).clamp(48, 80).toDouble();
-    final double size =
-        (width * 0.34).clamp(56.0, far ? math.max(220.0, height * 0.26) : 120.0) * (scoreboard ? 1.15 : 1);
-    final panel = this.height;
-    return far || panel == null ? size : math.max(56.0, math.min(size, panel * 0.28));
-  }
-
-  /// The leg line on top: from afar large and with the game; in a short window only in a match over several legs,
-  /// since a single leg is always leg 1
+  /// The leg line on top, or who won the leg just ended in its place: from afar large and with the game; in a short
+  /// window only in a match over several legs, since a single leg is always leg 1
   Widget? _metaLine(AppLocalizations l10n, ThemeData theme, {required bool short, required bool scoreboard}) {
+    if (legWon != null) {
+      return Padding(
+        padding: EdgeInsets.only(bottom: scoreboard ? 0 : (short ? 4 : 8)),
+        child: _LegWon(text: legWon!, big: far, short: short),
+      );
+    }
     if (short && game.settings.legsToWin == 1) return null;
     final text = far ? '${game.settings.startScore} · ${_meta(l10n)}' : _meta(l10n);
     if (scoreboard) {
@@ -107,6 +135,40 @@ class X01Panel extends StatelessWidget {
     );
   }
 
+  /// The visit's darts and the checkout route; the route's row keeps its place while there is none, so the score does
+  /// not jump when one appears
+  List<Widget> _visitAndCheckout(AppLocalizations l10n, ThemeData theme, {required bool short}) => [
+    if (details.contains(PanelDetail.visitDarts))
+      _VisitRow(
+        texts: dartTexts,
+        darts: [for (final d in visit.darts) d.dart],
+        total: visit.points,
+        bust: visit.isBust,
+        big: far,
+        short: short,
+      )
+    else if (visit.isBust)
+      Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Semantics(
+          liveRegion: true,
+          child: Text(l10n.bust, style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.error)),
+        ),
+      ),
+    if (details.contains(PanelDetail.checkout))
+      checkout == null
+          ? ExcludeSemantics(
+              child: Visibility(
+                visible: false,
+                maintainSize: true,
+                maintainAnimation: true,
+                maintainState: true,
+                child: _CheckoutLine(route: const ['T20'], onCall: () {}, big: far, short: short, placeholder: true),
+              ),
+            )
+          : _CheckoutLine(route: checkout!, onCall: onCallCheckout, big: far, short: short),
+  ];
+
   Widget _clear(BuildContext context, double width, double height, {required bool short}) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
@@ -119,58 +181,51 @@ class X01Panel extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ?_metaLine(l10n, theme, short: short, scoreboard: false),
-        if (legWon != null)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: _LegWon(text: legWon!, big: far),
-          ),
-        Container(
-          key: const ValueKey('active-player'),
-          padding: short ? const EdgeInsets.fromLTRB(12, 6, 12, 8) : const EdgeInsets.fromLTRB(16, 12, 16, 12),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.primary.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: theme.colorScheme.primary, width: 3),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  if (StatisticsScope.maybeOf(context)?.colourOf(active.name) case final colour?)
-                    PlayerDot(colour)
-                  else
-                    Icon(Icons.circle, size: 12, color: theme.colorScheme.primary),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      active.name,
-                      style: (far ? theme.textTheme.headlineMedium : theme.textTheme.titleLarge)?.copyWith(
-                        fontWeight: FontWeight.w700,
+        Flexible(
+          child: Container(
+            key: const ValueKey('active-player'),
+            padding: short ? const EdgeInsets.fromLTRB(12, 6, 12, 8) : const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: theme.colorScheme.primary, width: 3),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    if (StatisticsScope.maybeOf(context)?.colourOf(active.name) case final colour?)
+                      PlayerDot(colour)
+                    else
+                      Icon(Icons.circle, size: 12, color: theme.colorScheme.primary),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        active.name,
+                        style: (far ? theme.textTheme.headlineMedium : theme.textTheme.titleLarge)?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  if (_figures(l10n, active) case final figures?) Text(figures, style: theme.textTheme.bodyMedium),
-                  if (_legs(active) case final legs?) ...[const SizedBox(width: 12), legs],
-                ],
-              ),
-              _Remaining(
-                key: _rollKey,
-                name: active.name,
-                remaining: _shownRemaining,
-                size: _bigSize(width, height, short: short),
-              ),
-              if (details.contains(PanelDetail.visitDarts))
-                _VisitRow(texts: dartTexts, total: visit.points, bust: visit.isBust, big: far, short: short)
-              else if (visit.isBust)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(l10n.bust, style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.error)),
+                    if (_figures(l10n, active) case final figures?)
+                      Flexible(
+                        child: Text(
+                          figures,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      ),
+                    if (_legs(active) case final legs?) ...[const SizedBox(width: 12), legs],
+                  ],
                 ),
-              if (checkout != null && details.contains(PanelDetail.checkout))
-                _CheckoutLine(route: checkout!, onCall: onCallCheckout, big: far, short: short),
-            ],
+                _score(context, _bigSize(width, height, short: short), short: short),
+                ..._visitAndCheckout(l10n, theme, short: short),
+              ],
+            ),
           ),
         ),
         for (final p in others)
@@ -197,50 +252,51 @@ class X01Panel extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ?_metaLine(l10n, theme, short: short, scoreboard: true),
-        if (legWon != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: _LegWon(text: legWon!, big: far),
-          ),
-        Container(
-          key: const ValueKey('active-player'),
-          color: block,
-          padding: EdgeInsets.fromLTRB(16, short ? 4 : 8, 16, short ? 4 : 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.play_arrow, color: onBlock),
-                  const SizedBox(width: 4),
-                  if (StatisticsScope.maybeOf(context)?.colourOf(active.name) case final colour?) ...[
-                    PlayerDot(colour, ring: onBlock),
-                    const SizedBox(width: 8),
+        Flexible(
+          child: Container(
+            key: const ValueKey('active-player'),
+            color: block,
+            padding: EdgeInsets.fromLTRB(16, short ? 4 : 8, 16, short ? 4 : 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.play_arrow, color: onBlock),
+                    const SizedBox(width: 4),
+                    if (StatisticsScope.maybeOf(context)?.colourOf(active.name) case final colour?) ...[
+                      PlayerDot(colour, ring: onBlock),
+                      const SizedBox(width: 8),
+                    ],
+                    Expanded(
+                      child: Text(
+                        active.name.toUpperCase(),
+                        style: scoreStyle(far ? theme.textTheme.headlineMedium : theme.textTheme.headlineSmall)
+                            ?.copyWith(color: onBlock, fontWeight: FontWeight.w700, letterSpacing: 0.5),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (_figures(l10n, active) case final figures?)
+                      Flexible(
+                        child: Text(
+                          figures,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodyMedium?.copyWith(color: onBlock, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    if (_legs(active, colour: onBlock) case final legs?) ...[const SizedBox(width: 12), legs],
                   ],
-                  Expanded(
-                    child: Text(
-                      active.name.toUpperCase(),
-                      style: scoreStyle(far ? theme.textTheme.headlineMedium : theme.textTheme.headlineSmall)
-                          ?.copyWith(color: onBlock, fontWeight: FontWeight.w700, letterSpacing: 0.5),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (_figures(l10n, active) case final figures?)
-                    Text(
-                      figures,
-                      style: theme.textTheme.bodyMedium?.copyWith(color: onBlock, fontWeight: FontWeight.w700),
-                    ),
-                  if (_legs(active, colour: onBlock) case final legs?) ...[const SizedBox(width: 12), legs],
-                ],
-              ),
-              _Remaining(
-                key: _rollKey,
-                name: active.name,
-                remaining: _shownRemaining,
-                size: _bigSize(width, height, short: short, scoreboard: true),
-                color: onBlock,
-              ),
-            ],
+                ),
+                _score(
+                  context,
+                  _bigSize(width, height, short: short, scoreboard: true),
+                  short: short,
+                  color: onBlock,
+                ),
+              ],
+            ),
           ),
         ),
         for (final p in others)
@@ -256,25 +312,17 @@ class X01Panel extends StatelessWidget {
               flat: true,
             ),
           ),
-        SizedBox(height: short ? 4 : 8),
-        Container(
-          color: theme.colorScheme.surfaceContainerHigh,
-          padding: EdgeInsets.all(short ? 4 : 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (details.contains(PanelDetail.visitDarts))
-                _VisitRow(texts: dartTexts, total: visit.points, bust: visit.isBust, big: far, short: short)
-              else if (visit.isBust)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(l10n.bust, style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.error)),
-                ),
-              if (checkout != null && details.contains(PanelDetail.checkout))
-                _CheckoutLine(route: checkout!, onCall: onCallCheckout, big: far, short: short),
-            ],
+        if (details.contains(PanelDetail.visitDarts) || details.contains(PanelDetail.checkout) || visit.isBust) ...[
+          SizedBox(height: short ? 4 : 8),
+          Container(
+            color: theme.colorScheme.surfaceContainerHigh,
+            padding: EdgeInsets.all(short ? 4 : 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: _visitAndCheckout(l10n, theme, short: short),
+            ),
           ),
-        ),
+        ],
       ],
     );
   }
@@ -346,12 +394,13 @@ class _LegsBadge extends StatelessWidget {
   }
 }
 
-/// The leg just won, as a line at the top of the panel
+/// The leg just won, as the line at the top of the panel
 class _LegWon extends StatelessWidget {
-  const _LegWon({required this.text, required this.big});
+  const _LegWon({required this.text, required this.big, this.short = false});
 
   final String text;
   final bool big;
+  final bool short;
 
   @override
   Widget build(BuildContext context) {
@@ -359,7 +408,7 @@ class _LegWon extends StatelessWidget {
     final palette = AppPalette.of(context);
     return Container(
       key: const ValueKey('leg-won'),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: short ? 4 : 8),
       decoration: BoxDecoration(
         border: Border(left: BorderSide(color: palette.highlight, width: 6)),
         color: theme.colorScheme.surfaceContainerHigh,
@@ -369,10 +418,15 @@ class _LegWon extends StatelessWidget {
           Icon(Icons.flag, color: StatusColors.of(context).good, size: big ? 32 : 20),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              text,
-              style: (big ? theme.textTheme.headlineSmall : theme.textTheme.titleMedium)?.copyWith(
-                fontWeight: FontWeight.w700,
+            child: Semantics(
+              liveRegion: true,
+              child: Text(
+                text,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: (big ? theme.textTheme.headlineSmall : theme.textTheme.titleMedium)?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),
@@ -382,19 +436,40 @@ class _LegWon extends StatelessWidget {
   }
 }
 
-/// The remaining score, counting to its new value when a visit scores
+/// The remaining score, counting to its new value when a visit scores; after a checkout the checkout in its place
 class _Remaining extends StatelessWidget {
-  const _Remaining({super.key, required this.name, required this.remaining, required this.size, this.color});
+  const _Remaining({
+    super.key,
+    required this.name,
+    required this.remaining,
+    required this.size,
+    this.checkout,
+    this.color,
+  });
 
   final String name;
   final int remaining;
   final double size;
+  final String? checkout;
   final Color? color;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final style = Theme.of(context).textTheme.displayLarge
         ?.copyWith(fontSize: size, fontWeight: FontWeight.w700, height: 1.0, color: color);
+    final checkout = this.checkout;
+    if (checkout != null) {
+      return FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Text(
+          checkout,
+          key: ValueKey('remaining-$name'),
+          style: style?.copyWith(fontSize: size * 0.6),
+        ),
+      );
+    }
     return TweenAnimationBuilder<double>(
       tween: Tween(end: remaining.toDouble()),
       duration: motion(context, const Duration(milliseconds: 250)),
@@ -405,8 +480,8 @@ class _Remaining extends StatelessWidget {
         child: Text(
           '${value.round()}',
           key: ValueKey('remaining-$name'),
-          // The final value for screen readers and tests, not the frames in between
-          semanticsLabel: '$remaining',
+          // The final value for screen readers, not the frames in between, and what it is
+          semanticsLabel: l10n.x01RemainingSpoken(remaining),
           style: style,
         ),
       ),
@@ -468,17 +543,29 @@ class _OtherPlayer extends StatelessWidget {
                   )
                 : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [name, ?figures]),
           ),
-          if (legs != null) ...[legs!, const SizedBox(width: 16)],
-          Text(
-            '${player.remaining}',
-            key: ValueKey('remaining-${player.name}'),
-            style: scoreStyle(
-              big
-                  ? theme.textTheme.displayMedium
-                  : short
-                  ? theme.textTheme.headlineMedium
-                  : theme.textTheme.headlineLarge,
-            )?.copyWith(fontWeight: FontWeight.w700, height: short ? 1.1 : null),
+          // With the largest text the legs and the score shrink before they push past the edge
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (legs != null) ...[legs!, const SizedBox(width: 16)],
+                  Text(
+                    '${player.remaining}',
+                    key: ValueKey('remaining-${player.name}'),
+                    style: scoreStyle(
+                      big
+                          ? theme.textTheme.displayMedium
+                          : short
+                          ? theme.textTheme.headlineMedium
+                          : theme.textTheme.headlineLarge,
+                    )?.copyWith(fontWeight: FontWeight.w700, height: short ? 1.1 : null),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -487,10 +574,12 @@ class _OtherPlayer extends StatelessWidget {
   }
 }
 
-/// The three darts of the visit and what they come to, or that the visit is bust
+/// The three darts of the visit and what they come to, or that the visit is bust; the dart the input marks, such as one
+/// being corrected, framed
 class _VisitRow extends StatelessWidget {
   const _VisitRow({
     required this.texts,
+    required this.darts,
     required this.total,
     required this.bust,
     required this.big,
@@ -498,13 +587,16 @@ class _VisitRow extends StatelessWidget {
   });
 
   final List<String> texts;
+  final List<DartThrow> darts;
   final int total;
   final bool bust;
   final bool big;
   final bool short;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => MarkedDart(builder: _build);
+
+  Widget _build(BuildContext context, DartThrow? marked) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final style = scoreStyle(
@@ -522,10 +614,15 @@ class _VisitRow extends StatelessWidget {
             if (i > 0) const SizedBox(width: 8),
             Expanded(
               child: Container(
-                padding: EdgeInsets.symmetric(vertical: short ? 2 : 8),
+                key: ValueKey('visit-cell-$i'),
+                // Less high than the text would be, rather than taller: the row keeps its place in the budget
+                padding: EdgeInsets.symmetric(vertical: short ? 2 : 6),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surfaceContainerHigh,
                   borderRadius: BorderRadius.circular(12),
+                  border: marked != null && i < darts.length && identical(darts[i], marked)
+                      ? Border.all(color: theme.colorScheme.tertiary, width: 3)
+                      : Border.all(color: Colors.transparent, width: 3),
                 ),
                 child: Text(
                   i < texts.length ? texts[i] : '–',
@@ -545,8 +642,9 @@ class _VisitRow extends StatelessWidget {
           Expanded(
             flex: bust ? 2 : 1,
             child: Container(
-              padding: EdgeInsets.symmetric(vertical: short ? 2 : 8, horizontal: 4),
+              padding: EdgeInsets.symmetric(vertical: short ? 2 : 6, horizontal: 4),
               decoration: BoxDecoration(
+                border: Border.all(color: Colors.transparent, width: 3),
                 color: bust
                     ? theme.colorScheme.errorContainer
                     : texts.isEmpty
@@ -556,17 +654,22 @@ class _VisitRow extends StatelessWidget {
               ),
               child: FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text(
-                  bust ? l10n.bust : (texts.isEmpty ? '–' : '$total'),
-                  key: const ValueKey('visit-total'),
-                  maxLines: 1,
-                  style: style?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: bust
-                        ? theme.colorScheme.onErrorContainer
-                        : texts.isEmpty
-                        ? theme.colorScheme.onSurfaceVariant
-                        : theme.colorScheme.onSecondaryContainer,
+                // A bust is announced as it happens, not only shown
+                child: Semantics(
+                  liveRegion: bust,
+                  child: Text(
+                    bust ? l10n.bust : (texts.isEmpty ? '–' : '$total'),
+                    key: const ValueKey('visit-total'),
+                    semanticsLabel: bust ? l10n.bust : null,
+                    maxLines: 1,
+                    style: style?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: bust
+                          ? theme.colorScheme.onErrorContainer
+                          : texts.isEmpty
+                          ? theme.colorScheme.onSurfaceVariant
+                          : theme.colorScheme.onSecondaryContainer,
+                    ),
                   ),
                 ),
               ),
@@ -579,12 +682,21 @@ class _VisitRow extends StatelessWidget {
 }
 
 class _CheckoutLine extends StatelessWidget {
-  const _CheckoutLine({required this.route, required this.onCall, required this.big, this.short = false});
+  const _CheckoutLine({
+    required this.route,
+    required this.onCall,
+    required this.big,
+    this.short = false,
+    this.placeholder = false,
+  });
 
   final List<String> route;
   final VoidCallback onCall;
   final bool big;
   final bool short;
+
+  /// Only holds the row's place while there is no route
+  final bool placeholder;
 
   @override
   Widget build(BuildContext context) {
@@ -592,7 +704,7 @@ class _CheckoutLine extends StatelessWidget {
     final theme = Theme.of(context);
     final good = StatusColors.of(context).good;
     return Padding(
-      padding: EdgeInsets.only(top: short ? 0 : 8),
+      padding: EdgeInsets.only(top: short ? 0 : 4),
       child: Row(
         children: [
           Icon(Icons.flag, color: good, size: big ? 32 : 20),
@@ -607,16 +719,18 @@ class _CheckoutLine extends StatelessWidget {
           Expanded(
             child: Text(
               route.join('  '),
-              key: const ValueKey('checkout'),
+              key: placeholder ? null : const ValueKey('checkout'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: scoreStyle(big ? theme.textTheme.headlineMedium : theme.textTheme.titleLarge)
                   ?.copyWith(color: good, fontWeight: FontWeight.w700),
             ),
           ),
           IconButton(
-            key: const ValueKey('call-checkout'),
+            key: placeholder ? null : const ValueKey('call-checkout'),
             icon: const Icon(Icons.volume_up),
             tooltip: l10n.callCheckout,
-            visualDensity: short ? VisualDensity.compact : null,
+            visualDensity: big ? null : VisualDensity.compact,
             onPressed: onCall,
           ),
         ],

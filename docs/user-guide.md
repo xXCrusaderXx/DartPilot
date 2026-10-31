@@ -66,7 +66,11 @@ By hand, use one of two inputs, which you can switch at any time:
 - **Board:** tap where the dart landed. The app also keeps the exact spot, which the precision training and the hit statistics use.
 - **Keypad:** choose Single, Double or Triple, then the number; **Miss** for a dart outside the scoring area.
 
-**Undo** takes back the last dart. To correct a dart the cameras got wrong, tap it in the list of the visit and tap the board where it really is. A correction also helps DartPilot measure how well its detection works.
+The app remembers your choice on this device for the next game. With cameras connected the board stays on show, so you see where they found each dart; a correction on the keypad returns to it.
+
+On a computer or TV box with a keyboard you can also type the darts: **S**, **D** or **T** followed by the number (**T20**, **D16**, **5**), **B** for the bull, **25** for the outer bull, **M** or **0** for a miss. A number from 3 up counts at once; after 1 or 2 type the second digit or press **Enter**. **Backspace** clears what you typed, or undoes the last dart.
+
+**Undo** takes back the last dart. To correct a dart the cameras got wrong, tap it in the list of the last darts and tap the field where it really is; the dart is framed in the visit while you do. A correction also helps DartPilot measure how well its detection works.
 
 If darts are still in the board when a game starts, the app warns you; take them out first.
 

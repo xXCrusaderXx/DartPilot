@@ -182,13 +182,13 @@ class _AroundTheClockScreenState extends State<AroundTheClockScreen> with Record
           ),
       ],
       footer: [
-        VisitDarts([for (final (dart, _) in shown) dart.score.text(l10n)], hits: [for (final (_, hit) in shown) hit]),
-        const SizedBox(height: 8),
-        OutlinedButton.icon(
-          onPressed: _game.canUndo && !widget.watching ? () => setState(_game.undo) : null,
-          icon: const Icon(Icons.undo),
-          label: Text(l10n.undo),
+        VisitDarts(
+          [for (final (dart, _) in shown) dart.score.text(l10n)],
+          hits: [for (final (_, hit) in shown) hit],
+          darts: [for (final (dart, _) in shown) dart],
         ),
+        const SizedBox(height: 8),
+        GameUndoButton(onPressed: _game.canUndo && !widget.watching ? () => setState(_game.undo) : null),
       ],
     );
     return GameScaffold(

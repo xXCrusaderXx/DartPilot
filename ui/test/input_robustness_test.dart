@@ -93,7 +93,7 @@ void main() {
     expect(remaining(tester, 'Anna'), '221');
     await receive(tester, engine, correctionJson('s/1', 'rejected'));
     expect(remaining(tester, 'Anna'), '281');
-    expect(tester.widget<Text>(find.byKey(const ValueKey('visit-dart-0'))).data, 'S20');
+    expect(tester.widget<Text>(find.byKey(const ValueKey('visit-dart-0'))).data, '20');
   });
 
   testWidgets('a dart rejected elsewhere that lets a later dart win announces the winner', (tester) async {

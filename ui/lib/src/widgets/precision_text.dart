@@ -57,12 +57,16 @@ class MissTile extends StatelessWidget {
       final dx = dart.point.xMm - centre.xMm, dy = dart.point.yMm - centre.yMm;
       miss = l10n.missFromTarget(mmNumber(l10n, math.sqrt(dx * dx + dy * dy)), offsetText(l10n, dx, dy));
     }
+    final far = readFromAfar(context);
     return ListTile(
-      dense: true,
+      dense: !far,
       contentPadding: EdgeInsets.zero,
-      leading: Text('$number', style: theme.textTheme.titleMedium),
-      title: Text([dart.score.text(l10n), if (showTarget && aim != null) l10n.aimedAt(aim.label)].join('  ')),
-      subtitle: miss == null ? null : Text(miss),
+      leading: Text('$number', style: far ? theme.textTheme.headlineMedium : theme.textTheme.titleMedium),
+      title: Text(
+        [dart.score.text(l10n), if (showTarget && aim != null) l10n.aimedAt(aim.label)].join('  '),
+        style: far ? theme.textTheme.headlineMedium : null,
+      ),
+      subtitle: miss == null ? null : Text(miss, style: far ? theme.textTheme.titleLarge : null),
     );
   }
 }

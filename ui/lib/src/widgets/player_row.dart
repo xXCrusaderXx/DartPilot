@@ -95,16 +95,21 @@ class PlayerRow extends StatelessWidget {
                 Text(
                   scoreboard && active ? name.toUpperCase() : name,
                   overflow: TextOverflow.ellipsis,
-                  style: (far || active ? theme.textTheme.titleLarge : theme.textTheme.titleMedium)?.copyWith(
-                    fontWeight: active ? FontWeight.w800 : null,
-                    color: onBlock,
-                  ),
+                  // From afar a size above the details below it, as in the X01 panel
+                  style:
+                      (far
+                              ? theme.textTheme.headlineMedium
+                              : active
+                              ? theme.textTheme.titleLarge
+                              : theme.textTheme.titleMedium)
+                          ?.copyWith(fontWeight: active ? FontWeight.w800 : null, color: onBlock),
                 ),
                 if (details != null && (!far || detailsFromAfar))
                   Text(
                     details!,
                     key: detailsKey,
-                    style: theme.textTheme.bodySmall?.copyWith(color: onBlock ?? theme.colorScheme.onSurfaceVariant),
+                    // Progress, hit rate or record: read from the oche as well, where they are part of the game
+                    style: GameText.of(context).detail?.copyWith(color: onBlock ?? theme.colorScheme.onSurfaceVariant),
                   ),
               ],
             ),

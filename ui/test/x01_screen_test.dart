@@ -54,7 +54,7 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
     expect(find.text('Anna gewinnt!'), findsOneWidget);
-    expect(find.text('Checkout 121'), findsOneWidget);
+    expect(find.descendant(of: find.byType(Dialog), matching: find.text('Checkout 121')), findsOneWidget);
     // Ben threw only misses: no average to speak of
     expect(find.descendant(of: find.byKey(const ValueKey('result-Ben')), matching: find.text('Ø 0,0')), findsOneWidget);
     await tester.tap(find.text('Details'));

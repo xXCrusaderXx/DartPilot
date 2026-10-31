@@ -48,9 +48,9 @@ class AppearancePreview extends StatelessWidget {
               color: Theme.of(context).scaffoldBackgroundColor,
               child: GameLayout(
                 input: Center(child: Dartboard(throws: [for (final d in visit.darts) d.dart])),
-                panel: ScrollingPanel(
-                  top: [
-                    X01Panel(
+                panel: LayoutBuilder(
+                  builder: (context, constraints) => ScrollingPanel(
+                    fill: X01Panel(
                       game: game,
                       visit: visit,
                       dartTexts: const ['T20'],
@@ -59,8 +59,10 @@ class AppearancePreview extends StatelessWidget {
                       style: display.styleFor(windowClass),
                       far: display.farFor(windowClass),
                       details: display.panelDetails,
+                      width: constraints.maxWidth,
+                      height: constraints.maxHeight,
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),

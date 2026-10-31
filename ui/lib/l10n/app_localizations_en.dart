@@ -362,7 +362,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String correctingDart(String label) {
-    return 'Correcting $label – tap the board';
+    return 'Correct $label – tap the right field';
   }
 
   @override
@@ -2820,4 +2820,65 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get marksPerRoundShort => 'MPR';
+
+  @override
+  String get gameCamerasNotCounting => 'The cameras are not counting right now – enter the darts by hand';
+
+  @override
+  String get gameCameraLost => 'A camera delivers no pictures.';
+
+  @override
+  String get gameConnectionLost => 'Connection to the camera detection lost';
+
+  @override
+  String get gameConnectionLostHint =>
+      'Check the darts of this visit or enter them by hand. Corrections are sent once it is back.';
+
+  @override
+  String get gameReconnected => 'Connected again';
+
+  @override
+  String get gameReconnectedHint => 'Darts thrown while the connection was gone may be missing – check the last visit.';
+
+  @override
+  String get noticeOk => 'OK';
+
+  @override
+  String correctedElsewhere(String old, String corrected) {
+    return 'Corrected on another device: $old → $corrected';
+  }
+
+  @override
+  String rejectedElsewhere(String label) {
+    return 'Removed on another device: $label';
+  }
+
+  @override
+  String get missingDartsHint =>
+      'The darts are out of the board. Count the rest as misses, or enter them yourself before the next player throws.';
+
+  @override
+  String enterMissingDarts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Enter $count more darts by hand',
+      one: 'Enter 1 more dart by hand',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get enterMissingDartsHint => 'The cameras\' next darts wait until this visit is complete.';
+
+  @override
+  String get correctDartTooltip => 'Tap to correct this dart';
+
+  @override
+  String x01RemainingSpoken(int score) {
+    return '$score left';
+  }
+
+  @override
+  String get homeConnectedNotDetecting => 'Camera detection connected – not detecting darts yet';
 }

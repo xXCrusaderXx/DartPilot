@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -60,6 +62,9 @@ class _GameScaffoldState extends State<GameScaffold> {
   /// The input's notice, shown at the top of the score panel
   final ValueNotifier<Widget?> _notice = ValueNotifier(null);
 
+  /// The dart the input's notice is about, framed in the panel's visit
+  final ValueNotifier<DartThrow?> _marked = ValueNotifier(null);
+
   /// The outcome as the screen last handled it: after its own darts, or as the last build showed it
   late Object? _outcome = _currentOutcome();
 
@@ -89,6 +94,7 @@ class _GameScaffoldState extends State<GameScaffold> {
   void dispose() {
     ScreenAwake.release();
     _notice.dispose();
+    _marked.dispose();
     super.dispose();
   }
 
@@ -98,6 +104,7 @@ class _GameScaffoldState extends State<GameScaffold> {
     final celebrations = widget.celebrations;
     final layout = GameNoticeSlot(
       notice: _notice,
+      marked: _marked,
       child: GameLayout(
         input: widget.watching
             ? WatchedBoard(throws: widget.shownThrows)
@@ -108,20 +115,36 @@ class _GameScaffoldState extends State<GameScaffold> {
                 onDart: _onDart,
                 onChanged: _onChanged,
               ),
-        panel: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            ValueListenableBuilder(
-              valueListenable: _notice,
-              builder: (context, notice, _) => notice ?? const SizedBox.shrink(),
-            ),
-            // Over the score, where the moment belongs, and never over the board or keypad the next dart goes in
-            Expanded(
-              child: celebrations == null
-                  ? widget.panel
-                  : CelebrationOverlay(celebrations: celebrations, child: widget.panel),
-            ),
-          ],
+        // The notices never take the room the panel needs to keep Undo at its foot: where room is short they keep to
+        // their titles, and the most pressing of them stay.
+        panel: LayoutBuilder(
+          builder: (context, constraints) {
+            final room = math.max(0.0, constraints.maxHeight - ScrollingPanel.pinnedFrom);
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: room),
+                  child: CompactNotices(
+                    compact: constraints.maxHeight < CompactNotices.below,
+                    room: room,
+                    child: SingleChildScrollView(
+                      child: ValueListenableBuilder(
+                        valueListenable: _notice,
+                        builder: (context, notice, _) => notice ?? const SizedBox.shrink(),
+                      ),
+                    ),
+                  ),
+                ),
+                // Over the score, where the moment belongs, and never over the board or keypad the next dart goes in
+                Expanded(
+                  child: celebrations == null
+                      ? widget.panel
+                      : CelebrationOverlay(celebrations: celebrations, child: widget.panel),
+                ),
+              ],
+            );
+          },
         ),
         panelWidth: widget.panelWidth,
       ),

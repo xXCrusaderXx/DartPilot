@@ -66,7 +66,11 @@ Von Hand nimmst du eine von zwei Eingaben, zwischen denen du jederzeit wechseln 
 - **Scheibe:** tipp dorthin, wo der Dart steckt. Die App merkt sich dabei die genaue Stelle, die das Präzisionstraining und die Trefferstatistik nutzen.
 - **Tastenfeld:** wähle Single, Double oder Triple, dann die Zahl; **Daneben** für einen Dart außerhalb der Wertungsfläche.
 
-**Rückgängig** nimmt den letzten Dart zurück. Um einen Dart zu korrigieren, den die Kameras falsch erkannt haben, tipp ihn in der Liste der Aufnahme an und tipp dann auf die Scheibe, wo er wirklich steckt. Eine Korrektur hilft DartPilot auch zu messen, wie gut die Erkennung arbeitet.
+Die App merkt sich deine Wahl auf diesem Gerät fürs nächste Spiel. Sind Kameras verbunden, bleibt die Scheibe zu sehen, damit du siehst, wo sie jeden Dart gefunden haben; nach einer Korrektur mit dem Tastenfeld kehrt die App dorthin zurück.
+
+Am Computer oder an einer TV-Box mit Tastatur kannst du die Darts auch tippen: **S**, **D** oder **T** und dann die Zahl (**T20**, **D16**, **5**), **B** fürs Bull, **25** fürs Single-Bull, **M** oder **0** für Daneben. Eine Zahl ab 3 zählt sofort; nach 1 oder 2 tippst du die zweite Ziffer oder drückst **Enter**. **Rücktaste** löscht, was du getippt hast, oder nimmt den letzten Dart zurück.
+
+**Rückgängig** nimmt den letzten Dart zurück. Um einen Dart zu korrigieren, den die Kameras falsch erkannt haben, tipp ihn in der Liste der letzten Darts an und tipp dann das Feld an, wo er wirklich steckt; solange ist der Dart in der Aufnahme eingerahmt. Eine Korrektur hilft DartPilot auch zu messen, wie gut die Erkennung arbeitet.
 
 Stecken beim Spielstart noch Darts im Board, warnt dich die App; zieh sie zuerst heraus.
 

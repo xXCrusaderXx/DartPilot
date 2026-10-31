@@ -168,21 +168,24 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
     final shown = waiting || _game.isFinished || _game.dartsInVisit > 0 ? _game.currentVisit : const <CricketDart>[];
     final players = _game.players;
 
-    // The column at the oche in the display style: a bright block on the scoreboard, a tint in the clear style
+    // The column at the oche in the display style: on the scoreboard its name and points as a bright block over a faint
+    // column, so the marks are not read on yellow; in the clear style a tint
     final display = DisplayScope.of(context);
     final window = WindowClass.of(context);
     final scoreboard = display.styleFor(window) == DisplayStyle.scoreboard;
     final far = display.farFor(window);
     final palette = AppPalette.of(context);
     final statistics = StatisticsScope.maybeOf(context);
-    final activeFill = scoreboard ? palette.highlight : theme.colorScheme.primary.withValues(alpha: 0.18);
+    final activeFill = scoreboard
+        ? palette.highlight.withValues(alpha: 0.14)
+        : theme.colorScheme.primary.withValues(alpha: 0.18);
     final labelWidth = far ? 96.0 : 60.0;
     final divider = BorderSide(color: theme.dividerColor);
 
-    Widget cell(int i, Widget child) => Expanded(
+    Widget cell(int i, Widget child, {bool head = false}) => Expanded(
       child: Container(
         decoration: BoxDecoration(
-          color: i == atOche ? activeFill : null,
+          color: i == atOche ? (head && scoreboard ? palette.highlight : activeFill) : null,
           border: Border(left: divider),
         ),
         alignment: Alignment.center,
@@ -200,6 +203,7 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
           for (var i = 0; i < players.length; ++i)
             cell(
               i,
+              head: true,
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
                 child: Flex(
@@ -271,9 +275,8 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
                         maxLines: 1,
                         overflow: TextOverflow.fade,
                         softWrap: false,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: onCell(i) ?? theme.colorScheme.onSurfaceVariant,
-                        ),
+                        style: GameText.of(context).detail
+                            ?.copyWith(color: onCell(i) ?? theme.colorScheme.onSurfaceVariant),
                       ),
                   ],
                 ),
@@ -320,7 +323,6 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
                     players[i].marks[target]!,
                     key: ValueKey('marks-${players[i].name}-$label'),
                     size: markSize,
-                    color: onCell(i),
                   ),
                 ),
               ),
@@ -330,13 +332,9 @@ class _CricketScreenState extends State<CricketScreen> with RecordsGame, BotTurn
     }
 
     final footer = [
-      VisitDarts([for (final d in shown) d.dart.score.text(l10n)]),
+      VisitDarts([for (final d in shown) d.dart.score.text(l10n)], darts: [for (final d in shown) d.dart]),
       const SizedBox(height: 8),
-      OutlinedButton.icon(
-        onPressed: _game.canUndo && !widget.watching ? () => setState(_game.undo) : null,
-        icon: const Icon(Icons.undo),
-        label: Text(l10n.undo),
-      ),
+      GameUndoButton(onPressed: _game.canUndo && !widget.watching ? () => setState(_game.undo) : null),
     ];
     // The marks grow into the room the panel has and shrink to fit a phone, upright or on its side, down to the bull;
     // only where even that is too little do they scroll between names and Undo.
