@@ -2978,4 +2978,16 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get backupInvalid => 'Diese Datei ist keine DartPilot-Sicherung. Es wurde nichts geändert.';
+
+  @override
+  String get windowMinimize => 'Minimieren';
+
+  @override
+  String get windowMaximize => 'Maximieren';
+
+  @override
+  String get windowRestore => 'Wiederherstellen';
+
+  @override
+  String get windowClose => 'Schließen';
 }
