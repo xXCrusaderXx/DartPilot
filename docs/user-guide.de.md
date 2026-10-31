@@ -52,7 +52,7 @@ Entpacke den Ordner auf einen beliebigen Webserver, oder stelle ihn auf deinem e
 Der erste Bildschirm fragt, wie du spielen willst.
 
 - **Ohne Engine spielen (Darts von Hand eingeben):** keine Kameras nötig. Alle Spiele und Trainings funktionieren; du tippst für jeden Dart auf die Scheibe oder das Tastenfeld.
-- **Auf diesem Gerät** (Linux): die App startet die Kamera-Engine selbst. Steck vorher die drei Kameras an. Beim ersten Mal richtest du sie unter **Einstellungen → Einrichtung** ein: Kameras zuordnen, vom Board aus kalibrieren und das Ergebnis von der Einrichtungsdiagnose prüfen lassen. [Hardware](hardware.md) beschreibt Board, Kameras und Montage; [Kalibrierung](calibration.md) erklärt, was im Hintergrund passiert (beide auf Englisch).
+- **Auf diesem Gerät** (Linux): die App startet die Kamera-Engine selbst. Steck vorher die drei Kameras an. Beim ersten Mal richtest du sie unter **Einstellungen → Kameras & Erkennung** ein: Kameras zuordnen, vom Board aus kalibrieren und das Ergebnis von der Einrichtungsdiagnose prüfen lassen. [Kameras einrichten](setup-guide.de.md) führt Schritt für Schritt durch Montage, Schärfe, Kalibrierung und Prüfung.
 - **Im Netzwerk:** die Engine läuft auf einem anderen PC. Die App sucht sie in deinem Heimnetz; findet sie nichts, tipp die Adresse ein, die dieser PC anzeigt, zum Beispiel `ws://192.168.1.20:8484`. Beim ersten Mal gibst du die PIN ein, die das Gerät der Engine zeigt.
 
 Ändern kannst du das später unter **Einstellungen → Verbindung**.
@@ -142,7 +142,7 @@ Das Handy zeigt dann das laufende Spiel mit. Darts werden auf dem Gerät eingege
 | „Der Port der Engine ist belegt“ | Es läuft schon eine Engine, etwa von einem früheren Start. Beende sie oder starte den PC neu. |
 | Keine Engine im Netzwerk gefunden | Beide Geräte müssen im selben Heimnetz sein, nicht im Gastnetz. Tipp die Adresse ein, die der PC der Engine zeigt. |
 | Die Browser-Version verbindet sich nicht | Lade sie über `http://`, nicht `https://`, und tipp die Adresse der Engine ein; Browser können das Netz nicht durchsuchen. |
-| Darts landen im falschen Feld | **Einstellungen → Einrichtungsdiagnose** prüft die Einrichtung Schritt für Schritt; die [Einrichtungsdiagnose](setup-diagnosis.md) erklärt jeden Befund (auf Englisch). Korrigiere falsche Darts im Spiel; das hilft den Messungen. |
+| Darts landen im falschen Feld | **Einstellungen → Kameras & Erkennung → Erweitert → Einrichtungsdiagnose** prüft die Einrichtung Schritt für Schritt; die [Einrichtungsdiagnose](setup-diagnosis.md) erklärt jeden Befund (auf Englisch). Korrigiere falsche Darts im Spiel; das hilft den Messungen. |
 | Keine Ansage zu hören | Installiere unter Linux speech-dispatcher (siehe [Ton und Score-Ansage](#ton-und-score-ansage)) und prüfe die Lautstärke der Ansage. |
 
 Kommst du nicht weiter? Eröffne ein [Issue](https://github.com/xXCrusaderXx/DartPilot/issues) und nenn die Version aus **Einstellungen → Über DartPilot**, dein Gerät und was du gemacht hast.

@@ -4,6 +4,7 @@ Where to find what. New readers start with the [technical plan](technical_plan.m
 
 ## Playing
 
+- [Setting up the cameras](setup-guide.md) ([Deutsch](setup-guide.de.md)): mounting, focus, connecting, calibrating and checking the three cameras, for players.
 - [Player guide](user-guide.md) ([Deutsch](user-guide.de.md)): installing the app, the first start, entering darts, the games and training, statistics, the score caller, a phone as a second display, and troubleshooting.
 
 ## Plan and decisions

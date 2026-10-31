@@ -60,7 +60,7 @@ The core metrics are the radial position error in mm (median, P95), segment and 
 
 ### Play
 
-Download the app for Linux, Android, Windows or the browser from the [latest release](https://github.com/xXCrusaderXx/DartPilot/releases/latest). The Linux AppImage includes the camera engine. Every game can also be played without cameras, by entering the darts by hand. The [player guide](docs/user-guide.md) ([Deutsch](docs/user-guide.de.md)) explains installing, the first start, the games, training, statistics, the score caller and using a phone as a second display.
+Download the app for Linux, Android, Windows or the browser from the [latest release](https://github.com/xXCrusaderXx/DartPilot/releases/latest). The Linux AppImage includes the camera engine. Every game can also be played without cameras, by entering the darts by hand. The [player guide](docs/user-guide.md) ([Deutsch](docs/user-guide.de.md)) explains installing, the first start, the games, training, statistics, the score caller and using a phone as a second display; [setting up the cameras](docs/setup-guide.md) ([Deutsch](docs/setup-guide.de.md)) covers mounting and calibrating them.
 
 ### Try it without cameras
 
