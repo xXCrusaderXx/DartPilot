@@ -20,5 +20,5 @@ Delete this section if the change does not affect detection results. -->
 - [ ] `ruff check`, `ruff format --check` and `pytest` pass in `tools/` (if Python changed).
 - [ ] Changes to detection include before/after benchmark values above.
 - [ ] No recordings, datasets, or binaries are included (see [LEGAL.md](../LEGAL.md)).
-- [ ] If AI tools were used: I reviewed every change myself, and I describe their use here. See [AGENTS.md](../AGENTS.md).
+- [ ] If AI tools were used: I reviewed and tested the changes myself, and the commits carry a `Co-Authored-By` trailer for the tool. See [AGENTS.md](../AGENTS.md).
 - [ ] The title describes the change; `CHANGELOG.md` is not edited (it is written at release time).
