@@ -28,7 +28,7 @@ std::string find (const std::string& file, const std::string& pattern)
 }  // namespace
 
 // Engine, app and tools carry one version (CONTRIBUTING.md, "Versions"). A release build sets the engine's from the
-// milestone, so only X.Y.Z is compared: the files on dev say 0.3.0-dev while 0.3.0 is built.
+// milestone, so only X.Y.Z is compared: the files on main say 0.3.0-dev while 0.3.0 is built.
 TEST(Version, EngineAppAndToolsAgree)
 {
     const std::string engine(dartpilot::kVersion);
