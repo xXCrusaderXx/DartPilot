@@ -13,8 +13,6 @@ name: Release
 # A dry run builds and checks everything and uploads the files to the run, but
 # publishes nothing.
 #
-# Releases are built from main, which only receives merges from dev.
-#
 # Ways to start it:
 # - push a tag vX.Y.Z on main matching DARTPILOT_VERSION in CMakeLists.txt
 # - milestone-release.yml starts it on main with a version; it creates the tag itself
