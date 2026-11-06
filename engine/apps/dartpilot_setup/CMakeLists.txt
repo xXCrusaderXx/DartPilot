@@ -40,7 +40,7 @@ qt_add_qml_module(dartpilot_setup
     validation_run.hpp validation_run.cpp
     detection_test.hpp detection_test.cpp
 )
-target_link_libraries(dartpilot_setup PRIVATE Qt6::Quick Qt6::QuickControls2 Qt6::Concurrent dartpilot::capture dartpilot::geometry dartpilot::fusion dartpilot::scoring opencv_objdetect)
+target_link_libraries(dartpilot_setup PRIVATE Qt6::Quick Qt6::QuickControls2 Qt6::Concurrent dartpilot::capture dartpilot::geometry dartpilot::fusion dartpilot::scoring dartpilot_version opencv_objdetect)
 
 # The desktop file lets the taskbar show the icon; the window is matched to it through QGuiApplication::setDesktopFileName.
 install(TARGETS dartpilot_setup RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

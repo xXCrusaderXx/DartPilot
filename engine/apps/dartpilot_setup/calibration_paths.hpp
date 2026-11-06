@@ -5,6 +5,7 @@
 
 #include "dartpilot/geometry/calibration_store.hpp"
 #include "dartpilot/geometry/charuco.hpp"
+#include "dartpilot/version.hpp"
 
 namespace dartpilot::setup
 {
@@ -18,10 +19,13 @@ constexpr int kReferenceFps = 30;
 inline const char* const kReferencePixelFormat = "MJPG 1280x720 30fps";
 inline geometry::ReferenceMode referenceMode () { return {cv::Size(kReferenceWidth_px, kReferenceHeight_px), kReferencePixelFormat}; }
 
-// The pattern image in the repository, for opening it on a phone or tablet
+// The pattern image in the repository, for opening it on a phone or tablet: a release build links its own
+// release tag, a development build links main
 inline QString patternDownloadUrl (const geometry::CharucoTarget& target)
 {
-    return "https://raw.githubusercontent.com/xXCrusaderXx/DartPilot/dev/docs/calibration/" + QString::fromStdString(target.imageFileName());
+    const QString version = QString::fromUtf8(kVersion.data(), static_cast<qsizetype>(kVersion.size()));
+    const QString ref = version.contains(QStringLiteral("-dev")) ? QStringLiteral("main") : QStringLiteral("v") + version;
+    return "https://raw.githubusercontent.com/xXCrusaderXx/DartPilot/" + ref + "/docs/calibration/" + QString::fromStdString(target.imageFileName());
 }
 
 // A calibration belongs to the USB port, because all reference cameras report the same serial number.
