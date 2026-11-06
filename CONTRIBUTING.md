@@ -72,7 +72,7 @@ Recordings and annotations are valuable, but they are **not committed to this re
 
 1. Open an issue first for larger changes, so the approach can be agreed on before you invest time.
 2. Fork the repository and create a branch from `main` (`feat/…`, `fix/…`, `docs/…`, `chore/…`).
-3. Keep each PR focused on one topic. Use a [Conventional Commits](https://www.conventionalcommits.org/)-style PR title, for example `feat: per-frame capture timestamps from V4L2`. It becomes the message of the squash commit on `main` and the changelog entry.
+3. Keep each PR focused on one topic. Use a [Conventional Commits](https://www.conventionalcommits.org/)-style PR title of at most 72 characters, for example `feat: per-frame capture timestamps from V4L2`. It becomes the message of the squash commit on `main` and the changelog entry. Put issue references in the PR description (`Closes #12`) and keep them out of the title; GitHub appends the PR number to the commit itself.
 4. Open a pull request against `main` and fill in the template.
 
 ### Branches
