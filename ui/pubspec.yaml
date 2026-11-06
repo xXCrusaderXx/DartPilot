@@ -43,13 +43,13 @@ dependencies:
   shared_preferences: ^2.5.6
   path_provider: ^2.1.6
   qr_flutter: ^4.1.0
-  mobile_scanner: ^7.4.2
+  mobile_scanner: ^7.5.0
   flutter_tts: ^4.2.5
   image_picker: ^1.2.4
   wakelock_plus: ^1.8.2
   flutter_soloud: ^5.2.2
   file_selector: ^1.1.0
-  window_manager: ^0.5.2
+  window_manager: ^0.6.0
 
 dev_dependencies:
   flutter_test:
