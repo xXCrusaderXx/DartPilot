@@ -4,11 +4,11 @@ These rules apply to every AI agent (Claude Code, Codex, Copilot, Cursor, …) t
 
 ## Responsibility
 
-- An agent works on behalf of a human contributor. That human reviews every change, understands it, and answers for it in the PR.
-- **Never add a `Signed-off-by` line yourself, and never tick the sign-off box.** The DCO sign-off is a legal statement only the human can make. A `Co-Authored-By` trailer for the agent is welcome.
+- An agent works on behalf of a human contributor. That human reviews and tests the changes and answers for them in the PR.
+- **Never add a `Signed-off-by` line yourself, and never tick the sign-off box.** The DCO sign-off is a legal statement only the human can make.
 - Do not open, approve, merge, or close pull requests, push to `main` or `dev`, merge `dev` into `main`, create tags or releases, or change repository settings unless the human explicitly asks for that specific action.
 - Never bypass checks: no `--no-verify`, no disabling CI jobs, no weakening `.github/workflows/` or the DCO check to make a PR pass.
-- Disclose agent use in the PR description (the template has a checkbox).
+- Add a `Co-Authored-By` trailer that names the agent to every commit you write, for example `Co-Authored-By: Claude <noreply@anthropic.com>`.
 
 ## Legal limits
 
