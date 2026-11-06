@@ -8,7 +8,7 @@ description: >-
 runs:
   using: composite
   steps:
-    # Caches written on dev are readable by all PRs into dev. Bump the version in
+    # Caches written on main are readable by all PRs into main. Bump the version in
     # the key to drop a cache that grew stale.
     - name: Restore downloaded packages
       id: cache

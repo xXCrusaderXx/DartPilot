@@ -1,7 +1,7 @@
 name: Milestone release
 
 # Closing a roadmap milestone named "vX.Y.Z – Name" publishes release vX.Y.Z
-# from main (merge dev into main first).
+# from main.
 # The milestone's closed issues and merged PRs become the release notes.
 # See ROADMAP.md.
 on:
@@ -100,8 +100,6 @@ jobs:
       VERSION: ${{ needs.prepare.outputs.version }}
       NOTES: ${{ needs.prepare.outputs.notes }}
     steps:
-      # The milestone event runs on the default branch (dev). Releases are built
-      # and tagged from main, so the Release workflow is started on main.
       - name: Run the Release workflow on main
         run: |
           set -euo pipefail

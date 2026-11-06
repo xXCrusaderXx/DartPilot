@@ -163,7 +163,7 @@ flutter test
 
 ## Contributing
 
-Contributions are welcome: code, measurements, hardware reports and ideas. Read [CONTRIBUTING.md](CONTRIBUTING.md) first. Development happens on `dev`; `main` only receives merges from `dev` at release points. Every commit needs a DCO sign-off (`git commit -s`). Pull requests go against `dev` and are checked by CI; a maintainer reviews and merges them. Changes to detection report their effect on the benchmark.
+Contributions are welcome: code, measurements, hardware reports and ideas. Read [CONTRIBUTING.md](CONTRIBUTING.md) first. Pull requests go against `main` and need a DCO sign-off. CI checks them, and a maintainer reviews and squash-merges them. A release is a tag on `main`. Changes to detection report their effect on the benchmark.
 
 - Ideas for the roadmap: [roadmap proposal](https://github.com/xXCrusaderXx/DartPilot/issues/new?template=roadmap_proposal.yml)
 - Security problems: [SECURITY.md](SECURITY.md)

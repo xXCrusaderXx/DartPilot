@@ -31,7 +31,7 @@ jobs:
     steps:
       - name: Delete the head branch
         run: |
-          if [ "$BRANCH" = "$DEFAULT_BRANCH" ] || [ "$BRANCH" = "dev" ] || [ "$BRANCH" = "main" ]; then
+          if [ "$BRANCH" = "$DEFAULT_BRANCH" ] || [ "$BRANCH" = "main" ]; then
             echo "::notice::$BRANCH is a long-lived branch, kept."
             exit 0
           fi
@@ -62,7 +62,7 @@ jobs:
           in_use="$(gh pr list --state open --limit 500 --json headRefName,baseRefName --jq '.[] | .headRefName, .baseRefName' | sort -u)"
           gh api --paginate "repos/$GH_REPO/branches" --jq '.[] | "\(.name) \(.commit.sha)"' |
             while read -r branch sha; do
-              case "$branch" in dev|main) continue ;; esac
+              case "$branch" in main) continue ;; esac
               if grep -qxF "$branch" <<<"$in_use"; then
                 continue
               fi

@@ -6,7 +6,7 @@ These rules apply to every AI agent (Claude Code, Codex, Copilot, Cursor, …) t
 
 - An agent works on behalf of a human contributor. That human reviews and tests the changes and answers for them in the PR.
 - **Never add a `Signed-off-by` line yourself, and never tick the sign-off box.** The DCO sign-off is a legal statement only the human can make.
-- Do not open, approve, merge, or close pull requests, push to `main` or `dev`, merge `dev` into `main`, create tags or releases, or change repository settings unless the human explicitly asks for that specific action.
+- Do not open, approve, merge, or close pull requests, push to `main`, create tags or releases, or change repository settings unless the human explicitly asks for that specific action.
 - Never bypass checks: no `--no-verify`, no disabling CI jobs, no weakening `.github/workflows/` or the DCO check to make a PR pass.
 - Add a `Co-Authored-By` trailer that names the agent to every commit you write, for example `Co-Authored-By: Claude <noreply@anthropic.com>`.
 
@@ -48,7 +48,7 @@ Principles that every change keeps:
 
 ## Code
 
-- C++20, `.clang-format` style (Allman braces, 4-space indent, 150 columns). Format only the lines you change: `git clang-format origin/dev`.
+- C++20, `.clang-format` style (Allman braces, 4-space indent, 150 columns). Format only the lines you change: `git clang-format origin/main`.
 - Python 3.11+, `ruff` for linting and formatting.
 - Dart in `ui/`: `dart format` (120 columns, set in `analysis_options.yaml`), `flutter analyze` clean, user-visible strings in `lib/l10n/*.arb` (English and German), game rules as plain Dart without widgets so they can be tested.
 - QML in `engine/apps/dartpilot_setup`: 4-space indent, `dartpilot_setup_qmllint` target clean, colours and sizes from `Tokens.qml`, logic in C++ (ADR 0003).
@@ -62,7 +62,7 @@ Principles that every change keeps:
 cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DDARTPILOT_BUILD_TESTS=ON
 cmake --build build
 ctest --test-dir build --output-on-failure
-git clang-format --diff origin/dev
+git clang-format --diff origin/main
 (cd tools && ruff check . && ruff format --check . && pytest)
 (cd ui && dart format --output=none --set-exit-if-changed lib/main.dart lib/src test && flutter analyze && flutter test)
 ```
@@ -73,7 +73,7 @@ A change is done only when it builds and the tests pass. Say so in the PR if you
 
 - Changes you did not make belong to the human or another agent. Do not commit, revert, stash, or unstage them. Check `git diff --cached --name-only` before you commit.
 - Do not commit build output (`build/`), virtual environments, or anything under `data/`.
-- Branch from `dev` and open PRs against `dev`; they are squash-merged, so the PR title is the commit message. Update a branch by rebasing onto `origin/dev`, never by merging `dev` into it. `main` only receives `dev` at release points, merged by the human with a merge commit.
-- Never switch branches in the main checkout; it stays on `dev`. Work on a branch in your own worktree inside the repository, under `.worktrees/` (ignored by Git), named after the branch with `/` replaced by `-`: `git worktree add .worktrees/feat-capture-threads -b feat/capture-threads origin/dev`. Never create worktrees next to the repository or in temporary directories.
+- Branch from `main` and open PRs against `main`; they are squash-merged, so the PR title is the commit message. Update a branch by rebasing onto `origin/main`, never by merging `main` into it.
+- Never switch branches in the main checkout; it stays on `main`. Work on a branch in your own worktree inside the repository, under `.worktrees/` (ignored by Git), named after the branch with `/` replaced by `-`: `git worktree add .worktrees/feat-capture-threads -b feat/capture-threads origin/main`. Never create worktrees next to the repository or in temporary directories.
 - Don't edit `CHANGELOG.md` in feature PRs; it is written once per release. Put the change in the PR title instead.
 - Clean up after every merge: remove your worktree and local branch (`git worktree remove .worktrees/<name>`, `git branch -D <branch>`) and run `git fetch --prune`. The `Clean up merged branches` workflow deletes the remote branch.

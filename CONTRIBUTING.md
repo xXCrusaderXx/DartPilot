@@ -27,6 +27,7 @@ You may use AI coding tools. The rules:
 - **You** are responsible for the PR. Review the changes, test them, and make sure they do what the PR says. You should be able to answer questions about them in review.
 - The DCO sign-off is yours to give. An AI tool must never add `Signed-off-by` for you.
 - Mark AI use at least in the commit: add a `Co-Authored-By` trailer that names the tool, for example `Co-Authored-By: Claude <noreply@anthropic.com>`. GitHub keeps the trailer in the squash commit. A note in the PR description is welcome too.
+- Issues, bug reports and review comments describe what you observed yourself. Mark text that an AI tool wrote, and check every log, stack trace and claim in it before you post it. Reports that nobody can reproduce are closed.
 - Don't send unreviewed, bulk, or drive-by agent PRs. They will be closed.
 - Agents working in this repository must follow [AGENTS.md](AGENTS.md).
 
@@ -52,7 +53,7 @@ DartPilot's claim is precision, so changes that affect the detection result (`ev
 - Report hard groups separately when the change targets them (near wires, bull, double/triple rings, occluded tips; see section 7 of the [technical plan](docs/technical_plan.md#7-experiment-plan)).
 - A change that improves the mean but worsens a hard group must say so.
 
-Until the benchmark tooling exists (phase 1), describe how you measured the effect.
+`python -m dartpilot_tools.benchmark` in `tools/` computes these values from a replay run, and `dartpilot_tools.compare` compares runs on the same throws. [docs/benchmark.md](docs/benchmark.md) describes both.
 
 `scoring` must stay deterministic and free of image processing: board point in, score out.
 
@@ -70,31 +71,28 @@ Recordings and annotations are valuable, but they are **not committed to this re
 ## Workflow
 
 1. Open an issue first for larger changes, so the approach can be agreed on before you invest time.
-2. Fork the repository and create a branch from `dev` (`feat/…`, `fix/…`, `docs/…`, `chore/…`).
-3. Keep each PR focused on one topic. Use a [Conventional Commits](https://www.conventionalcommits.org/)-style PR title, for example `feat: per-frame capture timestamps from V4L2`. It becomes the message of the squash commit on `dev` and the changelog entry.
-4. Open a pull request against `dev` and fill in the template.
+2. Fork the repository and create a branch from `main` (`feat/…`, `fix/…`, `docs/…`, `chore/…`).
+3. Keep each PR focused on one topic. Use a [Conventional Commits](https://www.conventionalcommits.org/)-style PR title of at most 72 characters, for example `feat: per-frame capture timestamps from V4L2`. It becomes the message of the squash commit on `main` and the changelog entry. Put issue references in the PR description (`Closes #12`) and keep them out of the title; GitHub appends the PR number to the commit itself.
+4. Open a pull request against `main` and fill in the template.
 
 ### Branches
 
 | Branch | Purpose |
 | ------ | ------- |
-| `main` | Released code only. Changes come exclusively from `dev`, merged by a maintainer at a release point. |
-| `dev` | Integration branch and default branch. All development happens here, through feature and fix PRs. |
-| `feat/…`, `fix/…`, `docs/…`, `chore/…` | One topic each, branched from `dev`, deleted after the merge. |
+| `main` | Default branch. Every feature and fix PR is merged here once it is reviewed and its checks are green. A release is a tag on `main`. |
+| `feat/…`, `fix/…`, `docs/…`, `chore/…` | One topic each, branched from `main`, deleted after the merge. |
 
-PRs into `dev` are **squash-merged**: each PR becomes one commit, and `dev` stays a straight line. `dev` → `main` is the only merge commit, made by a maintainer at a release point. The `Branch policy` check fails every PR into `main` whose source is not `dev`. After `dev` is merged into `main`, work simply continues on `dev`.
+PRs are **squash-merged**: each PR becomes one commit, and `main` stays a straight line. There is no integration branch.
 
-To bring a branch up to date, rebase it onto `dev` (`git rebase origin/dev`, or `gh pr update-branch --rebase`). Never merge `dev` into a feature branch.
+To bring a branch up to date, rebase it onto `main` (`git rebase origin/main`, or `gh pr update-branch --rebase`). Never merge `main` into a feature branch.
 
 ### How a PR gets merged
 
-A PR can only be merged when all required checks are green (`format`, `build (ubuntu)`, `build (arch)` including the tests, `python`, `DCO sign-off`; for PRs into `main` also `source is dev`). The branch does not need to be up to date with `dev`; if two PRs that pass on their own break `dev` together, the CI run on `dev` shows it and a small follow-up PR fixes it.
+A PR can only be merged when all required checks are green (`format`, `build (ubuntu)`, `build (arch)` including the tests, `python`, `DCO sign-off`). The branch does not need to be up to date with `main`; if two PRs that pass on their own break `main` together, the CI run on `main` shows it and a small follow-up PR fixes it.
 
 - **Contributors' PRs:** a maintainer reviews the change. When it is good, the maintainer merges it, or enables auto-merge so GitHub merges it as soon as the checks are green. Nothing from outside is merged without a maintainer looking at it.
-- **Maintainers' own PRs into `dev`:** auto-merge is enabled automatically. Ticking the sign-off box in the PR description is the maintainer's one action; the PR merges once the checks are green.
+- **Maintainers' own PRs:** auto-merge is enabled automatically. Ticking the sign-off box in the PR description is the maintainer's one action; the PR merges once the checks are green.
 - **Dependabot:** minor and patch updates of GitHub Actions merge automatically once CI is green. Major updates wait for a maintainer.
-
-Auto-merge and CodeQL are switched on once the repository is public; until then they are skipped.
 
 A PR with a merge conflict needs a rebase by its author.
 
@@ -108,7 +106,7 @@ Run the same checks as CI before you push:
 
 ```sh
 # Formatting of the lines you changed (.clang-format in the repository root)
-git fetch origin && git clang-format --diff origin/dev
+git fetch origin && git clang-format --diff origin/main
 
 # Build and test the engine (the tests need no cameras)
 cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DDARTPILOT_BUILD_TESTS=ON
@@ -123,7 +121,7 @@ Optional: `.githooks/pre-push` stops a push when a commit's author or committer 
 
 Optional: `.githooks/post-merge` cleans up after every `git pull`: local branches whose PR was merged (remote branch gone) are deleted, together with their worktree if it has no changes. If you use worktrees, keep them under `.worktrees/` in the repository; that folder is ignored by Git. Enable it with `git config core.hooksPath .githooks` and `git config fetch.prune true`.
 
-CI checks only the lines your PR changes. To fix them in place, run `git clang-format origin/dev`. Don't reformat code you didn't otherwise touch.
+CI checks only the lines your PR changes. To fix them in place, run `git clang-format origin/main`. Don't reformat code you didn't otherwise touch.
 
 ## Code style
 
@@ -133,7 +131,7 @@ CI checks only the lines your PR changes. To fix them in place, run `git clang-f
 - QML (developer GUI `engine/apps/dartpilot_setup`): 4-space indent, no warnings from `cmake --build build --target dartpilot_setup_qmllint`. Colours and sizes come from `Tokens.qml`. Logic and image processing stay in C++; QML only arranges views and controls.
 - **Code comments and log messages are written in English.**
 - Each engine module is a library under `engine/<module>/` with its public headers in `include/dartpilot/<module>/`. Modules depend only on the modules before them in the pipeline; `scoring` depends on none of them.
-- Results carry their units in the name (`board_xy_mm`, `latency_ms`). Board coordinates follow the convention defined in phase 1.
+- Results carry their units in the name (`board_xy_mm`, `latency_ms`). Board coordinates follow [docs/board-coordinates.md](docs/board-coordinates.md).
 - Code that runs during replay must be deterministic: no wall-clock time, no unseeded randomness, no dependence on thread timing.
 - Match the surrounding code: naming and comment density.
 - Never commit build output, recordings, datasets, or binaries.
@@ -141,8 +139,9 @@ CI checks only the lines your PR changes. To fix them in place, run `git clang-f
 ## Pull request checklist
 
 - [ ] Signed off (`git commit -s`, or one `Signed-off-by` line in the PR description).
-- [ ] `git clang-format --diff origin/dev` reports no changes.
+- [ ] `git clang-format --diff origin/main` reports no changes.
 - [ ] The project builds with `cmake --build build`, and `ctest --test-dir build` passes.
+- [ ] A bug fix comes with a test that fails without the fix, if the bug can be tested without cameras.
 - [ ] `ruff check`, `ruff format --check` and `pytest` pass in `tools/` if you changed Python code.
 - [ ] Changes to detection include before/after benchmark values (see [Changes to detection](#changes-to-detection)).
 - [ ] No recordings, datasets, or binaries are committed (see [LEGAL.md](LEGAL.md)).
@@ -152,9 +151,9 @@ CI checks only the lines your PR changes. To fix them in place, run `git clang-f
 
 `CHANGELOG.md` is written by a maintainer once per release, from the titles of the merged PRs. Feature PRs don't edit it: with several PRs in flight it is the most frequent merge conflict.
 
-Releases follow the [roadmap](ROADMAP.md): every phase is a milestone named `vX.Y.Z – Name`. At a release point, a PR `dev` → `main` is opened and the maintainer merges it (merge commit, never automatic). When the maintainer then closes the milestone, the `Milestone release` workflow checks that all its issues are closed and runs the `Release` workflow for `X.Y.Z` on `main`. That workflow builds and tests the engine and publishes GitHub release `vX.Y.Z` with a source archive and checksums, and with the milestone's issues and PRs as release notes. The version comes from the milestone title, so no version-bump commit is needed. Before closing a milestone, work through the [release checklist](https://github.com/xXCrusaderXx/DartPilot/issues/new?template=release.yml).
+Releases follow the [roadmap](ROADMAP.md): every phase is a milestone named `vX.Y.Z – Name`. When the maintainer closes the milestone, the `Milestone release` workflow checks that all its issues are closed and runs the `Release` workflow for `X.Y.Z` on `main`. That workflow builds and tests the engine and publishes GitHub release `vX.Y.Z` with a source archive and checksums, and with the milestone's issues and PRs as release notes. The version comes from the milestone title, so no version-bump commit is needed. Before closing a milestone, work through the [release checklist](https://github.com/xXCrusaderXx/DartPilot/issues/new?template=release.yml).
 
-**Versions.** Engine, app and tools carry one version. Between releases it is the next release with `-dev`, e.g. `0.4.0-dev` in `CMakeLists.txt` (`DARTPILOT_VERSION`, what `dartpilot --version`, `hello.version` and the network announcement report), `0.4.0-dev+N` in `ui/pubspec.yaml` (N, the build number, only goes up, as Android requires) and `0.4.0.dev0` in `tools/pyproject.toml` (PEP 440). `VersionTest` fails when they differ. The release build sets the version from the milestone title; after a release, a PR on `dev` moves all three to the next version.
+**Versions.** Engine, app and tools carry one version. Between releases it is the next release with `-dev`, e.g. `0.4.0-dev` in `CMakeLists.txt` (`DARTPILOT_VERSION`, what `dartpilot --version`, `hello.version` and the network announcement report), `0.4.0-dev+N` in `ui/pubspec.yaml` (N, the build number, only goes up, as Android requires) and `0.4.0.dev0` in `tools/pyproject.toml` (PEP 440). `VersionTest` fails when they differ. The release build sets the version from the milestone title; after a release, a PR moves all three to the next version.
 
 For a release outside a milestone, either run the `Release` workflow by hand with a version (without a version it is a dry run that builds and tests everything but publishes nothing), or set `DARTPILOT_VERSION` in `CMakeLists.txt` and push a matching tag `vX.Y.Z` on `main`. A version with a suffix (`0.2.0-rc.1`) is published as a pre-release.
 
