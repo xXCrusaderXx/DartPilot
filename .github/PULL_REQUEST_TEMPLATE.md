@@ -17,6 +17,7 @@ Delete this section if the change does not affect detection results. -->
 - [ ] Signed off: every commit (`git commit -s`), or I add a `Signed-off-by: Name <email>` line to this description. See [CONTRIBUTING.md](../CONTRIBUTING.md).
 - [ ] `git clang-format --diff origin/dev` reports no changes.
 - [ ] The project builds locally, and `ctest` passes.
+- [ ] A bug fix comes with a test that fails without the fix (if it can be tested without cameras).
 - [ ] `ruff check`, `ruff format --check` and `pytest` pass in `tools/` (if Python changed).
 - [ ] Changes to detection include before/after benchmark values above.
 - [ ] No recordings, datasets, or binaries are included (see [LEGAL.md](../LEGAL.md)).

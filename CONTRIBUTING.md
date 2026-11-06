@@ -27,6 +27,7 @@ You may use AI coding tools. The rules:
 - **You** are responsible for the PR. Review the changes, test them, and make sure they do what the PR says. You should be able to answer questions about them in review.
 - The DCO sign-off is yours to give. An AI tool must never add `Signed-off-by` for you.
 - Mark AI use at least in the commit: add a `Co-Authored-By` trailer that names the tool, for example `Co-Authored-By: Claude <noreply@anthropic.com>`. GitHub keeps the trailer in the squash commit. A note in the PR description is welcome too.
+- Issues, bug reports and review comments describe what you observed yourself. Mark text that an AI tool wrote, and check every log, stack trace and claim in it before you post it. Reports that nobody can reproduce are closed.
 - Don't send unreviewed, bulk, or drive-by agent PRs. They will be closed.
 - Agents working in this repository must follow [AGENTS.md](AGENTS.md).
 
@@ -52,7 +53,7 @@ DartPilot's claim is precision, so changes that affect the detection result (`ev
 - Report hard groups separately when the change targets them (near wires, bull, double/triple rings, occluded tips; see section 7 of the [technical plan](docs/technical_plan.md#7-experiment-plan)).
 - A change that improves the mean but worsens a hard group must say so.
 
-Until the benchmark tooling exists (phase 1), describe how you measured the effect.
+`python -m dartpilot_tools.benchmark` in `tools/` computes these values from a replay run, and `dartpilot_tools.compare` compares runs on the same throws. [docs/benchmark.md](docs/benchmark.md) describes both.
 
 `scoring` must stay deterministic and free of image processing: board point in, score out.
 
@@ -94,8 +95,6 @@ A PR can only be merged when all required checks are green (`format`, `build (ub
 - **Maintainers' own PRs into `dev`:** auto-merge is enabled automatically. Ticking the sign-off box in the PR description is the maintainer's one action; the PR merges once the checks are green.
 - **Dependabot:** minor and patch updates of GitHub Actions merge automatically once CI is green. Major updates wait for a maintainer.
 
-Auto-merge and CodeQL are switched on once the repository is public; until then they are skipped.
-
 A PR with a merge conflict needs a rebase by its author.
 
 Draft PRs are never merged; mark the PR "Ready for review" when you are done.
@@ -133,7 +132,7 @@ CI checks only the lines your PR changes. To fix them in place, run `git clang-f
 - QML (developer GUI `engine/apps/dartpilot_setup`): 4-space indent, no warnings from `cmake --build build --target dartpilot_setup_qmllint`. Colours and sizes come from `Tokens.qml`. Logic and image processing stay in C++; QML only arranges views and controls.
 - **Code comments and log messages are written in English.**
 - Each engine module is a library under `engine/<module>/` with its public headers in `include/dartpilot/<module>/`. Modules depend only on the modules before them in the pipeline; `scoring` depends on none of them.
-- Results carry their units in the name (`board_xy_mm`, `latency_ms`). Board coordinates follow the convention defined in phase 1.
+- Results carry their units in the name (`board_xy_mm`, `latency_ms`). Board coordinates follow [docs/board-coordinates.md](docs/board-coordinates.md).
 - Code that runs during replay must be deterministic: no wall-clock time, no unseeded randomness, no dependence on thread timing.
 - Match the surrounding code: naming and comment density.
 - Never commit build output, recordings, datasets, or binaries.
@@ -143,6 +142,7 @@ CI checks only the lines your PR changes. To fix them in place, run `git clang-f
 - [ ] Signed off (`git commit -s`, or one `Signed-off-by` line in the PR description).
 - [ ] `git clang-format --diff origin/dev` reports no changes.
 - [ ] The project builds with `cmake --build build`, and `ctest --test-dir build` passes.
+- [ ] A bug fix comes with a test that fails without the fix, if the bug can be tested without cameras.
 - [ ] `ruff check`, `ruff format --check` and `pytest` pass in `tools/` if you changed Python code.
 - [ ] Changes to detection include before/after benchmark values (see [Changes to detection](#changes-to-detection)).
 - [ ] No recordings, datasets, or binaries are committed (see [LEGAL.md](LEGAL.md)).
